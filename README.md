@@ -1,6 +1,6 @@
 # The Sweet Fork v2
 
-Phase 1 stabilization workspace for a Next.js + Supabase rebuild of The Sweet Fork.
+Phase 1 and Phase 2 workspace for a Next.js + Supabase rebuild of The Sweet Fork.
 
 ## Stack
 
@@ -34,7 +34,10 @@ src/
     domain.ts           Shared domain types
 
 supabase/
-  migrations/           Reserved for Phase 2 SQL migrations (currently empty)
+  migrations/           SQL migrations for schema and starter reference data
+
+docs/
+  phase-2-schema.md    Plain-English schema notes and phase boundaries
 ```
 
 ## Route Groups
@@ -68,14 +71,15 @@ See [`.env.example`](/Users/indiobeltran/Library/Mobile Documents/com~apple~Clou
   - Tailwind/PostCSS setup
   - dependency manifest and lockfile
   - verification commands
-- Phase 2 not started:
-  - no SQL migrations
-  - no database schema or RLS policies
+- Phase 2 implemented:
+  - Supabase/Postgres schema migrations
+  - normalized inquiry, order, pricing, media, content, calendar, and notification tables
+  - starter reference seed data for products, pricing, gallery categories, site settings, and FAQ records
 - Phase 3 files exist in the repo but are intentionally not being expanded during this pass:
   - public-site routes
   - hardcoded content layer
   - starter pricing and inquiry validation utilities
-  - Supabase/auth helper scaffolding
+  - admin/auth helpers not yet wired into full CRUD flows
 
 ## Commands
 

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import type { AdminRole } from "@/types/domain";
+import type { Tables } from "@/types/supabase.generated";
 import { createClient } from "@/lib/supabase/server";
 
 export async function getCurrentAdmin() {
@@ -18,21 +19,23 @@ export async function getCurrentAdmin() {
     return null;
   }
 
-  const { data: adminUser } = await supabase
-    .from("admin_users")
-    .select("id, email, full_name, role")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const [{ data: rawProfile }, { data: rawRoleRow }] = await Promise.all([
+    supabase.from("profiles").select("id, email, full_name").eq("id", user.id).maybeSingle(),
+    supabase.from("user_roles").select("role").eq("user_id", user.id).maybeSingle(),
+  ]);
 
-  if (!adminUser) {
+  const profile = rawProfile as Pick<Tables<"profiles">, "id" | "email" | "full_name"> | null;
+  const roleRow = rawRoleRow as Pick<Tables<"user_roles">, "role"> | null;
+
+  if (!profile || !roleRow) {
     return null;
   }
 
   return {
-    id: adminUser.id as string,
-    email: adminUser.email as string,
-    fullName: adminUser.full_name as string,
-    role: adminUser.role as AdminRole,
+    id: profile.id,
+    email: profile.email ?? user.email ?? "",
+    fullName: profile.full_name ?? user.user_metadata?.full_name ?? "",
+    role: roleRow.role as AdminRole,
   };
 }
 

@@ -11,7 +11,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --max-warnings=0",
-    "typecheck": "next typegen && tsc --noEmit --project tsconfig.typecheck.json"
+    "typecheck": "next typegen && tsc --noEmit --project tsconfig.typecheck.json",
+    "db:push": "supabase db push",
+    "db:typegen": "supabase gen types typescript --linked --schema public > src/types/supabase.generated.ts",
+    "db:verify:seed": "node --env-file=.env.local scripts/verify-reference-data.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
@@ -32,6 +35,7 @@
     "eslint": "^8.57.1",
     "eslint-config-next": "^15.3.1",
     "postcss": "^8.5.3",
+    "supabase": "^2.84.10",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3"
   }
