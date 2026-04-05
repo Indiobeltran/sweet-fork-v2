@@ -1,0 +1,28 @@
+import Link from "next/link";
+
+export function InquiryCta() {
+  return (
+    <section className="border-t border-charcoal/8 bg-charcoal px-5 py-16 text-ivory sm:px-8 md:py-20">
+      <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+        <div className="space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gold/70">Start the conversation</p>
+          <h2 className="max-w-3xl font-serif text-4xl leading-none tracking-[-0.04em] sm:text-5xl">
+            Submit one detailed inquiry for the full celebration, not six disconnected messages.
+          </h2>
+        </div>
+        <div className="space-y-4">
+          <p className="max-w-xl text-sm leading-7 text-ivory/72">
+            The new intake flow collects event details, product selections, inspiration, and contact preferences up front so
+            quotes can start from a clearer picture.
+          </p>
+          <Link
+            href="/start-order"
+            className="inline-flex h-12 items-center rounded-full bg-ivory px-5 text-sm font-medium text-charcoal transition hover:bg-white"
+          >
+            Start Order
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}

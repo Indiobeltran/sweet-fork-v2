@@ -1,0 +1,28 @@
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+
+type SectionHeadingProps = {
+  eyebrow: string;
+  title: string;
+  description?: string;
+  align?: "left" | "center";
+};
+
+export function SectionHeading({
+  eyebrow,
+  title,
+  description,
+  align = "left",
+}: SectionHeadingProps) {
+  return (
+    <div className={cn("max-w-2xl space-y-4", align === "center" && "mx-auto text-center")}>
+      <Badge>{eyebrow}</Badge>
+      <div className="space-y-3">
+        <h2 className="font-serif text-4xl leading-none tracking-[-0.03em] text-charcoal sm:text-5xl">
+          {title}
+        </h2>
+        {description ? <p className="text-base leading-7 text-charcoal/72">{description}</p> : null}
+      </div>
+    </div>
+  );
+}
