@@ -10,12 +10,34 @@ type SupabaseEnv = {
   serviceRoleKey: string;
 };
 
+export type InquiryFeatureFlagEnvOverrides = {
+  uploadEnabled?: boolean;
+  linkFallbackEnabled?: boolean;
+  storageBucket?: string;
+};
+
 export function getPublicEnv() {
+  const inquiryOverrides = getInquiryFeatureFlagEnvOverrides();
+
   return {
     siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-    uploadEnabled: process.env.INQUIRY_UPLOAD_ENABLED !== "false",
-    linkFallbackEnabled: process.env.INQUIRY_LINK_FALLBACK_ENABLED !== "false",
-    storageBucket: process.env.SUPABASE_STORAGE_BUCKET || "inspiration",
+    uploadEnabled: inquiryOverrides.uploadEnabled ?? true,
+    linkFallbackEnabled: inquiryOverrides.linkFallbackEnabled ?? true,
+    storageBucket: inquiryOverrides.storageBucket || "inspiration",
+  };
+}
+
+export function getInquiryFeatureFlagEnvOverrides(): InquiryFeatureFlagEnvOverrides {
+  return {
+    uploadEnabled:
+      typeof process.env.INQUIRY_UPLOAD_ENABLED === "string"
+        ? process.env.INQUIRY_UPLOAD_ENABLED !== "false"
+        : undefined,
+    linkFallbackEnabled:
+      typeof process.env.INQUIRY_LINK_FALLBACK_ENABLED === "string"
+        ? process.env.INQUIRY_LINK_FALLBACK_ENABLED !== "false"
+        : undefined,
+    storageBucket: process.env.SUPABASE_STORAGE_BUCKET || undefined,
   };
 }
 

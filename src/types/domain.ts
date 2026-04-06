@@ -37,6 +37,18 @@ export type PaymentStatus = (typeof paymentStatuses)[number];
 
 export type ContactPreference = "email" | "text" | "phone";
 export type FulfillmentMethod = "pickup" | "delivery";
+export const budgetRangeValues = [
+  "under-150",
+  "150-300",
+  "300-600",
+  "600-1000",
+  "1000-2000",
+  "2000-plus",
+] as const;
+export type BudgetRangeValue = (typeof budgetRangeValues)[number];
+
+export const budgetFlexibilityValues = ["firm", "moderate", "open"] as const;
+export type BudgetFlexibility = (typeof budgetFlexibilityValues)[number];
 
 export type ProductDetailOption = {
   label: string;
@@ -66,23 +78,13 @@ export type InquiryProductItem = {
 export type InquiryPayload = {
   eventType: string;
   eventDate: string;
-  eventTime?: string;
+  deliveryZip?: string;
   guestCount?: number;
-  servingTarget?: number;
-  venueName?: string;
-  venueAddress?: string;
+  budgetRange: BudgetRangeValue;
+  budgetFlexibility: BudgetFlexibility;
   fulfillmentMethod: FulfillmentMethod;
-  budgetMin?: number;
-  budgetMax?: number;
-  deliveryWindow?: string;
   colorPalette?: string;
-  dietaryNotes?: string;
   orderItems: InquiryProductItem[];
-  inspirationFiles: Array<{
-    path: string;
-    url?: string;
-    name: string;
-  }>;
   inspirationLinks: string[];
   inspirationText?: string;
   customerName: string;
@@ -102,6 +104,7 @@ export type PricingRange = {
 export type InquiryEstimate = PricingRange & {
   summary: string[];
   lineItems: Array<{
+    productType: ProductType;
     label: string;
     minimum: number;
     maximum: number;

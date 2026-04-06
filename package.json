@@ -10,7 +10,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx --max-warnings=0",
+    "lint": "eslint src middleware.ts next.config.ts tailwind.config.ts --ext .js,.jsx,.ts,.tsx --cache --cache-location .eslintcache --max-warnings=0",
     "typecheck": "next typegen && tsc --noEmit --project tsconfig.typecheck.json",
     "db:push": "supabase db push",
     "db:typegen": "supabase gen types typescript --linked --schema public > src/types/supabase.generated.ts",

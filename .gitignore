@@ -5,4 +5,9 @@ node_modules
 package-lock.json
 coverage
 dist
+.eslintcache
 *.log
+
+.eslintcache
+tsconfig.tsbuildinfo
+tsconfig.typecheck.tsbuildinfo
