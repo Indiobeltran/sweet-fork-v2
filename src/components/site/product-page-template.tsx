@@ -23,7 +23,7 @@ export function ProductPageTemplate({ content }: ProductPageTemplateProps) {
         <SectionHeading
           eyebrow={content.shortTitle}
           title="What to expect"
-          description="A premium order flow that starts with the event context, design direction, and serving plan before moving into final quoting."
+          description="Current lead times, starting-price context, and ordering details drawn from the live Sweet Fork menu and FAQ."
         />
         <div className="grid gap-4">
           {content.detailBullets.map((bullet) => (
@@ -37,9 +37,9 @@ export function ProductPageTemplate({ content }: ProductPageTemplateProps) {
       <section className="border-y border-charcoal/8 bg-cream/70 py-16 md:py-20">
         <div className="section-shell grid gap-10 lg:grid-cols-[1fr_1fr]">
           <SectionHeading
-            eyebrow="Starting point"
-            title="Design tiers"
-            description="Pricing and scope always depend on serving counts, finish complexity, pickup or delivery needs, and calendar fit."
+            eyebrow="Starting prices"
+            title="Current menu guide"
+            description="Final quotes still depend on design complexity, quantity, and delivery needs, but these are the current starting points and scope notes."
           />
           <div className="grid gap-4">
             {content.packages.map((item) => (
@@ -57,7 +57,7 @@ export function ProductPageTemplate({ content }: ProductPageTemplateProps) {
           <SectionHeading
             eyebrow="Questions clients ask"
             title="Before you inquire"
-            description="These are the details that help the first conversation start with more clarity and less back-and-forth."
+            description="These answers reflect the current Sweet Fork ordering, timing, and customization policies."
           />
           <div className="space-y-4">
             {content.faq.map((item) => (

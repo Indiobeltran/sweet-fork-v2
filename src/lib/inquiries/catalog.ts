@@ -120,7 +120,7 @@ function buildPricingBaseline(
     ...defaultPricingBaseline,
   };
   const latestByKey = pickLatestPriceRows(productPrices);
-  let deliveryRange: [number, number] = [35, 85];
+  let deliveryRange: [number, number] = [15, 50];
 
   products.forEach((product) => {
     const productType = product.product_type;
@@ -228,7 +228,7 @@ export async function getStartOrderPageData(): Promise<StartOrderPageData> {
       catalog: buildFallbackCatalog(defaultPricingBaseline),
       featureFlags: mergeFeatureFlags(),
       pricingBaseline: defaultPricingBaseline,
-      deliveryRange: [35, 85],
+      deliveryRange: [15, 50],
     };
   }
 
@@ -281,7 +281,7 @@ export async function getStartOrderPageData(): Promise<StartOrderPageData> {
       catalog: buildFallbackCatalog(defaultPricingBaseline),
       featureFlags: mergeFeatureFlags(),
       pricingBaseline: defaultPricingBaseline,
-      deliveryRange: [35, 85],
+      deliveryRange: [15, 50],
     };
   }
 }

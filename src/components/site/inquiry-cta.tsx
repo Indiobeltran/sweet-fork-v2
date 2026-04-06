@@ -7,13 +7,13 @@ export function InquiryCta() {
         <div className="space-y-4">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gold/70">Start the conversation</p>
           <h2 className="max-w-3xl font-serif text-4xl leading-none tracking-[-0.04em] sm:text-5xl">
-            Submit one detailed inquiry for the full celebration, not six disconnected messages.
+            Start an order inquiry for the cake, treats, or dessert details you have in mind.
           </h2>
         </div>
         <div className="space-y-4">
           <p className="max-w-xl text-sm leading-7 text-ivory/72">
-            The new intake flow collects event details, product selections, inspiration, and contact preferences up front so
-            quotes can start from a clearer picture.
+            Share the event, servings, pickup or delivery needs, and any inspiration you have.
+            The Sweet Fork usually replies with a detailed quote within 24 to 48 hours.
           </p>
           <Link
             href="/start-order"

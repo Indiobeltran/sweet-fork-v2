@@ -38,8 +38,14 @@ export type PaymentStatus = (typeof paymentStatuses)[number];
 export type ContactPreference = "email" | "text" | "phone";
 export type FulfillmentMethod = "pickup" | "delivery";
 export const budgetRangeValues = [
-  "under-150",
+  "under-75",
+  "75-150",
   "150-300",
+  "300-500",
+  "500-plus",
+  "not-sure",
+  // Legacy values kept for compatibility with older inquiry metadata.
+  "under-150",
   "300-600",
   "600-1000",
   "1000-2000",

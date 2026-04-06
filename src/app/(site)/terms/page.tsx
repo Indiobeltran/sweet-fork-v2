@@ -1,9 +1,10 @@
 import { PublicPageHero } from "@/components/site/public-page-hero";
+import { termsSections } from "@/lib/content/site-content";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "Terms",
-  description: "Terms and conditions for Sweet Fork inquiries, orders, and fulfillment.",
+  description: "Order policies, lead times, payment terms, pickup, delivery, and bakery terms for The Sweet Fork.",
   path: "/terms",
 });
 
@@ -12,18 +13,26 @@ export default function TermsPage() {
     <div>
       <PublicPageHero
         eyebrow="Terms"
-        title="Order terms and service expectations."
-        description="This placeholder legal page is structured for final bakery policy copy and should be reviewed with business-specific language before launch."
+        title="Policies, lead times, and order terms."
+        description="These terms summarize the current ordering, payment, pickup, delivery, allergen, and design policies reflected on the live Sweet Fork site."
       />
       <section className="section-shell space-y-8 py-16 md:py-20">
-        {[
-          "Orders are not confirmed until availability, scope, and payment terms are approved.",
-          "Design references guide the direction but are not replicated exactly.",
-          "Pickup and delivery timing, setup needs, and final balance expectations should be confirmed in writing.",
-        ].map((item) => (
-          <p key={item} className="max-w-3xl text-base leading-8 text-charcoal/72">
-            {item}
-          </p>
+        {termsSections.map((section) => (
+          <article
+            key={section.title}
+            className="rounded-[1.8rem] border border-charcoal/8 bg-white p-6 shadow-soft"
+          >
+            <h2 className="font-serif text-3xl tracking-[-0.03em] text-charcoal">
+              {section.title}
+            </h2>
+            <div className="mt-4 space-y-3">
+              {section.points.map((point) => (
+                <p key={point} className="max-w-4xl text-base leading-8 text-charcoal/72">
+                  {point}
+                </p>
+              ))}
+            </div>
+          </article>
         ))}
       </section>
     </div>

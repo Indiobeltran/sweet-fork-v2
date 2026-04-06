@@ -5,7 +5,8 @@ import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "About",
-  description: "Meet The Sweet Fork and learn about the boutique bakery approach behind the brand.",
+  description:
+    "Learn about The Sweet Fork, a small custom bakery in Centerville, Utah specializing in handcrafted cakes, cupcakes, macarons, and decorated cookies.",
   path: "/about",
 });
 

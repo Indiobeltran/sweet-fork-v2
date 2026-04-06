@@ -4,7 +4,8 @@ import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "Wedding Cakes",
-  description: "Wedding cakes and coordinated dessert planning for refined celebrations.",
+  description:
+    "Wedding cakes for Northern Utah celebrations, starting at $300 with companion desserts available by inquiry.",
   path: "/wedding-cakes",
 });
 

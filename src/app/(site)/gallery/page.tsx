@@ -6,7 +6,7 @@ import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "Gallery",
-  description: "Browse The Sweet Fork gallery for celebration cakes, wedding cakes, cupcakes, cookies, macarons, and dessert-table styling.",
+  description: "Browse The Sweet Fork gallery for custom cakes, cupcakes, macarons, cookies, and dessert details from recent orders.",
   path: "/gallery",
 });
 
@@ -17,9 +17,9 @@ export default async function GalleryPage() {
     <div>
       <PublicPageHero
         eyebrow="Gallery"
-        title="A gallery built to feel like a boutique grid, not a bakery catalog."
-        description="The live image library will eventually be admin-managed through Supabase storage, but the page structure is already prepared for that workflow."
-        accent="Warm neutrals, sculpted finishes, and detail that reads beautifully in person and on camera."
+        title="Custom cakes and treats from recent Sweet Fork work."
+        description="Browse celebration cakes, wedding details, cupcakes, macarons, sugar cookies, and seasonal kits from the bakery's portfolio."
+        accent="Based in Centerville and serving celebrations across Davis County, Salt Lake County, and Weber County."
       />
       <section className="section-shell py-16 md:py-20">
         <GalleryGrid items={galleryItems} />

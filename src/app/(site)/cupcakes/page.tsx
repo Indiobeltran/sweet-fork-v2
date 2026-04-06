@@ -4,7 +4,8 @@ import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "Cupcakes",
-  description: "Custom cupcake assortments for showers, birthdays, and dessert tables.",
+  description:
+    "Custom cupcakes for showers, birthdays, and dessert tables in Centerville, Utah. Starting at $36 per dozen.",
   path: "/cupcakes",
 });
 

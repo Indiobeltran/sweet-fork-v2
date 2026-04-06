@@ -335,23 +335,29 @@ function getBudgetRangeValue(
   const minimum = row.budget_min ?? 0;
   const maximum = row.budget_max;
 
-  if (maximum !== null && maximum <= 150) {
+  if (minimum === 0 && maximum === null) {
+    return "not-sure";
+  }
+  if (maximum !== null && maximum <= 75) {
+    return "under-75";
+  }
+  if (minimum >= 75 && maximum !== null && maximum <= 150) {
+    return "75-150";
+  }
+  if (minimum === 0 && maximum !== null && maximum <= 150) {
     return "under-150";
   }
   if (minimum >= 150 && maximum !== null && maximum <= 300) {
     return "150-300";
   }
+  if (minimum >= 300 && maximum !== null && maximum <= 500) {
+    return "300-500";
+  }
   if (minimum >= 300 && maximum !== null && maximum <= 600) {
     return "300-600";
   }
-  if (minimum >= 600 && maximum !== null && maximum <= 1000) {
-    return "600-1000";
-  }
-  if (minimum >= 1000 && maximum !== null && maximum <= 2000) {
-    return "1000-2000";
-  }
-  if (minimum >= 2000) {
-    return "2000-plus";
+  if (minimum >= 500) {
+    return "500-plus";
   }
 
   return null;

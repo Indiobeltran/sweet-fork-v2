@@ -4,7 +4,8 @@ import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "Custom Cakes",
-  description: "Custom celebration cakes designed for birthdays, showers, and milestone gatherings.",
+  description:
+    "Handcrafted custom cakes for birthdays, weddings, and celebrations in Centerville, Utah. Celebration cakes start at $80.",
   path: "/custom-cakes",
 });
 

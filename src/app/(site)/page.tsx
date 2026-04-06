@@ -53,11 +53,15 @@ export default async function HomePage() {
             <div className="rounded-[2.4rem] border border-white/50 bg-[linear-gradient(180deg,rgba(255,255,255,0.62),rgba(247,239,228,0.92))] p-4 shadow-soft">
               <div className="grid min-h-[620px] gap-4 rounded-[2rem] bg-charcoal/95 p-4 text-ivory lg:grid-cols-[1fr_0.78fr]">
                 <div className="relative overflow-hidden rounded-[1.7rem] bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.22),transparent_26%),radial-gradient(circle_at_bottom_right,rgba(214,181,122,0.4),transparent_28%),linear-gradient(160deg,#2f261f,#5d4a3b_55%,#3a3028)] p-8">
-                  <p className="text-xs uppercase tracking-[0.22em] text-ivory/55">Celebration-first</p>
+                  <p className="text-xs uppercase tracking-[0.22em] text-ivory/55">Made from scratch</p>
                   <div className="mt-24 max-w-md space-y-4">
-                    <p className="font-serif text-5xl leading-none tracking-[-0.05em]">The moment on the table matters.</p>
+                    <p className="font-serif text-5xl leading-none tracking-[-0.05em]">
+                      Custom desserts for life&apos;s sweetest moments.
+                    </p>
                     <p className="text-sm leading-7 text-ivory/74">
-                      Editorial in feel, warm in tone, and built for people who want a centerpiece that feels personal without feeling overdone.
+                      A small, intentional bakery in Centerville creating cakes and confections
+                      with artisan quality, limited weekly availability, and a custom quote for
+                      every order.
                     </p>
                   </div>
                 </div>
@@ -72,11 +76,11 @@ export default async function HomePage() {
                     <p className="mt-3 text-sm leading-7 text-charcoal/68">{data.weddingHighlight.body}</p>
                   </div>
                   <div className="rounded-[1.7rem] border border-ivory/10 bg-white/10 p-6">
-                    <p className="text-xs uppercase tracking-[0.2em] text-gold/70">Operationally better</p>
+                    <p className="text-xs uppercase tracking-[0.2em] text-gold/70">Good to know</p>
                     <ul className="mt-5 space-y-4 text-sm leading-7 text-ivory/76">
-                      <li>One inquiry can cover multiple products</li>
-                      <li>Upload inspiration images directly to storage</li>
-                      <li>Better qualification before manual follow-up begins</li>
+                      <li>Most custom orders require at least 2 weeks notice</li>
+                      <li>Pickup is available in Centerville at no charge</li>
+                      <li>Delivery is offered across nearby Davis, Salt Lake, and Weber County communities</li>
                     </ul>
                   </div>
                 </div>
@@ -90,8 +94,8 @@ export default async function HomePage() {
         <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr]">
           <SectionHeading
             eyebrow="Core offerings"
-            title="A modern bakery menu built around celebrations, with room for weddings to scale elegantly."
-            description="The experience leads with celebration, while wedding work remains clearly visible for clients planning larger, more coordinated events."
+            title="Custom cakes, wedding cakes, and treats for birthdays, gatherings, gifting, and special events."
+            description="The Sweet Fork serves celebrations across Northern Utah with made-to-order desserts and a quote process tailored to the event."
           />
           <div className="grid gap-4 sm:grid-cols-2">
             {data.offerings.map((item) => (
@@ -116,11 +120,11 @@ export default async function HomePage() {
       <section className="border-y border-charcoal/8 bg-cream/65 py-16 md:py-20">
         <div className="section-shell space-y-10">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <SectionHeading
-            eyebrow="Gallery atmosphere"
-            title="A boutique grid with room for polished textures, soft structure, and future image management."
-            description="The gallery is already structured so admin-managed images can swap in cleanly as the library grows."
-          />
+            <SectionHeading
+              eyebrow="Gallery"
+              title="A closer look at cakes, cupcakes, macarons, cookies, and decorating kits from recent orders."
+              description="Browse real Sweet Fork work across birthdays, weddings, seasonal treats, and custom celebration details."
+            />
             <Link href="/gallery" className="text-sm font-semibold uppercase tracking-[0.18em] text-charcoal">
               Full gallery
             </Link>

@@ -240,7 +240,7 @@ export function createEmptyInquiryValues(): InquiryFormValues {
     guestCount: undefined,
     fulfillmentMethod: "pickup",
     deliveryZip: undefined,
-    budgetRange: "300-600",
+    budgetRange: "not-sure",
     budgetFlexibility: "moderate",
     orderItems: [],
     colorPalette: undefined,

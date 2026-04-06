@@ -4,7 +4,7 @@ import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "FAQ",
-  description: "Answers to common questions about lead times, delivery, pricing, and inquiry details.",
+  description: "Common questions about ordering, pricing, delivery, policies, and lead times for The Sweet Fork in Centerville, Utah.",
   path: "/faq",
 });
 
@@ -29,9 +29,9 @@ export default async function FaqPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <PublicPageHero
         eyebrow="FAQ"
-        title="Answers before the inbox conversation even starts."
-        description="Clear expectations help everyone move faster, especially when custom work spans several products and moving pieces."
-        accent="Thoughtful qualification is part of the brand experience, not just an internal efficiency play."
+        title="Answers to common ordering, pricing, and policy questions."
+        description="These are the questions Sweet Fork customers ask most often before they book a cake, a dessert order, or a pickup or delivery date."
+        accent="Still deciding? Start the inquiry form and include anything else you want answered in the first reply."
       />
       <section className="section-shell space-y-4 py-16 md:py-20">
         {faqItems.map((item) => (

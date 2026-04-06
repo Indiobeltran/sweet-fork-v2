@@ -4,7 +4,8 @@ import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "Macarons",
-  description: "Macaron assortments for dessert tables, gifting, and coordinated event styling.",
+  description:
+    "Custom macarons for gifting, dessert tables, and events in Centerville, Utah. Starting at $30 per dozen.",
   path: "/macarons",
 });
 

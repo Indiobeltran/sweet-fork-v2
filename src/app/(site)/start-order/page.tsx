@@ -6,7 +6,7 @@ import { buildMetadata } from "@/lib/seo";
 export const metadata = buildMetadata({
   title: "Start Order",
   description:
-    "Submit a premium multi-step inquiry for custom cakes, wedding cakes, cupcakes, sugar cookies, macarons, and DIY kits.",
+    "Submit an order inquiry for custom cakes, wedding cakes, cupcakes, sugar cookies, macarons, and DIY kits in Centerville, Utah.",
   path: "/start-order",
 });
 
@@ -21,47 +21,49 @@ export default async function StartOrderPage() {
         <div className="grain-surface overflow-hidden rounded-[2.8rem] border border-charcoal/10 bg-paper px-6 py-10 shadow-soft sm:px-8 sm:py-12 lg:px-10">
           <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
             <div className="space-y-4">
-              <Badge>Phase 4 Intake</Badge>
+              <Badge>Order Inquiry</Badge>
               <h1 className="max-w-4xl font-serif text-5xl leading-none tracking-[-0.05em] text-charcoal sm:text-6xl">
-                Start the full order inquiry with clarity, detail, and room for design direction.
+                Start your order inquiry with the details needed for a clear quote.
               </h1>
               <p className="max-w-3xl text-base leading-8 text-charcoal/70">
-                This guided flow keeps everything in one polished place: event details, multiple
-                product selections, item-specific notes, inspiration uploads, and the final contact
-                review before submission.
+                Share the event, choose one or several desserts, add inspiration, and The Sweet
+                Fork will usually reply within 24 to 48 hours with a detailed quote.
               </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-[1.8rem] border border-charcoal/8 bg-white/85 p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                  Products
+                  Options
                 </p>
                 <p className="mt-3 font-serif text-3xl tracking-[-0.04em] text-charcoal">
                   {pageData.catalog.length}
                 </p>
                 <p className="mt-2 text-sm leading-7 text-charcoal/62">
-                  Live catalog choices pulled from the current Supabase schema.
+                  Custom cakes, wedding cakes, and treats available through one inquiry.
                 </p>
               </div>
               <div className="rounded-[1.8rem] border border-charcoal/8 bg-white/85 p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                  Flow
-                </p>
-                <p className="mt-3 font-serif text-3xl tracking-[-0.04em] text-charcoal">5 steps</p>
-                <p className="mt-2 text-sm leading-7 text-charcoal/62">
-                  Guided enough to feel confident, concise enough to finish comfortably.
-                </p>
-              </div>
-              <div className="rounded-[1.8rem] border border-charcoal/8 bg-white/85 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                  Inspiration
+                  Response
                 </p>
                 <p className="mt-3 font-serif text-3xl tracking-[-0.04em] text-charcoal">
-                  {pageData.featureFlags.uploadsEnabled ? "Uploads on" : "Notes mode"}
+                  24-48 hrs
                 </p>
                 <p className="mt-2 text-sm leading-7 text-charcoal/62">
-                  Uploads, links, and written notes adapt to the current inquiry feature flags.
+                  Most inquiries are reviewed personally within 24 to 48 hours.
+                </p>
+              </div>
+              <div className="rounded-[1.8rem] border border-charcoal/8 bg-white/85 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+                  Lead time
+                </p>
+                <p className="mt-3 font-serif text-3xl tracking-[-0.04em] text-charcoal">
+                  2 weeks
+                </p>
+                <p className="mt-2 text-sm leading-7 text-charcoal/62">
+                  Most custom orders need at least 2 weeks notice. Wedding cakes usually need 4 to
+                  6 weeks.
                 </p>
               </div>
             </div>

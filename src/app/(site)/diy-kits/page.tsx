@@ -4,7 +4,8 @@ import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "DIY Kits",
-  description: "Interactive decorating kits for parties, gifting, classrooms, and hosted events.",
+  description:
+    "DIY decorating kits for parties, gifting, classrooms, and family activities in Centerville, Utah. Starting at $25.",
   path: "/diy-kits",
 });
 

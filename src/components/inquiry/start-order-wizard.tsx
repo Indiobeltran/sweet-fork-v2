@@ -564,12 +564,12 @@ export function StartOrderWizard({
                 Your celebration details are in.
               </h2>
               <p className="max-w-2xl text-base leading-8 text-charcoal/72">
-                We saved everything under{" "}
+                Your request was received under{" "}
                 <span className="font-semibold text-charcoal">
                   {submissionResult.referenceCode}
                 </span>
-                . The Sweet Fork can now review the event scope, product mix, and inspiration
-                together before the first reply goes out.
+                . The Sweet Fork can now review the event scope, design direction, and timing
+                before sending the next reply.
               </p>
             </div>
 
@@ -610,19 +610,21 @@ export function StartOrderWizard({
                 <div>
                   <p className="font-medium">1. Review</p>
                   <p className="mt-1 text-sm leading-7 text-ivory/70">
-                    Your inquiry, items, and inspiration assets are now grouped in one record.
+                    The order details, selected desserts, and inspiration references are reviewed
+                    together.
                   </p>
                 </div>
                 <div>
-                  <p className="font-medium">2. Estimate check</p>
+                  <p className="font-medium">2. Quote</p>
                   <p className="mt-1 text-sm leading-7 text-ivory/70">
-                    The first-pass estimate is attached so quoting can start from the full picture.
+                    A detailed quote is prepared around the design, servings, timing, and delivery
+                    needs.
                   </p>
                 </div>
                 <div>
-                  <p className="font-medium">3. Follow-up</p>
+                  <p className="font-medium">3. Reserve</p>
                   <p className="mt-1 text-sm leading-7 text-ivory/70">
-                    You can expect a reply once availability, scope, and design direction are reviewed.
+                    Once the quote is approved, a 50% deposit secures the order date.
                   </p>
                 </div>
               </div>
@@ -642,19 +644,19 @@ export function StartOrderWizard({
               <div className="flex flex-wrap items-center gap-3">
                 <Badge>Start Order</Badge>
                 <p className="text-sm text-charcoal/60">
-                  One guided inquiry for the full celebration.
+                  One guided inquiry for the full order.
                 </p>
               </div>
 
               <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
                 <div className="space-y-3">
                   <h2 className="font-serif text-4xl tracking-[-0.04em] text-charcoal sm:text-5xl">
-                    A premium intake that keeps the details feeling clear, not heavy.
+                    Share the event details Sweet Fork needs for a clear quote.
                   </h2>
                   <p className="max-w-2xl text-base leading-8 text-charcoal/70">
-                    Share the event, choose one or several sweets, add inspiration, and review
-                    everything before you send. You can move backward at any point without
-                    losing progress.
+                    Add the event details, dessert selections, inspiration, and contact
+                    preferences in one place. You can move backward at any point without losing
+                    progress.
                   </p>
                 </div>
                 <div className="rounded-[1.8rem] border border-charcoal/8 bg-white px-5 py-5">

@@ -207,9 +207,11 @@ export const publicSitePaths = [
   "/gallery",
   "/how-to-order",
   "/macarons",
+  "/privacy",
   "/pricing",
   "/start-order",
   "/sugar-cookies",
+  "/terms",
   "/wedding-cakes",
 ];
 
@@ -223,7 +225,7 @@ export const siteSettingDefinitions: SiteSettingDefinition[] = [
       {
         key: "tagline",
         label: "Short tagline",
-        placeholder: "Premium boutique custom bakery",
+        placeholder: "Custom cakes and desserts made to order",
         required: true,
         type: "text",
       },
@@ -239,7 +241,7 @@ export const siteSettingDefinitions: SiteSettingDefinition[] = [
     fallback: {
       description: siteConfig.description,
       name: siteConfig.name,
-      tagline: "Premium boutique custom bakery",
+      tagline: "Custom cakes and desserts made to order",
     },
   },
   {
@@ -309,9 +311,9 @@ export const contentSectionDefinitions: ContentSectionDefinition[] = [
     blockType: "hero",
     fallback: {
       body:
-        "The Sweet Fork creates custom cakes, wedding desserts, cupcakes, cookies, macarons, and giftable treats for celebrations that want warmth, polish, and a more intentional intake process from the first inquiry.",
-      eyebrow: "Premium boutique custom bakery",
-      heading: "Celebration cakes and sweets with a quieter kind of luxury.",
+        "Artisan cakes, macarons, cupcakes, and decorated cookies are made to order in Centerville, Utah, with limited weekly availability and custom quotes for every event.",
+      eyebrow: "Centerville, Utah",
+      heading: "Custom desserts made to order.",
       items: homeExperiencePillars.map((item) => ({
         description: item.description,
         title: item.title,
@@ -339,10 +341,9 @@ export const contentSectionDefinitions: ContentSectionDefinition[] = [
     blockType: "rich-text",
     fallback: {
       body:
-        "Wedding capability is clear from the first screen, without turning the entire brand into a wedding-only studio.",
-      eyebrow: "Weddings included",
-      heading:
-        "Wedding capability is clear from the first screen, without turning the entire brand into a wedding-only studio.",
+        "Wedding cakes are available as elegant centerpieces, and companion desserts can be added to the same inquiry when a full dessert spread is needed.",
+      eyebrow: "Wedding cakes",
+      heading: "Wedding cakes start at $300 and usually need 4 to 6 weeks notice.",
       items: [],
       settings: {},
     },
@@ -361,9 +362,9 @@ export const contentSectionDefinitions: ContentSectionDefinition[] = [
     blockType: "feature-list",
     fallback: {
       body:
-        "The intake wizard reduces scattered email follow-up by collecting event-level details, item-level details, inspiration, and contact preferences in one sequence.",
+        "The ordering process is straightforward: start with the inquiry form, receive a detailed quote within 24 to 48 hours, and secure the date with a deposit.",
       eyebrow: "How it works",
-      heading: "A lead-generation flow designed to gather the right information once.",
+      heading: "Inquiry first, then a quote, then the order is reserved.",
       items: staticProcessSteps.map((item) => ({
         description: item.description,
         step: item.step,
@@ -386,30 +387,29 @@ export const contentSectionDefinitions: ContentSectionDefinition[] = [
     blockType: "rich-text",
     fallback: {
       body:
-        "The Sweet Fork is positioned for clients who want custom sweets that feel refined and personal, without the experience becoming intimidating or overly formal.",
+        "The Sweet Fork began with the belief that every celebration deserves something special, and it continues to operate as a small, intentional bakery serving Northern Utah.",
       eyebrow: "About",
-      heading:
-        "A boutique bakery built around warmth, polish, and event-level intention.",
+      heading: "A small custom bakery rooted in Centerville, Utah.",
       items: [
         {
           text:
-            "The Sweet Fork serves celebrations that want something more elevated than a standard order form and more approachable than a high-barrier luxury experience.",
+            "What started as a passion project has grown into a made-to-order bakery focused on custom cakes, macarons, cupcakes, and decorated sugar cookies.",
         },
         {
           text:
-            "The new platform reflects that middle space: strong art direction on the public site, practical operational tools on the admin side, and a more complete intake process that gathers the right details up front.",
+            "Every creation is made from scratch in a home kitchen using quality ingredients and a careful, hands-on process.",
         },
         {
           text:
-            "It is designed for a bakery owner who needs clarity, simplicity, and room to grow pricing, content, and image management without turning the business into a software project.",
+            "Weekly order volume stays intentionally limited so each client receives full attention from inquiry through pickup or delivery.",
         },
       ],
       settings: {
         accent:
-          "The aesthetic is calm and editorial. The service philosophy is thoughtful, clear, and deeply celebration-first.",
-        studioEyebrow: "Studio point of view",
+          "The Sweet Fork operates under Utah's Home Consumption and Homemade Food Act and serves Davis County, Salt Lake County, and Weber County.",
+        studioEyebrow: "The Sweet Fork",
         studioQuote:
-          "Beautiful sweets should feel celebratory, hospitable, and well-considered from the first email to final pickup.",
+          "\"Life's sweetest moments, made from scratch.\"",
       },
     },
   },

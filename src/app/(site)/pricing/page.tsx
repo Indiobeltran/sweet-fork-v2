@@ -6,7 +6,7 @@ import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "Pricing",
-  description: "Starting pricing for custom cakes, wedding cakes, cupcakes, sugar cookies, macarons, and DIY kits.",
+  description: "Starting prices for custom cakes, wedding cakes, cupcakes, sugar cookies, macarons, and DIY kits in Centerville, Utah.",
   path: "/pricing",
 });
 
@@ -17,9 +17,9 @@ export default async function PricingPage() {
     <div>
       <PublicPageHero
         eyebrow="Pricing"
-        title="Transparent starting points, with room for custom scope."
-        description="Pricing should set expectations without flattening custom work into a rigid menu. These ranges preserve current logic while staying ready for future automation."
-        accent="Quoting gets more accurate because the intake captures event details and multiple products before the first manual reply."
+        title="Starting prices for custom cakes, wedding cakes, and treats."
+        description="Every order is custom, so final pricing depends on design, size, flavors, and details. These starting prices reflect the current live menu."
+        accent="Pickup is free in Centerville. Delivery is available across Davis County, Salt Lake County, and nearby Weber County communities, with fees based on location."
       />
       <section className="section-shell grid gap-4 py-16 md:grid-cols-3 md:py-20">
         {data.highlights.map((item) => (
@@ -36,7 +36,7 @@ export default async function PricingPage() {
           <div className="grid grid-cols-4 border-b border-charcoal/8 px-6 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/50">
             <span>Product</span>
             <span>Starting at</span>
-            <span>Logic</span>
+            <span>Details</span>
             <span>Lead time</span>
           </div>
           {data.matrix.map((row) => (
@@ -50,7 +50,7 @@ export default async function PricingPage() {
         </div>
         <div className="section-shell mt-8">
           <Link href="/start-order" className="text-sm font-semibold uppercase tracking-[0.18em] text-charcoal">
-            Start an inquiry with estimated range support
+            Start an order inquiry
           </Link>
         </div>
       </section>

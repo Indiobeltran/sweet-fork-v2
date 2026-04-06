@@ -5,7 +5,7 @@ import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "How to Order",
-  description: "Learn how The Sweet Fork inquiry, review, quoting, and fulfillment process works.",
+  description: "Learn how The Sweet Fork inquiry, quote, deposit, pickup, and delivery process works.",
   path: "/how-to-order",
 });
 
@@ -14,9 +14,9 @@ export default function HowToOrderPage() {
     <div>
       <PublicPageHero
         eyebrow="How to order"
-        title="A more guided process from inquiry to fulfilled order."
-        description="The system is designed to collect the event vision, product selections, inspiration, and logistics at the beginning so quotes move faster and with more context."
-        accent="Better intake means better-fit inquiries, fewer scattered follow-up emails, and cleaner handoff into production."
+        title="Inquiry, quote, deposit, then your order is reserved."
+        description="Start with the order form, and The Sweet Fork usually replies within 24 to 48 hours with a detailed quote based on the event, design, and servings."
+        accent="Most custom orders require 2 weeks notice. Wedding cakes usually need 4 to 6 weeks."
       />
       <section className="section-shell space-y-4 py-16 md:py-20">
         {processSteps.map((item) => (
@@ -28,10 +28,10 @@ export default function HowToOrderPage() {
             </div>
             <p className="text-sm leading-7 text-charcoal/52">
               {item.step === "01"
-                ? "Event details, budget range, guest count, date, and fulfillment method"
+                ? "Event type, date, guest count, pickup or delivery, and overall budget range"
                 : item.step === "02"
-                  ? "Multiple items, product-specific details, images, links, and notes"
-                  : "Internal summary, estimate range, quote follow-up, scheduling, and payment workflow"}
+                  ? "Detailed quote, design notes, flavors, quantities, and any rush-order considerations"
+                  : "50% deposit to secure the date, then final balance before pickup or delivery"}
             </p>
           </article>
         ))}

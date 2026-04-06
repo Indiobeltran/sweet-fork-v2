@@ -10,28 +10,28 @@ export type InquiryPricingBaseline = Record<ProductType, ProductPricingBaseline>
 
 export const defaultPricingBaseline: InquiryPricingBaseline = {
   "custom-cake": {
-    base: [160, 260],
-    perServing: [6, 10],
+    base: [80, 120],
+    perServing: [0, 3],
   },
   "wedding-cake": {
-    base: [450, 850],
-    perServing: [7, 12],
+    base: [300, 450],
+    perServing: [0, 5],
   },
   cupcakes: {
-    base: [72, 96],
-    perUnit: [3.5, 5],
+    base: [36, 48],
+    perUnit: [0, 1.5],
   },
   "sugar-cookies": {
-    base: [85, 115],
-    perUnit: [4.25, 6],
+    base: [48, 60],
+    perUnit: [0, 1.5],
   },
   macarons: {
-    base: [70, 98],
-    perUnit: [3.25, 4.75],
+    base: [30, 42],
+    perUnit: [0, 1.25],
   },
   "diy-kit": {
-    base: [48, 70],
-    perUnit: [12, 18],
+    base: [25, 35],
+    perUnit: [0, 5],
   },
 };
 
@@ -147,7 +147,7 @@ export function estimateInquiry(
   options: EstimateOptions = {},
 ): InquiryEstimate {
   const pricingBaseline = options.pricing ?? defaultPricingBaseline;
-  const deliveryRange = options.deliveryRange ?? [35, 85];
+  const deliveryRange = options.deliveryRange ?? [15, 50];
   const lineItems = payload.orderItems.map((item) => estimateItemRange(item, pricingBaseline));
   const totals = lineItems.reduce(
     (acc, item) => {

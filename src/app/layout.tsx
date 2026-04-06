@@ -6,7 +6,7 @@ import { siteConfig } from "@/lib/content/site-content";
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   title: {
-    default: `${siteConfig.name} | Premium Boutique Bakery`,
+    default: `${siteConfig.name} | Custom Cakes & Desserts | Centerville, Utah`,
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
