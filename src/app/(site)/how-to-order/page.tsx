@@ -3,11 +3,14 @@ import { PublicPageHero } from "@/components/site/public-page-hero";
 import { processSteps } from "@/lib/content/site-content";
 import { buildMetadata } from "@/lib/seo";
 
-export const metadata = buildMetadata({
-  title: "How to Order",
-  description: "Learn how The Sweet Fork inquiry, quote, deposit, pickup, and delivery process works.",
-  path: "/how-to-order",
-});
+export async function generateMetadata() {
+  return buildMetadata({
+    title: "How to Order",
+    description:
+      "Learn how The Sweet Fork inquiry, quote, deposit, pickup, and delivery process works.",
+    path: "/how-to-order",
+  });
+}
 
 export default function HowToOrderPage() {
   return (

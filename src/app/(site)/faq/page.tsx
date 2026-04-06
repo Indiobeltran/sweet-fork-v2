@@ -2,11 +2,14 @@ import { PublicPageHero } from "@/components/site/public-page-hero";
 import { getPublicFaqItems } from "@/lib/site/marketing";
 import { buildMetadata } from "@/lib/seo";
 
-export const metadata = buildMetadata({
-  title: "FAQ",
-  description: "Common questions about ordering, pricing, delivery, policies, and lead times for The Sweet Fork in Centerville, Utah.",
-  path: "/faq",
-});
+export async function generateMetadata() {
+  return buildMetadata({
+    title: "FAQ",
+    description:
+      "Common questions about ordering, pricing, delivery, policies, and lead times for The Sweet Fork in Centerville, Utah.",
+    path: "/faq",
+  });
+}
 
 export default async function FaqPage() {
   const faqItems = await getPublicFaqItems();

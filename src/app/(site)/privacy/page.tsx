@@ -2,11 +2,14 @@ import { PublicPageHero } from "@/components/site/public-page-hero";
 import { privacySections } from "@/lib/content/site-content";
 import { buildMetadata } from "@/lib/seo";
 
-export const metadata = buildMetadata({
-  title: "Privacy",
-  description: "Privacy overview for inquiry submissions, inspiration uploads, and order records at The Sweet Fork.",
-  path: "/privacy",
-});
+export async function generateMetadata() {
+  return buildMetadata({
+    title: "Privacy",
+    description:
+      "Privacy overview for inquiry submissions, inspiration uploads, and order records at The Sweet Fork.",
+    path: "/privacy",
+  });
+}
 
 export default function PrivacyPage() {
   return (

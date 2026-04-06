@@ -18,7 +18,7 @@ export function SectionHeading({
     <div className={cn("max-w-2xl space-y-4", align === "center" && "mx-auto text-center")}>
       <Badge>{eyebrow}</Badge>
       <div className="space-y-3">
-        <h2 className="font-serif text-4xl leading-none tracking-[-0.03em] text-charcoal sm:text-5xl">
+        <h2 className="text-balance font-serif text-4xl leading-none tracking-[-0.03em] text-charcoal sm:text-5xl">
           {title}
         </h2>
         {description ? <p className="text-base leading-7 text-charcoal/72">{description}</p> : null}

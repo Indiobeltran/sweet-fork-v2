@@ -9,6 +9,13 @@ This phase adds the internal admin surfaces for:
 
 The goal is practical launch support, not a larger CRM or scheduling platform.
 
+This launch-polish pass also tightens the public site in a few practical ways:
+
+- `booking.notice` can now render as a public-facing site banner when enabled.
+- Hidden products are no longer backfilled into public inquiry, sitemap, or product-page routing.
+- Brand logo, favicon, and social-share assets now live in `public/brand`.
+- Placeholder gallery image mapping now lives in `docs/launch-placeholder-image-plan.md`.
+
 ## Migration Helper Notes
 
 - This pass stays inside the existing Phase 2 schema.
@@ -39,6 +46,7 @@ Then verify the seeded reference data:
   - SEO defaults
   - inquiry feature flags
   - booking notice copy
+- If the booking notice should be public, make sure `booking.notice` is enabled and the message is written in customer-facing language.
 - Open `/admin/calendar` and add blackout dates for:
   - vacations
   - sold-out weekends
@@ -48,6 +56,8 @@ Then verify the seeded reference data:
   - the inquiry appears in `/admin/inquiries`
   - the event date appears in `/admin/calendar`
   - a notification log row appears in `/admin/notifications`
+- Review hidden or inactive products in `/admin/products` and confirm the public navigation, pricing, sitemap, and start-order flow match what should actually be bookable.
+- If AI placeholder images are needed for launch, generate them using `docs/launch-placeholder-image-plan.md` and drop them into `public/placeholders/marketing`.
 - Review `/admin/orders`, `/admin/customers`, pricing, content, FAQs, testimonials, and media one final time before launch.
 - Run:
   - `npm run typecheck`
@@ -68,6 +78,7 @@ Then verify the seeded reference data:
 - Use `/admin/settings` for business info and launch-sensitive toggles.
 - Keep settings changes small and intentional.
 - Treat booking notices as reusable operational copy, not a full marketing campaign tool.
+- Use the public booking notice for real availability updates only; avoid leaving an outdated warning visible after the calendar opens back up.
 
 ### Users And Access
 

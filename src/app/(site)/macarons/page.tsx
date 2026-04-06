@@ -1,14 +1,29 @@
+import { notFound } from "next/navigation";
+
 import { ProductPageTemplate } from "@/components/site/product-page-template";
-import { productPageContent } from "@/lib/content/site-content";
 import { buildMetadata } from "@/lib/seo";
+import { getPublicProductPageData } from "@/lib/site/marketing";
 
-export const metadata = buildMetadata({
-  title: "Macarons",
-  description:
-    "Custom macarons for gifting, dessert tables, and events in Centerville, Utah. Starting at $30 per dozen.",
-  path: "/macarons",
-});
+const slug = "macarons";
 
-export default function MacaronsPage() {
-  return <ProductPageTemplate content={productPageContent.macarons} />;
+export async function generateMetadata() {
+  const page = await getPublicProductPageData(slug);
+
+  return buildMetadata({
+    title: page?.metadataTitle ?? "Macarons",
+    description:
+      page?.metadataDescription ??
+      "Custom macarons for gifting, dessert tables, and events in Centerville, Utah. Starting at $30 per dozen.",
+    path: "/macarons",
+  });
+}
+
+export default async function MacaronsPage() {
+  const page = await getPublicProductPageData(slug);
+
+  if (!page) {
+    notFound();
+  }
+
+  return <ProductPageTemplate content={page.content} />;
 }

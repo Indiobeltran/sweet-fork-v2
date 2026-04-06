@@ -97,23 +97,32 @@ export default async function HomePage() {
             title="Custom cakes, wedding cakes, and treats for birthdays, gatherings, gifting, and special events."
             description="The Sweet Fork serves celebrations across Northern Utah with made-to-order desserts and a quote process tailored to the event."
           />
-          <div className="grid gap-4 sm:grid-cols-2">
-            {data.offerings.map((item) => (
-              <Link
-                key={item.slug}
-                href={`/${item.slug}`}
-                className="group rounded-[1.8rem] border border-charcoal/8 bg-white p-6 shadow-soft transition hover:-translate-y-1 hover:border-charcoal/15"
-              >
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-charcoal/48">{item.eyebrow}</p>
-                <h2 className="mt-5 font-serif text-3xl leading-none tracking-[-0.04em] text-charcoal">{item.shortTitle}</h2>
-                <p className="mt-3 text-sm leading-7 text-charcoal/68">{item.intro}</p>
-                <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-charcoal">
-                  Explore
-                  <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-                </span>
-              </Link>
-            ))}
-          </div>
+          {data.offerings.length > 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {data.offerings.map((item) => (
+                <Link
+                  key={item.slug}
+                  href={`/${item.slug}`}
+                  className="group rounded-[1.8rem] border border-charcoal/8 bg-white p-6 shadow-soft transition hover:-translate-y-1 hover:border-charcoal/15"
+                >
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-charcoal/48">{item.eyebrow}</p>
+                  <h2 className="mt-5 font-serif text-3xl leading-none tracking-[-0.04em] text-charcoal">{item.shortTitle}</h2>
+                  <p className="mt-3 text-sm leading-7 text-charcoal/68">{item.intro}</p>
+                  <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-charcoal">
+                    Explore
+                    <ArrowRight aria-hidden="true" className="h-4 w-4 transition group-hover:translate-x-1" />
+                  </span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-[1.8rem] border border-charcoal/10 bg-white p-6 shadow-soft">
+              <p className="text-sm leading-7 text-charcoal/68">
+                Public offerings are temporarily paused while availability is updated. Check the
+                booking notice above for the latest timing guidance.
+              </p>
+            </div>
+          )}
         </div>
       </section>
 

@@ -32,13 +32,19 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-body::selection {
+::selection {
   background: rgba(195, 163, 103, 0.22);
 }
 
 a {
   color: inherit;
   text-decoration: none;
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid rgba(195, 163, 103, 0.55);
+  outline-offset: 3px;
 }
 
 img {
@@ -70,4 +76,18 @@ img {
 
 .section-shell {
   @apply mx-auto max-w-7xl px-5 sm:px-8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

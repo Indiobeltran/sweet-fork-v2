@@ -4,11 +4,14 @@ import { PublicPageHero } from "@/components/site/public-page-hero";
 import { getGalleryItemsForPlacement } from "@/lib/site/marketing";
 import { buildMetadata } from "@/lib/seo";
 
-export const metadata = buildMetadata({
-  title: "Gallery",
-  description: "Browse The Sweet Fork gallery for custom cakes, cupcakes, macarons, cookies, and dessert details from recent orders.",
-  path: "/gallery",
-});
+export async function generateMetadata() {
+  return buildMetadata({
+    title: "Gallery",
+    description:
+      "Browse The Sweet Fork gallery for custom cakes, cupcakes, macarons, cookies, and dessert details from recent orders.",
+    path: "/gallery",
+  });
+}
 
 export default async function GalleryPage() {
   const galleryItems = await getGalleryItemsForPlacement("gallery.grid");

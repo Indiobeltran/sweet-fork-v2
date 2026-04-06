@@ -11,7 +11,7 @@ export function PublicPageHero({
   eyebrow,
   title,
   description,
-  accent = "Designed with celebration in mind and the backend details already considered.",
+  accent = "Small-batch desserts, custom quoting, and thoughtful details from inquiry through pickup or delivery.",
 }: PublicPageHeroProps) {
   return (
     <section className="relative overflow-hidden border-b border-charcoal/8 bg-paper">
@@ -20,7 +20,7 @@ export function PublicPageHero({
         <div className="space-y-6">
           <Badge>{eyebrow}</Badge>
           <div className="space-y-4">
-            <h1 className="max-w-4xl font-serif text-5xl leading-[0.95] tracking-[-0.05em] text-charcoal sm:text-6xl lg:text-7xl">
+            <h1 className="max-w-4xl text-balance font-serif text-5xl leading-[0.95] tracking-[-0.05em] text-charcoal sm:text-6xl lg:text-7xl">
               {title}
             </h1>
             <p className="max-w-2xl text-base leading-8 text-charcoal/72 sm:text-lg">{description}</p>

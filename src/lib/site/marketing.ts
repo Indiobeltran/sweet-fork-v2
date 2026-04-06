@@ -1,13 +1,19 @@
 import "server-only";
 
+import { access } from "node:fs/promises";
+import { join } from "node:path";
+import { cache } from "react";
+
 import { createAdminClient } from "@/lib/supabase/admin";
 import { defaultPricingBaseline } from "@/lib/pricing";
 import { formatCurrency } from "@/lib/utils";
 import { isSupabaseConfigured } from "@/lib/env";
 import {
+  footerNavigation,
   faqItems as staticFaqItems,
   galleryItems as staticGalleryItems,
   homeExperiencePillars,
+  mainNavigation,
   pricingHighlights as staticPricingHighlights,
   pricingMatrix as staticPricingMatrix,
   processSteps as staticProcessSteps,
@@ -16,6 +22,7 @@ import {
   testimonials as staticTestimonials,
   websiteContentSections,
 } from "@/lib/content/site-content";
+import { galleryPlaceholderImageAssets } from "@/lib/site/placeholder-images";
 import type { ProductType, GalleryItem } from "@/types/domain";
 import type { Enums, Json, Tables } from "@/types/supabase.generated";
 
@@ -178,6 +185,31 @@ export type PricingHighlightItem = {
   value: string;
 };
 
+export type PublicSiteLink = {
+  href: string;
+  label: string;
+};
+
+export type PublicBookingNotice = {
+  message: string;
+  title: string;
+  tone: "closed" | "info" | "limited";
+};
+
+export type PublicSeoData = {
+  defaultDescription: string;
+  siteName: string;
+  titleSuffix: string;
+};
+
+export type PublicSiteChromeData = {
+  bookingNotice: PublicBookingNotice | null;
+  footerCompanyLinks: PublicSiteLink[];
+  footerServiceLinks: PublicSiteLink[];
+  mainNavigation: PublicSiteLink[];
+  site: SiteShellData;
+};
+
 export const marketingMediaBucket = "marketing";
 
 export const mediaPlacementDefinitions: MediaPlacementDefinition[] = [
@@ -214,6 +246,15 @@ export const publicSitePaths = [
   "/terms",
   "/wedding-cakes",
 ];
+
+const productPagePaths = new Set(Object.keys(productPageContent).map((slug) => `/${slug}`));
+
+const bookingNoticeFallback: PublicBookingNotice = {
+  message:
+    "Most custom orders need at least 2 weeks notice. Holiday and wedding weekends can book earlier.",
+  title: "Limited booking notice",
+  tone: "limited",
+};
 
 export const siteSettingDefinitions: SiteSettingDefinition[] = [
   {
@@ -513,7 +554,7 @@ function parseContentBlockValue(
   };
 }
 
-async function getSiteSettingRows() {
+const getSiteSettingRows = cache(async function getSiteSettingRows() {
   if (!isSupabaseConfigured()) {
     return [];
   }
@@ -533,9 +574,9 @@ async function getSiteSettingRows() {
   }
 
   return (data ?? []) as SiteSettingRow[];
-}
+});
 
-async function getContentBlockRows() {
+const getContentBlockRows = cache(async function getContentBlockRows() {
   if (!isSupabaseConfigured()) {
     return [];
   }
@@ -550,7 +591,7 @@ async function getContentBlockRows() {
   }
 
   return (data ?? []) as ContentBlockRow[];
-}
+});
 
 export async function getManagedSiteSettings() {
   const rows = await getSiteSettingRows();
@@ -667,6 +708,186 @@ function getStaticProductCards() {
   }));
 }
 
+const getPublicProductRows = cache(async function getPublicProductRows(): Promise<ProductRow[] | null> {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("products")
+    .select(
+      "display_order, id, is_active, long_description, name, product_type, requires_consultation, short_description, slug",
+    )
+    .eq("is_active", true)
+    .order("display_order", { ascending: true });
+
+  if (error || !data) {
+    if (error) {
+      console.error("Unable to load public products.", error);
+    }
+
+    return null;
+  }
+
+  return (data ?? []) as ProductRow[];
+});
+
+const hasLocalPlaceholderAsset = cache(async function hasLocalPlaceholderAsset(relativePath: string) {
+  try {
+    await access(join(process.cwd(), "public", relativePath));
+    return true;
+  } catch {
+    return false;
+  }
+});
+
+async function resolveFallbackGalleryItems(limit: number) {
+  return Promise.all(
+    staticGalleryItems.slice(0, limit).map(async (item) => {
+      const asset = galleryPlaceholderImageAssets[item.placeholderKey];
+
+      if (!asset || !(await hasLocalPlaceholderAsset(asset.relativePath))) {
+        return item;
+      }
+
+      return {
+        ...item,
+        alt: item.alt || asset.alt,
+        imageUrl: `/${asset.relativePath}`,
+      } satisfies GalleryItem;
+    }),
+  );
+}
+
+export async function getPublicSeoData(): Promise<PublicSeoData> {
+  const settings = await getManagedSiteSettings();
+  const byKey = new Map(settings.map((setting) => [setting.definition.key, setting.value]));
+  const brand = byKey.get("brand.identity") ?? siteSettingDefinitions[0].fallback;
+  const seo = byKey.get("seo.defaults") ?? siteSettingDefinitions[3].fallback;
+
+  return {
+    defaultDescription: seo.defaultDescription,
+    siteName: brand.name,
+    titleSuffix: seo.titleSuffix,
+  };
+}
+
+export async function getPublicBookingNotice(): Promise<PublicBookingNotice | null> {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("site_settings")
+    .select("value_json")
+    .eq("setting_key", "booking.notice")
+    .maybeSingle();
+
+  if (error) {
+    console.error("Unable to load public booking notice.", error);
+    return null;
+  }
+
+  const record = isRecord(data?.value_json ?? null) ? (data?.value_json as Record<string, Json>) : null;
+  const enabled = record ? getBooleanValue(record, "enabled") ?? false : false;
+
+  if (!enabled) {
+    return null;
+  }
+
+  const tone = record ? getStringValue(record, "tone") : null;
+
+  return {
+    message: record ? getStringValue(record, "message") ?? bookingNoticeFallback.message : bookingNoticeFallback.message,
+    title: record ? getStringValue(record, "title") ?? bookingNoticeFallback.title : bookingNoticeFallback.title,
+    tone:
+      tone === "closed" || tone === "limited" || tone === "info"
+        ? tone
+        : bookingNoticeFallback.tone,
+  };
+}
+
+export async function getPublicSiteChromeData(): Promise<PublicSiteChromeData> {
+  const [site, activeProducts, bookingNotice] = await Promise.all([
+    getSiteShellData(),
+    getPublicProductRows(),
+    getPublicBookingNotice(),
+  ]);
+
+  const activeProductPaths =
+    activeProducts === null
+      ? productPagePaths
+      : new Set(activeProducts.map((product) => `/${product.slug}`));
+
+  return {
+    bookingNotice,
+    footerCompanyLinks: footerNavigation.company,
+    footerServiceLinks:
+      activeProducts === null
+        ? footerNavigation.services
+        : activeProducts
+            .filter((product) => Boolean(productPageContent[product.slug]))
+            .map((product) => ({
+              href: `/${product.slug}`,
+              label: product.name,
+            })),
+    mainNavigation: mainNavigation.filter(
+      (item) => !productPagePaths.has(item.href) || activeProductPaths.has(item.href),
+    ),
+    site,
+  };
+}
+
+export async function getPublicProductPageData(slug: string) {
+  const fallback = productPageContent[slug];
+
+  if (!fallback) {
+    return null;
+  }
+
+  const activeProducts = await getPublicProductRows();
+
+  if (activeProducts === null) {
+    return {
+      content: fallback,
+      metadataDescription: fallback.intro,
+      metadataTitle: fallback.shortTitle,
+    };
+  }
+
+  const product = activeProducts.find((item) => item.slug === slug);
+
+  if (!product) {
+    return null;
+  }
+
+  return {
+    content: {
+      ...fallback,
+      intro: product.long_description ?? product.short_description ?? fallback.intro,
+      shortTitle: product.name,
+    },
+    metadataDescription: product.short_description ?? product.long_description ?? fallback.intro,
+    metadataTitle: product.name,
+  };
+}
+
+export async function getPublicSitemapPaths() {
+  const activeProducts = await getPublicProductRows();
+
+  if (activeProducts === null) {
+    return publicSitePaths;
+  }
+
+  const activePaths = new Set(activeProducts.map((product) => `/${product.slug}`));
+
+  return publicSitePaths.filter(
+    (path) => !productPagePaths.has(path) || activePaths.has(path),
+  );
+}
+
 export async function getSiteShellData(): Promise<SiteShellData> {
   const settings = await getManagedSiteSettings();
   const byKey = new Map(settings.map((setting) => [setting.definition.key, setting.value]));
@@ -690,7 +911,9 @@ export async function getGalleryItemsForPlacement(
   placementKey: string,
   options: { limit?: number } = {},
 ): Promise<GalleryItem[]> {
-  const fallbackItems = staticGalleryItems.slice(0, options.limit ?? staticGalleryItems.length);
+  const fallbackItems = await resolveFallbackGalleryItems(
+    options.limit ?? staticGalleryItems.length,
+  );
   const placement = getMediaPlacementByKey(placementKey);
 
   if (!placement || !isSupabaseConfigured()) {
@@ -956,28 +1179,13 @@ export async function getAboutPageData(): Promise<AboutPageData> {
 }
 
 export async function getPublicOfferingCards() {
-  if (!isSupabaseConfigured()) {
+  const activeProducts = await getPublicProductRows();
+
+  if (activeProducts === null) {
     return getStaticProductCards();
   }
 
-  const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("products")
-    .select(
-      "display_order, id, is_active, long_description, name, product_type, requires_consultation, short_description, slug",
-    )
-    .eq("is_active", true)
-    .order("display_order", { ascending: true });
-
-  if (error || !data || data.length === 0) {
-    if (error) {
-      console.error("Unable to load public product cards.", error);
-    }
-
-    return getStaticProductCards();
-  }
-
-  return ((data ?? []) as ProductRow[]).map((product) => {
+  return activeProducts.map((product) => {
     const fallback = productPageContent[product.slug];
 
     return {
@@ -1019,7 +1227,7 @@ export async function getPublicPricingData(): Promise<{
         .eq("is_active", true),
     ]);
 
-  if (productError || priceError || !productData || productData.length === 0) {
+  if (productError || priceError || !productData) {
     if (productError) {
       console.error("Unable to load public products for pricing.", productError);
     }
@@ -1031,6 +1239,13 @@ export async function getPublicPricingData(): Promise<{
     return {
       highlights: staticPricingHighlights,
       matrix: staticPricingMatrix,
+    };
+  }
+
+  if (productData.length === 0) {
+    return {
+      highlights: [],
+      matrix: [],
     };
   }
 

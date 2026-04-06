@@ -3,12 +3,14 @@ import { PublicPageHero } from "@/components/site/public-page-hero";
 import { getAboutPageData } from "@/lib/site/marketing";
 import { buildMetadata } from "@/lib/seo";
 
-export const metadata = buildMetadata({
-  title: "About",
-  description:
-    "Learn about The Sweet Fork, a small custom bakery in Centerville, Utah specializing in handcrafted cakes, cupcakes, macarons, and decorated cookies.",
-  path: "/about",
-});
+export async function generateMetadata() {
+  return buildMetadata({
+    title: "About",
+    description:
+      "Learn about The Sweet Fork, a small custom bakery in Centerville, Utah specializing in handcrafted cakes, cupcakes, macarons, and decorated cookies.",
+    path: "/about",
+  });
+}
 
 export default async function AboutPage() {
   const data = await getAboutPageData();

@@ -3,17 +3,20 @@ import { Badge } from "@/components/ui/badge";
 import { getStartOrderPageData } from "@/lib/inquiries/catalog";
 import { buildMetadata } from "@/lib/seo";
 
-export const metadata = buildMetadata({
-  title: "Start Order",
-  description:
-    "Submit an order inquiry for custom cakes, wedding cakes, cupcakes, sugar cookies, macarons, and DIY kits in Centerville, Utah.",
-  path: "/start-order",
-});
+export async function generateMetadata() {
+  return buildMetadata({
+    title: "Start Order",
+    description:
+      "Submit an order inquiry for custom cakes, wedding cakes, cupcakes, sugar cookies, macarons, and DIY kits in Centerville, Utah.",
+    path: "/start-order",
+  });
+}
 
 export const dynamic = "force-dynamic";
 
 export default async function StartOrderPage() {
   const pageData = await getStartOrderPageData();
+  const hasCatalog = pageData.catalog.length > 0;
 
   return (
     <div className="pb-6 pt-8 sm:pt-10">
@@ -40,30 +43,35 @@ export default async function StartOrderPage() {
                   {pageData.catalog.length}
                 </p>
                 <p className="mt-2 text-sm leading-7 text-charcoal/62">
-                  Custom cakes, wedding cakes, and treats available through one inquiry.
+                  {hasCatalog
+                    ? "Custom cakes, wedding cakes, and treats available through one inquiry."
+                    : "Public inquiry options are currently paused while availability is updated."}
                 </p>
               </div>
               <div className="rounded-[1.8rem] border border-charcoal/8 bg-white/85 p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                  Response
+                  {hasCatalog ? "Response" : "Status"}
                 </p>
                 <p className="mt-3 font-serif text-3xl tracking-[-0.04em] text-charcoal">
-                  24-48 hrs
+                  {hasCatalog ? "24-48 hrs" : "Updated"}
                 </p>
                 <p className="mt-2 text-sm leading-7 text-charcoal/62">
-                  Most inquiries are reviewed personally within 24 to 48 hours.
+                  {hasCatalog
+                    ? "Most inquiries are reviewed personally within 24 to 48 hours."
+                    : "The booking notice above reflects the current public availability status."}
                 </p>
               </div>
               <div className="rounded-[1.8rem] border border-charcoal/8 bg-white/85 p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                  Lead time
+                  {hasCatalog ? "Lead time" : "Offerings"}
                 </p>
                 <p className="mt-3 font-serif text-3xl tracking-[-0.04em] text-charcoal">
-                  2 weeks
+                  {hasCatalog ? "2 weeks" : "Paused"}
                 </p>
                 <p className="mt-2 text-sm leading-7 text-charcoal/62">
-                  Most custom orders need at least 2 weeks notice. Wedding cakes usually need 4 to
-                  6 weeks.
+                  {hasCatalog
+                    ? "Most custom orders need at least 2 weeks notice. Wedding cakes usually need 4 to 6 weeks."
+                    : "The public inquiry list does not currently include any active product options."}
                 </p>
               </div>
             </div>
@@ -71,7 +79,25 @@ export default async function StartOrderPage() {
         </div>
       </section>
 
-      <StartOrderWizard {...pageData} />
+      {hasCatalog ? (
+        <StartOrderWizard {...pageData} />
+      ) : (
+        <section className="section-shell pb-12">
+          <div className="rounded-[2rem] border border-charcoal/10 bg-white px-6 py-8 shadow-soft sm:px-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+              Ordering update
+            </p>
+            <h2 className="mt-3 text-balance font-serif text-4xl tracking-[-0.04em] text-charcoal">
+              Online inquiries are temporarily unavailable.
+            </h2>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-charcoal/68">
+              The public product list does not currently include any active offerings. Check the
+              booking notice above for availability context, or use the contact details in the
+              footer if you need to confirm timing directly.
+            </p>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

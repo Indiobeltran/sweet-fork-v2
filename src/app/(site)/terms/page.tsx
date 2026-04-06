@@ -2,11 +2,14 @@ import { PublicPageHero } from "@/components/site/public-page-hero";
 import { termsSections } from "@/lib/content/site-content";
 import { buildMetadata } from "@/lib/seo";
 
-export const metadata = buildMetadata({
-  title: "Terms",
-  description: "Order policies, lead times, payment terms, pickup, delivery, and bakery terms for The Sweet Fork.",
-  path: "/terms",
-});
+export async function generateMetadata() {
+  return buildMetadata({
+    title: "Terms",
+    description:
+      "Order policies, lead times, payment terms, pickup, delivery, and bakery terms for The Sweet Fork.",
+    path: "/terms",
+  });
+}
 
 export default function TermsPage() {
   return (

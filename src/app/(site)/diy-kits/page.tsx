@@ -1,14 +1,29 @@
+import { notFound } from "next/navigation";
+
 import { ProductPageTemplate } from "@/components/site/product-page-template";
-import { productPageContent } from "@/lib/content/site-content";
 import { buildMetadata } from "@/lib/seo";
+import { getPublicProductPageData } from "@/lib/site/marketing";
 
-export const metadata = buildMetadata({
-  title: "DIY Kits",
-  description:
-    "DIY decorating kits for parties, gifting, classrooms, and family activities in Centerville, Utah. Starting at $25.",
-  path: "/diy-kits",
-});
+const slug = "diy-kits";
 
-export default function DiyKitsPage() {
-  return <ProductPageTemplate content={productPageContent["diy-kits"]} />;
+export async function generateMetadata() {
+  const page = await getPublicProductPageData(slug);
+
+  return buildMetadata({
+    title: page?.metadataTitle ?? "DIY Kits",
+    description:
+      page?.metadataDescription ??
+      "DIY decorating kits for parties, gifting, classrooms, and family activities in Centerville, Utah. Starting at $25.",
+    path: "/diy-kits",
+  });
+}
+
+export default async function DiyKitsPage() {
+  const page = await getPublicProductPageData(slug);
+
+  if (!page) {
+    notFound();
+  }
+
+  return <ProductPageTemplate content={page.content} />;
 }

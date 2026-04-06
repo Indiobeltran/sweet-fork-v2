@@ -191,25 +191,23 @@ function buildCatalog(
   products: ProductRow[],
   pricingBaseline: InquiryPricingBaseline,
 ): InquiryCatalogItem[] {
-  const productMap = new Map(products.map((product) => [product.product_type, product]));
+  return products
+    .slice()
+    .sort((left, right) => left.display_order - right.display_order)
+    .map((product) => {
+      const fallback = productPresentationByType[product.product_type];
 
-  return productTypes.map((productType) => {
-    const product = productMap.get(productType);
-    const fallback = productPresentationByType[productType];
-
-    return {
-      id: product?.id ?? null,
-      productType,
-      name: product?.name ?? fallback.name,
-      slug: product?.slug ?? fallback.slug,
-      shortDescription:
-        product?.short_description ?? fallback.shortDescription,
-      requiresConsultation:
-        product?.requires_consultation ?? fallback.requiresConsultation,
-      pricing: pricingBaseline[productType],
-      startingAt: getStartingPrice(productType, pricingBaseline),
-    };
-  });
+      return {
+        id: product.id,
+        productType: product.product_type,
+        name: product.name,
+        slug: product.slug,
+        shortDescription: product.short_description ?? fallback.shortDescription,
+        requiresConsultation: product.requires_consultation ?? fallback.requiresConsultation,
+        pricing: pricingBaseline[product.product_type],
+        startingAt: getStartingPrice(product.product_type, pricingBaseline),
+      };
+    });
 }
 
 export function getCatalogMap(catalog: InquiryCatalogItem[]) {
@@ -266,10 +264,7 @@ export async function getStartOrderPageData(): Promise<StartOrderPageData> {
     );
 
     return {
-      catalog:
-        activeProducts.length > 0
-          ? buildCatalog(activeProducts, pricingBaseline)
-          : buildFallbackCatalog(pricingBaseline),
+      catalog: buildCatalog(activeProducts, pricingBaseline),
       featureFlags: parseFeatureFlags(inquiryFlags?.value_json ?? null),
       pricingBaseline,
       deliveryRange,
