@@ -1,9 +1,11 @@
-import { updateContentSection, updateSiteSetting } from "@/app/admin/(protected)/content/actions";
+import Link from "next/link";
+
+import { updateContentSection } from "@/app/admin/(protected)/content/actions";
 import { AdminNoticeBanner } from "@/components/admin/admin-notice-banner";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { getContentAdminData } from "@/lib/admin/site-management";
 import { toTitleCase } from "@/lib/utils";
@@ -48,7 +50,7 @@ function ToggleField({
 }
 
 export default async function AdminContentPage({ searchParams }: AdminContentPageProps) {
-  const [rawSearchParams, data] = await Promise.all([searchParams, getContentAdminData()]);
+  const [rawSearchParams, sections] = await Promise.all([searchParams, getContentAdminData()]);
   const notice = getNoticeValue(rawSearchParams);
 
   return (
@@ -67,64 +69,36 @@ export default async function AdminContentPage({ searchParams }: AdminContentPag
         }}
       />
 
-      <AdminSectionCard
-        title="Website settings"
-        description="These are the small brand and contact details that repeat across the site. Keeping them here makes updates safer than editing page-by-page."
-      >
-        <div className="grid gap-5 xl:grid-cols-2">
-          {data.settings.map((setting) => (
-            <article
-              key={setting.definition.key}
-              className="rounded-[1.8rem] border border-charcoal/10 bg-paper p-5"
-            >
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                  {setting.definition.label}
-                </p>
-                <p className="text-sm leading-7 text-charcoal/62">{setting.definition.description}</p>
-              </div>
+      <div className="rounded-[1.8rem] border border-charcoal/10 bg-white/88 p-5 shadow-soft">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+              Settings moved
+            </p>
+            <h2 className="mt-2 font-serif text-3xl tracking-[-0.04em] text-charcoal">
+              Business and launch settings now live in one place.
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-7 text-charcoal/64">
+              Core site details, inquiry flags, booking notices, and launch notes now live in
+              Settings so this page can stay focused on structured content only.
+            </p>
+          </div>
 
-              <form action={updateSiteSetting} className="mt-5 space-y-4">
-                <input type="hidden" name="settingKey" value={setting.definition.key} />
-                <input type="hidden" name="redirectTo" value="/admin/content" />
-
-                {setting.definition.fields.map((field) => (
-                  <div key={field.key}>
-                    <Label htmlFor={`${setting.definition.key}-${field.key}`}>{field.label}</Label>
-                    {field.type === "textarea" ? (
-                      <Textarea
-                        id={`${setting.definition.key}-${field.key}`}
-                        name={`field.${field.key}`}
-                        defaultValue={setting.value[field.key] ?? ""}
-                        placeholder={field.placeholder}
-                        required={field.required}
-                      />
-                    ) : (
-                      <Input
-                        id={`${setting.definition.key}-${field.key}`}
-                        name={`field.${field.key}`}
-                        defaultValue={setting.value[field.key] ?? ""}
-                        placeholder={field.placeholder}
-                        required={field.required}
-                        type={field.type}
-                      />
-                    )}
-                  </div>
-                ))}
-
-                <Button type="submit">Save {setting.definition.label.toLowerCase()}</Button>
-              </form>
-            </article>
-          ))}
+          <Link
+            href="/admin/settings"
+            className="inline-flex h-12 items-center justify-center rounded-full border border-charcoal/15 bg-ivory/80 px-5 text-sm font-medium tracking-[0.02em] text-charcoal transition hover:border-charcoal/40 hover:bg-white"
+          >
+            Open settings
+          </Link>
         </div>
-      </AdminSectionCard>
+      </div>
 
       <AdminSectionCard
         title="Structured sections"
         description="These forms only cover the sections already modeled for the live site. That keeps editing flexible enough for day-to-day changes without turning the app into an unrestricted CMS."
       >
         <div className="space-y-5">
-          {data.sections.map((section) => (
+          {sections.map((section) => (
             <article
               key={section.definition.key}
               className="rounded-[1.8rem] border border-charcoal/10 bg-paper p-5"

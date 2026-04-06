@@ -1,14 +1,12 @@
 import "server-only";
 
-import { createClient as createSessionClient } from "@/lib/supabase/server";
 import {
   getManagedContentSections,
-  getManagedSiteSettings,
   mediaPlacementDefinitions,
   type ManagedContentSection,
-  type ManagedSiteSetting,
 } from "@/lib/site/marketing";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient as createSessionClient } from "@/lib/supabase/server";
 import { defaultPricingBaseline } from "@/lib/pricing";
 import { formatCurrency } from "@/lib/utils";
 import type { Json, Tables } from "@/types/supabase.generated";
@@ -152,19 +150,8 @@ function pickCurrentPriceRows(priceRows: ProductPriceRow[]) {
   return latestByKey;
 }
 
-export async function getContentAdminData(): Promise<{
-  sections: ManagedContentSection[];
-  settings: ManagedSiteSetting[];
-}> {
-  const [settings, sections] = await Promise.all([
-    getManagedSiteSettings(),
-    getManagedContentSections(),
-  ]);
-
-  return {
-    sections,
-    settings,
-  };
+export async function getContentAdminData(): Promise<ManagedContentSection[]> {
+  return getManagedContentSections();
 }
 
 export async function getMediaLibraryData(): Promise<MediaLibraryData> {

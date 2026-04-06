@@ -8,7 +8,11 @@ import { cn } from "@/lib/utils";
 const adminLinks = [
   { href: "/admin/inquiries", label: "Inquiries" },
   { href: "/admin/orders", label: "Orders" },
+  { href: "/admin/calendar", label: "Calendar" },
   { href: "/admin/customers", label: "Customers" },
+  { href: "/admin/notifications", label: "Notifications" },
+  { href: "/admin/settings", label: "Settings" },
+  { href: "/admin/users", label: "Users" },
   { href: "/admin/media", label: "Media" },
   { href: "/admin/content", label: "Content" },
   { href: "/admin/faqs", label: "FAQs" },

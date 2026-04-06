@@ -20,14 +20,21 @@ export async function getCurrentAdmin() {
   }
 
   const [{ data: rawProfile }, { data: rawRoleRow }] = await Promise.all([
-    supabase.from("profiles").select("id, email, full_name").eq("id", user.id).maybeSingle(),
+    supabase
+      .from("profiles")
+      .select("id, email, full_name, is_active")
+      .eq("id", user.id)
+      .maybeSingle(),
     supabase.from("user_roles").select("role").eq("user_id", user.id).maybeSingle(),
   ]);
 
-  const profile = rawProfile as Pick<Tables<"profiles">, "id" | "email" | "full_name"> | null;
+  const profile = rawProfile as Pick<
+    Tables<"profiles">,
+    "email" | "full_name" | "id" | "is_active"
+  > | null;
   const roleRow = rawRoleRow as Pick<Tables<"user_roles">, "role"> | null;
 
-  if (!profile || !roleRow) {
+  if (!profile || !roleRow || !profile.is_active) {
     return null;
   }
 
