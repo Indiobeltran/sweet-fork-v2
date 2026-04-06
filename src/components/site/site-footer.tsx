@@ -1,23 +1,28 @@
 import Link from "next/link";
 
-import { footerNavigation, siteConfig } from "@/lib/content/site-content";
+import { footerNavigation } from "@/lib/content/site-content";
+import type { SiteShellData } from "@/lib/site/marketing";
 
-export function SiteFooter() {
+type SiteFooterProps = {
+  site: SiteShellData;
+};
+
+export function SiteFooter({ site }: Readonly<SiteFooterProps>) {
   return (
     <footer className="border-t border-charcoal/8 bg-charcoal text-ivory">
       <div className="mx-auto grid max-w-7xl gap-12 px-5 py-14 sm:px-8 lg:grid-cols-[1.2fr_0.8fr_0.8fr]">
         <div className="space-y-5">
           <div>
-            <p className="font-serif text-3xl tracking-[-0.03em]">{siteConfig.name}</p>
-            <p className="mt-2 max-w-md text-sm leading-7 text-ivory/70">{siteConfig.description}</p>
+            <p className="font-serif text-3xl tracking-[-0.03em]">{site.name}</p>
+            <p className="mt-2 max-w-md text-sm leading-7 text-ivory/70">{site.description}</p>
           </div>
           <div className="space-y-1 text-sm text-ivory/76">
-            <p>{siteConfig.location}</p>
-            <a href={`mailto:${siteConfig.email}`} className="block transition hover:text-ivory">
-              {siteConfig.email}
+            <p>{site.location}</p>
+            <a href={`mailto:${site.email}`} className="block transition hover:text-ivory">
+              {site.email}
             </a>
-            <a href={`tel:${siteConfig.phone}`} className="block transition hover:text-ivory">
-              {siteConfig.phone}
+            <a href={`tel:${site.phone}`} className="block transition hover:text-ivory">
+              {site.phone}
             </a>
           </div>
         </div>

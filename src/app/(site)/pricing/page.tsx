@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { PublicPageHero } from "@/components/site/public-page-hero";
-import { pricingHighlights, pricingMatrix } from "@/lib/content/site-content";
+import { getPublicPricingData } from "@/lib/site/marketing";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
@@ -10,7 +10,9 @@ export const metadata = buildMetadata({
   path: "/pricing",
 });
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  const data = await getPublicPricingData();
+
   return (
     <div>
       <PublicPageHero
@@ -20,7 +22,7 @@ export default function PricingPage() {
         accent="Quoting gets more accurate because the intake captures event details and multiple products before the first manual reply."
       />
       <section className="section-shell grid gap-4 py-16 md:grid-cols-3 md:py-20">
-        {pricingHighlights.map((item) => (
+        {data.highlights.map((item) => (
           <article key={item.label} className="rounded-[1.8rem] border border-charcoal/8 bg-white p-6 shadow-soft">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/48">{item.label}</p>
             <h2 className="mt-6 font-serif text-4xl tracking-[-0.04em] text-charcoal">{item.value}</h2>
@@ -37,7 +39,7 @@ export default function PricingPage() {
             <span>Logic</span>
             <span>Lead time</span>
           </div>
-          {pricingMatrix.map((row) => (
+          {data.matrix.map((row) => (
             <div key={row.product} className="grid gap-4 border-b border-charcoal/8 px-6 py-5 text-sm text-charcoal/72 last:border-none md:grid-cols-4">
               <p className="font-medium text-charcoal">{row.product}</p>
               <p>{row.startingAt}</p>

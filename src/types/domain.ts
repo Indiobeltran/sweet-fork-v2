@@ -132,7 +132,7 @@ export type ProductPageContent = {
 export type GalleryItem = {
   id: string;
   title: string;
-  category: ProductType | "celebration";
+  category: string;
   alt: string;
   imageUrl?: string | null;
   placeholderKey: string;

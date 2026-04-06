@@ -1,5 +1,5 @@
 import { PublicPageHero } from "@/components/site/public-page-hero";
-import { faqItems } from "@/lib/content/site-content";
+import { getPublicFaqItems } from "@/lib/site/marketing";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
@@ -8,7 +8,9 @@ export const metadata = buildMetadata({
   path: "/faq",
 });
 
-export default function FaqPage() {
+export default async function FaqPage() {
+  const faqItems = await getPublicFaqItems();
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",

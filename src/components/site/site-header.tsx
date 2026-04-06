@@ -4,10 +4,15 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
-import { mainNavigation, siteConfig } from "@/lib/content/site-content";
+import { mainNavigation } from "@/lib/content/site-content";
 import { cn } from "@/lib/utils";
 
-export function SiteHeader() {
+type SiteHeaderProps = {
+  brandName: string;
+  tagline: string;
+};
+
+export function SiteHeader({ brandName, tagline }: Readonly<SiteHeaderProps>) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -19,10 +24,10 @@ export function SiteHeader() {
           </div>
           <div>
             <p className="font-serif text-2xl leading-none tracking-[-0.04em] text-charcoal">
-              {siteConfig.name}
+              {brandName}
             </p>
             <p className="text-[11px] uppercase tracking-[0.22em] text-charcoal/48">
-              Boutique custom bakery
+              {tagline}
             </p>
           </div>
         </Link>

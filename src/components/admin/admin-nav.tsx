@@ -9,6 +9,12 @@ const adminLinks = [
   { href: "/admin/inquiries", label: "Inquiries" },
   { href: "/admin/orders", label: "Orders" },
   { href: "/admin/customers", label: "Customers" },
+  { href: "/admin/media", label: "Media" },
+  { href: "/admin/content", label: "Content" },
+  { href: "/admin/faqs", label: "FAQs" },
+  { href: "/admin/testimonials", label: "Testimonials" },
+  { href: "/admin/pricing", label: "Pricing" },
+  { href: "/admin/products", label: "Products" },
 ];
 
 function isActiveLink(pathname: string, href: string) {

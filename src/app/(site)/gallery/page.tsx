@@ -1,7 +1,7 @@
 import { GalleryGrid } from "@/components/site/gallery-grid";
 import { InquiryCta } from "@/components/site/inquiry-cta";
 import { PublicPageHero } from "@/components/site/public-page-hero";
-import { galleryItems } from "@/lib/content/site-content";
+import { getGalleryItemsForPlacement } from "@/lib/site/marketing";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
@@ -10,7 +10,9 @@ export const metadata = buildMetadata({
   path: "/gallery",
 });
 
-export default function GalleryPage() {
+export default async function GalleryPage() {
+  const galleryItems = await getGalleryItemsForPlacement("gallery.grid");
+
   return (
     <div>
       <PublicPageHero
