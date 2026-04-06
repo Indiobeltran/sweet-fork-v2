@@ -1,3 +1,5 @@
+// These mappings are for staging-only AI placeholder assets until real photography
+// or explicitly approved production replacements are available.
 export type PublicImageSlot = {
   key: string;
   page: string;

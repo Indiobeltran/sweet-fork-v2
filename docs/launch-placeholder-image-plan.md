@@ -2,12 +2,16 @@
 
 This pass does not add new public image modules or redesign the site.
 
+These placeholder images are for staging and pre-launch review only.
+They should not be treated as real Sweet Fork photography or as final production imagery.
+
 Current public image behavior after this pass:
 
 - Brand assets now load from `public/brand`.
 - The homepage gallery and `/gallery` page share the same fallback image manifest.
 - If a mapped placeholder file is dropped into `public/placeholders/marketing`, the public gallery will pick it up automatically.
 - If no mapped file exists yet, the existing neutral fallback cards continue to render without broken images.
+- Any AI-generated image placed through this plan should remain staging-only until the owner explicitly approves production use.
 
 ## Audit Summary
 
@@ -67,6 +71,7 @@ Per-slot prompts:
 
 - The code-side manifest lives in `src/lib/site/placeholder-images.ts`.
 - The public gallery fallback checks for these exact filenames in `public/placeholders/marketing`.
+- Treat every generated file in that folder as staging-only unless it is later replaced or explicitly approved for production.
 - Drop-in replacement flow:
   1. Generate the image using the mapped prompt.
   2. Export it to the mapped filename.
@@ -75,6 +80,6 @@ Per-slot prompts:
 
 ## Owner Review Items
 
-- Confirm whether AI placeholders are acceptable for launch, or only for staging / pre-launch review.
+- Confirm whether AI placeholders should remain staging-only or can ever be promoted to production.
 - Confirm whether any gallery slot should remain intentionally empty until real photography is available.
 - Replace any AI placeholder with real Sweet Fork photography as soon as approved images exist.
