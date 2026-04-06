@@ -1,9 +1,8 @@
-import Link from "next/link";
-
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { requireAdmin } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import { AdminNav } from "@/components/admin/admin-nav";
 import { signOutAdmin } from "@/app/admin/actions";
+import { requireAdmin } from "@/lib/auth";
 
 export default async function AdminProtectedLayout({
   children,
@@ -18,18 +17,19 @@ export default async function AdminProtectedLayout({
         <div className="grain-surface overflow-hidden rounded-[2.4rem] border border-charcoal/10 bg-paper px-6 py-6 shadow-soft sm:px-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-3">
-              <Badge>Admin Inquiry Desk</Badge>
+              <Badge>Admin Operations Desk</Badge>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
                   Signed in as {admin.role}
                 </p>
                 <h1 className="mt-2 font-serif text-4xl tracking-[-0.04em] text-charcoal sm:text-5xl">
-                  Keep inquiries warm, clear, and easy to follow.
+                  Keep inquiries, orders, and customers easy to follow.
                 </h1>
               </div>
               <p className="max-w-3xl text-sm leading-7 text-charcoal/66">
-                This phase covers inquiry review only: list filters, full inquiry detail, internal
-                notes, status changes, and a placeholder for order conversion.
+                This workspace stays intentionally manual-first so day-to-day bakery operations can
+                move without a bulky CRM: review inquiries, convert them into orders, track
+                payments, and keep repeat customer history close at hand.
               </p>
             </div>
 
@@ -45,17 +45,7 @@ export default async function AdminProtectedLayout({
             </div>
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              href="/admin/inquiries"
-              className="rounded-full border border-charcoal/12 bg-white px-4 py-2 text-sm font-medium text-charcoal transition hover:border-charcoal/30"
-            >
-              Inquiries
-            </Link>
-            <span className="rounded-full border border-charcoal/8 bg-white/70 px-4 py-2 text-sm text-charcoal/55">
-              More admin modules will arrive in later phases
-            </span>
-          </div>
+          <AdminNav />
         </div>
 
         <div className="pt-6">{children}</div>

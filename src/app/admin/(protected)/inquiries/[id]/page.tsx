@@ -1,13 +1,15 @@
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { addInquiryNote, updateInquiryStatus } from "@/app/admin/(protected)/inquiries/actions";
+import { createOrderFromInquiry } from "@/app/admin/(protected)/orders/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { addInquiryNote, updateInquiryStatus } from "@/app/admin/(protected)/inquiries/actions";
 import {
   getInquiryDetail,
   type InquiryAssetDisplay,
@@ -15,6 +17,11 @@ import {
   type InquirySignalPriority,
   type InquirySignalUrgency,
 } from "@/lib/admin/inquiries";
+import { getInquiryConversionData } from "@/lib/admin/orders";
+import {
+  getOrderStatusClasses,
+  getPaymentStatusClasses,
+} from "@/lib/admin/order-workflow";
 import { formatDate, toTitleCase } from "@/lib/utils";
 import type { Enums } from "@/types/supabase.generated";
 
@@ -113,6 +120,10 @@ function NoticeBanner({ notice }: { notice: string | undefined }) {
   }
 
   const copyByNotice: Record<string, { className: string; text: string }> = {
+    "convert-error": {
+      className: "border-rose/24 bg-rose/10 text-charcoal",
+      text: "The inquiry could not be converted into an order. Please try again.",
+    },
     "note-added": {
       className: "border-emerald-200 bg-emerald-50 text-emerald-900",
       text: "Internal note saved.",
@@ -166,18 +177,22 @@ function AssetCard({ asset }: { asset: InquiryAssetDisplay }) {
 
       <div className="space-y-2 p-4">
         <p className="text-sm font-medium text-charcoal">{asset.label}</p>
-        <p className="text-xs uppercase tracking-[0.16em] text-charcoal/45">
-          {asset.originalFilename ?? "Private inspiration upload"}
-        </p>
-        {asset.note ? <p className="text-sm leading-7 text-charcoal/62">{asset.note}</p> : null}
-        {asset.signedUrl ? (
+        {asset.originalFilename ? (
+          <p className="text-xs uppercase tracking-[0.16em] text-charcoal/45">
+            {asset.originalFilename}
+          </p>
+        ) : null}
+        {asset.textContent ? (
+          <p className="text-sm leading-7 text-charcoal/70">{asset.textContent}</p>
+        ) : null}
+        {asset.url ? (
           <a
-            href={asset.signedUrl}
+            href={asset.url}
             target="_blank"
             rel="noreferrer"
             className="text-sm font-medium text-charcoal underline decoration-gold/60 underline-offset-4"
           >
-            Open full preview
+            Open reference
           </a>
         ) : null}
       </div>
@@ -190,7 +205,10 @@ export default async function AdminInquiryDetailPage({
   searchParams,
 }: AdminInquiryDetailPageProps) {
   const [{ id }, rawSearchParams] = await Promise.all([params, searchParams]);
-  const detail = await getInquiryDetail(id);
+  const [detail, conversion] = await Promise.all([
+    getInquiryDetail(id),
+    getInquiryConversionData(id),
+  ]);
 
   if (!detail) {
     notFound();
@@ -260,273 +278,144 @@ export default async function AdminInquiryDetailPage({
                   <DetailRow label="Time" value={detail.event.eventTime ?? "Not shared"} />
                   <DetailRow
                     label="Fulfillment"
-                    value={detail.event.fulfillmentMethod === "delivery" ? "Delivery" : "Pickup"}
-                  />
-                  <DetailRow
-                    label="Delivery window"
-                    value={detail.event.deliveryWindow ?? "Not needed yet"}
-                  />
-                </div>
-              </div>
-
-              <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                  Size and venue
-                </p>
-                <div className="mt-4">
-                  <DetailRow
-                    label="Guest count"
-                    value={detail.event.guestCount ?? "Not shared"}
+                    value={toTitleCase(detail.event.fulfillmentMethod)}
                   />
                   <DetailRow
                     label="Serving target"
                     value={detail.event.servingTarget ?? "Not shared"}
                   />
+                  <DetailRow
+                    label="Guest count"
+                    value={detail.event.guestCount ?? "Not shared"}
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+                  Venue and planning
+                </p>
+                <div className="mt-4">
                   <DetailRow label="Venue" value={detail.event.venueName ?? "Not shared"} />
                   <DetailRow
                     label="Address"
                     value={detail.event.venueAddress ?? "Not shared"}
                   />
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-[1.6rem] border border-charcoal/8 bg-white/80 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                  Budget and estimate
-                </p>
-                <div className="mt-4">
-                  <DetailRow label="Budget range" value={detail.budgetLabel ?? "Not shared"} />
                   <DetailRow
-                    label="Estimate range"
+                    label="Delivery window"
+                    value={detail.event.deliveryWindow ?? "Not shared"}
+                  />
+                  <DetailRow label="Budget" value={detail.budgetLabel ?? "Not shared"} />
+                  <DetailRow
+                    label="Estimated range"
                     value={detail.estimatedLabel ?? "Still to be set"}
                   />
                 </div>
               </div>
+            </div>
+          </SectionCard>
 
-              <div className="rounded-[1.6rem] border border-charcoal/8 bg-white/80 p-5">
+          <SectionCard title="Customer and signals">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                  Notes from intake
+                  Contact details
                 </p>
                 <div className="mt-4">
-                  <DetailRow
-                    label="Dietary notes"
-                    value={detail.dietaryNotes ?? "None shared"}
-                  />
-                  <DetailRow
-                    label="Color palette"
-                    value={detail.colorPalette ?? "Not shared"}
-                  />
-                  <DetailRow
-                    label="Additional notes"
-                    value={detail.additionalNotes ?? "None shared"}
-                  />
-                </div>
-              </div>
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Selected products">
-            <div className="space-y-4">
-              {detail.items.map((item) => (
-                <article
-                  key={item.id}
-                  className="rounded-[1.8rem] border border-charcoal/10 bg-ivory/75 p-5"
-                >
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                        {toTitleCase(item.productType)}
-                      </p>
-                      <h3 className="mt-2 font-serif text-2xl tracking-[-0.03em] text-charcoal">
-                        {item.productLabel}
-                      </h3>
-                      <p className="mt-2 text-sm text-charcoal/66">{item.requestedQuantityLabel}</p>
-                    </div>
-
-                    <div className="rounded-full border border-charcoal/10 bg-white px-4 py-2 text-sm font-medium text-charcoal">
-                      {item.estimatedLabel ?? "Estimate not set"}
-                    </div>
-                  </div>
-
-                  <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-3 rounded-[1.4rem] border border-charcoal/8 bg-white/78 p-4">
-                      <DetailRow label="Size" value={item.sizeLabel ?? "Open"} />
-                      <DetailRow label="Shape" value={item.shapeLabel ?? "Open"} />
-                      <DetailRow
-                        label="Finish"
-                        value={item.icingStyleLabel ?? "Open"}
-                      />
-                      <DetailRow
-                        label="Color notes"
-                        value={item.colorPalette ?? "None shared"}
-                      />
-                    </div>
-
-                    <div className="space-y-3 rounded-[1.4rem] border border-charcoal/8 bg-white/78 p-4">
-                      <DetailRow
-                        label="Flavor notes"
-                        value={item.flavorNotes ?? "None shared"}
-                      />
-                      <DetailRow
-                        label="Design notes"
-                        value={item.designNotes ?? "None shared"}
-                      />
-                      <DetailRow
-                        label="Inspiration notes"
-                        value={item.inspirationNotes ?? "None shared"}
-                      />
-                      <DetailRow
-                        label="Topper text"
-                        value={item.topperText ?? "None shared"}
-                      />
-                    </div>
-                  </div>
-
-                  {item.detailSummary ? (
-                    <p className="mt-4 text-sm leading-7 text-charcoal/66">{item.detailSummary}</p>
-                  ) : null}
-                </article>
-              ))}
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Inspiration and references">
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                  Uploads
-                </h3>
-                {detail.uploads.length > 0 ? (
-                  <div className="mt-4 grid gap-4 md:grid-cols-2">
-                    {detail.uploads.map((asset) => (
-                      <AssetCard key={asset.id} asset={asset} />
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-3 text-sm leading-7 text-charcoal/62">
-                    No image uploads were attached to this inquiry.
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                  Reference links
-                </h3>
-                {detail.inspirationLinks.length > 0 ? (
-                  <div className="mt-4 grid gap-3">
-                    {detail.inspirationLinks.map((asset) => (
-                      <a
-                        key={asset.id}
-                        href={asset.url ?? "#"}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded-[1.5rem] border border-charcoal/10 bg-ivory/70 px-4 py-4 text-sm leading-7 text-charcoal transition hover:border-charcoal/25"
-                      >
-                        <span className="block font-medium">{asset.label}</span>
-                        <span className="block break-all text-charcoal/66">{asset.url}</span>
-                      </a>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-3 text-sm leading-7 text-charcoal/62">
-                    No external reference links were included.
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                  Reference text
-                </h3>
-                {detail.inspirationTextBlocks.length > 0 ? (
-                  <div className="mt-4 grid gap-3">
-                    {detail.inspirationTextBlocks.map((asset) => (
-                      <div
-                        key={asset.id}
-                        className="rounded-[1.5rem] border border-charcoal/10 bg-white/82 p-5"
-                      >
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                          {asset.label}
-                        </p>
-                        <p className="mt-3 text-sm leading-8 text-charcoal/72">
-                          {asset.textContent}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-3 text-sm leading-7 text-charcoal/62">
-                    No written inspiration notes were included.
-                  </p>
-                )}
-              </div>
-            </div>
-          </SectionCard>
-        </div>
-
-        <div className="space-y-6">
-          <SectionCard title="Contact and signals">
-            <div className="space-y-4">
-              <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
-                <div>
                   <DetailRow label="Email" value={detail.contact.customerEmail} />
                   <DetailRow label="Phone" value={detail.contact.customerPhone} />
-                  <DetailRow
-                    label="Instagram"
-                    value={detail.contact.instagramHandle ?? "Not shared"}
-                  />
                   <DetailRow
                     label="Preferred contact"
                     value={toTitleCase(detail.contact.preferredContact)}
                   />
                   <DetailRow
-                    label="How they heard"
-                    value={detail.howDidYouHear ?? "Not shared"}
+                    label="Instagram"
+                    value={detail.contact.instagramHandle ?? "Not shared"}
                   />
                 </div>
               </div>
 
-              <div className="grid gap-3">
-                <div
-                  className={`rounded-[1.4rem] border px-4 py-4 ${getSignalClasses(detail.clarityValue)}`}
-                >
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                    Clarity placeholder
-                  </p>
-                  <p className="mt-2 text-sm font-medium text-charcoal">{detail.clarityLabel}</p>
+              <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+                  Review signals
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span
+                    className={`rounded-full border px-3 py-1 text-xs font-medium ${getSignalClasses(detail.clarityValue)}`}
+                  >
+                    Clarity: {detail.clarityLabel}
+                  </span>
+                  <span
+                    className={`rounded-full border px-3 py-1 text-xs font-medium ${getSignalClasses(detail.priorityValue)}`}
+                  >
+                    Priority: {detail.priorityLabel}
+                  </span>
+                  <span
+                    className={`rounded-full border px-3 py-1 text-xs font-medium ${getSignalClasses(detail.urgencyValue)}`}
+                  >
+                    Timing: {detail.urgencyLabel}
+                  </span>
                 </div>
-                <div
-                  className={`rounded-[1.4rem] border px-4 py-4 ${getSignalClasses(detail.priorityValue)}`}
-                >
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                    Priority placeholder
-                  </p>
-                  <p className="mt-2 text-sm font-medium text-charcoal">{detail.priorityLabel}</p>
-                </div>
-                <div
-                  className={`rounded-[1.4rem] border px-4 py-4 ${getSignalClasses(detail.urgencyValue)}`}
-                >
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                    Timing placeholder
-                  </p>
-                  <p className="mt-2 text-sm font-medium text-charcoal">{detail.urgencyLabel}</p>
+                <div className="mt-4 space-y-2 text-sm leading-7 text-charcoal/68">
+                  {detail.colorPalette ? <p>Palette: {detail.colorPalette}</p> : null}
+                  {detail.howDidYouHear ? <p>Lead source: {detail.howDidYouHear}</p> : null}
+                  {detail.dietaryNotes ? <p>Dietary notes: {detail.dietaryNotes}</p> : null}
+                  {detail.additionalNotes ? <p>Extra notes: {detail.additionalNotes}</p> : null}
                 </div>
               </div>
-
-              {detail.internalSummary ? (
-                <div className="rounded-[1.6rem] border border-charcoal/8 bg-white/80 p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                    Internal summary
-                  </p>
-                  <p className="mt-3 text-sm leading-8 text-charcoal/70">{detail.internalSummary}</p>
-                </div>
-              ) : null}
             </div>
           </SectionCard>
 
+          <SectionCard title="Requested items">
+            <div className="space-y-4">
+              {detail.items.map((item) => (
+                <article
+                  key={item.id}
+                  className="rounded-[1.6rem] border border-charcoal/10 bg-ivory/70 p-5"
+                >
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-charcoal">{item.productLabel}</h3>
+                      <p className="mt-1 text-sm text-charcoal/62">{item.requestedQuantityLabel}</p>
+                    </div>
+                    <div className="text-sm text-charcoal/62">
+                      {item.estimatedLabel ?? "Estimate still open"}
+                    </div>
+                  </div>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2 text-sm leading-7 text-charcoal/68">
+                      {item.sizeLabel ? <p>Size: {item.sizeLabel}</p> : null}
+                      {item.shapeLabel ? <p>Shape: {item.shapeLabel}</p> : null}
+                      {item.icingStyleLabel ? <p>Icing style: {item.icingStyleLabel}</p> : null}
+                      {item.flavorNotes ? <p>Flavor notes: {item.flavorNotes}</p> : null}
+                      {item.colorPalette ? <p>Palette: {item.colorPalette}</p> : null}
+                    </div>
+                    <div className="space-y-2 text-sm leading-7 text-charcoal/68">
+                      {item.designNotes ? <p>Design notes: {item.designNotes}</p> : null}
+                      {item.inspirationNotes ? (
+                        <p>Inspiration notes: {item.inspirationNotes}</p>
+                      ) : null}
+                      {item.detailSummary ? <p>Summary: {item.detailSummary}</p> : null}
+                      {item.topperText ? <p>Topper text: {item.topperText}</p> : null}
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </SectionCard>
+
+          {detail.assets.length > 0 ? (
+            <SectionCard title="Inspiration and uploads">
+              <div className="grid gap-4 md:grid-cols-2">
+                {detail.assets.map((asset) => (
+                  <AssetCard key={asset.id} asset={asset} />
+                ))}
+              </div>
+            </SectionCard>
+          ) : null}
+        </div>
+
+        <div className="space-y-6">
           <SectionCard title="Status and reference">
             <form action={updateInquiryStatus} className="space-y-4">
               <input type="hidden" name="inquiryId" value={detail.id} />
@@ -621,14 +510,191 @@ export default async function AdminInquiryDetailPage({
           </SectionCard>
 
           <SectionCard title="Convert to order">
-            <div className="rounded-[1.6rem] border border-dashed border-charcoal/18 bg-ivory/65 p-5">
-              <p className="text-sm leading-8 text-charcoal/70">{detail.convertToOrderNote}</p>
-              <div className="mt-4">
-                <Button type="button" variant="secondary" disabled aria-disabled="true">
-                  Convert to order in next phase
-                </Button>
+            {conversion?.existingOrder ? (
+              <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${getOrderStatusClasses(conversion.existingOrder.status)}`}
+                  >
+                    {toTitleCase(conversion.existingOrder.status)}
+                  </span>
+                  <span
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${getPaymentStatusClasses(conversion.existingOrder.paymentStatus)}`}
+                  >
+                    {toTitleCase(conversion.existingOrder.paymentStatus)}
+                  </span>
+                </div>
+                <p className="mt-4 text-sm leading-8 text-charcoal/70">
+                  This inquiry has already been converted into an order. Continue the workflow from
+                  the linked order and customer records below.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <Link
+                    href={`/admin/orders/${conversion.existingOrder.id}`}
+                    className="inline-flex h-12 items-center justify-center rounded-full bg-charcoal px-5 text-sm font-medium tracking-[0.02em] text-ivory shadow-soft transition hover:bg-charcoal/90"
+                  >
+                    Open linked order
+                  </Link>
+                  {conversion.linkedCustomer ? (
+                    <Link
+                      href={`/admin/customers/${conversion.linkedCustomer.id}`}
+                      className="inline-flex h-12 items-center justify-center rounded-full border border-charcoal/15 bg-ivory/80 px-5 text-sm font-medium tracking-[0.02em] text-charcoal transition hover:border-charcoal/40 hover:bg-white"
+                    >
+                      Open linked customer
+                    </Link>
+                  ) : null}
+                </div>
               </div>
-            </div>
+            ) : (
+              <form action={createOrderFromInquiry} className="space-y-5">
+                <input type="hidden" name="inquiryId" value={detail.id} />
+                <input type="hidden" name="redirectTo" value={redirectTo} />
+
+                <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5 text-sm leading-8 text-charcoal/70">
+                  This creates a manual-first order from the inquiry’s event details and requested
+                  items. You can finish pricing, payment records, Square references, and bakery
+                  notes after conversion on the order detail page.
+                </div>
+
+                <div className="rounded-[1.6rem] border border-charcoal/8 bg-white/82 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+                    Customer handling
+                  </p>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <Label htmlFor="customerAction">Create or link customer</Label>
+                      <Select
+                        id="customerAction"
+                        name="customerAction"
+                        defaultValue={conversion?.defaultCustomerId ? "link" : "create"}
+                      >
+                        <option value="create">Create a customer from this inquiry</option>
+                        <option value="link">Link an existing customer</option>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="existingCustomerId">Existing customer</Label>
+                      <Select
+                        id="existingCustomerId"
+                        name="existingCustomerId"
+                        defaultValue={conversion?.defaultCustomerId ?? ""}
+                      >
+                        <option value="">Choose a customer if linking</option>
+                        {conversion?.customerOptions.map((customer) => (
+                          <option key={customer.id} value={customer.id}>
+                            {customer.label}
+                            {customer.isLinked
+                              ? " • already linked"
+                              : customer.isSuggested
+                                ? " • suggested match"
+                                : ""}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 space-y-2 text-sm leading-7 text-charcoal/66">
+                    {conversion?.linkedCustomer ? (
+                      <p>
+                        Current linked customer:{" "}
+                        <span className="font-medium text-charcoal">
+                          {conversion.linkedCustomer.label}
+                        </span>
+                      </p>
+                    ) : null}
+                    {conversion?.matchedCustomerIds.length ? (
+                      <p>Suggested matches were found using the inquiry name, email, or phone.</p>
+                    ) : (
+                      <p>
+                        No likely matches were found yet, so creating a fresh customer is usually
+                        the cleanest choice.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div>
+                    <Label htmlFor="orderStatus">Starting order status</Label>
+                    <Select
+                      id="orderStatus"
+                      name="orderStatus"
+                      defaultValue={conversion?.suggestedOrderStatus ?? "draft"}
+                    >
+                      <option value="draft">Draft</option>
+                      <option value="quoted">Quoted</option>
+                      <option value="confirmed">Confirmed</option>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="estimatedTotalAmount">Estimate total</Label>
+                    <Input
+                      id="estimatedTotalAmount"
+                      name="estimatedTotalAmount"
+                      inputMode="decimal"
+                      placeholder="Optional"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="totalAmount">Final total</Label>
+                    <Input
+                      id="totalAmount"
+                      name="totalAmount"
+                      inputMode="decimal"
+                      placeholder="Optional for now"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="depositDueAmount">Deposit required</Label>
+                    <Input
+                      id="depositDueAmount"
+                      name="depositDueAmount"
+                      inputMode="decimal"
+                      placeholder="Optional"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="depositDueAt">Deposit due date</Label>
+                    <Input id="depositDueAt" name="depositDueAt" type="date" />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="finalDueAt">Final due date</Label>
+                    <Input id="finalDueAt" name="finalDueAt" type="date" />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="fulfillmentNotes">Pickup or delivery notes</Label>
+                    <Textarea
+                      id="fulfillmentNotes"
+                      name="fulfillmentNotes"
+                      placeholder="Parking notes, pickup timing, or delivery handoff details."
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="internalSummary">Internal summary</Label>
+                    <Textarea
+                      id="internalSummary"
+                      name="internalSummary"
+                      placeholder="A short bakery-side summary for the new order."
+                    />
+                  </div>
+                </div>
+
+                <Button type="submit" className="w-full sm:w-auto">
+                  Create order from inquiry
+                </Button>
+              </form>
+            )}
           </SectionCard>
         </div>
       </div>
