@@ -18,7 +18,6 @@ export const mainNavigation = [
   { href: "/pricing", label: "Pricing" },
   { href: "/how-to-order", label: "How to Order" },
   { href: "/about", label: "About" },
-  { href: "/start-order", label: "Start Order" },
 ];
 
 export const footerNavigation = {

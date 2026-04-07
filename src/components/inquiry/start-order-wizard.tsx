@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -101,22 +101,39 @@ function StepMarker({
   title: string;
 }) {
   return (
-    <div className="flex min-w-0 items-center gap-3">
+    <div
+      className={cn(
+        "flex items-center gap-2 rounded-full transition sm:min-w-0 sm:gap-3",
+        active ? "border border-charcoal bg-charcoal px-3 py-2 text-ivory shadow-soft" : "px-0 py-0",
+      )}
+    >
       <div
         className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition",
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition",
           complete
             ? "border-charcoal bg-charcoal text-ivory"
             : active
-              ? "border-gold bg-gold/15 text-charcoal"
-              : "border-charcoal/10 bg-white text-charcoal/48",
+              ? "border-ivory/30 bg-ivory text-charcoal"
+              : "border-charcoal/10 bg-white text-charcoal/40",
         )}
       >
         {complete ? <Check className="h-4 w-4" /> : index + 1}
       </div>
-      <div className="min-w-0">
-        <p className="text-[11px] uppercase tracking-[0.18em] text-charcoal/45">Step {index + 1}</p>
-        <p className={cn("truncate text-sm font-medium", active ? "text-charcoal" : "text-charcoal/60")}>
+      <div className={cn("min-w-0", active ? "block" : "hidden sm:block")}>
+        <p
+          className={cn(
+            "text-[10px] uppercase tracking-[0.18em]",
+            active ? "text-ivory/62" : "text-charcoal/40",
+          )}
+        >
+          Step {index + 1}
+        </p>
+        <p
+          className={cn(
+            "truncate text-sm font-medium",
+            active ? "text-ivory" : complete ? "text-charcoal/68" : "text-charcoal/52",
+          )}
+        >
           {title}
         </p>
       </div>
@@ -190,6 +207,7 @@ export function StartOrderWizard({
   deliveryRange,
 }: StartOrderWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
+  const [hasStarted, setHasStarted] = useState(false);
   const [activeItemType, setActiveItemType] = useState<ProductType | null>(null);
   const [values, setValues] = useState<InquiryFormValues>(() => createEmptyInquiryValues());
   const [uploads, setUploads] = useState<UploadDraft[]>([]);
@@ -199,6 +217,8 @@ export function StartOrderWizard({
   const [submissionResult, setSubmissionResult] = useState<InquirySubmissionResponse | null>(
     null,
   );
+  const stepViewportRef = useRef<HTMLDivElement | null>(null);
+  const hasMountedRef = useRef(false);
 
   const normalizedValues = normalizeInquiryFormValues(values);
   const selectedItems = normalizedValues.orderItems;
@@ -224,6 +244,37 @@ export function StartOrderWizard({
       setActiveItemType(selectedItems[0].productType);
     }
   }, [activeItemType, selectedItems]);
+
+  useEffect(() => {
+    if (currentStep > 0) {
+      setHasStarted(true);
+    }
+  }, [currentStep]);
+
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      const target = stepViewportRef.current;
+
+      if (!target) {
+        return;
+      }
+
+      const offset = window.matchMedia("(min-width: 1024px)").matches ? 104 : 88;
+      const top = target.getBoundingClientRect().top + window.scrollY - offset;
+
+      window.scrollTo({
+        top: Math.max(top, 0),
+        behavior: "smooth",
+      });
+    }, 120);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [currentStep]);
 
   const activeItem =
     selectedItems.find((item) => item.productType === activeItemType) ?? selectedItems[0];
@@ -636,34 +687,61 @@ export function StartOrderWizard({
   }
 
   return (
-    <section className="section-shell pb-20">
+    <section className="section-shell pb-20" data-order-wizard-state={hasStarted ? "started" : "intro"}>
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
         <div className="grain-surface overflow-hidden rounded-[2.4rem] border border-charcoal/10 bg-white shadow-soft">
-          <div className="border-b border-charcoal/8 bg-cream/70 px-6 py-6 sm:px-8">
+          <div
+            className={cn(
+              "border-b border-charcoal/8 px-5 py-5 transition-[padding,background-color] duration-300 sm:px-8",
+              hasStarted ? "bg-white/92" : "bg-cream/70 sm:py-6",
+            )}
+          >
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-3">
                 <Badge>Start Order</Badge>
                 <p className="text-sm text-charcoal/60">
-                  One guided inquiry for the full order.
+                  {hasStarted
+                    ? "Stay with the active step. You can go back without losing progress."
+                    : "One guided inquiry for the full order."}
                 </p>
               </div>
 
-              <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
-                <div className="space-y-3">
+              <div
+                className={cn(
+                  "grid gap-4 transition-[grid-template-columns] duration-300 lg:items-end",
+                  hasStarted ? "lg:grid-cols-[1fr_240px]" : "lg:grid-cols-[1.15fr_0.85fr]",
+                )}
+              >
+                <div
+                  className={cn(
+                    "overflow-hidden transition-[max-height,opacity,transform] duration-300",
+                    hasStarted ? "max-h-0 translate-y-[-8px] opacity-0" : "max-h-60 opacity-100",
+                  )}
+                >
                   <h2 className="font-serif text-4xl tracking-[-0.04em] text-charcoal sm:text-5xl">
                     Share the event details Sweet Fork needs for a clear quote.
                   </h2>
-                  <p className="max-w-2xl text-base leading-8 text-charcoal/70">
+                  <p className="mt-3 max-w-2xl text-base leading-8 text-charcoal/70">
                     Add the event details, dessert selections, inspiration, and contact
                     preferences in one place. You can move backward at any point without losing
                     progress.
                   </p>
                 </div>
-                <div className="rounded-[1.8rem] border border-charcoal/8 bg-white px-5 py-5">
+                <div
+                  className={cn(
+                    "rounded-[1.8rem] border px-4 py-4 transition-colors duration-300 sm:px-5 sm:py-5",
+                    hasStarted ? "border-charcoal/10 bg-cream/65" : "border-charcoal/8 bg-white",
+                  )}
+                >
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
                     Current step
                   </p>
-                  <p className="mt-3 font-serif text-3xl tracking-[-0.04em] text-charcoal">
+                  <p
+                    className={cn(
+                      "font-serif tracking-[-0.04em] text-charcoal",
+                      hasStarted ? "mt-2 text-[1.9rem] leading-none sm:text-3xl" : "mt-3 text-3xl",
+                    )}
+                  >
                     {inquiryStepTitles[currentStep]}
                   </p>
                   <p className="mt-2 text-sm leading-7 text-charcoal/65">
@@ -672,7 +750,7 @@ export function StartOrderWizard({
                 </div>
               </div>
 
-              <div className="flex gap-4 overflow-x-auto pb-1">
+              <div className="flex gap-2 overflow-x-auto pb-1 sm:gap-3">
                 {inquiryStepTitles.map((title, index) => (
                   <StepMarker
                     key={title}
@@ -686,10 +764,11 @@ export function StartOrderWizard({
             </div>
           </div>
 
-          <div className="px-6 py-8 sm:px-8 sm:py-10">
+          <div className="px-5 py-6 sm:px-8 sm:py-10">
+            <div ref={stepViewportRef} className="scroll-mt-24 sm:scroll-mt-28" />
             {currentStep === 0 ? (
-              <div className="space-y-8">
-                <div className="grid gap-4 rounded-[2rem] border border-charcoal/8 bg-cream/60 p-5 sm:grid-cols-[1fr_auto] sm:items-center">
+              <div className="space-y-6 sm:space-y-8">
+                <div className="grid gap-3 rounded-[2rem] border border-charcoal/8 bg-cream/60 p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
                   <div className="space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
                       Event details
@@ -852,8 +931,8 @@ export function StartOrderWizard({
             ) : null}
 
             {currentStep === 1 ? (
-              <div className="space-y-8">
-                <div className="grid gap-4 rounded-[2rem] border border-charcoal/8 bg-cream/60 p-5 sm:grid-cols-[1fr_auto] sm:items-center">
+              <div className="space-y-6 sm:space-y-8">
+                <div className="grid gap-3 rounded-[2rem] border border-charcoal/8 bg-cream/60 p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
                   <div className="space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
                       Product mix
@@ -877,7 +956,7 @@ export function StartOrderWizard({
                         key={product.productType}
                         type="button"
                         className={cn(
-                          "rounded-[1.9rem] border p-5 text-left transition",
+                          "rounded-[1.9rem] border p-4 text-left transition sm:p-5",
                           selected
                             ? "border-charcoal bg-charcoal text-ivory"
                             : "border-charcoal/10 bg-white hover:border-charcoal/30",
@@ -885,7 +964,7 @@ export function StartOrderWizard({
                         onClick={() => toggleProductSelection(product.productType)}
                       >
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                          <p className="font-serif text-3xl tracking-[-0.04em]">
+                          <p className="font-serif text-[1.7rem] tracking-[-0.04em] sm:text-3xl">
                             {product.name}
                           </p>
                           <div className="flex items-center gap-2">
@@ -949,8 +1028,8 @@ export function StartOrderWizard({
             ) : null}
 
             {currentStep === 2 ? (
-              <div className="space-y-8">
-                <div className="grid gap-4 rounded-[2rem] border border-charcoal/8 bg-cream/60 p-5 sm:grid-cols-[1fr_auto] sm:items-center">
+              <div className="space-y-6 sm:space-y-8">
+                <div className="grid gap-3 rounded-[2rem] border border-charcoal/8 bg-cream/60 p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
                   <div className="space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
                       Item details
@@ -1002,13 +1081,13 @@ export function StartOrderWizard({
                 </div>
 
                 {activeItem ? (
-                  <div className="space-y-6 rounded-[2rem] border border-charcoal/10 bg-white p-6 shadow-soft">
+                  <div className="space-y-6 rounded-[2rem] border border-charcoal/10 bg-white p-5 shadow-soft sm:p-6">
                     <div className="flex flex-wrap items-center justify-between gap-4">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
                           Active selection
                         </p>
-                        <h3 className="mt-2 font-serif text-4xl tracking-[-0.04em] text-charcoal">
+                        <h3 className="mt-2 font-serif text-[2rem] tracking-[-0.04em] text-charcoal sm:text-4xl">
                           {catalogMap[activeItem.productType]?.name ??
                             getProductDisplayLabel(activeItem.productType)}
                         </h3>
@@ -1299,8 +1378,8 @@ export function StartOrderWizard({
             ) : null}
 
             {currentStep === 3 ? (
-              <div className="space-y-8">
-                <div className="grid gap-4 rounded-[2rem] border border-charcoal/8 bg-cream/60 p-5 sm:grid-cols-[1fr_auto] sm:items-center">
+              <div className="space-y-6 sm:space-y-8">
+                <div className="grid gap-3 rounded-[2rem] border border-charcoal/8 bg-cream/60 p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
                   <div className="space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
                       Inspiration
@@ -1333,7 +1412,7 @@ export function StartOrderWizard({
                     </div>
                     <label
                       className={cn(
-                        "flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-[2rem] border border-dashed px-6 py-8 text-center transition",
+                        "flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-[2rem] border border-dashed px-5 py-7 text-center transition sm:min-h-[220px] sm:px-6 sm:py-8",
                         featureFlags.uploadsEnabled
                           ? "border-charcoal/18 bg-cream/45 hover:border-charcoal/35"
                           : "cursor-not-allowed border-charcoal/10 bg-charcoal/3 text-charcoal/40",
@@ -1455,8 +1534,8 @@ export function StartOrderWizard({
             ) : null}
 
             {currentStep === 4 ? (
-              <div className="space-y-8">
-                <div className="grid gap-4 rounded-[2rem] border border-charcoal/8 bg-cream/60 p-5 sm:grid-cols-[1fr_auto] sm:items-center">
+              <div className="space-y-6 sm:space-y-8">
+                <div className="grid gap-3 rounded-[2rem] border border-charcoal/8 bg-cream/60 p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
                   <div className="space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
                       Contact and review
@@ -1555,7 +1634,7 @@ export function StartOrderWizard({
                   />
                 </div>
 
-                <div className="rounded-[2rem] border border-charcoal/10 bg-charcoal px-6 py-6 text-ivory">
+                <div className="rounded-[2rem] border border-charcoal/10 bg-charcoal px-5 py-5 text-ivory sm:px-6 sm:py-6">
                   <div className="flex items-center gap-3">
                     <CheckCircle2 className="h-5 w-5 text-gold" />
                     <p className="text-sm font-medium">
@@ -1663,7 +1742,7 @@ export function StartOrderWizard({
             ) : null}
           </div>
 
-          <div className="border-t border-charcoal/8 bg-cream/50 px-6 py-5 sm:px-8">
+          <div className="border-t border-charcoal/8 bg-cream/50 px-5 py-5 sm:px-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-charcoal/60">
@@ -1680,6 +1759,7 @@ export function StartOrderWizard({
                   onClick={goToPreviousStep}
                   disabled={currentStep === 0 || isSubmitting}
                   icon={<ArrowLeft className="h-4 w-4" />}
+                  className="w-full sm:w-auto"
                 >
                   Back
                 </Button>
@@ -1689,6 +1769,7 @@ export function StartOrderWizard({
                     onClick={goToNextStep}
                     disabled={isSubmitting}
                     icon={<ArrowRight className="h-4 w-4" />}
+                    className="w-full sm:w-auto"
                   >
                     Continue
                   </Button>
@@ -1704,6 +1785,7 @@ export function StartOrderWizard({
                         <Check className="h-4 w-4" />
                       )
                     }
+                    className="w-full sm:w-auto"
                   >
                     {isSubmitting ? "Submitting inquiry..." : "Submit inquiry"}
                   </Button>
@@ -1714,13 +1796,13 @@ export function StartOrderWizard({
         </div>
 
         <aside className="space-y-5 xl:sticky xl:top-24">
-          <div className="rounded-[2rem] border border-charcoal/10 bg-white p-6 shadow-soft">
+          <div className="rounded-[2rem] border border-charcoal/10 bg-white p-5 shadow-soft sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
                   Live estimate
                 </p>
-                <h3 className="mt-3 font-serif text-4xl tracking-[-0.04em] text-charcoal">
+                <h3 className="mt-3 font-serif text-[2rem] tracking-[-0.04em] text-charcoal sm:text-4xl">
                   {formatCurrency(estimate.minimum)} to {formatCurrency(estimate.maximum)}
                 </h3>
               </div>
@@ -1752,7 +1834,7 @@ export function StartOrderWizard({
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-charcoal/10 bg-white p-6 shadow-soft">
+          <div className="rounded-[2rem] border border-charcoal/10 bg-white p-5 shadow-soft sm:p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
               Inquiry snapshot
             </p>

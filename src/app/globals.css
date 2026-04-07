@@ -78,6 +78,26 @@ img {
   @apply mx-auto max-w-7xl px-5 sm:px-8;
 }
 
+.start-order-page-hero {
+  overflow: hidden;
+  max-height: 72rem;
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    max-height 360ms ease,
+    opacity 220ms ease,
+    transform 360ms ease,
+    padding 360ms ease;
+}
+
+.start-order-page-shell:has([data-order-wizard-state="started"]) .start-order-page-hero {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-0.75rem);
+  padding-bottom: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

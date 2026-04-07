@@ -19,10 +19,10 @@ export default async function StartOrderPage() {
   const hasCatalog = pageData.catalog.length > 0;
 
   return (
-    <div className="pb-6 pt-8 sm:pt-10">
-      <section className="section-shell pb-8">
-        <div className="grain-surface overflow-hidden rounded-[2.8rem] border border-charcoal/10 bg-paper px-6 py-10 shadow-soft sm:px-8 sm:py-12 lg:px-10">
-          <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
+    <div className="start-order-page-shell pb-6 pt-8 sm:pt-10">
+      <section className="start-order-page-hero section-shell pb-8">
+        <div className="grain-surface overflow-hidden rounded-[2.8rem] border border-charcoal/10 bg-paper px-6 py-9 shadow-soft sm:px-8 sm:py-11 lg:px-10">
+          <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
             <div className="space-y-4">
               <Badge>Order Inquiry</Badge>
               <h1 className="max-w-4xl font-serif text-5xl leading-none tracking-[-0.05em] text-charcoal sm:text-6xl">
@@ -35,7 +35,7 @@ export default async function StartOrderPage() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-[1.8rem] border border-charcoal/8 bg-white/85 p-5">
+              <div className="rounded-[1.8rem] border border-charcoal/8 bg-white/85 p-4 sm:p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
                   Options
                 </p>
@@ -48,7 +48,7 @@ export default async function StartOrderPage() {
                     : "Public inquiry options are currently paused while availability is updated."}
                 </p>
               </div>
-              <div className="rounded-[1.8rem] border border-charcoal/8 bg-white/85 p-5">
+              <div className="rounded-[1.8rem] border border-charcoal/8 bg-white/85 p-4 sm:p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
                   {hasCatalog ? "Response" : "Status"}
                 </p>
@@ -61,7 +61,7 @@ export default async function StartOrderPage() {
                     : "The booking notice above reflects the current public availability status."}
                 </p>
               </div>
-              <div className="rounded-[1.8rem] border border-charcoal/8 bg-white/85 p-5">
+              <div className="rounded-[1.8rem] border border-charcoal/8 bg-white/85 p-4 sm:p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
                   {hasCatalog ? "Lead time" : "Offerings"}
                 </p>
