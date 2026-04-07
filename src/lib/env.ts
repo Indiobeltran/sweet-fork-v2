@@ -4,10 +4,20 @@ const requiredServerKeys = [
   "SUPABASE_SERVICE_ROLE_KEY",
 ] as const;
 
+const requiredBrowserKeys = [
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+] as const;
+
 type SupabaseEnv = {
   url: string;
   anonKey: string;
   serviceRoleKey: string;
+};
+
+type PublicSupabaseEnv = {
+  url: string;
+  anonKey: string;
 };
 
 export type InquiryFeatureFlagEnvOverrides = {
@@ -45,6 +55,10 @@ export function isSupabaseConfigured() {
   return requiredServerKeys.every((key) => Boolean(process.env[key]));
 }
 
+export function isSupabaseBrowserConfigured() {
+  return requiredBrowserKeys.every((key) => Boolean(process.env[key]));
+}
+
 export function getSupabaseEnv(): SupabaseEnv {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -58,5 +72,19 @@ export function getSupabaseEnv(): SupabaseEnv {
     url,
     anonKey,
     serviceRoleKey,
+  };
+}
+
+export function getPublicSupabaseEnv(): PublicSupabaseEnv {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey) {
+    throw new Error("Missing public Supabase environment variables.");
+  }
+
+  return {
+    url,
+    anonKey,
   };
 }
