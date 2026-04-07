@@ -273,7 +273,7 @@ export async function getStartOrderPageData(): Promise<StartOrderPageData> {
     console.error("Unable to load live start-order data.", error);
 
     return {
-      catalog: buildFallbackCatalog(defaultPricingBaseline),
+      catalog: [],
       featureFlags: mergeFeatureFlags(),
       pricingBaseline: defaultPricingBaseline,
       deliveryRange: [15, 50],

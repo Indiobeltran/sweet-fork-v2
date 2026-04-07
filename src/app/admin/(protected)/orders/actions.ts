@@ -13,6 +13,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   Constants,
   type Enums,
+  type Tables,
   type TablesInsert,
   type TablesUpdate,
 } from "@/types/supabase.generated";
@@ -23,6 +24,24 @@ type OrderStatusTransitionRow = {
   confirmed_at: string | null;
   fulfilled_at: string | null;
   quoted_at: string | null;
+};
+
+type InquiryRollbackSnapshot = Pick<
+  Tables<"inquiries">,
+  "customer_id" | "id" | "reviewed_at" | "status"
+>;
+
+type CustomerRollbackSnapshot = Pick<
+  Tables<"customers">,
+  "last_inquiry_at" | "last_order_at"
+>;
+
+type OrderCreationRollbackContext = {
+  createdCustomerId: string | null;
+  customerId: string;
+  customerSnapshot: CustomerRollbackSnapshot | null;
+  inquirySnapshot: InquiryRollbackSnapshot;
+  orderId: string;
 };
 
 function redirectWithNotice(path: string, notice: string): never {
@@ -157,6 +176,38 @@ function revalidateOrderWorkflow(orderId: string, customerId?: string | null, in
   }
 }
 
+async function rollbackCreatedOrder(
+  supabase: ReturnType<typeof createAdminClient>,
+  context: OrderCreationRollbackContext,
+) {
+  await supabase.from("payments").delete().eq("order_id", context.orderId);
+  await supabase.from("order_items").delete().eq("order_id", context.orderId);
+  await supabase.from("orders").delete().eq("id", context.orderId);
+  await supabase
+    .from("inquiries")
+    .update({
+      customer_id: context.inquirySnapshot.customer_id,
+      reviewed_at: context.inquirySnapshot.reviewed_at,
+      status: context.inquirySnapshot.status,
+    })
+    .eq("id", context.inquirySnapshot.id);
+
+  if (context.createdCustomerId) {
+    await supabase.from("customers").delete().eq("id", context.createdCustomerId);
+    return;
+  }
+
+  if (context.customerSnapshot) {
+    await supabase
+      .from("customers")
+      .update({
+        last_inquiry_at: context.customerSnapshot.last_inquiry_at,
+        last_order_at: context.customerSnapshot.last_order_at,
+      })
+      .eq("id", context.customerId);
+  }
+}
+
 export async function createOrderFromInquiry(formData: FormData) {
   await requireAdmin();
 
@@ -227,6 +278,7 @@ export async function createOrderFromInquiry(formData: FormData) {
   }
 
   let customerId = inquiry.customer_id;
+  let createdCustomerId: string | null = null;
   let usedExistingCustomerMatch = false;
 
   if (customerAction === "link") {
@@ -268,11 +320,28 @@ export async function createOrderFromInquiry(formData: FormData) {
       }
 
       customerId = newCustomer.id;
+      createdCustomerId = newCustomer.id;
     }
   }
 
   if (!customerId) {
     redirectWithNotice(redirectTarget, "convert-error");
+  }
+
+  let customerSnapshot: CustomerRollbackSnapshot | null = null;
+
+  if (!createdCustomerId) {
+    const { data: currentCustomer, error: customerSnapshotError } = await supabase
+      .from("customers")
+      .select("last_inquiry_at, last_order_at")
+      .eq("id", customerId)
+      .maybeSingle();
+
+    if (customerSnapshotError || !currentCustomer) {
+      redirectWithNotice(redirectTarget, "convert-error");
+    }
+
+    customerSnapshot = currentCustomer;
   }
 
   const metadata = mergeOrderWorkflowMetadata({}, {
@@ -349,7 +418,13 @@ export async function createOrderFromInquiry(formData: FormData) {
   const { error: orderItemsError } = await supabase.from("order_items").insert(orderItemsInsert);
 
   if (orderItemsError) {
-    await supabase.from("orders").delete().eq("id", createdOrder.id);
+    await rollbackCreatedOrder(supabase, {
+      createdCustomerId,
+      customerId,
+      customerSnapshot,
+      inquirySnapshot: inquiry,
+      orderId: createdOrder.id,
+    });
     redirectWithNotice(redirectTarget, "convert-error");
   }
 
@@ -364,10 +439,23 @@ export async function createOrderFromInquiry(formData: FormData) {
       status: "pending",
     };
 
-    await supabase.from("payments").insert(depositPaymentInsert);
+    const { error: depositPaymentError } = await supabase
+      .from("payments")
+      .insert(depositPaymentInsert);
+
+    if (depositPaymentError) {
+      await rollbackCreatedOrder(supabase, {
+        createdCustomerId,
+        customerId,
+        customerSnapshot,
+        inquirySnapshot: inquiry,
+        orderId: createdOrder.id,
+      });
+      redirectWithNotice(redirectTarget, "convert-error");
+    }
   }
 
-  await Promise.all([
+  const [{ error: inquiryUpdateError }, { error: customerUpdateError }] = await Promise.all([
     supabase
       .from("inquiries")
       .update({
@@ -385,7 +473,31 @@ export async function createOrderFromInquiry(formData: FormData) {
       .eq("id", customerId),
   ]);
 
-  await syncOrderPaymentState(createdOrder.id);
+  if (inquiryUpdateError || customerUpdateError) {
+    await rollbackCreatedOrder(supabase, {
+      createdCustomerId,
+      customerId,
+      customerSnapshot,
+      inquirySnapshot: inquiry,
+      orderId: createdOrder.id,
+    });
+    redirectWithNotice(redirectTarget, "convert-error");
+  }
+
+  try {
+    await syncOrderPaymentState(createdOrder.id);
+  } catch (error) {
+    console.error("Unable to finalize order payment state after inquiry conversion.", error);
+    await rollbackCreatedOrder(supabase, {
+      createdCustomerId,
+      customerId,
+      customerSnapshot,
+      inquirySnapshot: inquiry,
+      orderId: createdOrder.id,
+    });
+    redirectWithNotice(redirectTarget, "convert-error");
+  }
+
   revalidateOrderWorkflow(createdOrder.id, createdOrder.customer_id, createdOrder.inquiry_id);
 
   redirectWithNotice(

@@ -55,15 +55,15 @@ export default async function AdminLoginPage() {
                 Included
               </p>
               <p className="mt-2 text-sm leading-7 text-charcoal/72">
-                Inquiry list, detail review, notes, status updates, and inspiration viewing.
+                Inquiry review, order follow-up, customer history, payments, and launch settings.
               </p>
             </div>
             <div className="rounded-[1.75rem] border border-charcoal/8 bg-white/85 p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                Next phase
+                Operations
               </p>
               <p className="mt-2 text-sm leading-7 text-charcoal/72">
-                Order conversion, customers, and payments stay outside this pass.
+                Calendar, notifications, media, content, pricing, and user access are also managed here.
               </p>
             </div>
           </div>

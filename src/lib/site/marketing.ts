@@ -727,7 +727,7 @@ const getPublicProductRows = cache(async function getPublicProductRows(): Promis
       console.error("Unable to load public products.", error);
     }
 
-    return null;
+    return [];
   }
 
   return (data ?? []) as ProductRow[];
@@ -1185,17 +1185,21 @@ export async function getPublicOfferingCards() {
     return getStaticProductCards();
   }
 
-  return activeProducts.map((product) => {
-    const fallback = productPageContent[product.slug];
+  return activeProducts
+    .filter((product) => Boolean(productPageContent[product.slug]))
+    .map((product) => {
+      const fallback = productPageContent[product.slug];
 
-    return {
-      eyebrow: fallback?.eyebrow ?? (product.requires_consultation ? "Consultation-led" : "Core offering"),
-      intro: product.short_description ?? fallback?.intro ?? product.long_description ?? "",
-      name: product.name,
-      shortTitle: fallback?.shortTitle ?? product.name,
-      slug: product.slug,
-    };
-  });
+      return {
+        eyebrow:
+          fallback?.eyebrow ??
+          (product.requires_consultation ? "Consultation-led" : "Core offering"),
+        intro: product.short_description ?? fallback?.intro ?? product.long_description ?? "",
+        name: product.name,
+        shortTitle: fallback?.shortTitle ?? product.name,
+        slug: product.slug,
+      };
+    });
 }
 
 export async function getPublicPricingData(): Promise<{
@@ -1237,8 +1241,8 @@ export async function getPublicPricingData(): Promise<{
     }
 
     return {
-      highlights: staticPricingHighlights,
-      matrix: staticPricingMatrix,
+      highlights: [],
+      matrix: [],
     };
   }
 
