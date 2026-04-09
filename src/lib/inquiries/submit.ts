@@ -29,7 +29,6 @@ type SubmissionCleanup = {
 export type InquirySubmissionResult = {
   inquiryId: string;
   referenceCode: string;
-  estimate: InquiryEstimate;
   uploadedAssetCount: number;
 };
 
@@ -470,7 +469,6 @@ export async function submitInquiry(
     return {
       inquiryId,
       referenceCode,
-      estimate,
       uploadedAssetCount: files.length,
     };
   } catch (error) {

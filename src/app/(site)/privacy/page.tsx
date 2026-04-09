@@ -23,7 +23,7 @@ export default function PrivacyPage() {
         {privacySections.map((section) => (
           <article
             key={section.title}
-            className="rounded-[1.8rem] border border-charcoal/8 bg-white p-6 shadow-soft"
+            className="luxury-panel rounded-[1.8rem] p-6"
           >
             <h2 className="font-serif text-3xl tracking-[-0.03em] text-charcoal">
               {section.title}

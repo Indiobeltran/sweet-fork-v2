@@ -85,7 +85,7 @@ const sectionDefinitions: Array<Pick<SettingsAdminSection, "description" | "key"
     key: "business",
     title: "Business info and site defaults",
     description:
-      "These settings power the brand, contact, and SEO details that are already reused across the live site.",
+      "These settings power the brand, contact, and SEO details that are already reused across the public site.",
   },
   {
     key: "inquiries",

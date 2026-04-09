@@ -416,6 +416,57 @@ export default async function AdminInquiryDetailPage({
         </div>
 
         <div className="space-y-6">
+          <SectionCard title="Estimate insight">
+            <div className="space-y-4">
+              <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+                  Internal pricing view
+                </p>
+                <p className="mt-3 font-serif text-3xl tracking-[-0.04em] text-charcoal">
+                  {detail.estimateInsight.totalLabel ?? "Still to be set"}
+                </p>
+                <p className="mt-3 text-sm leading-7 text-charcoal/68">
+                  {detail.estimateInsight.summary}
+                </p>
+                {detail.estimateInsight.deliveryLabel ? (
+                  <p className="mt-3 text-sm leading-7 text-charcoal/68">
+                    Delivery contribution:{" "}
+                    <span className="font-medium text-charcoal">
+                      {detail.estimateInsight.deliveryLabel}
+                    </span>
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="space-y-3">
+                {detail.estimateInsight.lineItems.map((item) => (
+                  <article
+                    key={item.id}
+                    className="rounded-[1.4rem] border border-charcoal/8 bg-white/82 p-4"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium text-charcoal">{item.productLabel}</p>
+                        <p className="mt-1 text-sm text-charcoal/60">
+                          {item.requestedQuantityLabel}
+                        </p>
+                      </div>
+                      <p className="text-sm font-medium text-charcoal">
+                        {item.estimatedLabel ?? "Estimate pending"}
+                      </p>
+                    </div>
+                    <div className="mt-3 space-y-2 text-sm leading-7 text-charcoal/66">
+                      {item.drivers.map((driver) => (
+                        <p key={driver}>{driver}</p>
+                      ))}
+                      {item.detailSummary ? <p>Stored summary: {item.detailSummary}</p> : null}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </SectionCard>
+
           <SectionCard title="Status and reference">
             <form action={updateInquiryStatus} className="space-y-4">
               <input type="hidden" name="inquiryId" value={detail.id} />

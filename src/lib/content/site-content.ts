@@ -10,64 +10,44 @@ export const siteConfig = {
   location: "Centerville, Utah",
 };
 
-export const mainNavigation = [
+export const primaryNavigation = [
   { href: "/", label: "Home" },
   { href: "/custom-cakes", label: "Custom Cakes" },
   { href: "/wedding-cakes", label: "Wedding Cakes" },
-  { href: "/gallery", label: "Gallery" },
+  { href: "/cupcakes", label: "Cupcakes" },
+  { href: "/sugar-cookies", label: "Sugar Cookies" },
+  { href: "/macarons", label: "Macarons" },
+  { href: "/diy-kits", label: "DIY Kits" },
+];
+
+export const secondaryNavigation = [
   { href: "/pricing", label: "Pricing" },
   { href: "/how-to-order", label: "How to Order" },
+  { href: "/gallery", label: "Gallery" },
+  { href: "/faq", label: "FAQ" },
   { href: "/about", label: "About" },
 ];
 
-export const footerNavigation = {
-  services: [
-    { href: "/custom-cakes", label: "Custom Cakes" },
-    { href: "/wedding-cakes", label: "Wedding Cakes" },
-    { href: "/cupcakes", label: "Cupcakes" },
-    { href: "/sugar-cookies", label: "Sugar Cookies" },
-    { href: "/macarons", label: "Macarons" },
-    { href: "/diy-kits", label: "DIY Kits" },
-  ],
-  company: [
-    { href: "/about", label: "About" },
-    { href: "/faq", label: "FAQ" },
-    { href: "/terms", label: "Terms" },
-    { href: "/privacy", label: "Privacy" },
-  ],
-};
+export const footerNavigation = [{ href: "/terms", label: "Terms" }, { href: "/privacy", label: "Privacy" }];
 
 export const productPageContent: Record<string, ProductPageContent> = {
   "custom-cakes": {
     slug: "custom-cakes",
     shortTitle: "Custom Cakes",
-    title: "Custom cakes made to order for birthdays, weddings, and celebrations",
-    eyebrow: "Our signature",
+    title: "Custom cakes designed with a polished, boutique finish for milestone celebrations.",
+    eyebrow: "Custom Cakes",
     intro:
-      "Every cake is a one-of-a-kind creation, designed and crafted specifically for your celebration.",
-    heroStatement:
-      "Starting at $80 for celebration cakes, with two weeks notice for most orders.",
+      "Every cake is designed around your gathering, guest count, and overall mood, then finished with the refined details that make a celebration feel considered.",
+    heroStatement: "Handcrafted in Centerville with limited weekly availability for custom work.",
+    startingPriceLabel: "$80+",
+    pricingNote: "Celebration cakes begin at $80.",
+    pricingContext:
+      "Final quotes reflect servings, tier count, finish complexity, and any delivery coordination.",
+    availabilityNote: "Most custom cakes need at least 2 weeks notice, and peak weekends can book earlier.",
     detailBullets: [
-      "Birthday and celebration cakes start at $80 for single-tier cakes serving about 10 to 20 guests.",
-      "Two-tier cakes start at $150 for 30 to 50 servings, and 3+ tier cakes start at $250 for 60+ servings.",
-      "Wedding cakes start at $300 and usually need 4 to 6 weeks notice.",
-    ],
-    packages: [
-      {
-        title: "Birthday & Celebration Cakes",
-        description:
-          "Custom milestone and party cakes start at $80 for a single tier serving roughly 10 to 20 guests.",
-      },
-      {
-        title: "Tiered Cakes",
-        description:
-          "Two-tier cakes start at $150 for 30 to 50 servings, while three-tier-and-up cakes start at $250 for 60+ servings.",
-      },
-      {
-        title: "Wedding Cakes",
-        description:
-          "Elegant wedding centerpieces start at $300 and are quoted around servings, design complexity, and delivery needs.",
-      },
+      "Single-tier celebration cakes are a strong fit for birthdays, showers, and smaller gatherings.",
+      "Tiered cakes can be designed for larger celebrations when you need more servings or a stronger visual centerpiece.",
+      "Inspiration is welcome, but each design is interpreted through The Sweet Fork style rather than copied exactly.",
     ],
     faq: [
       {
@@ -90,34 +70,26 @@ export const productPageContent: Record<string, ProductPageContent> = {
   "wedding-cakes": {
     slug: "wedding-cakes",
     shortTitle: "Wedding Cakes",
-    title: "Wedding cakes for Northern Utah celebrations",
+    title: "Wedding cakes with an elegant, tailored presence for Northern Utah celebrations.",
     eyebrow: "Wedding cakes",
     intro:
-      "Wedding cakes are designed as elegant centerpieces for your special day, with room to add cupcakes, macarons, or cookies to the same order.",
-    heroStatement:
-      "Starting at $300, with 4 to 6 weeks notice recommended.",
+      "Each wedding cake is quoted around your guest count, floral or styling direction, and the role the cake plays within the overall dessert presentation.",
+    heroStatement: "Designed as a focal point, with companion desserts available through the same inquiry.",
+    startingPriceLabel: "$300+",
+    pricingNote: "Wedding cakes begin at $300.",
+    pricingContext:
+      "Your quote is shaped by servings, structure, finish complexity, venue logistics, and delivery needs.",
+    availabilityNote: "Wedding inquiries are best submitted 4 to 6 weeks ahead, with earlier booking recommended for peak dates.",
     detailBullets: [
-      "Wedding cake pricing starts at $300 and depends on servings, structure, design complexity, and delivery.",
-      "Most wedding orders need 4 to 6 weeks notice, with earlier booking recommended for peak dates.",
-      "Delivery is available across Davis County, Salt Lake County, and nearby Weber County communities, with fees based on location.",
-    ],
-    packages: [
-      {
-        title: "Wedding Cake Centerpiece",
-        description:
-          "Custom wedding cakes start at $300 and are quoted to the guest count, finish, and display plan.",
-      },
-      {
-        title: "Companion Desserts",
-        description:
-          "Cupcakes, macarons, and decorated sugar cookies can be added to the same inquiry for a coordinated dessert spread.",
-      },
+      "Wedding cakes are available as statement centerpieces or as part of a larger dessert table with coordinated companion sweets.",
+      "Delivery is available across Davis, Salt Lake, and nearby Weber County communities when timing and setup require it.",
+      "The earlier the inquiry comes in, the more room there is to align date, design direction, and display planning.",
     ],
     faq: [
       {
         question: "Do you offer tastings?",
         answer:
-          "The Sweet Fork does not currently offer in-person tastings, but wedding sample boxes may be available for an additional fee.",
+          "The Sweet Fork does not currently offer in-person tastings, but curated wedding tasting boxes may be available for an additional fee.",
       },
       {
         question: "How do I secure the wedding date?",
@@ -134,27 +106,21 @@ export const productPageContent: Record<string, ProductPageContent> = {
   cupcakes: {
     slug: "cupcakes",
     shortTitle: "Cupcakes",
-    title: "Custom cupcakes for parties, gifting, and event tables",
+    title: "Custom cupcakes for polished dessert tables, gifting, and easy-to-serve celebrations.",
     eyebrow: "Custom cupcakes",
     intro:
-      "Moist, flavorful cupcakes topped with signature buttercream and finished for birthdays, showers, parties, and events.",
-    heroStatement: "Starting at $36 per dozen, with custom decorations and toppers available.",
+      "Cupcakes bring the same custom color story and handmade finish to showers, birthdays, launch parties, and dessert displays.",
+    heroStatement: "A versatile option when you want a refined presentation without the formality of a tiered cake.",
+    startingPriceLabel: "$36+",
+    pricingNote: "Cupcake orders begin at $36 per dozen.",
+    pricingContext:
+      "Quotes reflect quantity, decorative finish, toppers, and whether the order is part of a larger dessert spread.",
+    availabilityNote: "Most cupcake orders need 1 to 2 weeks notice and begin with a one-dozen minimum.",
     detailBullets: [
       "Minimum order is 1 dozen.",
       "Most cupcake orders need 1 to 2 weeks notice.",
-      "Vanilla, chocolate, red velvet, lemon, strawberry, and funfetti are regular options, with custom flavors available.",
-    ],
-    packages: [
-      {
-        title: "Classic Custom Dozen",
-        description:
-          "Made-to-order cupcakes start at $36 per dozen for parties, gifting, and easy-serve celebrations.",
-      },
-      {
-        title: "Decorations & Toppers",
-        description:
-          "Custom decorations, themed colors, and toppers are available for birthdays, showers, and special events.",
-      },
+      "Flavor pairings, tonal buttercream palettes, and topper notes can be customized to the event.",
+      "Cupcakes can be added to cake and wedding inquiries when you want a coordinated dessert table.",
     ],
     faq: [
       {
@@ -176,27 +142,20 @@ export const productPageContent: Record<string, ProductPageContent> = {
   "sugar-cookies": {
     slug: "sugar-cookies",
     shortTitle: "Sugar Cookies",
-    title: "Decorated sugar cookies for favors, gifting, and dessert tables",
+    title: "Decorated sugar cookies styled for favors, gifting, and elevated dessert tables.",
     eyebrow: "Decorated sugar cookies",
     intro:
-      "Hand-decorated buttercream sugar cookies are designed to look beautiful and taste just as good.",
-    heroStatement: "Starting at $48 per dozen for simple custom designs.",
+      "Buttercream sugar cookies are designed to feel polished and personal, whether they are headed to a shower, a birthday table, or an event welcome box.",
+    heroStatement: "Ideal for custom themes, favor sets, and coordinated dessert-table details.",
+    startingPriceLabel: "$48+",
+    pricingNote: "Decorated sugar cookies begin at $48 per dozen.",
+    pricingContext:
+      "Quotes depend on detail level, number of shapes, packaging direction, and whether the set is part of a broader order.",
+    availabilityNote: "Most cookie orders need about 2 weeks notice, especially for themed sets and favor packaging.",
     detailBullets: [
-      "Cookie orders are priced by the dozen, with custom shapes and themes available.",
-      "Simple custom designs start at $48 per dozen, while detailed work is quoted by complexity.",
+      "Cookie orders are designed by the dozen, with custom themes, shapes, and event palettes available.",
+      "More intricate work, favor-ready assortments, and layered design sets are quoted by complexity.",
       "Most cookie orders need about 2 weeks notice.",
-    ],
-    packages: [
-      {
-        title: "Simple Custom Dozen",
-        description:
-          "Decorated sugar cookies start at $48 per dozen for simpler custom sets.",
-      },
-      {
-        title: "Detailed Themed Sets",
-        description:
-          "More intricate designs, custom shapes, and favor-ready assortments are quoted by complexity.",
-      },
     ],
     faq: [
       {
@@ -217,27 +176,20 @@ export const productPageContent: Record<string, ProductPageContent> = {
   macarons: {
     slug: "macarons",
     shortTitle: "Macarons",
-    title: "Custom macarons for dessert tables, gifts, and party orders",
+    title: "Custom macarons for gifting, dessert tables, and refined party orders.",
     eyebrow: "Custom macarons",
     intro:
-      "Delicate almond meringue cookies with smooth, flavorful fillings, handcrafted using classic techniques.",
-    heroStatement: "Starting at $30 per dozen, with a 1 dozen minimum.",
+      "Macarons bring a polished, giftable finish to showers, weddings, dessert tables, and modern celebration spreads.",
+    heroStatement: "Handcrafted with classic technique and tailored around your chosen palette and flavor mix.",
+    startingPriceLabel: "$30+",
+    pricingNote: "Macaron orders begin at $30 per dozen.",
+    pricingContext:
+      "Quotes reflect quantity, color customization, flavor mix, and whether the order is paired with other desserts.",
+    availabilityNote: "Most macaron orders need 1 to 2 weeks notice and begin with a one-dozen minimum.",
     detailBullets: [
       "Minimum order is 1 dozen, available as assorted or single flavors.",
       "Most macaron orders need 1 to 2 weeks notice.",
-      "Flavor options include vanilla, chocolate, raspberry, lemon, salted caramel, pistachio, lavender, and custom flavors.",
-    ],
-    packages: [
-      {
-        title: "Custom Macarons",
-        description:
-          "Macarons start at $30 per dozen for made-to-order assortments or single-flavor sets.",
-      },
-      {
-        title: "Flavor & Color Customization",
-        description:
-          "Custom colors and flavor pairings can be discussed for parties, gifting, and dessert-table styling.",
-      },
+      "Custom colors and flavor pairings can be discussed for weddings, gifting, and curated dessert styling.",
     ],
     faq: [
       {
@@ -259,29 +211,20 @@ export const productPageContent: Record<string, ProductPageContent> = {
   "diy-kits": {
     slug: "diy-kits",
     shortTitle: "DIY Kits",
-    title: "DIY decoration kits for family nights, parties, and seasonal gifting",
+    title: "DIY decorating kits for hosted activities, gifting, and sweet-at-home celebrations.",
     eyebrow: "DIY decoration kits",
     intro:
-      "All-inclusive decorating kits make it easy to create edible masterpieces at home, in classrooms, or at parties.",
-    heroStatement: "Starting at $25 per kit, with 1 to 2 weeks notice for most orders.",
+      "These all-inclusive kits are designed for family nights, classroom treats, party activities, and giftable sweet moments that still feel beautifully put together.",
+    heroStatement: "An easy way to bring the Sweet Fork aesthetic into birthdays, holidays, and group activities.",
+    startingPriceLabel: "$25+",
+    pricingNote: "DIY kits begin at $25 each.",
+    pricingContext:
+      "Quotes depend on kit size, seasonal themes, add-ons, and how many kits you need prepared together.",
+    availabilityNote: "Most kit orders need 1 to 2 weeks notice, especially around holidays and school-event weekends.",
     detailBullets: [
-      "DIY decoration kits start at $25 per kit.",
-      "Most kit orders need 1 to 2 weeks notice.",
-      "Each kit is designed to include what you need to decorate at home.",
-    ],
-    packages: [
-      {
-        title: "Sweet Starter Kit",
-        description: "A smaller all-in-one decorating kit for a family activity, gift, or casual celebration.",
-      },
-      {
-        title: "Sweet Party Kit",
-        description: "A larger kit built for parties, classrooms, and shared decorating.",
-      },
-      {
-        title: "Sweet Celebration Kit",
-        description: "A celebration-ready kit for birthdays, holidays, and special gatherings.",
-      },
+      "Each kit is assembled to feel complete and ready to use right away.",
+      "DIY kits work especially well for parties, classroom treats, and holiday gifting.",
+      "Seasonal themes and color stories can be discussed when timing allows.",
     ],
     faq: [
       {
@@ -302,35 +245,35 @@ export const productPageContent: Record<string, ProductPageContent> = {
 
 export const homeExperiencePillars = [
   {
-    title: "Made from scratch",
-    description: "Every order is handcrafted with quality ingredients and no mass-production shortcuts.",
+    title: "Handcrafted in small batches",
+    description: "Each order is made from scratch with the kind of restraint and finish that feels personal, not mass produced.",
   },
   {
     title: "Limited weekly availability",
-    description: "The Sweet Fork typically accepts 6 to 7 custom cake orders per week to keep quality personal and consistent.",
+    description: "Weekly order volume stays intentionally limited so every cake, dessert table, and pickup window receives close attention.",
   },
   {
     title: "Serving Northern Utah",
     description:
-      "Based in Centerville with pickup available and delivery offered across Davis County, Salt Lake County, and nearby Weber County communities.",
+      "Based in Centerville, with pickup available locally and delivery offered across Davis, Salt Lake, and nearby Weber County communities.",
   },
 ];
 
 export const processSteps = [
   {
     step: "01",
-    title: "Submit the inquiry",
-    description: "Share the event, date, servings, pickup or delivery needs, and the desserts you are considering.",
+    title: "Share the celebration",
+    description: "Tell us about the event, timing, dessert mix, and overall design direction in one guided inquiry.",
   },
   {
     step: "02",
-    title: "Receive the quote",
-    description: "The Sweet Fork reviews the request and usually replies within 24 to 48 hours with a detailed quote.",
+    title: "Receive your quote",
+    description: "The Sweet Fork reviews availability and usually replies within 24 to 48 hours with a tailored quote and next steps.",
   },
   {
     step: "03",
     title: "Reserve the date",
-    description: "Once the quote is approved, a 50% deposit secures the order and production details move forward.",
+    description: "Once the quote is approved, a deposit secures the date and the order moves into production planning.",
   },
 ];
 
@@ -340,60 +283,54 @@ export const galleryItems: GalleryItem[] = [
     title: "Vintage heart birthday cake",
     category: "custom-cake",
     alt: "Vintage heart-shaped birthday cake with piped buttercream",
-    placeholderKey: "wedding-tier",
   },
   {
     id: "gal-02",
     title: "Floral celebration cake",
     category: "custom-cake",
     alt: "Custom celebration cake with floral buttercream details",
-    placeholderKey: "garden-cake",
   },
   {
     id: "gal-03",
     title: "Holiday macaron assortment",
     category: "macarons",
     alt: "Custom macarons arranged in a seasonal assortment",
-    placeholderKey: "macaron-tower",
   },
   {
     id: "gal-04",
     title: "Strawberry sugar cookie set",
     category: "sugar-cookies",
     alt: "Decorated strawberry-themed sugar cookies",
-    placeholderKey: "cookie-favors",
   },
   {
     id: "gal-05",
     title: "Color-themed cupcakes",
     category: "cupcakes",
     alt: "Custom cupcakes arranged in a coordinated event palette",
-    placeholderKey: "cupcake-set",
   },
   {
     id: "gal-06",
     title: "Valentine's DIY kit",
     category: "diy-kit",
     alt: "DIY cookie decorating kit packaged for a holiday activity",
-    placeholderKey: "diy-kit",
   },
 ];
 
 export const pricingHighlights = [
   {
-    label: "Custom Cakes",
+    label: "Celebration Cakes",
     value: "Starting at $80",
-    note: "Birthday and celebration cakes start at $80 for smaller single-tier orders serving about 10 to 20 guests.",
+    note: "A polished starting point for birthdays, showers, and milestone gatherings.",
   },
   {
     label: "Wedding Cakes",
     value: "Starting at $300",
-    note: "Wedding cakes start at $300 and are quoted around servings, structure, design complexity, and delivery.",
+    note: "Quoted around servings, structure, finish complexity, and venue logistics.",
   },
   {
     label: "Treats & Confections",
     value: "Starting at $25",
-    note: "Cupcakes start at $36 per dozen, macarons at $30 per dozen, sugar cookies at $48 per dozen, and DIY kits at $25.",
+    note: "Cupcakes, macarons, cookies, and kits are all available by inquiry for a more custom fit.",
   },
 ];
 
@@ -466,7 +403,7 @@ export const faqItems = [
   {
     question: "Do you offer tastings?",
     answer:
-      "There are no in-person tastings right now, but wedding sample boxes may be available for an additional fee.",
+      "There are no in-person tastings right now, but curated wedding tasting boxes may be available for an additional fee.",
   },
 ];
 

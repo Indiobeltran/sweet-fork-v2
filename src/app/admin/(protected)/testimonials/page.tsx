@@ -120,7 +120,7 @@ export default async function AdminTestimonialsPage({
             </div>
 
             <ToggleField defaultChecked label="Feature this testimonial" name="isFeatured" />
-            <ToggleField defaultChecked label="Publish on the live site" name="isPublished" />
+            <ToggleField defaultChecked label="Publish on the public site" name="isPublished" />
           </div>
 
           <Button type="submit">Create testimonial</Button>
@@ -199,7 +199,7 @@ export default async function AdminTestimonialsPage({
                   />
                   <ToggleField
                     defaultChecked={testimonial.is_published}
-                    label="Publish on the live site"
+                    label="Publish on the public site"
                     name="isPublished"
                   />
                 </div>

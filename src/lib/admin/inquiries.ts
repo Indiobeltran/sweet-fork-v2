@@ -212,6 +212,22 @@ export type InquiryItemDetail = {
   topperText: string | null;
 };
 
+export type InquiryEstimateInsightLineItem = {
+  detailSummary: string | null;
+  drivers: string[];
+  estimatedLabel: string | null;
+  id: string;
+  productLabel: string;
+  requestedQuantityLabel: string;
+};
+
+export type InquiryEstimateInsight = {
+  deliveryLabel: string | null;
+  lineItems: InquiryEstimateInsightLineItem[];
+  summary: string;
+  totalLabel: string | null;
+};
+
 export type InquiryDetail = {
   additionalNotes: string | null;
   archivedAt: string | null;
@@ -229,6 +245,7 @@ export type InquiryDetail = {
   };
   convertToOrderNote: string;
   dietaryNotes: string | null;
+  estimateInsight: InquiryEstimateInsight;
   estimatedLabel: string | null;
   event: {
     deliveryWindow: string | null;
@@ -338,23 +355,32 @@ function getBudgetRangeValue(
   if (minimum === 0 && maximum === null) {
     return "not-sure";
   }
-  if (maximum !== null && maximum <= 75) {
-    return "under-75";
-  }
-  if (minimum >= 75 && maximum !== null && maximum <= 150) {
-    return "75-150";
-  }
   if (minimum === 0 && maximum !== null && maximum <= 150) {
     return "under-150";
   }
   if (minimum >= 150 && maximum !== null && maximum <= 300) {
     return "150-300";
   }
-  if (minimum >= 300 && maximum !== null && maximum <= 500) {
-    return "300-500";
-  }
   if (minimum >= 300 && maximum !== null && maximum <= 600) {
     return "300-600";
+  }
+  if (minimum >= 600 && maximum !== null && maximum <= 1000) {
+    return "600-1000";
+  }
+  if (minimum >= 1000 && maximum !== null && maximum <= 2000) {
+    return "1000-2000";
+  }
+  if (minimum >= 2000) {
+    return "2000-plus";
+  }
+  if (maximum !== null && maximum <= 75) {
+    return "under-75";
+  }
+  if (minimum >= 75 && maximum !== null && maximum <= 150) {
+    return "75-150";
+  }
+  if (minimum >= 300 && maximum !== null && maximum <= 500) {
+    return "300-500";
   }
   if (minimum >= 500) {
     return "500-plus";
@@ -458,6 +484,65 @@ function formatEstimateRange(minimum: number | null, maximum: number | null) {
   }
 
   return `Up to ${formatCurrency(maximum ?? 0)}`;
+}
+
+function getEstimateDrivers(item: InquiryItemDetailRow) {
+  const drivers = [`Requested scope: ${formatRequestedQuantity(item)}`];
+
+  if (item.tiers && item.tiers > 1) {
+    drivers.push(`${item.tiers} tiers requested`);
+  }
+
+  if (item.shape === "heart" || item.shape === "tiered") {
+    drivers.push("Special shape requested");
+  }
+
+  if (item.icing_style === "painted" || item.icing_style === "mixed") {
+    drivers.push("Decorative finish increases labor");
+  }
+
+  if (item.topper_text) {
+    drivers.push("Custom wording or topper included");
+  }
+
+  if (item.design_notes || item.inspiration_notes || item.color_palette) {
+    drivers.push("Custom design direction provided");
+  }
+
+  return drivers;
+}
+
+function buildEstimateInsight(
+  inquiry: Pick<InquiryDetailQueryRow, "estimated_max" | "estimated_min" | "fulfillment_method">,
+  items: InquiryItemDetailRow[],
+): InquiryEstimateInsight {
+  const itemMinimum = items.reduce((sum, item) => sum + (item.estimated_min ?? 0), 0);
+  const itemMaximum = items.reduce((sum, item) => sum + (item.estimated_max ?? 0), 0);
+  const deliveryMinimum =
+    inquiry.estimated_min !== null ? Math.max(inquiry.estimated_min - itemMinimum, 0) : null;
+  const deliveryMaximum =
+    inquiry.estimated_max !== null ? Math.max(inquiry.estimated_max - itemMaximum, 0) : null;
+
+  return {
+    deliveryLabel:
+      inquiry.fulfillment_method === "delivery" &&
+      (deliveryMinimum !== null || deliveryMaximum !== null)
+        ? formatEstimateRange(deliveryMinimum, deliveryMaximum)
+        : null,
+    lineItems: items.map((item) => ({
+      detailSummary: getDetailSummary(item.detail_json),
+      drivers: getEstimateDrivers(item),
+      estimatedLabel: formatEstimateRange(item.estimated_min, item.estimated_max),
+      id: item.id,
+      productLabel: item.product_label || getProductDisplayLabel(item.product_type),
+      requestedQuantityLabel: formatRequestedQuantity(item),
+    })),
+    summary:
+      inquiry.fulfillment_method === "delivery"
+        ? "This estimate reflects requested quantities, finish details, and the current internal delivery allowance."
+        : "This estimate reflects requested quantities and finish details against the current internal pricing baseline.",
+    totalLabel: formatEstimateRange(inquiry.estimated_min, inquiry.estimated_max),
+  };
 }
 
 function getSignalLabel(
@@ -670,7 +755,7 @@ export async function getInquiryListData(filters: InquiryListFilters): Promise<I
         detail:
           rushCount === 0
             ? `${deliveryCount} delivery request${deliveryCount === 1 ? "" : "s"} in this view`
-            : "Closest event dates based on the current placeholder urgency signal",
+            : "Closest event dates based on the current availability urgency signal",
         label: rushCount === 0 ? "Deliveries in view" : "Rush inquiries",
         value: String(rushCount === 0 ? deliveryCount : rushCount),
       },
@@ -826,7 +911,8 @@ export async function getInquiryDetail(inquiryId: string): Promise<InquiryDetail
   }
 
   const inquiry = inquiryData as InquiryDetailQueryRow;
-  const items = ((itemData ?? []) as InquiryItemDetailRow[]).map(mapItemDetail);
+  const itemRows = (itemData ?? []) as InquiryItemDetailRow[];
+  const items = itemRows.map(mapItemDetail);
   const notes = ((noteData ?? []) as InquiryNoteQueryRow[]).map(mapNoteDisplay);
   const assetDisplays = await Promise.all(
     ((assetData ?? []) as InquiryAssetQueryRow[]).map(async (asset) => {
@@ -898,6 +984,7 @@ export async function getInquiryDetail(inquiryId: string): Promise<InquiryDetail
     convertToOrderNote:
       "This will connect the inquiry to a customer and order record in the next phase. For now, use the notes and status sections to keep review moving.",
     dietaryNotes: inquiry.dietary_notes,
+    estimateInsight: buildEstimateInsight(inquiry, itemRows),
     estimatedLabel: formatEstimateRange(inquiry.estimated_min, inquiry.estimated_max),
     event: {
       deliveryWindow: inquiry.delivery_window,

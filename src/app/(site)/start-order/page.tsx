@@ -5,7 +5,7 @@ import { buildMetadata } from "@/lib/seo";
 
 export async function generateMetadata() {
   return buildMetadata({
-    title: "Start Order",
+    title: "Start Your Inquiry",
     description:
       "Submit an order inquiry for custom cakes, wedding cakes, cupcakes, sugar cookies, macarons, and DIY kits in Centerville, Utah.",
     path: "/start-order",
@@ -24,13 +24,13 @@ export default async function StartOrderPage() {
         <div className="grain-surface overflow-hidden rounded-[2.8rem] border border-charcoal/10 bg-paper px-6 py-9 shadow-soft sm:px-8 sm:py-11 lg:px-10">
           <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
             <div className="space-y-4">
-              <Badge>Order Inquiry</Badge>
+              <Badge>Inquiry</Badge>
               <h1 className="max-w-4xl font-serif text-5xl leading-none tracking-[-0.05em] text-charcoal sm:text-6xl">
-                Start your order inquiry with the details needed for a clear quote.
+                Start your inquiry with the details Sweet Fork needs most.
               </h1>
               <p className="max-w-3xl text-base leading-8 text-charcoal/70">
-                Share the event, choose one or several desserts, add inspiration, and The Sweet
-                Fork will usually reply within 24 to 48 hours with a detailed quote.
+                Share the event, choose one or several desserts, add inspiration, and Sweet Fork
+                will usually reply within 24 to 48 hours with quote-ready next steps.
               </p>
             </div>
 
@@ -44,7 +44,7 @@ export default async function StartOrderPage() {
                 </p>
                 <p className="mt-2 text-sm leading-7 text-charcoal/62">
                   {hasCatalog
-                    ? "Custom cakes, wedding cakes, and treats available through one inquiry."
+                    ? "Custom cakes, wedding cakes, and treats can all be discussed through one inquiry."
                     : "Public inquiry options are currently paused while availability is updated."}
                 </p>
               </div>

@@ -340,7 +340,7 @@ values
   ('public', 'Can you accommodate dietary restrictions?', 'Some dietary needs can be discussed, but everything is made in a home kitchen that processes common allergens, so allergen-free products cannot be guaranteed.', 110, true),
   ('public', 'Are you a licensed bakery?', 'The Sweet Fork operates under Utah''s Home Consumption and Homemade Food Act in a dedicated home kitchen that is not subject to state food service licensing or inspection.', 120, true),
   ('public', 'How many orders do you take per week?', 'The Sweet Fork typically limits custom cake orders to about 6 to 7 per week so each client and event receives full attention.', 130, true),
-  ('public', 'Do you offer tastings?', 'There are no in-person tastings right now, but wedding sample boxes may be available for an additional fee.', 140, true)
+  ('public', 'Do you offer tastings?', 'There are no in-person tastings right now, but curated wedding tasting boxes may be available for an additional fee.', 140, true)
 on conflict (category_key, question) do nothing;
 
 insert into public.content_blocks (

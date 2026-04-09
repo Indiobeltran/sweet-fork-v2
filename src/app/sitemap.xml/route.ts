@@ -1,7 +1,11 @@
 import { getPublicSitemapPaths } from "@/lib/site/marketing";
 
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (process.env.NODE_ENV === "development"
+      ? "http://localhost:3000"
+      : "https://www.thesweetfork.com");
   const updatedAt = new Date().toISOString();
   const routes = await getPublicSitemapPaths();
 

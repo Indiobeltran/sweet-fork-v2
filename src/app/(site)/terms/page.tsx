@@ -17,13 +17,13 @@ export default function TermsPage() {
       <PublicPageHero
         eyebrow="Terms"
         title="Policies, lead times, and order terms."
-        description="These terms summarize the current ordering, payment, pickup, delivery, allergen, and design policies reflected on the live Sweet Fork site."
+        description="These terms summarize ordering, payment, pickup, delivery, allergen, and design expectations for Sweet Fork custom orders."
       />
       <section className="section-shell space-y-8 py-16 md:py-20">
         {termsSections.map((section) => (
           <article
             key={section.title}
-            className="rounded-[1.8rem] border border-charcoal/8 bg-white p-6 shadow-soft"
+            className="luxury-panel rounded-[1.8rem] p-6"
           >
             <h2 className="font-serif text-3xl tracking-[-0.03em] text-charcoal">
               {section.title}

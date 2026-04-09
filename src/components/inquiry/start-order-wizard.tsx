@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   ImagePlus,
   LoaderCircle,
-  MapPin,
   PartyPopper,
   PhoneCall,
   Sparkles,
@@ -22,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import {
   budgetFlexibilityOptions,
   budgetRangeOptions,
@@ -35,7 +34,7 @@ import {
   inquiryStepTitles,
   type InquiryFeatureFlags,
 } from "@/lib/inquiries/config";
-import { estimateInquiry, getProductDisplayLabel, getStartingPrice } from "@/lib/pricing";
+import { getProductDisplayLabel } from "@/lib/pricing";
 import type {
   InquiryCatalogItem,
   InquirySubmissionResponse,
@@ -53,13 +52,10 @@ import {
   type InquiryFormValues,
 } from "@/lib/validations/inquiry";
 import type { InquiryProductItem, ProductType } from "@/types/domain";
-import type { InquiryPricingBaseline } from "@/lib/pricing";
 
 type StartOrderWizardProps = {
   catalog: InquiryCatalogItem[];
   featureFlags: InquiryFeatureFlags;
-  pricingBaseline: InquiryPricingBaseline;
-  deliveryRange: [number, number];
 };
 
 type UploadDraft = {
@@ -149,23 +145,41 @@ function InlineError({ message }: { message?: string }) {
   return <p className="mt-2 text-sm text-rose-700">{message}</p>;
 }
 
+function StepAlert({ message }: { message?: string }) {
+  if (!message) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-[1.4rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+      {message}
+    </div>
+  );
+}
+
 function SelectionButton({
   active,
   children,
   onClick,
+  className,
+  buttonRef,
 }: {
   active: boolean;
   children: ReactNode;
   onClick: () => void;
+  className?: string;
+  buttonRef?: (element: HTMLButtonElement | null) => void;
 }) {
   return (
     <button
       type="button"
+      ref={buttonRef}
       className={cn(
         "rounded-full border px-4 py-2 text-left text-sm transition",
         active
           ? "border-charcoal bg-charcoal text-ivory"
           : "border-charcoal/12 bg-white text-charcoal hover:border-charcoal/30",
+        className,
       )}
       onClick={onClick}
     >
@@ -181,6 +195,31 @@ function StatRow({ label, value }: { label: string; value: ReactNode }) {
       <div className="text-right text-sm font-medium text-charcoal">{value}</div>
     </div>
   );
+}
+
+function getFieldErrorClass(...messages: Array<string | undefined>) {
+  return messages.some(Boolean)
+    ? "border-rose-300 bg-rose-50/70 focus:border-rose-400 focus:ring-rose-100"
+    : undefined;
+}
+
+function formatSelectedItemSummary(item: InquiryProductItem) {
+  switch (item.productType) {
+    case "custom-cake":
+      return `${item.servings ?? "?"} servings`;
+    case "wedding-cake":
+      return `${item.weddingServings ?? item.servings ?? "?"} servings`;
+    case "cupcakes":
+      return `${item.cupcakeCount ?? "?"} cupcakes`;
+    case "sugar-cookies":
+      return `${item.cookieCount ?? "?"} cookies`;
+    case "macarons":
+      return `${item.macaronCount ?? "?"} macarons`;
+    case "diy-kit":
+      return `${item.kitCount ?? "?"} kits`;
+    default:
+      return `${item.quantity} item${item.quantity === 1 ? "" : "s"}`;
+  }
 }
 
 function findStepForErrors(errors: ErrorMap) {
@@ -203,8 +242,6 @@ function findStepForErrors(errors: ErrorMap) {
 export function StartOrderWizard({
   catalog,
   featureFlags,
-  pricingBaseline,
-  deliveryRange,
 }: StartOrderWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
@@ -219,6 +256,8 @@ export function StartOrderWizard({
   );
   const stepViewportRef = useRef<HTMLDivElement | null>(null);
   const hasMountedRef = useRef(false);
+  const fieldRefs = useRef<Record<string, HTMLElement | null>>({});
+  const shouldFocusErrorRef = useRef(false);
 
   const normalizedValues = normalizeInquiryFormValues(values);
   const selectedItems = normalizedValues.orderItems;
@@ -229,10 +268,6 @@ export function StartOrderWizard({
     },
     {} as Record<ProductType, InquiryCatalogItem>,
   );
-  const estimate = estimateInquiry(normalizedValues, {
-    pricing: pricingBaseline,
-    deliveryRange,
-  });
 
   useEffect(() => {
     if (selectedItems.length === 0) {
@@ -276,8 +311,35 @@ export function StartOrderWizard({
     return () => window.clearTimeout(timeoutId);
   }, [currentStep]);
 
+  useEffect(() => {
+    if (!shouldFocusErrorRef.current || Object.keys(errors).length === 0) {
+      return;
+    }
+
+    shouldFocusErrorRef.current = false;
+    const keys = Object.keys(errors);
+    const firstKey = keys[0];
+    const target = fieldRefs.current[firstKey];
+
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      if ("focus" in target) {
+        window.setTimeout(() => {
+          (target as HTMLElement).focus();
+        }, 160);
+      }
+    }
+  }, [currentStep, errors]);
+
   const activeItem =
     selectedItems.find((item) => item.productType === activeItemType) ?? selectedItems[0];
+
+  const stepHasError = Object.keys(errors).some((key) => findStepForErrors({ [key]: errors[key] }) === currentStep);
+  const registerFieldRef =
+    (key: string) =>
+    (element: HTMLElement | null) => {
+      fieldRefs.current[key] = element;
+    };
 
   const itemPath = (productType: ProductType, field: keyof InquiryProductItem) => {
     const index = normalizedValues.orderItems.findIndex(
@@ -501,6 +563,7 @@ export function StartOrderWizard({
     }));
 
     if (Object.keys(nextErrors).length > 0) {
+      shouldFocusErrorRef.current = true;
       if (stepIndex === 2) {
         const firstInvalidItemKey = Object.keys(nextErrors).find((key) =>
           key.startsWith("orderItems."),
@@ -552,12 +615,14 @@ export function StartOrderWizard({
 
     if (!result.success) {
       const nextErrors = flattenIssues(result.error.issues);
+      shouldFocusErrorRef.current = true;
       setErrors(nextErrors);
       setCurrentStep(findStepForErrors(nextErrors));
       return;
     }
 
     if (!featureFlags.linkFallbackEnabled && preparedValues.inspirationLinks.length > 0) {
+      shouldFocusErrorRef.current = true;
       setErrors({
         inspirationLinks:
           "Reference links are turned off right now. Use image uploads or notes instead.",
@@ -627,11 +692,12 @@ export function StartOrderWizard({
             <div className="grid gap-4 md:grid-cols-3">
               <div className="rounded-[1.8rem] border border-charcoal/8 bg-cream/70 p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                  Estimate range
+                  Event date
                 </p>
-                <p className="mt-3 font-serif text-3xl tracking-[-0.04em] text-charcoal">
-                  {formatCurrency(submissionResult.estimate.minimum)} to{" "}
-                  {formatCurrency(submissionResult.estimate.maximum)}
+                <p className="mt-3 text-lg font-medium text-charcoal">
+                  {normalizedValues.eventDate
+                    ? formatDate(normalizedValues.eventDate)
+                    : "To be confirmed"}
                 </p>
               </div>
               <div className="rounded-[1.8rem] border border-charcoal/8 bg-cream/70 p-5">
@@ -661,26 +727,26 @@ export function StartOrderWizard({
                 <div>
                   <p className="font-medium">1. Review</p>
                   <p className="mt-1 text-sm leading-7 text-ivory/70">
-                    The order details, selected desserts, and inspiration references are reviewed
-                    together.
-                  </p>
-                </div>
-                <div>
-                  <p className="font-medium">2. Quote</p>
-                  <p className="mt-1 text-sm leading-7 text-ivory/70">
-                    A detailed quote is prepared around the design, servings, timing, and delivery
-                    needs.
-                  </p>
-                </div>
-                <div>
-                  <p className="font-medium">3. Reserve</p>
-                  <p className="mt-1 text-sm leading-7 text-ivory/70">
-                    Once the quote is approved, a 50% deposit secures the order date.
-                  </p>
-                </div>
+                  The order details, selected desserts, and inspiration references are reviewed
+                  together.
+                </p>
+              </div>
+              <div>
+                <p className="font-medium">2. Quote</p>
+                <p className="mt-1 text-sm leading-7 text-ivory/70">
+                  A quote and next-step details are prepared around the design, servings, timing,
+                  and delivery needs.
+                </p>
+              </div>
+              <div>
+                <p className="font-medium">3. Reserve</p>
+                <p className="mt-1 text-sm leading-7 text-ivory/70">
+                  Once the quote is approved, a deposit secures the order date.
+                </p>
               </div>
             </div>
           </div>
+        </div>
         </div>
       </section>
     );
@@ -698,10 +764,10 @@ export function StartOrderWizard({
           >
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-3">
-                <Badge>Start Order</Badge>
+                <Badge>Inquiry</Badge>
                 <p className="text-sm text-charcoal/60">
                   {hasStarted
-                    ? "Stay with the active step. You can go back without losing progress."
+                    ? "Stay with the active step. You can move backward without losing progress."
                     : "One guided inquiry for the full order."}
                 </p>
               </div>
@@ -719,12 +785,12 @@ export function StartOrderWizard({
                   )}
                 >
                   <h2 className="font-serif text-4xl tracking-[-0.04em] text-charcoal sm:text-5xl">
-                    Share the event details Sweet Fork needs for a clear quote.
+                    Share the celebration details Sweet Fork needs for a tailored quote.
                   </h2>
                   <p className="mt-3 max-w-2xl text-base leading-8 text-charcoal/70">
-                    Add the event details, dessert selections, inspiration, and contact
-                    preferences in one place. You can move backward at any point without losing
-                    progress.
+                    Add the event details, dessert selections, inspiration, and contact preferences
+                    in one place. Each step keeps the details focused so the inquiry never feels
+                    overwhelming on mobile.
                   </p>
                 </div>
                 <div
@@ -766,6 +832,9 @@ export function StartOrderWizard({
 
           <div className="px-5 py-6 sm:px-8 sm:py-10">
             <div ref={stepViewportRef} className="scroll-mt-24 sm:scroll-mt-28" />
+            <StepAlert
+              message={stepHasError ? "Please review the highlighted fields before continuing." : undefined}
+            />
             {currentStep === 0 ? (
               <div className="space-y-6 sm:space-y-8">
                 <div className="grid gap-3 rounded-[2rem] border border-charcoal/8 bg-cream/60 p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
@@ -785,9 +854,11 @@ export function StartOrderWizard({
                   <Label htmlFor="event-type">What are you celebrating?</Label>
                   <Input
                     id="event-type"
+                    ref={registerFieldRef("eventType")}
                     value={values.eventType}
                     onChange={(event) => setFieldValue("eventType", event.target.value)}
                     placeholder="Birthday, wedding, shower, launch, holiday gathering..."
+                    className={getFieldErrorClass(errors.eventType)}
                   />
                   <InlineError message={errors.eventType} />
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -808,9 +879,11 @@ export function StartOrderWizard({
                     <Label htmlFor="event-date">Event date</Label>
                     <Input
                       id="event-date"
+                      ref={registerFieldRef("eventDate")}
                       type="date"
                       value={values.eventDate}
                       onChange={(event) => setFieldValue("eventDate", event.target.value)}
+                      className={getFieldErrorClass(errors.eventDate)}
                     />
                     <InlineError message={errors.eventDate} />
                   </div>
@@ -818,10 +891,12 @@ export function StartOrderWizard({
                     <Label htmlFor="guest-count">Guest count</Label>
                     <Input
                       id="guest-count"
+                      ref={registerFieldRef("guestCount")}
                       inputMode="numeric"
                       value={values.guestCount ?? ""}
                       onChange={(event) => setNumericValue("guestCount", event.target.value)}
                       placeholder="Approximate number of guests"
+                      className={getFieldErrorClass(errors.guestCount)}
                     />
                     <InlineError message={errors.guestCount} />
                   </div>
@@ -851,6 +926,7 @@ export function StartOrderWizard({
                     <Label htmlFor="delivery-zip">Delivery ZIP</Label>
                     <Input
                       id="delivery-zip"
+                      ref={registerFieldRef("deliveryZip")}
                       inputMode="numeric"
                       value={values.deliveryZip ?? ""}
                       onChange={(event) => setFieldValue("deliveryZip", event.target.value)}
@@ -859,23 +935,26 @@ export function StartOrderWizard({
                           ? "Required for delivery requests"
                           : "Only needed if delivery is selected"
                       }
+                      className={getFieldErrorClass(errors.deliveryZip)}
                     />
                     <InlineError message={errors.deliveryZip} />
                   </div>
                 </div>
 
                 <div>
-                  <Label>Overall budget range</Label>
+                  <Label>Investment comfort range</Label>
                   <div className="grid gap-3 md:grid-cols-2">
-                    {budgetRangeOptions.map((option) => (
+                    {budgetRangeOptions.map((option, index) => (
                       <button
                         key={option.value}
                         type="button"
+                        ref={index === 0 ? registerFieldRef("budgetRange") : undefined}
                         className={cn(
                           "rounded-[1.6rem] border p-4 text-left transition",
                           values.budgetRange === option.value
                             ? "border-charcoal bg-charcoal text-ivory"
                             : "border-charcoal/10 bg-white hover:border-charcoal/30",
+                          errors.budgetRange && "border-rose-300 bg-rose-50/70",
                         )}
                         onClick={() => setFieldValue("budgetRange", option.value)}
                       >
@@ -899,15 +978,17 @@ export function StartOrderWizard({
                 <div>
                   <Label>Budget flexibility</Label>
                   <div className="grid gap-3 md:grid-cols-3">
-                    {budgetFlexibilityOptions.map((option) => (
+                    {budgetFlexibilityOptions.map((option, index) => (
                       <button
                         key={option.value}
                         type="button"
+                        ref={index === 0 ? registerFieldRef("budgetFlexibility") : undefined}
                         className={cn(
                           "rounded-[1.6rem] border p-4 text-left transition",
                           values.budgetFlexibility === option.value
                             ? "border-charcoal bg-charcoal text-ivory"
                             : "border-charcoal/10 bg-white hover:border-charcoal/30",
+                          errors.budgetFlexibility && "border-rose-300 bg-rose-50/70",
                         )}
                         onClick={() => setFieldValue("budgetFlexibility", option.value)}
                       >
@@ -938,15 +1019,15 @@ export function StartOrderWizard({
                       Product mix
                     </p>
                     <p className="text-sm leading-7 text-charcoal/68">
-                      Select every sweet you want us to consider for this event. One inquiry can
-                      cover the full dessert story.
+                      Select every sweet you want Sweet Fork to consider for this event. One
+                      inquiry can cover the full dessert story.
                     </p>
                   </div>
                   <PartyPopper className="h-6 w-6 text-charcoal/45" />
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
-                  {catalog.map((product) => {
+                  {catalog.map((product, index) => {
                     const selected = selectedItems.some(
                       (item) => item.productType === product.productType,
                     );
@@ -955,11 +1036,13 @@ export function StartOrderWizard({
                       <button
                         key={product.productType}
                         type="button"
+                        ref={index === 0 ? registerFieldRef("orderItems") : undefined}
                         className={cn(
                           "rounded-[1.9rem] border p-4 text-left transition sm:p-5",
                           selected
                             ? "border-charcoal bg-charcoal text-ivory"
                             : "border-charcoal/10 bg-white hover:border-charcoal/30",
+                          errors.orderItems && "border-rose-300 bg-rose-50/70 text-charcoal",
                         )}
                         onClick={() => toggleProductSelection(product.productType)}
                       >
@@ -995,28 +1078,13 @@ export function StartOrderWizard({
                           {product.shortDescription}
                         </p>
                         <div className="mt-5 flex items-center justify-between gap-4">
-                          <div>
-                            <p
-                              className={cn(
-                                "text-[11px] font-semibold uppercase tracking-[0.18em]",
-                                selected ? "text-gold/75" : "text-charcoal/45",
-                              )}
-                            >
-                              Starting at
-                            </p>
-                            <p className="mt-1 text-lg font-medium">
-                              {formatCurrency(
-                                getStartingPrice(product.productType, pricingBaseline),
-                              )}
-                            </p>
-                          </div>
                           <p
                             className={cn(
                               "text-sm font-medium",
                               selected ? "text-ivory" : "text-charcoal/70",
                             )}
                           >
-                            {selected ? "Selected" : "Add to inquiry"}
+                            {selected ? "Included in your inquiry" : "Add to inquiry"}
                           </p>
                         </div>
                       </button>
@@ -1036,7 +1104,7 @@ export function StartOrderWizard({
                     </p>
                     <p className="text-sm leading-7 text-charcoal/68">
                       Each selected product gets its own detail panel so the quote can reflect
-                      counts, servings, finishes, and design direction cleanly.
+                      counts, servings, finish preferences, and design direction cleanly.
                     </p>
                   </div>
                   <Sparkles className="h-6 w-6 text-charcoal/45" />
@@ -1106,6 +1174,12 @@ export function StartOrderWizard({
                           </Label>
                           <Input
                             id={`${activeItem.productType}-servings`}
+                            ref={(element) => {
+                              registerFieldRef(itemPath(activeItem.productType, "servings"))(element);
+                              if (activeItem.productType === "wedding-cake") {
+                                registerFieldRef(itemPath(activeItem.productType, "weddingServings"))(element);
+                              }
+                            }}
                             inputMode="numeric"
                             value={
                               activeItem.productType === "wedding-cake"
@@ -1129,6 +1203,10 @@ export function StartOrderWizard({
                               })
                             }
                             placeholder="How many servings do you need?"
+                            className={getFieldErrorClass(
+                              errors[itemPath(activeItem.productType, "servings")],
+                              errors[itemPath(activeItem.productType, "weddingServings")],
+                            )}
                           />
                           <InlineError
                             message={
@@ -1141,6 +1219,7 @@ export function StartOrderWizard({
                           <Label htmlFor={`${activeItem.productType}-tiers`}>Tier count</Label>
                           <Input
                             id={`${activeItem.productType}-tiers`}
+                            ref={registerFieldRef(itemPath(activeItem.productType, "tiers"))}
                             inputMode="numeric"
                             value={activeItem.tiers ?? ""}
                             onChange={(event) =>
@@ -1152,6 +1231,7 @@ export function StartOrderWizard({
                               })
                             }
                             placeholder="Optional"
+                            className={getFieldErrorClass(errors[itemPath(activeItem.productType, "tiers")])}
                           />
                           <InlineError
                             message={errors[itemPath(activeItem.productType, "tiers")]}
@@ -1161,6 +1241,7 @@ export function StartOrderWizard({
                           <Label htmlFor={`${activeItem.productType}-shape`}>Shape</Label>
                           <Select
                             id={`${activeItem.productType}-shape`}
+                            ref={registerFieldRef(itemPath(activeItem.productType, "shape"))}
                             value={activeItem.shape ?? ""}
                             onChange={(event) =>
                               updateOrderItem(activeItem.productType, {
@@ -1170,6 +1251,7 @@ export function StartOrderWizard({
                                     : (event.target.value as InquiryProductItem["shape"]),
                               })
                             }
+                            className={getFieldErrorClass(errors[itemPath(activeItem.productType, "shape")])}
                           >
                             <option value="">Select a shape</option>
                             {cakeShapeOptions.map((option) => (
@@ -1183,6 +1265,7 @@ export function StartOrderWizard({
                           <Label htmlFor={`${activeItem.productType}-icing`}>Finish style</Label>
                           <Select
                             id={`${activeItem.productType}-icing`}
+                            ref={registerFieldRef(itemPath(activeItem.productType, "icingStyle"))}
                             value={activeItem.icingStyle ?? ""}
                             onChange={(event) =>
                               updateOrderItem(activeItem.productType, {
@@ -1192,6 +1275,7 @@ export function StartOrderWizard({
                                     : (event.target.value as InquiryProductItem["icingStyle"]),
                               })
                             }
+                            className={getFieldErrorClass(errors[itemPath(activeItem.productType, "icingStyle")])}
                           >
                             <option value="">Select a finish</option>
                             {icingStyleOptions.map((option) => (
@@ -1209,6 +1293,7 @@ export function StartOrderWizard({
                         <Label htmlFor="cupcake-count">Cupcake count</Label>
                         <Input
                           id="cupcake-count"
+                          ref={registerFieldRef(itemPath(activeItem.productType, "cupcakeCount"))}
                           inputMode="numeric"
                           value={activeItem.cupcakeCount ?? ""}
                           onChange={(event) =>
@@ -1219,7 +1304,8 @@ export function StartOrderWizard({
                                   : Number(event.target.value),
                             })
                           }
-                          placeholder="Example: 24 or 48"
+                          placeholder="24 or 48"
+                          className={getFieldErrorClass(errors[itemPath(activeItem.productType, "cupcakeCount")])}
                         />
                         <InlineError
                           message={errors[itemPath(activeItem.productType, "cupcakeCount")]}
@@ -1232,6 +1318,7 @@ export function StartOrderWizard({
                         <Label htmlFor="cookie-count">Cookie count</Label>
                         <Input
                           id="cookie-count"
+                          ref={registerFieldRef(itemPath(activeItem.productType, "cookieCount"))}
                           inputMode="numeric"
                           value={activeItem.cookieCount ?? ""}
                           onChange={(event) =>
@@ -1242,7 +1329,8 @@ export function StartOrderWizard({
                                   : Number(event.target.value),
                             })
                           }
-                          placeholder="Example: 24 or 48"
+                          placeholder="24 or 48"
+                          className={getFieldErrorClass(errors[itemPath(activeItem.productType, "cookieCount")])}
                         />
                         <InlineError
                           message={errors[itemPath(activeItem.productType, "cookieCount")]}
@@ -1255,6 +1343,7 @@ export function StartOrderWizard({
                         <Label htmlFor="macaron-count">Macaron count</Label>
                         <Input
                           id="macaron-count"
+                          ref={registerFieldRef(itemPath(activeItem.productType, "macaronCount"))}
                           inputMode="numeric"
                           value={activeItem.macaronCount ?? ""}
                           onChange={(event) =>
@@ -1265,7 +1354,8 @@ export function StartOrderWizard({
                                   : Number(event.target.value),
                             })
                           }
-                          placeholder="Example: 24 or 48"
+                          placeholder="24 or 48"
+                          className={getFieldErrorClass(errors[itemPath(activeItem.productType, "macaronCount")])}
                         />
                         <InlineError
                           message={errors[itemPath(activeItem.productType, "macaronCount")]}
@@ -1278,6 +1368,7 @@ export function StartOrderWizard({
                         <Label htmlFor="kit-count">Kit quantity</Label>
                         <Input
                           id="kit-count"
+                          ref={registerFieldRef(itemPath(activeItem.productType, "kitCount"))}
                           inputMode="numeric"
                           value={activeItem.kitCount ?? ""}
                           onChange={(event) =>
@@ -1289,6 +1380,7 @@ export function StartOrderWizard({
                             })
                           }
                           placeholder="How many kits do you need?"
+                          className={getFieldErrorClass(errors[itemPath(activeItem.productType, "kitCount")])}
                         />
                         <InlineError
                           message={errors[itemPath(activeItem.productType, "kitCount")]}
@@ -1301,6 +1393,7 @@ export function StartOrderWizard({
                         <Label htmlFor={`${activeItem.productType}-palette`}>Item color palette</Label>
                         <Input
                           id={`${activeItem.productType}-palette`}
+                          ref={registerFieldRef(itemPath(activeItem.productType, "colorPalette"))}
                           value={activeItem.colorPalette ?? ""}
                           onChange={(event) =>
                             updateOrderItem(activeItem.productType, {
@@ -1308,12 +1401,14 @@ export function StartOrderWizard({
                             })
                           }
                           placeholder="Ivory, sage, soft gold, blush..."
+                          className={getFieldErrorClass(errors[itemPath(activeItem.productType, "colorPalette")])}
                         />
                       </div>
                       <div>
                         <Label htmlFor={`${activeItem.productType}-topper`}>Topper or wording</Label>
                         <Input
                           id={`${activeItem.productType}-topper`}
+                          ref={registerFieldRef(itemPath(activeItem.productType, "topperText"))}
                           value={activeItem.topperText ?? ""}
                           onChange={(event) =>
                             updateOrderItem(activeItem.productType, {
@@ -1321,6 +1416,7 @@ export function StartOrderWizard({
                             })
                           }
                           placeholder="Optional wording or topper notes"
+                          className={getFieldErrorClass(errors[itemPath(activeItem.productType, "topperText")])}
                         />
                       </div>
                     </div>
@@ -1330,6 +1426,7 @@ export function StartOrderWizard({
                         <Label htmlFor={`${activeItem.productType}-flavor`}>Flavor notes</Label>
                         <Textarea
                           id={`${activeItem.productType}-flavor`}
+                          ref={registerFieldRef(itemPath(activeItem.productType, "flavorNotes"))}
                           value={activeItem.flavorNotes ?? ""}
                           onChange={(event) =>
                             updateOrderItem(activeItem.productType, {
@@ -1337,13 +1434,18 @@ export function StartOrderWizard({
                             })
                           }
                           placeholder="Favorite flavors, fillings, or ingredients to highlight"
-                          className="min-h-[120px]"
+                          className={cn(
+                            "min-h-[120px]",
+                            getFieldErrorClass(errors[itemPath(activeItem.productType, "flavorNotes")]),
+                          )}
+                          aria-invalid={Boolean(errors[itemPath(activeItem.productType, "flavorNotes")])}
                         />
                       </div>
                       <div>
                         <Label htmlFor={`${activeItem.productType}-design`}>Design notes</Label>
                         <Textarea
                           id={`${activeItem.productType}-design`}
+                          ref={registerFieldRef(itemPath(activeItem.productType, "designNotes"))}
                           value={activeItem.designNotes ?? ""}
                           onChange={(event) =>
                             updateOrderItem(activeItem.productType, {
@@ -1351,7 +1453,11 @@ export function StartOrderWizard({
                             })
                           }
                           placeholder="Overall direction, motifs, florals, finish, packaging, or styling cues"
-                          className="min-h-[120px]"
+                          className={cn(
+                            "min-h-[120px]",
+                            getFieldErrorClass(errors[itemPath(activeItem.productType, "designNotes")]),
+                          )}
+                          aria-invalid={Boolean(errors[itemPath(activeItem.productType, "designNotes")])}
                         />
                       </div>
                     </div>
@@ -1362,6 +1468,7 @@ export function StartOrderWizard({
                       </Label>
                       <Textarea
                         id={`${activeItem.productType}-inspiration`}
+                        ref={registerFieldRef(itemPath(activeItem.productType, "inspirationNotes"))}
                         value={activeItem.inspirationNotes ?? ""}
                         onChange={(event) =>
                           updateOrderItem(activeItem.productType, {
@@ -1369,7 +1476,11 @@ export function StartOrderWizard({
                           })
                         }
                         placeholder="Anything about this item that should stand out in the proposal"
-                        className="min-h-[120px]"
+                        className={cn(
+                          "min-h-[120px]",
+                          getFieldErrorClass(errors[itemPath(activeItem.productType, "inspirationNotes")]),
+                        )}
+                        aria-invalid={Boolean(errors[itemPath(activeItem.productType, "inspirationNotes")])}
                       />
                     </div>
                   </div>
@@ -1385,8 +1496,8 @@ export function StartOrderWizard({
                       Inspiration
                     </p>
                     <p className="text-sm leading-7 text-charcoal/68">
-                      Upload direct references when you have them, then add links or notes if they
-                      tell the story better.
+                      Upload direct references when you have them, then add links or written notes
+                      if they tell the story better.
                     </p>
                   </div>
                   <ImagePlus className="h-6 w-6 text-charcoal/45" />
@@ -1396,9 +1507,11 @@ export function StartOrderWizard({
                   <Label htmlFor="overall-palette">Overall palette or mood</Label>
                   <Input
                     id="overall-palette"
+                    ref={registerFieldRef("colorPalette")}
                     value={values.colorPalette ?? ""}
                     onChange={(event) => setFieldValue("colorPalette", event.target.value)}
                     placeholder="Romantic neutrals, polished black and ivory, cheerful pastels..."
+                    className={getFieldErrorClass(errors.colorPalette)}
                   />
                 </div>
 
@@ -1411,11 +1524,14 @@ export function StartOrderWizard({
                       </p>
                     </div>
                     <label
+                      ref={registerFieldRef("inspirationUploads")}
+                      tabIndex={-1}
                       className={cn(
                         "flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-[2rem] border border-dashed px-5 py-7 text-center transition sm:min-h-[220px] sm:px-6 sm:py-8",
                         featureFlags.uploadsEnabled
                           ? "border-charcoal/18 bg-cream/45 hover:border-charcoal/35"
                           : "cursor-not-allowed border-charcoal/10 bg-charcoal/3 text-charcoal/40",
+                        errors.inspirationUploads && "border-rose-300 bg-rose-50/70",
                       )}
                     >
                       <ImagePlus className="h-8 w-8" />
@@ -1482,11 +1598,13 @@ export function StartOrderWizard({
                           {values.inspirationLinks.map((link, index) => (
                             <div key={`inspiration-link-${index}`} className="flex gap-3">
                               <Input
+                                ref={index === 0 ? registerFieldRef("inspirationLinks") : undefined}
                                 value={link}
                                 onChange={(event) =>
                                   setInspirationLink(index, event.target.value)
                                 }
                                 placeholder="Pinterest board, Instagram post, venue gallery..."
+                                className={getFieldErrorClass(errors.inspirationLinks)}
                               />
                               <button
                                 type="button"
@@ -1519,12 +1637,16 @@ export function StartOrderWizard({
                       <Label htmlFor="inspiration-text">Written inspiration notes</Label>
                       <Textarea
                         id="inspiration-text"
+                        ref={registerFieldRef("inspirationText")}
                         value={values.inspirationText ?? ""}
                         onChange={(event) =>
                           setFieldValue("inspirationText", event.target.value)
                         }
                         placeholder="Share the mood, must-have details, floral direction, venue feel, or anything the images do not explain well."
-                        className="min-h-[180px]"
+                        className={cn(
+                          "min-h-[180px]",
+                          getFieldErrorClass(errors.inspirationText),
+                        )}
                       />
                       <InlineError message={errors.inspirationText} />
                     </div>
@@ -1538,11 +1660,11 @@ export function StartOrderWizard({
                 <div className="grid gap-3 rounded-[2rem] border border-charcoal/8 bg-cream/60 p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
                   <div className="space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                      Contact and review
+                      Review and submit
                     </p>
                     <p className="text-sm leading-7 text-charcoal/68">
-                      Add the best contact details, then review the event, items, inspiration, and
-                      estimate together before you submit.
+                      Add the best contact details, then review the event, product, inspiration,
+                      and contact sections before you submit.
                     </p>
                   </div>
                   <PhoneCall className="h-6 w-6 text-charcoal/45" />
@@ -1553,9 +1675,11 @@ export function StartOrderWizard({
                     <Label htmlFor="customer-name">Your name</Label>
                     <Input
                       id="customer-name"
+                      ref={registerFieldRef("customerName")}
                       value={values.customerName}
                       onChange={(event) => setFieldValue("customerName", event.target.value)}
                       placeholder="Full name"
+                      className={getFieldErrorClass(errors.customerName)}
                     />
                     <InlineError message={errors.customerName} />
                   </div>
@@ -1563,10 +1687,12 @@ export function StartOrderWizard({
                     <Label htmlFor="customer-email">Email</Label>
                     <Input
                       id="customer-email"
+                      ref={registerFieldRef("customerEmail")}
                       type="email"
                       value={values.customerEmail}
                       onChange={(event) => setFieldValue("customerEmail", event.target.value)}
-                      placeholder="name@example.com"
+                      placeholder="hello@yourmail.com"
+                      className={getFieldErrorClass(errors.customerEmail)}
                     />
                     <InlineError message={errors.customerEmail} />
                   </div>
@@ -1574,9 +1700,11 @@ export function StartOrderWizard({
                     <Label htmlFor="customer-phone">Phone</Label>
                     <Input
                       id="customer-phone"
+                      ref={registerFieldRef("customerPhone")}
                       value={values.customerPhone}
                       onChange={(event) => setFieldValue("customerPhone", event.target.value)}
                       placeholder="(555) 555-5555"
+                      className={getFieldErrorClass(errors.customerPhone)}
                     />
                     <InlineError message={errors.customerPhone} />
                   </div>
@@ -1584,11 +1712,13 @@ export function StartOrderWizard({
                     <Label htmlFor="instagram-handle">Instagram handle</Label>
                     <Input
                       id="instagram-handle"
+                      ref={registerFieldRef("instagramHandle")}
                       value={values.instagramHandle ?? ""}
                       onChange={(event) =>
                         setFieldValue("instagramHandle", event.target.value)
                       }
                       placeholder="@optional"
+                      className={getFieldErrorClass(errors.instagramHandle)}
                     />
                   </div>
                 </div>
@@ -1597,10 +1727,14 @@ export function StartOrderWizard({
                   <div>
                     <Label>Preferred contact method</Label>
                     <div className="grid gap-3 sm:grid-cols-3">
-                      {(["email", "text", "phone"] as const).map((option) => (
+                      {(["email", "text", "phone"] as const).map((option, index) => (
                         <SelectionButton
                           key={option}
                           active={values.preferredContact === option}
+                          buttonRef={index === 0 ? registerFieldRef("preferredContact") : undefined}
+                          className={cn(
+                            errors.preferredContact && "border-rose-300 bg-rose-50/70 text-charcoal",
+                          )}
                           onClick={() => setFieldValue("preferredContact", option)}
                         >
                           {option === "email"
@@ -1611,14 +1745,17 @@ export function StartOrderWizard({
                         </SelectionButton>
                       ))}
                     </div>
+                    <InlineError message={errors.preferredContact} />
                   </div>
                   <div>
                     <Label htmlFor="how-heard">How did you hear about The Sweet Fork?</Label>
                     <Input
                       id="how-heard"
+                      ref={registerFieldRef("howDidYouHear")}
                       value={values.howDidYouHear ?? ""}
                       onChange={(event) => setFieldValue("howDidYouHear", event.target.value)}
                       placeholder="Instagram, referral, venue, returning client..."
+                      className={getFieldErrorClass(errors.howDidYouHear)}
                     />
                   </div>
                 </div>
@@ -1627,113 +1764,126 @@ export function StartOrderWizard({
                   <Label htmlFor="additional-notes">Anything else we should know?</Label>
                   <Textarea
                     id="additional-notes"
+                    ref={registerFieldRef("additionalNotes")}
                     value={values.additionalNotes ?? ""}
                     onChange={(event) => setFieldValue("additionalNotes", event.target.value)}
                     placeholder="Extra timing notes, venue constraints, setup details, or anything helpful before the first reply."
-                    className="min-h-[150px]"
+                    className={cn(
+                      "min-h-[150px]",
+                      getFieldErrorClass(errors.additionalNotes),
+                    )}
                   />
                 </div>
 
                 <div className="rounded-[2rem] border border-charcoal/10 bg-charcoal px-5 py-5 text-ivory sm:px-6 sm:py-6">
                   <div className="flex items-center gap-3">
                     <CheckCircle2 className="h-5 w-5 text-gold" />
-                    <p className="text-sm font-medium">
-                      Final review before submit
-                    </p>
+                    <p className="text-sm font-medium">Final review before submit</p>
                   </div>
-                  <div className="mt-6 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-                    <div className="space-y-4">
-                      <StatRow
-                        label="Event"
-                        value={
-                          <div>
-                            <p>{normalizedValues.eventType}</p>
-                            <p className="text-xs uppercase tracking-[0.16em] text-ivory/55">
-                              {normalizedValues.eventDate
-                                ? formatDate(normalizedValues.eventDate)
-                                : "Date pending"}
-                            </p>
-                          </div>
-                        }
-                      />
-                      <StatRow
-                        label="Fulfillment"
-                        value={
-                          <div>
-                            <p className="capitalize">{normalizedValues.fulfillmentMethod}</p>
-                            {normalizedValues.deliveryZip ? (
-                              <p className="text-xs uppercase tracking-[0.16em] text-ivory/55">
-                                ZIP {normalizedValues.deliveryZip}
-                              </p>
-                            ) : null}
-                          </div>
-                        }
-                      />
-                      <StatRow
-                        label="Budget"
-                        value={
-                          <div>
-                            <p>{getBudgetRangeLabel(normalizedValues.budgetRange)}</p>
-                            <p className="text-xs uppercase tracking-[0.16em] text-ivory/55">
-                              {getBudgetFlexibilityLabel(normalizedValues.budgetFlexibility)}
-                            </p>
-                          </div>
-                        }
-                      />
-                      <StatRow
-                        label="Inspiration"
-                        value={`${uploads.length} upload${uploads.length === 1 ? "" : "s"}, ${
-                          normalizedValues.inspirationLinks.length
-                        } link${normalizedValues.inspirationLinks.length === 1 ? "" : "s"}`}
-                      />
+                  <div className="mt-6 grid gap-4">
+                    <div className="rounded-[1.6rem] border border-white/12 bg-white/6 p-5">
+                      <div className="flex items-center justify-between gap-4">
+                        <p className="text-sm font-medium text-ivory">Event details</p>
+                        <button
+                          type="button"
+                          className="rounded-full border border-white/12 px-3 py-1 text-xs uppercase tracking-[0.16em] text-ivory/78 transition hover:border-white/24"
+                          onClick={() => setCurrentStep(0)}
+                        >
+                          Edit
+                        </button>
+                      </div>
+                      <div className="mt-4 space-y-3 text-sm leading-7 text-ivory/72">
+                        <p>{normalizedValues.eventType}</p>
+                        <p>{normalizedValues.eventDate ? formatDate(normalizedValues.eventDate) : "Date pending"}</p>
+                        <p className="capitalize">
+                          {normalizedValues.fulfillmentMethod}
+                          {normalizedValues.deliveryZip ? ` • ZIP ${normalizedValues.deliveryZip}` : ""}
+                        </p>
+                        <p>
+                          {getBudgetRangeLabel(normalizedValues.budgetRange)}
+                          {" • "}
+                          {getBudgetFlexibilityLabel(normalizedValues.budgetFlexibility)}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="rounded-[1.8rem] border border-white/12 bg-white/6 p-5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold/70">
-                        Included items
-                      </p>
+                    <div className="rounded-[1.6rem] border border-white/12 bg-white/6 p-5">
+                      <div className="flex items-center justify-between gap-4">
+                        <p className="text-sm font-medium text-ivory">Product selections</p>
+                        <button
+                          type="button"
+                          className="rounded-full border border-white/12 px-3 py-1 text-xs uppercase tracking-[0.16em] text-ivory/78 transition hover:border-white/24"
+                          onClick={() => setCurrentStep(2)}
+                        >
+                          Edit
+                        </button>
+                      </div>
                       <div className="mt-4 space-y-3">
-                        {selectedItems.map((item) => {
-                          const lineItem = estimate.lineItems.find(
-                            (entry) => entry.productType === item.productType,
-                          );
+                        {selectedItems.map((item) => (
+                          <div
+                            key={item.productType}
+                            className="rounded-[1.35rem] border border-white/10 bg-white/6 px-4 py-4 text-sm text-ivory/72"
+                          >
+                            <p className="font-medium text-ivory">
+                              {catalogMap[item.productType]?.name ?? getProductDisplayLabel(item.productType)}
+                            </p>
+                            <p className="mt-1">{formatSelectedItemSummary(item)}</p>
+                            {item.designNotes ? (
+                              <p className="mt-2 text-ivory/56">Design: {item.designNotes}</p>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
 
-                          return (
-                            <div
-                              key={item.productType}
-                              className="rounded-[1.4rem] border border-white/10 bg-white/6 px-4 py-4"
-                            >
-                              <div className="flex flex-wrap items-start justify-between gap-3">
-                                <div>
-                                  <p className="font-medium text-ivory">
-                                    {catalogMap[item.productType]?.name ??
-                                      getProductDisplayLabel(item.productType)}
-                                  </p>
-                                  <p className="mt-1 text-sm text-ivory/65">
-                                    {item.productType === "custom-cake"
-                                      ? `${item.servings ?? "?"} servings`
-                                      : item.productType === "wedding-cake"
-                                        ? `${item.weddingServings ?? item.servings ?? "?"} servings`
-                                        : item.productType === "cupcakes"
-                                          ? `${item.cupcakeCount ?? "?"} cupcakes`
-                                          : item.productType === "sugar-cookies"
-                                            ? `${item.cookieCount ?? "?"} cookies`
-                                            : item.productType === "macarons"
-                                              ? `${item.macaronCount ?? "?"} macarons`
-                                              : `${item.kitCount ?? "?"} kits`}
-                                  </p>
-                                </div>
-                                <p className="text-sm font-medium text-ivory">
-                                  {lineItem
-                                    ? `${formatCurrency(lineItem.minimum)} to ${formatCurrency(
-                                        lineItem.maximum,
-                                      )}`
-                                    : "Estimate pending"}
-                                </p>
-                              </div>
-                            </div>
-                          );
-                        })}
+                    <div className="rounded-[1.6rem] border border-white/12 bg-white/6 p-5">
+                      <div className="flex items-center justify-between gap-4">
+                        <p className="text-sm font-medium text-ivory">Design inputs</p>
+                        <button
+                          type="button"
+                          className="rounded-full border border-white/12 px-3 py-1 text-xs uppercase tracking-[0.16em] text-ivory/78 transition hover:border-white/24"
+                          onClick={() => setCurrentStep(3)}
+                        >
+                          Edit
+                        </button>
+                      </div>
+                      <div className="mt-4 space-y-3 text-sm leading-7 text-ivory/72">
+                        <p>Overall palette: {normalizedValues.colorPalette ?? "Not shared yet"}</p>
+                        <p>
+                          Inspiration files: {uploads.length} upload{uploads.length === 1 ? "" : "s"}
+                        </p>
+                        <p>
+                          Inspiration links: {normalizedValues.inspirationLinks.length} link
+                          {normalizedValues.inspirationLinks.length === 1 ? "" : "s"}
+                        </p>
+                        <p>{normalizedValues.inspirationText ?? "No additional written inspiration notes yet."}</p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-[1.6rem] border border-white/12 bg-white/6 p-5">
+                      <div className="flex items-center justify-between gap-4">
+                        <p className="text-sm font-medium text-ivory">Contact info</p>
+                        <button
+                          type="button"
+                          className="rounded-full border border-white/12 px-3 py-1 text-xs uppercase tracking-[0.16em] text-ivory/78 transition hover:border-white/24"
+                          onClick={() => setCurrentStep(4)}
+                        >
+                          Edit
+                        </button>
+                      </div>
+                      <div className="mt-4 space-y-3 text-sm leading-7 text-ivory/72">
+                        <p>{normalizedValues.customerName}</p>
+                        <p>{normalizedValues.customerEmail}</p>
+                        <p>{normalizedValues.customerPhone}</p>
+                        <p>
+                          Preferred contact:{" "}
+                          {normalizedValues.preferredContact === "email"
+                            ? "Email"
+                            : normalizedValues.preferredContact === "text"
+                              ? "Text"
+                              : "Phone"}
+                        </p>
+                        {normalizedValues.instagramHandle ? <p>{normalizedValues.instagramHandle}</p> : null}
                       </div>
                     </div>
                   </div>
@@ -1746,7 +1896,7 @@ export function StartOrderWizard({
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-charcoal/60">
-                  Progress is kept while you move backward or forward.
+                  Your progress stays in place while you move backward or forward.
                 </p>
                 {submitError ? (
                   <p className="mt-2 text-sm text-rose-700">{submitError}</p>
@@ -1800,37 +1950,18 @@ export function StartOrderWizard({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                  Live estimate
+                  What happens next
                 </p>
                 <h3 className="mt-3 font-serif text-[2rem] tracking-[-0.04em] text-charcoal sm:text-4xl">
-                  {formatCurrency(estimate.minimum)} to {formatCurrency(estimate.maximum)}
+                  Thoughtful review, then a tailored quote.
                 </h3>
               </div>
               <Sparkles className="h-5 w-5 text-charcoal/40" />
             </div>
-            <p className="mt-3 text-sm leading-7 text-charcoal/65">
-              This first-pass range uses the current pricing baseline plus practical adjustments for
-              tiers, finish style, toppers, and delivery.
-            </p>
-            <div className="mt-6 space-y-3">
-              {estimate.lineItems.map((lineItem) => (
-                <div
-                  key={lineItem.productType}
-                  className="rounded-[1.4rem] border border-charcoal/8 bg-cream/55 px-4 py-4"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <p className="text-sm font-medium text-charcoal">{lineItem.label}</p>
-                    <p className="text-sm font-medium text-charcoal">
-                      {formatCurrency(lineItem.minimum)} to {formatCurrency(lineItem.maximum)}
-                    </p>
-                  </div>
-                </div>
-              ))}
-              {estimate.lineItems.length === 0 ? (
-                <div className="rounded-[1.4rem] border border-charcoal/8 bg-cream/55 px-4 py-4 text-sm leading-7 text-charcoal/62">
-                  Select at least one product to start the working estimate.
-                </div>
-              ) : null}
+            <div className="mt-5 space-y-3 text-sm leading-7 text-charcoal/66">
+              <p>1. Sweet Fork reviews the event details, selected desserts, and inspiration.</p>
+              <p>2. A quote and next-step details are usually sent within 24 to 48 hours.</p>
+              <p>3. If everything looks right, a deposit secures the date on the calendar.</p>
             </div>
           </div>
 
@@ -1853,18 +1984,10 @@ export function StartOrderWizard({
               />
               <StatRow
                 label="Fulfillment"
-                value={
-                  normalizedValues.fulfillmentMethod === "delivery" ? (
-                    <span className="inline-flex items-center gap-2">
-                      <MapPin className="h-4 w-4" /> Delivery
-                    </span>
-                  ) : (
-                    "Pickup"
-                  )
-                }
+                value={normalizedValues.fulfillmentMethod === "delivery" ? "Delivery" : "Pickup"}
               />
               <StatRow
-                label="Budget"
+                label="Investment"
                 value={getBudgetRangeLabel(normalizedValues.budgetRange)}
               />
             </div>

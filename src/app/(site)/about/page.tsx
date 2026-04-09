@@ -1,5 +1,6 @@
 import { InquiryCta } from "@/components/site/inquiry-cta";
 import { PublicPageHero } from "@/components/site/public-page-hero";
+import { getInquiryCtaBySlug } from "@/lib/site/cta";
 import { getAboutPageData } from "@/lib/site/marketing";
 import { buildMetadata } from "@/lib/seo";
 
@@ -14,6 +15,7 @@ export async function generateMetadata() {
 
 export default async function AboutPage() {
   const data = await getAboutPageData();
+  const defaultCta = getInquiryCtaBySlug();
 
   return (
     <div>
@@ -22,6 +24,7 @@ export default async function AboutPage() {
         title={data.heading}
         description={data.body}
         accent={data.settings.accent}
+        cta={defaultCta}
       />
       <section className="section-shell grid gap-8 py-16 md:py-20 lg:grid-cols-[0.95fr_1.05fr]">
         <div className="rounded-[2rem] border border-charcoal/8 bg-charcoal p-8 text-ivory shadow-soft">
@@ -36,7 +39,10 @@ export default async function AboutPage() {
           ))}
         </div>
       </section>
-      <InquiryCta />
+      <InquiryCta
+        title="If the Sweet Fork style feels like the right fit, the next step is easy."
+        description="Submit the inquiry with your date, dessert needs, and design direction, and Sweet Fork will guide the rest from there."
+      />
     </div>
   );
 }

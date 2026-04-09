@@ -1,7 +1,5 @@
 import "server-only";
 
-import { access } from "node:fs/promises";
-import { join } from "node:path";
 import { cache } from "react";
 
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -13,16 +11,16 @@ import {
   faqItems as staticFaqItems,
   galleryItems as staticGalleryItems,
   homeExperiencePillars,
-  mainNavigation,
   pricingHighlights as staticPricingHighlights,
   pricingMatrix as staticPricingMatrix,
+  primaryNavigation,
   processSteps as staticProcessSteps,
   productPageContent,
+  secondaryNavigation,
   siteConfig,
   testimonials as staticTestimonials,
   websiteContentSections,
 } from "@/lib/content/site-content";
-import { galleryPlaceholderImageAssets } from "@/lib/site/placeholder-images";
 import type { ProductType, GalleryItem } from "@/types/domain";
 import type { Enums, Json, Tables } from "@/types/supabase.generated";
 
@@ -204,9 +202,9 @@ export type PublicSeoData = {
 
 export type PublicSiteChromeData = {
   bookingNotice: PublicBookingNotice | null;
-  footerCompanyLinks: PublicSiteLink[];
-  footerServiceLinks: PublicSiteLink[];
-  mainNavigation: PublicSiteLink[];
+  footerLegalLinks: PublicSiteLink[];
+  primaryNavigation: PublicSiteLink[];
+  secondaryNavigation: PublicSiteLink[];
   site: SiteShellData;
 };
 
@@ -352,18 +350,18 @@ export const contentSectionDefinitions: ContentSectionDefinition[] = [
     blockType: "hero",
     fallback: {
       body:
-        "Artisan cakes, macarons, cupcakes, and decorated cookies are made to order in Centerville, Utah, with limited weekly availability and custom quotes for every event.",
+        "A boutique home bakery for custom cakes and desserts designed with a polished finish, thoughtful hospitality, and limited weekly availability.",
       eyebrow: "Centerville, Utah",
-      heading: "Custom desserts made to order.",
+      heading: "Custom cakes and desserts with a refined, made-to-order feel.",
       items: homeExperiencePillars.map((item) => ({
         description: item.description,
         title: item.title,
       })),
       settings: {
         primaryCtaHref: "/start-order",
-        primaryCtaLabel: "Start Order",
+        primaryCtaLabel: "Start Your Inquiry",
         secondaryCtaHref: "/gallery",
-        secondaryCtaLabel: "View Gallery",
+        secondaryCtaLabel: "Explore the Gallery",
       },
     },
   },
@@ -382,9 +380,9 @@ export const contentSectionDefinitions: ContentSectionDefinition[] = [
     blockType: "rich-text",
     fallback: {
       body:
-        "Wedding cakes are available as elegant centerpieces, and companion desserts can be added to the same inquiry when a full dessert spread is needed.",
+        "Wedding cakes are designed as statement pieces, with companion desserts available when you want the full table to feel cohesive.",
       eyebrow: "Wedding cakes",
-      heading: "Wedding cakes start at $300 and usually need 4 to 6 weeks notice.",
+      heading: "Wedding cakes are quoted with the event, table, and guest experience in mind.",
       items: [],
       settings: {},
     },
@@ -403,9 +401,9 @@ export const contentSectionDefinitions: ContentSectionDefinition[] = [
     blockType: "feature-list",
     fallback: {
       body:
-        "The ordering process is straightforward: start with the inquiry form, receive a detailed quote within 24 to 48 hours, and secure the date with a deposit.",
+        "The process stays personal and clear from the first inquiry through the final confirmation.",
       eyebrow: "How it works",
-      heading: "Inquiry first, then a quote, then the order is reserved.",
+      heading: "A simple inquiry-first process designed to keep the details easy.",
       items: staticProcessSteps.map((item) => ({
         description: item.description,
         step: item.step,
@@ -428,29 +426,29 @@ export const contentSectionDefinitions: ContentSectionDefinition[] = [
     blockType: "rich-text",
     fallback: {
       body:
-        "The Sweet Fork began with the belief that every celebration deserves something special, and it continues to operate as a small, intentional bakery serving Northern Utah.",
+        "The Sweet Fork began with the idea that handmade desserts can feel both personal and beautifully composed, and it continues to grow as a small, intentional bakery serving Northern Utah.",
       eyebrow: "About",
-      heading: "A small custom bakery rooted in Centerville, Utah.",
+      heading: "A small bakery rooted in Centerville, Utah, with a luxury-minded finish.",
       items: [
         {
           text:
-            "What started as a passion project has grown into a made-to-order bakery focused on custom cakes, macarons, cupcakes, and decorated sugar cookies.",
+            "What began as a passion project has become a made-to-order bakery focused on custom cakes, macarons, cupcakes, and decorated sugar cookies for celebrations across Northern Utah.",
         },
         {
           text:
-            "Every creation is made from scratch in a home kitchen using quality ingredients and a careful, hands-on process.",
+            "Every order is made from scratch in a home kitchen using quality ingredients, careful technique, and an intentionally limited production calendar.",
         },
         {
           text:
-            "Weekly order volume stays intentionally limited so each client receives full attention from inquiry through pickup or delivery.",
+            "That smaller scale allows each client to receive thoughtful guidance from inquiry through pickup or delivery.",
         },
       ],
       settings: {
         accent:
-          "The Sweet Fork operates under Utah's Home Consumption and Homemade Food Act and serves Davis County, Salt Lake County, and Weber County.",
+          "The Sweet Fork operates under Utah's Home Consumption and Homemade Food Act and serves Davis, Salt Lake, and nearby Weber County communities.",
         studioEyebrow: "The Sweet Fork",
         studioQuote:
-          "\"Life's sweetest moments, made from scratch.\"",
+          "\"Handcrafted for life's sweetest moments.\"",
       },
     },
   },
@@ -645,6 +643,14 @@ function getMediaPublicUrl(asset: Pick<MediaAssetRow, "bucket" | "public_url" | 
   return createAdminClient().storage.from(asset.bucket).getPublicUrl(asset.storage_path).data.publicUrl;
 }
 
+function isApprovedMarketingAsset(
+  asset: Pick<MediaAssetRow, "public_url" | "storage_path">,
+) {
+  const candidate = `${asset.public_url ?? ""} ${asset.storage_path ?? ""}`.toLowerCase();
+
+  return !(candidate.includes("placeholders") && candidate.includes("marketing"));
+}
+
 function isCurrentPriceRow(row: ProductPriceRow) {
   if (!row.is_active) {
     return false;
@@ -733,31 +739,11 @@ const getPublicProductRows = cache(async function getPublicProductRows(): Promis
   return (data ?? []) as ProductRow[];
 });
 
-const hasLocalPlaceholderAsset = cache(async function hasLocalPlaceholderAsset(relativePath: string) {
-  try {
-    await access(join(process.cwd(), "public", relativePath));
-    return true;
-  } catch {
-    return false;
-  }
-});
-
 async function resolveFallbackGalleryItems(limit: number) {
-  return Promise.all(
-    staticGalleryItems.slice(0, limit).map(async (item) => {
-      const asset = galleryPlaceholderImageAssets[item.placeholderKey];
-
-      if (!asset || !(await hasLocalPlaceholderAsset(asset.relativePath))) {
-        return item;
-      }
-
-      return {
-        ...item,
-        alt: item.alt || asset.alt,
-        imageUrl: `/${asset.relativePath}`,
-      } satisfies GalleryItem;
-    }),
-  );
+  return staticGalleryItems.slice(0, limit).map((item) => ({
+    ...item,
+    imageUrl: item.imageUrl ?? null,
+  }));
 }
 
 export async function getPublicSeoData(): Promise<PublicSeoData> {
@@ -823,19 +809,11 @@ export async function getPublicSiteChromeData(): Promise<PublicSiteChromeData> {
 
   return {
     bookingNotice,
-    footerCompanyLinks: footerNavigation.company,
-    footerServiceLinks:
-      activeProducts === null
-        ? footerNavigation.services
-        : activeProducts
-            .filter((product) => Boolean(productPageContent[product.slug]))
-            .map((product) => ({
-              href: `/${product.slug}`,
-              label: product.name,
-            })),
-    mainNavigation: mainNavigation.filter(
+    footerLegalLinks: footerNavigation,
+    primaryNavigation: primaryNavigation.filter(
       (item) => !productPagePaths.has(item.href) || activeProductPaths.has(item.href),
     ),
+    secondaryNavigation,
     site,
   };
 }
@@ -866,7 +844,6 @@ export async function getPublicProductPageData(slug: string) {
   return {
     content: {
       ...fallback,
-      intro: product.long_description ?? product.short_description ?? fallback.intro,
       shortTitle: product.name,
     },
     metadataDescription: product.short_description ?? product.long_description ?? fallback.intro,
@@ -974,7 +951,8 @@ export async function getGalleryItemsForPlacement(
     );
     assets = explicitPlacements
       .map((placementRow) => assetMap.get(placementRow.media_asset_id))
-      .filter(Boolean) as typeof assets;
+      .filter((asset): asset is (typeof assets)[number] => Boolean(asset))
+      .filter((asset) => isApprovedMarketingAsset(asset)) as typeof assets;
   } else {
     const { data: assetData, error: assetError } = await admin
       .from("media_assets")
@@ -989,7 +967,7 @@ export async function getGalleryItemsForPlacement(
       return fallbackItems;
     }
 
-    assets = (assetData ?? []) as typeof assets;
+    assets = ((assetData ?? []) as typeof assets).filter((asset) => isApprovedMarketingAsset(asset));
   }
 
   if (assets.length === 0) {
@@ -1074,7 +1052,6 @@ export async function getGalleryItemsForPlacement(
       category: primaryCategory?.name ?? "Celebration",
       id: asset.id,
       imageUrl: getMediaPublicUrl(asset),
-      placeholderKey: asset.id,
       title,
     } satisfies GalleryItem;
   });
@@ -1194,7 +1171,7 @@ export async function getPublicOfferingCards() {
         eyebrow:
           fallback?.eyebrow ??
           (product.requires_consultation ? "Consultation-led" : "Core offering"),
-        intro: product.short_description ?? fallback?.intro ?? product.long_description ?? "",
+        intro: fallback?.intro ?? product.long_description ?? product.short_description ?? "",
         name: product.name,
         shortTitle: fallback?.shortTitle ?? product.name,
         slug: product.slug,
@@ -1241,15 +1218,15 @@ export async function getPublicPricingData(): Promise<{
     }
 
     return {
-      highlights: [],
-      matrix: [],
+      highlights: staticPricingHighlights,
+      matrix: staticPricingMatrix,
     };
   }
 
   if (productData.length === 0) {
     return {
-      highlights: [],
-      matrix: [],
+      highlights: staticPricingHighlights,
+      matrix: staticPricingMatrix,
     };
   }
 

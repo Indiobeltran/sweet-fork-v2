@@ -202,7 +202,7 @@ function buildCatalog(
         productType: product.product_type,
         name: product.name,
         slug: product.slug,
-        shortDescription: product.short_description ?? fallback.shortDescription,
+        shortDescription: fallback.shortDescription,
         requiresConsultation: product.requires_consultation ?? fallback.requiresConsultation,
         pricing: pricingBaseline[product.product_type],
         startingAt: getStartingPrice(product.product_type, pricingBaseline),

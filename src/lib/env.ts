@@ -9,6 +9,14 @@ type PublicSupabaseEnv = {
   anonKey: string;
 };
 
+const productionSiteUrl = "https://www.thesweetfork.com";
+
+function getDefaultSiteUrl() {
+  return process.env.NODE_ENV === "development"
+    ? "http://localhost:3000"
+    : productionSiteUrl;
+}
+
 export type InquiryFeatureFlagEnvOverrides = {
   uploadEnabled?: boolean;
   linkFallbackEnabled?: boolean;
@@ -19,7 +27,7 @@ export function getPublicEnv() {
   const inquiryOverrides = getInquiryFeatureFlagEnvOverrides();
 
   return {
-    siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+    siteUrl: process.env.NEXT_PUBLIC_SITE_URL || getDefaultSiteUrl(),
     uploadEnabled: inquiryOverrides.uploadEnabled ?? true,
     linkFallbackEnabled: inquiryOverrides.linkFallbackEnabled ?? true,
     storageBucket: inquiryOverrides.storageBucket || "inspiration",

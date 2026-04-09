@@ -16,14 +16,14 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       </a>
       <SiteHeader
         brandName={chrome.site.name}
-        navigation={chrome.mainNavigation}
+        primaryNavigation={chrome.primaryNavigation}
+        secondaryNavigation={chrome.secondaryNavigation}
         tagline={chrome.site.tagline}
       />
       {chrome.bookingNotice ? <PublicBookingNoticeBanner notice={chrome.bookingNotice} /> : null}
       <main id="site-main">{children}</main>
       <SiteFooter
-        companyLinks={chrome.footerCompanyLinks}
-        serviceLinks={chrome.footerServiceLinks}
+        legalLinks={chrome.footerLegalLinks}
         site={chrome.site}
       />
     </div>

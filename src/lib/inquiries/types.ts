@@ -1,6 +1,6 @@
 import type { InquiryFeatureFlags } from "@/lib/inquiries/config";
 import type { InquiryPricingBaseline, ProductPricingBaseline } from "@/lib/pricing";
-import type { InquiryEstimate, ProductType } from "@/types/domain";
+import type { ProductType } from "@/types/domain";
 
 export type InquiryCatalogItem = {
   id: string | null;
@@ -23,6 +23,5 @@ export type StartOrderPageData = {
 export type InquirySubmissionResponse = {
   inquiryId: string;
   referenceCode: string;
-  estimate: InquiryEstimate;
   uploadedAssetCount: number;
 };

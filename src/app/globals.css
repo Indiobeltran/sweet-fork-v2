@@ -3,14 +3,14 @@
 @tailwind utilities;
 
 :root {
-  --color-ivory: 252 248 243;
-  --color-cream: 245 238 230;
-  --color-gold: 195 163 103;
-  --color-charcoal: 48 39 33;
-  --color-stone: 118 103 91;
-  --color-rose: 178 149 136;
-  --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
-  --font-body: "Avenir Next", "Segoe UI", Helvetica, Arial, sans-serif;
+  --color-ivory: 249 244 237;
+  --color-cream: 242 235 227;
+  --color-gold: 186 154 99;
+  --color-charcoal: 55 43 36;
+  --color-stone: 127 112 99;
+  --color-rose: 177 149 137;
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-body: "Inter", "Segoe UI", Helvetica, Arial, sans-serif;
 }
 
 * {
@@ -19,16 +19,19 @@
 
 html {
   scroll-behavior: smooth;
+  background: rgb(var(--color-ivory));
 }
 
 body {
+  min-height: 100vh;
   margin: 0;
   background:
-    radial-gradient(circle at top left, rgba(214, 181, 122, 0.18), transparent 22%),
-    radial-gradient(circle at bottom right, rgba(178, 149, 136, 0.12), transparent 24%),
+    radial-gradient(circle at top left, rgba(186, 154, 99, 0.12), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(177, 149, 137, 0.1), transparent 26%),
     rgb(var(--color-ivory));
   color: rgb(var(--color-charcoal));
   font-family: var(--font-body), sans-serif;
+  line-height: 1.5;
   text-rendering: optimizeLegibility;
 }
 
@@ -78,6 +81,28 @@ img {
   @apply mx-auto max-w-7xl px-5 sm:px-8;
 }
 
+.section-reveal {
+  animation: fade-up 0.72s ease-out both;
+}
+
+.luxury-panel {
+  border: 1px solid rgba(var(--color-charcoal), 0.08);
+  border-radius: 2rem;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(18px);
+  box-shadow:
+    0 14px 40px rgba(53, 37, 29, 0.08),
+    0 2px 10px rgba(53, 37, 29, 0.04);
+}
+
+.eyebrow-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(var(--color-charcoal), 0.46);
+}
+
 .start-order-page-hero {
   overflow: hidden;
   max-height: 72rem;
@@ -96,6 +121,10 @@ img {
   pointer-events: none;
   transform: translateY(-0.75rem);
   padding-bottom: 0;
+}
+
+.site-bottom-spacing {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
 }
 
 @media (prefers-reduced-motion: reduce) {

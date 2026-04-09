@@ -95,7 +95,7 @@ export default async function AdminContentPage({ searchParams }: AdminContentPag
 
       <AdminSectionCard
         title="Structured sections"
-        description="These forms only cover the sections already modeled for the live site. That keeps editing flexible enough for day-to-day changes without turning the app into an unrestricted CMS."
+        description="These forms only cover the sections already modeled for the public site. That keeps editing flexible enough for day-to-day changes without turning the app into an unrestricted CMS."
       >
         <div className="space-y-5">
           {sections.map((section) => (
@@ -157,7 +157,7 @@ export default async function AdminContentPage({ searchParams }: AdminContentPag
 
                 <ToggleField
                   defaultChecked={section.isActive}
-                  label="Show this section on the live site"
+                  label="Show this section on the public site"
                   name="isActive"
                 />
 
