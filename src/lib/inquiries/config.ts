@@ -13,6 +13,14 @@ export const inquiryStepTitles = [
   "Review & Submit",
 ] as const;
 
+export const inquiryStepDescriptions = [
+  "Confirm the event type, date, fulfillment plan, and investment range.",
+  "Choose every dessert Sweet Fork should consider for this celebration.",
+  "Add the counts, servings, and item notes needed for a quote-ready review.",
+  "Share color direction, inspiration images, links, or written notes.",
+  "Review the full inquiry, add contact details, and send it through.",
+] as const;
+
 export const eventTypeSuggestions = [
   "Birthday",
   "Wedding",

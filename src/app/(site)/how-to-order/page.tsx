@@ -33,7 +33,7 @@ export default function HowToOrderPage() {
               <h2 className="text-xl font-medium text-charcoal">{item.title}</h2>
               <p className="mt-2 max-w-2xl text-sm leading-7 text-charcoal/68">{item.description}</p>
             </div>
-            <p className="text-sm leading-7 text-charcoal/52">
+            <p className="text-sm leading-7 text-charcoal/64">
               {item.step === "01"
                 ? "Event type, date, dessert needs, pickup or delivery, and inspiration if you have it"
                 : item.step === "02"

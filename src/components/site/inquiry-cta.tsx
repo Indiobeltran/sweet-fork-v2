@@ -38,7 +38,7 @@ export function InquiryCta({
             subtext={cta.subtext}
             buttonClassName="bg-ivory text-charcoal hover:bg-white sm:w-full"
           />
-          <p className="text-sm leading-7 text-ivory/58">
+          <p className="text-sm leading-7 text-ivory/66">
             {urgencyNote}
           </p>
         </div>

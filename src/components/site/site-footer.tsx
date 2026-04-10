@@ -19,13 +19,13 @@ export function SiteFooter({ legalLinks, site }: Readonly<SiteFooterProps>) {
           <Image
             src="/brand/logo-light.png"
             alt={site.name}
-            width={340}
-            height={193}
+            width={1024}
+            height={582}
             sizes="188px"
             className="h-auto w-[188px]"
           />
-          <p className="max-w-xl text-sm leading-8 text-ivory/72">{site.description}</p>
-          <div className="grid gap-2 text-sm text-ivory/76">
+          <p className="max-w-xl text-sm leading-8 text-ivory/80">{site.description}</p>
+          <div className="grid gap-2 text-sm text-ivory/84">
             <p>{site.location}</p>
             <a
               href={`tel:${site.phone}`}
@@ -51,19 +51,19 @@ export function SiteFooter({ legalLinks, site }: Readonly<SiteFooterProps>) {
         </div>
 
         <div className="space-y-5 md:justify-self-end md:text-right">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-ivory/52">Legal</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-ivory/62">Legal</p>
           <div className="flex flex-wrap gap-3 md:justify-end">
             {legalLinks.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-full border border-white/10 px-4 py-2 text-sm text-ivory/74 transition hover:border-white/24 hover:text-ivory focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50"
+                className="rounded-full border border-white/10 px-4 py-2 text-sm text-ivory/82 transition hover:border-white/24 hover:text-ivory focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50"
               >
                 {item.label}
               </Link>
             ))}
           </div>
-          <p className="text-sm leading-7 text-ivory/56">
+          <p className="text-sm leading-7 text-ivory/66">
             Custom cakes and desserts for pickup in Centerville and local delivery across Northern Utah.
           </p>
         </div>

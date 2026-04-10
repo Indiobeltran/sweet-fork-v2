@@ -31,6 +31,7 @@ import {
   getBudgetFlexibilityLabel,
   getBudgetRangeLabel,
   icingStyleOptions,
+  inquiryStepDescriptions,
   inquiryStepTitles,
   type InquiryFeatureFlags,
 } from "@/lib/inquiries/config";
@@ -88,55 +89,69 @@ function formatFileSize(size: number) {
 
 function StepMarker({
   active,
+  canSelect,
   complete,
   index,
+  onSelect,
+  description,
   title,
 }: {
   active: boolean;
+  canSelect: boolean;
   complete: boolean;
   index: number;
+  onSelect: () => void;
+  description: string;
   title: string;
 }) {
   return (
-    <div
-      role="listitem"
-      aria-current={active ? "step" : undefined}
-      aria-label={`Step ${index + 1}: ${title}${complete ? ", complete" : active ? ", current" : ""}`}
-      className={cn(
-        "flex items-center gap-2 rounded-full transition sm:min-w-0 sm:gap-3",
-        active ? "border border-charcoal bg-charcoal px-3 py-2 text-ivory shadow-soft" : "px-0 py-0",
-      )}
-    >
-      <div
+    <div role="listitem">
+      <button
+        type="button"
+        aria-current={active ? "step" : undefined}
+        aria-label={`Step ${index + 1}: ${title}. ${description}${complete ? " Complete." : active ? " Current step." : ""}`}
+        disabled={!canSelect}
         className={cn(
-          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition",
-          complete
-            ? "border-charcoal bg-charcoal text-ivory"
-            : active
-              ? "border-ivory/30 bg-ivory text-charcoal"
-              : "border-charcoal/10 bg-white text-charcoal/40",
+          "flex items-center gap-2 rounded-full transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50 disabled:cursor-default sm:min-w-0 sm:gap-3",
+          active
+            ? "border border-charcoal bg-charcoal px-3 py-2 text-ivory shadow-soft"
+            : "px-0 py-0",
+          !active && canSelect && "hover:opacity-100",
+          !canSelect && !active && "opacity-85",
         )}
+        onClick={onSelect}
       >
-        {complete ? <Check className="h-4 w-4" /> : index + 1}
-      </div>
-      <div className={cn("min-w-0", active ? "block" : "hidden sm:block")}>
-        <p
+        <div
           className={cn(
-            "text-[10px] uppercase tracking-[0.18em]",
-            active ? "text-ivory/62" : "text-charcoal/40",
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition",
+            complete
+              ? "border-charcoal bg-charcoal text-ivory"
+              : active
+                ? "border-ivory/30 bg-ivory text-charcoal"
+                : "border-charcoal/10 bg-white text-charcoal/40",
           )}
         >
-          Step {index + 1}
-        </p>
-        <p
-          className={cn(
-            "truncate text-sm font-medium",
-            active ? "text-ivory" : complete ? "text-charcoal/68" : "text-charcoal/52",
-          )}
-        >
-          {title}
-        </p>
-      </div>
+          {complete ? <Check className="h-4 w-4" /> : index + 1}
+        </div>
+        <div className={cn("min-w-0", active ? "block" : "hidden sm:block")}>
+          <p
+            className={cn(
+              "text-[10px] uppercase tracking-[0.18em]",
+              active ? "text-ivory/62" : "text-charcoal/40",
+            )}
+          >
+            Step {index + 1}
+          </p>
+          <p
+            className={cn(
+              "truncate text-sm font-medium",
+              active ? "text-ivory" : complete ? "text-charcoal/68" : "text-charcoal/52",
+            )}
+          >
+            {title}
+          </p>
+        </div>
+      </button>
     </div>
   );
 }
@@ -176,7 +191,11 @@ function FieldLabel({
   return (
     <Label {...props}>
       <span>{children}</span>
-      {required ? <span className="ml-2 text-[10px] text-charcoal/52">Required</span> : null}
+      {required ? (
+        <span className="ml-2 inline-flex rounded-full border border-charcoal/10 bg-charcoal/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-charcoal/56">
+          Required
+        </span>
+      ) : null}
     </Label>
   );
 }
@@ -200,7 +219,7 @@ function SelectionButton({
       ref={buttonRef}
       aria-pressed={active}
       className={cn(
-        "rounded-full border px-4 py-2 text-left text-sm transition",
+        "rounded-full border px-4 py-2 text-left text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50",
         active
           ? "border-charcoal bg-charcoal text-ivory"
           : "border-charcoal/12 bg-white text-charcoal hover:border-charcoal/30",
@@ -226,6 +245,57 @@ function getFieldErrorClass(...messages: Array<string | undefined>) {
   return messages.some(Boolean)
     ? "border-rose-300 bg-rose-50/70 focus:border-rose-400 focus:ring-rose-100"
     : undefined;
+}
+
+function getStepErrorMessage(stepIndex: number) {
+  switch (stepIndex) {
+    case 0:
+      return "Please review the event details below before continuing.";
+    case 1:
+      return "Select at least one dessert to continue.";
+    case 2:
+      return "Each selected dessert needs its required count or serving target before you continue.";
+    case 3:
+      return "Please review the inspiration details below before continuing.";
+    default:
+      return "Please review the highlighted fields before submitting.";
+  }
+}
+
+function isErrorForStep(key: string, stepIndex: number) {
+  if (stepIndex === 0) {
+    return (
+      key.startsWith("event") ||
+      key.startsWith("guestCount") ||
+      key.startsWith("fulfillmentMethod") ||
+      key.startsWith("deliveryZip") ||
+      key.startsWith("budget")
+    );
+  }
+
+  if (stepIndex === 1) {
+    return key === "orderItems";
+  }
+
+  if (stepIndex === 2) {
+    return key.startsWith("orderItems.");
+  }
+
+  if (stepIndex === 3) {
+    return (
+      key.startsWith("colorPalette") ||
+      key.startsWith("inspiration") ||
+      key === "inspirationUploads"
+    );
+  }
+
+  return (
+    key.startsWith("customer") ||
+    key.startsWith("instagram") ||
+    key.startsWith("preferredContact") ||
+    key.startsWith("howDidYouHear") ||
+    key.startsWith("additionalNotes")
+  );
 }
 
 function formatSelectedItemSummary(item: InquiryProductItem) {
@@ -282,6 +352,8 @@ export function StartOrderWizard({
     null,
   );
   const stepViewportRef = useRef<HTMLDivElement | null>(null);
+  const stepHeadingRef = useRef<HTMLHeadingElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const hasMountedRef = useRef(false);
   const fieldRefs = useRef<Record<string, HTMLElement | null>>({});
   const shouldFocusErrorRef = useRef(false);
@@ -325,6 +397,7 @@ export function StartOrderWizard({
 
     const timeoutId = window.setTimeout(() => {
       const target = stepViewportRef.current;
+      const shouldFocusHeading = !shouldFocusErrorRef.current;
 
       if (!target) {
         return;
@@ -337,6 +410,12 @@ export function StartOrderWizard({
         top: Math.max(top, 0),
         behavior: "smooth",
       });
+
+      if (shouldFocusHeading) {
+        window.setTimeout(() => {
+          stepHeadingRef.current?.focus();
+        }, 160);
+      }
     }, 120);
 
     return () => window.clearTimeout(timeoutId);
@@ -365,7 +444,7 @@ export function StartOrderWizard({
   const activeItem =
     selectedItems.find((item) => item.productType === activeItemType) ?? selectedItems[0];
 
-  const stepHasError = Object.keys(errors).some((key) => findStepForErrors({ [key]: errors[key] }) === currentStep);
+  const stepHasError = Object.keys(errors).some((key) => isErrorForStep(key, currentStep));
   const registerFieldRef =
     (key: string) =>
     (element: HTMLElement | null) => {
@@ -485,6 +564,11 @@ export function StartOrderWizard({
 
   const removeUpload = (uploadId: string) => {
     setUploads((current) => current.filter((upload) => upload.id !== uploadId));
+    setErrors((current) => {
+      const next = { ...current };
+      delete next.inspirationUploads;
+      return next;
+    });
   };
 
   const setInspirationLink = (index: number, value: string) => {
@@ -588,10 +672,16 @@ export function StartOrderWizard({
       }
     }
 
-    setErrors((current) => ({
-      ...current,
-      ...nextErrors,
-    }));
+    setErrors((current) => {
+      const filtered = Object.fromEntries(
+        Object.entries(current).filter(([key]) => !isErrorForStep(key, stepIndex)),
+      );
+
+      return {
+        ...filtered,
+        ...nextErrors,
+      };
+    });
 
     if (Object.keys(nextErrors).length > 0) {
       shouldFocusErrorRef.current = true;
@@ -626,6 +716,28 @@ export function StartOrderWizard({
 
   const goToPreviousStep = () => {
     setCurrentStep((current) => Math.max(current - 1, 0));
+  };
+
+  const goToStep = (stepIndex: number) => {
+    if (stepIndex === currentStep) {
+      return;
+    }
+
+    if (stepIndex < currentStep) {
+      setCurrentStep(stepIndex);
+      return;
+    }
+
+    for (let index = currentStep; index < stepIndex; index += 1) {
+      const valid = validateStep(index);
+
+      if (!valid) {
+        setCurrentStep(index);
+        return;
+      }
+    }
+
+    setCurrentStep(stepIndex);
   };
 
   const submitInquiryForm = async () => {
@@ -836,12 +948,17 @@ export function StartOrderWizard({
                     Current step
                   </p>
                   <p
+                    ref={stepHeadingRef}
+                    tabIndex={-1}
                     className={cn(
-                      "font-serif tracking-[-0.04em] text-charcoal",
+                      "font-serif tracking-[-0.04em] text-charcoal focus:outline-none",
                       hasStarted ? "mt-2 text-[1.9rem] leading-none sm:text-3xl" : "mt-3 text-3xl",
                     )}
                   >
                     {inquiryStepTitles[currentStep]}
+                  </p>
+                  <p className="mt-2 text-sm leading-7 text-charcoal/65">
+                    {inquiryStepDescriptions[currentStep]}
                   </p>
                   <p className="mt-2 text-sm leading-7 text-charcoal/65">
                     {currentStep + 1} of {inquiryStepTitles.length}
@@ -850,6 +967,10 @@ export function StartOrderWizard({
               </div>
 
               <div className="space-y-3">
+                <p className="sr-only" aria-live="polite">
+                  Step {currentStep + 1} of {inquiryStepTitles.length}: {inquiryStepTitles[currentStep]}.{" "}
+                  {inquiryStepDescriptions[currentStep]}
+                </p>
                 <div className="flex items-center justify-between gap-3 text-xs uppercase tracking-[0.18em] text-charcoal/45">
                   <span>Progress</span>
                   <span>{progressPercentage}% complete</span>
@@ -877,8 +998,11 @@ export function StartOrderWizard({
                   <StepMarker
                     key={title}
                     active={currentStep === index}
+                    canSelect={index <= currentStep}
                     complete={index < currentStep}
+                    description={inquiryStepDescriptions[index]}
                     index={index}
+                    onSelect={() => goToStep(index)}
                     title={title}
                   />
                 ))}
@@ -889,7 +1013,7 @@ export function StartOrderWizard({
           <div className="px-5 py-6 sm:px-8 sm:py-10">
             <div ref={stepViewportRef} className="scroll-mt-24 sm:scroll-mt-28" />
             <StepAlert
-              message={stepHasError ? "Please review the highlighted fields before continuing." : undefined}
+              message={stepHasError ? getStepErrorMessage(currentStep) : undefined}
             />
             <div className="sr-only" aria-hidden="true">
               <label htmlFor="website">Leave this field empty</label>
@@ -956,8 +1080,11 @@ export function StartOrderWizard({
                       type="date"
                       value={values.eventDate}
                       onChange={(event) => setFieldValue("eventDate", event.target.value)}
-                      onFocus={(event) => {
-                        event.currentTarget.showPicker?.();
+                      onKeyDown={(event) => {
+                        if ((event.key === "Enter" || event.key === " ") && "showPicker" in event.currentTarget) {
+                          event.preventDefault();
+                          event.currentTarget.showPicker?.();
+                        }
                       }}
                       min={minimumEventDate}
                       className={getFieldErrorClass(errors.eventDate)}
@@ -966,7 +1093,7 @@ export function StartOrderWizard({
                       aria-invalid={Boolean(errors.eventDate)}
                     />
                     <p id="event-date-hint" className="mt-2 text-sm text-charcoal/58">
-                      Online inquiries accept future dates only and review them in Mountain Time.
+                      Choose a future date. Sweet Fork reviews inquiry timing in Mountain Time.
                     </p>
                     <InlineError message={errors.eventDate} />
                   </div>
@@ -1038,7 +1165,7 @@ export function StartOrderWizard({
                         ref={index === 0 ? registerFieldRef("budgetRange") : undefined}
                         aria-pressed={values.budgetRange === option.value}
                         className={cn(
-                          "rounded-[1.6rem] border p-4 text-left transition",
+                          "rounded-[1.6rem] border p-4 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50",
                           values.budgetRange === option.value
                             ? "border-charcoal bg-charcoal text-ivory"
                             : "border-charcoal/10 bg-white hover:border-charcoal/30",
@@ -1073,7 +1200,7 @@ export function StartOrderWizard({
                         ref={index === 0 ? registerFieldRef("budgetFlexibility") : undefined}
                         aria-pressed={values.budgetFlexibility === option.value}
                         className={cn(
-                          "rounded-[1.6rem] border p-4 text-left transition",
+                          "rounded-[1.6rem] border p-4 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50",
                           values.budgetFlexibility === option.value
                             ? "border-charcoal bg-charcoal text-ivory"
                             : "border-charcoal/10 bg-white hover:border-charcoal/30",
@@ -1128,7 +1255,7 @@ export function StartOrderWizard({
                         ref={index === 0 ? registerFieldRef("orderItems") : undefined}
                         aria-pressed={selected}
                         className={cn(
-                          "rounded-[1.9rem] border p-4 text-left transition sm:p-5",
+                          "rounded-[1.9rem] border p-4 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50 sm:p-5",
                           selected
                             ? "border-charcoal bg-charcoal text-ivory"
                             : "border-charcoal/10 bg-white hover:border-charcoal/30",
@@ -1211,7 +1338,7 @@ export function StartOrderWizard({
                         key={item.productType}
                         type="button"
                         className={cn(
-                          "min-w-fit rounded-full border px-4 py-3 text-left transition",
+                          "min-w-fit rounded-full border px-4 py-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50",
                           activeItem?.productType === item.productType
                             ? "border-charcoal bg-charcoal text-ivory"
                             : "border-charcoal/10 bg-white text-charcoal",
@@ -1238,6 +1365,10 @@ export function StartOrderWizard({
                   })}
                 </div>
 
+                <div className="rounded-[1.6rem] border border-charcoal/8 bg-cream/45 px-4 py-4 text-sm leading-7 text-charcoal/66">
+                  Counts or servings marked <span className="font-medium text-charcoal">Required</span> are needed before Sweet Fork can review that item confidently.
+                </div>
+
                 {activeItem ? (
                   <div className="space-y-6 rounded-[2rem] border border-charcoal/10 bg-white p-5 shadow-soft sm:p-6">
                     <div className="flex flex-wrap items-center justify-between gap-4">
@@ -1259,9 +1390,9 @@ export function StartOrderWizard({
                       activeItem.productType === "wedding-cake") && (
                       <div className="grid gap-6 md:grid-cols-2">
                         <div>
-                          <Label htmlFor={`${activeItem.productType}-servings`}>
+                          <FieldLabel htmlFor={`${activeItem.productType}-servings`} required>
                             Estimated servings
-                          </Label>
+                          </FieldLabel>
                           <Input
                             id={`${activeItem.productType}-servings`}
                             ref={(element) => {
@@ -1380,7 +1511,9 @@ export function StartOrderWizard({
 
                     {activeItem.productType === "cupcakes" && (
                       <div>
-                        <Label htmlFor="cupcake-count">Cupcake count</Label>
+                        <FieldLabel htmlFor="cupcake-count" required>
+                          Cupcake count
+                        </FieldLabel>
                         <Input
                           id="cupcake-count"
                           ref={registerFieldRef(itemPath(activeItem.productType, "cupcakeCount"))}
@@ -1405,7 +1538,9 @@ export function StartOrderWizard({
 
                     {activeItem.productType === "sugar-cookies" && (
                       <div>
-                        <Label htmlFor="cookie-count">Cookie count</Label>
+                        <FieldLabel htmlFor="cookie-count" required>
+                          Cookie count
+                        </FieldLabel>
                         <Input
                           id="cookie-count"
                           ref={registerFieldRef(itemPath(activeItem.productType, "cookieCount"))}
@@ -1430,7 +1565,9 @@ export function StartOrderWizard({
 
                     {activeItem.productType === "macarons" && (
                       <div>
-                        <Label htmlFor="macaron-count">Macaron count</Label>
+                        <FieldLabel htmlFor="macaron-count" required>
+                          Macaron count
+                        </FieldLabel>
                         <Input
                           id="macaron-count"
                           ref={registerFieldRef(itemPath(activeItem.productType, "macaronCount"))}
@@ -1455,7 +1592,9 @@ export function StartOrderWizard({
 
                     {activeItem.productType === "diy-kit" && (
                       <div>
-                        <Label htmlFor="kit-count">Kit quantity</Label>
+                        <FieldLabel htmlFor="kit-count" required>
+                          Kit quantity
+                        </FieldLabel>
                         <Input
                           id="kit-count"
                           ref={registerFieldRef(itemPath(activeItem.productType, "kitCount"))}
@@ -1615,9 +1754,19 @@ export function StartOrderWizard({
                     </div>
                     <label
                       ref={registerFieldRef("inspirationUploads")}
-                      tabIndex={-1}
+                      tabIndex={featureFlags.uploadsEnabled ? 0 : -1}
+                      onKeyDown={(event) => {
+                        if (!featureFlags.uploadsEnabled) {
+                          return;
+                        }
+
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          fileInputRef.current?.click();
+                        }
+                      }}
                       className={cn(
-                        "flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-[2rem] border border-dashed px-5 py-7 text-center transition sm:min-h-[220px] sm:px-6 sm:py-8",
+                        "flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-[2rem] border border-dashed px-5 py-7 text-center transition focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-gold/50 sm:min-h-[220px] sm:px-6 sm:py-8",
                         featureFlags.uploadsEnabled
                           ? "border-charcoal/18 bg-cream/45 hover:border-charcoal/35"
                           : "cursor-not-allowed border-charcoal/10 bg-charcoal/3 text-charcoal/40",
@@ -1636,6 +1785,7 @@ export function StartOrderWizard({
                       </p>
                       {featureFlags.uploadsEnabled ? (
                         <input
+                          ref={fileInputRef}
                           type="file"
                           accept="image/*"
                           multiple
@@ -1663,7 +1813,7 @@ export function StartOrderWizard({
                             </div>
                             <button
                               type="button"
-                              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-charcoal/10 text-charcoal transition hover:border-charcoal/30"
+                              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-charcoal/10 text-charcoal transition hover:border-charcoal/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50"
                               onClick={() => removeUpload(upload.id)}
                               aria-label={`Remove ${upload.file.name}`}
                             >
@@ -1697,11 +1847,11 @@ export function StartOrderWizard({
                                 className={getFieldErrorClass(errors.inspirationLinks)}
                               />
                               <button
-                                type="button"
-                                className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-charcoal/10 text-charcoal transition hover:border-charcoal/30"
-                                onClick={() => removeInspirationLink(index)}
-                                aria-label={`Remove inspiration link ${index + 1}`}
-                              >
+                              type="button"
+                              className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-charcoal/10 text-charcoal transition hover:border-charcoal/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50"
+                              onClick={() => removeInspirationLink(index)}
+                              aria-label={`Remove inspiration link ${index + 1}`}
+                            >
                                 <Trash2 className="h-4 w-4" />
                               </button>
                             </div>
@@ -1893,8 +2043,8 @@ export function StartOrderWizard({
                         <p className="text-sm font-medium text-ivory">Event details</p>
                         <button
                           type="button"
-                          className="rounded-full border border-white/12 px-3 py-1 text-xs uppercase tracking-[0.16em] text-ivory/78 transition hover:border-white/24"
-                          onClick={() => setCurrentStep(0)}
+                          className="rounded-full border border-white/12 px-3 py-1 text-xs uppercase tracking-[0.16em] text-ivory/78 transition hover:border-white/24 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50"
+                          onClick={() => goToStep(0)}
                         >
                           Edit
                         </button>
@@ -1919,8 +2069,8 @@ export function StartOrderWizard({
                         <p className="text-sm font-medium text-ivory">Product selections</p>
                         <button
                           type="button"
-                          className="rounded-full border border-white/12 px-3 py-1 text-xs uppercase tracking-[0.16em] text-ivory/78 transition hover:border-white/24"
-                          onClick={() => setCurrentStep(2)}
+                          className="rounded-full border border-white/12 px-3 py-1 text-xs uppercase tracking-[0.16em] text-ivory/78 transition hover:border-white/24 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50"
+                          onClick={() => goToStep(2)}
                         >
                           Edit
                         </button>
@@ -1948,8 +2098,8 @@ export function StartOrderWizard({
                         <p className="text-sm font-medium text-ivory">Design inputs</p>
                         <button
                           type="button"
-                          className="rounded-full border border-white/12 px-3 py-1 text-xs uppercase tracking-[0.16em] text-ivory/78 transition hover:border-white/24"
-                          onClick={() => setCurrentStep(3)}
+                          className="rounded-full border border-white/12 px-3 py-1 text-xs uppercase tracking-[0.16em] text-ivory/78 transition hover:border-white/24 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50"
+                          onClick={() => goToStep(3)}
                         >
                           Edit
                         </button>
@@ -1972,8 +2122,8 @@ export function StartOrderWizard({
                         <p className="text-sm font-medium text-ivory">Contact info</p>
                         <button
                           type="button"
-                          className="rounded-full border border-white/12 px-3 py-1 text-xs uppercase tracking-[0.16em] text-ivory/78 transition hover:border-white/24"
-                          onClick={() => setCurrentStep(4)}
+                          className="rounded-full border border-white/12 px-3 py-1 text-xs uppercase tracking-[0.16em] text-ivory/78 transition hover:border-white/24 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50"
+                          onClick={() => goToStep(4)}
                         >
                           Edit
                         </button>

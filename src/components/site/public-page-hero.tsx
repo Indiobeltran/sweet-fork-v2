@@ -30,7 +30,7 @@ export function PublicPageHero({
             <h1 className="max-w-4xl text-balance font-serif text-5xl leading-[0.95] tracking-[-0.05em] text-charcoal sm:text-6xl lg:text-7xl">
               {title}
             </h1>
-            <p className="max-w-2xl text-base leading-8 text-charcoal/72 sm:text-lg">{description}</p>
+            <p className="max-w-2xl text-base leading-8 text-charcoal/76 sm:text-lg">{description}</p>
           </div>
           {cta ? (
             <SitePrimaryCta href={cta.href} label={cta.label} subtext={cta.subtext} />
@@ -42,7 +42,7 @@ export function PublicPageHero({
             {accent}
           </p>
           <div className="mt-8 h-px w-full bg-gradient-to-r from-gold/35 via-charcoal/10 to-transparent" />
-          <p className="mt-6 text-sm leading-7 text-charcoal/64">
+          <p className="mt-6 text-sm leading-7 text-charcoal/70">
             Inquiry-only ordering keeps every quote tailored to the event instead of forcing a one-size-fits-all checkout flow.
           </p>
         </div>

@@ -4,6 +4,7 @@ import { cache } from "react";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { defaultPricingBaseline } from "@/lib/pricing";
+import { resolveGalleryPlaceholderImageUrl } from "@/lib/site/placeholder-images";
 import { formatCurrency } from "@/lib/utils";
 import { isSupabaseConfigured } from "@/lib/env";
 import {
@@ -765,10 +766,12 @@ const getPublicProductRows = cache(async function getPublicProductRows(): Promis
 });
 
 async function resolveFallbackGalleryItems(limit: number) {
-  return staticGalleryItems.slice(0, limit).map((item) => ({
-    ...item,
-    imageUrl: item.imageUrl ?? null,
-  }));
+  return Promise.all(
+    staticGalleryItems.slice(0, limit).map(async (item) => ({
+      ...item,
+      imageUrl: item.imageUrl ?? (await resolveGalleryPlaceholderImageUrl(item.id)) ?? null,
+    })),
+  );
 }
 
 export async function getPublicSeoData(): Promise<PublicSeoData> {

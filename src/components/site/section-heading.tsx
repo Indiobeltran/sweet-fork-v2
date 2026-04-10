@@ -21,7 +21,7 @@ export function SectionHeading({
         <h2 className="text-balance font-serif text-4xl leading-[0.92] tracking-[-0.04em] text-charcoal sm:text-5xl">
           {title}
         </h2>
-        {description ? <p className="text-base leading-8 text-charcoal/70">{description}</p> : null}
+        {description ? <p className="text-base leading-8 text-charcoal/76">{description}</p> : null}
       </div>
     </div>
   );

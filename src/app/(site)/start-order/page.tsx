@@ -36,7 +36,7 @@ export default async function StartOrderPage() {
 
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-[1.8rem] border border-charcoal/8 bg-white/85 p-4 sm:p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/58">
                   Options
                 </p>
                 <p className="mt-3 font-serif text-3xl tracking-[-0.04em] text-charcoal">
@@ -49,7 +49,7 @@ export default async function StartOrderPage() {
                 </p>
               </div>
               <div className="rounded-[1.8rem] border border-charcoal/8 bg-white/85 p-4 sm:p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/58">
                   {hasCatalog ? "Response" : "Status"}
                 </p>
                 <p className="mt-3 font-serif text-3xl tracking-[-0.04em] text-charcoal">
@@ -62,7 +62,7 @@ export default async function StartOrderPage() {
                 </p>
               </div>
               <div className="rounded-[1.8rem] border border-charcoal/8 bg-white/85 p-4 sm:p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/58">
                   {hasCatalog ? "Lead time" : "Offerings"}
                 </p>
                 <p className="mt-3 font-serif text-3xl tracking-[-0.04em] text-charcoal">
@@ -84,7 +84,7 @@ export default async function StartOrderPage() {
       ) : (
         <section className="section-shell pb-12">
           <div className="rounded-[2rem] border border-charcoal/10 bg-white px-6 py-8 shadow-soft sm:px-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/58">
               Ordering update
             </p>
             <h2 className="mt-3 text-balance font-serif text-4xl tracking-[-0.04em] text-charcoal">

@@ -20,6 +20,8 @@
 html {
   scroll-behavior: smooth;
   background: rgb(var(--color-ivory));
+  color-scheme: light;
+  scroll-padding-top: 7rem;
 }
 
 body {
@@ -44,10 +46,33 @@ a {
   text-decoration: none;
 }
 
-a:focus-visible,
-button:focus-visible {
-  outline: 2px solid rgba(195, 163, 103, 0.55);
+:where(
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [role="button"],
+    [tabindex]:not([tabindex="-1"])
+  ) {
+  -webkit-tap-highlight-color: rgba(186, 154, 99, 0.16);
+  touch-action: manipulation;
+}
+
+:where(
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [role="button"],
+    [tabindex]:not([tabindex="-1"])
+  ):focus-visible {
+  outline: 2px solid rgba(186, 154, 99, 0.82);
   outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(186, 154, 99, 0.16);
 }
 
 img {
@@ -100,7 +125,7 @@ img {
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(var(--color-charcoal), 0.46);
+  color: rgba(var(--color-charcoal), 0.58);
 }
 
 .start-order-page-hero {

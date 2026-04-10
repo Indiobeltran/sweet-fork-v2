@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
@@ -12,6 +12,11 @@ type GalleryGridProps = {
   compact?: boolean;
   priorityCount?: number;
 };
+
+const GALLERY_CARD_SIZES =
+  "(max-width: 640px) calc(100vw - 2.5rem), (max-width: 1024px) calc(50vw - 2.5rem), 405px";
+const GALLERY_MODAL_SIZES =
+  "(max-width: 1024px) calc(100vw - 2.5rem), (max-width: 1280px) calc(100vw - 24rem), 820px";
 
 function getAdjacentInteractiveIndex(
   current: number | null,
@@ -47,6 +52,9 @@ export function GalleryGrid({
 }: GalleryGridProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const dialogId = useId();
+  const triggerRefs = useRef<Record<number, HTMLButtonElement | null>>({});
+  const dialogPanelRef = useRef<HTMLDivElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const activeItem = activeIndex === null ? null : items[activeIndex] ?? null;
   const titleId = `${dialogId}-title`;
   const descriptionId = `${dialogId}-description`;
@@ -61,6 +69,20 @@ export function GalleryGrid({
       }, []),
     [items],
   );
+  const activeImagePosition =
+    activeIndex === null ? null : interactiveIndexes.indexOf(activeIndex) + 1;
+
+  const closeItem = (indexToFocus = activeIndex) => {
+    setActiveIndex(null);
+
+    if (indexToFocus === null) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      triggerRefs.current[indexToFocus]?.focus();
+    });
+  };
 
   useEffect(() => {
     if (activeIndex === null) {
@@ -69,10 +91,21 @@ export function GalleryGrid({
 
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const focusTimeoutId = window.setTimeout(() => {
+      closeButtonRef.current?.focus();
+    }, 40);
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setActiveIndex(null);
+        setActiveIndex((current) => {
+          if (current !== null) {
+            window.requestAnimationFrame(() => {
+              triggerRefs.current[current]?.focus();
+            });
+          }
+
+          return null;
+        });
       }
 
       if (event.key === "ArrowRight") {
@@ -86,11 +119,43 @@ export function GalleryGrid({
           getAdjacentInteractiveIndex(current, interactiveIndexes, "previous"),
         );
       }
+
+      if (event.key === "Tab") {
+        const focusableElements = dialogPanelRef.current
+          ? Array.from(
+              dialogPanelRef.current.querySelectorAll<HTMLElement>(
+                'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+              ),
+            )
+          : [];
+
+        if (focusableElements.length === 0) {
+          return;
+        }
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (!firstElement || !lastElement) {
+          return;
+        }
+
+        if (event.shiftKey && document.activeElement === firstElement) {
+          event.preventDefault();
+          lastElement.focus();
+        }
+
+        if (!event.shiftKey && document.activeElement === lastElement) {
+          event.preventDefault();
+          firstElement.focus();
+        }
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
+      window.clearTimeout(focusTimeoutId);
       document.body.style.overflow = originalOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
@@ -118,7 +183,7 @@ export function GalleryGrid({
             <article
               key={item.id}
               className={cn(
-                "group relative overflow-hidden rounded-[2rem] border border-charcoal/8 bg-white shadow-soft transition duration-300 hover:-translate-y-1",
+                "group relative overflow-hidden rounded-[2rem] border border-charcoal/8 bg-white shadow-soft transition duration-300 hover:-translate-y-1 focus-within:-translate-y-1 focus-within:border-gold/35 focus-within:shadow-[0_18px_48px_rgba(53,37,29,0.14)]",
                 isFeatured ? "lg:row-span-2" : "",
               )}
               style={{
@@ -128,7 +193,10 @@ export function GalleryGrid({
             >
               <button
                 type="button"
-                className="w-full text-left"
+                ref={(element) => {
+                  triggerRefs.current[index] = element;
+                }}
+                className="w-full text-left focus-visible:outline-none"
                 onClick={() => openItem(index)}
                 aria-haspopup={item.imageUrl ? "dialog" : undefined}
                 aria-label={
@@ -150,12 +218,8 @@ export function GalleryGrid({
                         alt={item.alt}
                         fill
                         priority={index < priorityCount}
-                        quality={86}
-                        sizes={
-                          isFeatured
-                            ? "(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 40vw"
-                            : "(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                        }
+                        quality={82}
+                        sizes={GALLERY_CARD_SIZES}
                         className="object-cover transition duration-500 group-hover:scale-[1.03]"
                       />
                       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(48,39,33,0.08),rgba(48,39,33,0.22)_55%,rgba(48,39,33,0.68))]" />
@@ -202,10 +266,11 @@ export function GalleryGrid({
           aria-modal="true"
           aria-labelledby={titleId}
           aria-describedby={descriptionId}
-          onClick={() => setActiveIndex(null)}
+          onClick={() => closeItem()}
         >
           <div
-            className="relative w-full max-w-6xl rounded-[2rem] border border-white/10 bg-[#1f1815] p-4 text-ivory shadow-[0_30px_90px_rgba(15,9,7,0.5)] sm:p-5"
+            ref={dialogPanelRef}
+            className="relative max-h-[calc(100svh-2rem)] w-full max-w-6xl overflow-y-auto rounded-[2rem] border border-white/10 bg-[#1f1815] p-4 text-ivory shadow-[0_30px_90px_rgba(15,9,7,0.5)] sm:p-5"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-4 flex items-start justify-between gap-4">
@@ -219,11 +284,17 @@ export function GalleryGrid({
                 >
                   {activeItem.title}
                 </h3>
+                {activeImagePosition ? (
+                  <p className="mt-3 text-sm leading-6 text-ivory/70">
+                    Image {activeImagePosition} of {interactiveIndexes.length}
+                  </p>
+                ) : null}
               </div>
               <button
+                ref={closeButtonRef}
                 type="button"
-                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/6 text-ivory transition hover:border-white/28 hover:bg-white/10"
-                onClick={() => setActiveIndex(null)}
+                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/6 text-ivory transition hover:border-white/28 hover:bg-white/10 focus-visible:border-gold/50 focus-visible:bg-white/12"
+                onClick={() => closeItem()}
                 aria-label="Close gallery image"
               >
                 <X className="h-4 w-4" />
@@ -238,8 +309,8 @@ export function GalleryGrid({
                     alt={activeItem.alt}
                     fill
                     priority
-                    quality={88}
-                    sizes="(max-width: 1024px) 100vw, 68vw"
+                    quality={86}
+                    sizes={GALLERY_MODAL_SIZES}
                     className="object-cover"
                   />
                 </div>
@@ -253,25 +324,29 @@ export function GalleryGrid({
                   <p id={descriptionId} className="mt-3 text-sm leading-7 text-ivory/78">
                     {activeItem.alt}
                   </p>
+                  <p className="mt-4 text-sm leading-7 text-ivory/62">
+                    Use the previous and next buttons, or your arrow keys, to move through the
+                    gallery without closing the lightbox.
+                  </p>
                 </div>
 
                 {showGalleryControls ? (
                   <div className="grid gap-3 sm:grid-cols-2">
                     <button
                       type="button"
-                      className="inline-flex items-center justify-center gap-2 rounded-full border border-white/12 px-4 py-3 text-sm font-medium text-ivory transition hover:border-white/28 hover:bg-white/8"
+                      className="inline-flex items-center justify-center gap-2 rounded-full border border-white/12 px-4 py-3 text-sm font-medium text-ivory transition hover:border-white/28 hover:bg-white/8 focus-visible:border-gold/50 focus-visible:bg-white/12"
                       onClick={() =>
                         setActiveIndex((current) =>
                           getAdjacentInteractiveIndex(current, interactiveIndexes, "previous"),
                         )
                       }
                     >
-                      <ChevronLeft className="h-4 w-4" />
+                      <ChevronLeft className="h-4 w-4" aria-hidden="true" />
                       Previous
                     </button>
                     <button
                       type="button"
-                      className="inline-flex items-center justify-center gap-2 rounded-full border border-white/12 px-4 py-3 text-sm font-medium text-ivory transition hover:border-white/28 hover:bg-white/8"
+                      className="inline-flex items-center justify-center gap-2 rounded-full border border-white/12 px-4 py-3 text-sm font-medium text-ivory transition hover:border-white/28 hover:bg-white/8 focus-visible:border-gold/50 focus-visible:bg-white/12"
                       onClick={() =>
                         setActiveIndex((current) =>
                           getAdjacentInteractiveIndex(current, interactiveIndexes, "next"),
@@ -279,7 +354,7 @@ export function GalleryGrid({
                       }
                     >
                       Next
-                      <ChevronRight className="h-4 w-4" />
+                      <ChevronRight className="h-4 w-4" aria-hidden="true" />
                     </button>
                   </div>
                 ) : null}

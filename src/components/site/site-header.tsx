@@ -46,10 +46,10 @@ function NavLink({
         compact
           ? isActive
             ? "bg-charcoal text-ivory px-3 py-2 text-[13px] shadow-soft"
-            : "px-3 py-2 text-[13px] text-charcoal/62 hover:bg-charcoal/5 hover:text-charcoal"
+            : "px-3 py-2 text-[13px] text-charcoal/72 hover:bg-charcoal/5 hover:text-charcoal"
           : isActive
             ? "bg-charcoal text-ivory px-4 py-2.5 text-sm shadow-soft"
-            : "px-4 py-2.5 text-sm text-charcoal/70 hover:bg-charcoal/5 hover:text-charcoal",
+            : "px-4 py-2.5 text-sm text-charcoal/78 hover:bg-charcoal/5 hover:text-charcoal",
       )}
       onClick={onClick}
     >
@@ -87,7 +87,7 @@ export function SiteHeader({
     <header className="sticky top-0 z-50 border-b border-charcoal/8 bg-ivory/90 backdrop-blur-xl">
       <div className="hidden border-b border-charcoal/8 lg:block">
         <div className="section-shell flex h-11 items-center justify-between gap-6">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-charcoal/44">{tagline}</p>
+          <p className="text-[11px] uppercase tracking-[0.22em] text-charcoal/56">{tagline}</p>
           <nav className="flex items-center gap-1">
             {secondaryNavigation.map((item) => (
               <NavLink
@@ -110,8 +110,8 @@ export function SiteHeader({
           <Image
             src="/brand/logo-dark.png"
             alt={brandName}
-            width={340}
-            height={193}
+            width={1024}
+            height={582}
             priority
             sizes="(max-width: 640px) 130px, 148px"
             className="h-auto w-[130px] shrink-0 sm:w-[148px]"
@@ -164,7 +164,7 @@ export function SiteHeader({
       >
         <div className="overflow-hidden">
           <div className="section-shell pb-6 pt-5">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-charcoal/44">{tagline}</p>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-charcoal/56">{tagline}</p>
 
             <div className="mt-6">
               <p className="eyebrow-label">Shop by category</p>
@@ -200,7 +200,7 @@ export function SiteHeader({
                       "rounded-[1.2rem] px-4 py-3 text-sm transition",
                       pathname === item.href
                         ? "bg-charcoal text-ivory shadow-soft"
-                        : "text-charcoal/70 hover:bg-white/82 hover:text-charcoal",
+                        : "text-charcoal/78 hover:bg-white/82 hover:text-charcoal",
                     )}
                     onClick={() => setOpen(false)}
                   >
@@ -217,7 +217,7 @@ export function SiteHeader({
             >
               {defaultInquiryCta.label}
             </Link>
-            <p className="mt-3 text-center text-sm text-charcoal/56">{defaultInquiryCta.subtext}</p>
+            <p className="mt-3 text-center text-sm text-charcoal/66">{defaultInquiryCta.subtext}</p>
           </div>
         </div>
       </div>

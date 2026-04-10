@@ -8,12 +8,17 @@ const contentSecurityPolicy = [
   "connect-src 'self' ws: wss: https://*.supabase.co",
   "font-src 'self' data:",
   "form-action 'self'",
+  "frame-src 'none'",
   "frame-ancestors 'none'",
   "img-src 'self' data: blob: https://*.supabase.co",
+  "manifest-src 'self'",
   "media-src 'self' data: blob: https://*.supabase.co",
   "object-src 'none'",
   `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"}`,
+  "script-src-attr 'none'",
   "style-src 'self' 'unsafe-inline'",
+  "style-src-elem 'self' 'unsafe-inline'",
+  "worker-src 'self' blob:",
   ...(isProduction ? ["upgrade-insecure-requests"] : []),
 ].join("; ");
 

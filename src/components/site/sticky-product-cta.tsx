@@ -55,7 +55,7 @@ export function StickyProductCta({
         >
           {label}
         </Link>
-        <p className="mt-2 text-center text-xs text-charcoal/56">{subtext}</p>
+        <p className="mt-2 text-center text-xs text-charcoal/66">{subtext}</p>
       </div>
     </div>
   );

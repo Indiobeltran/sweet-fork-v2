@@ -35,7 +35,7 @@ export function ProductPageTemplate({ content }: ProductPageTemplateProps) {
             <p className="mt-4 font-serif text-3xl leading-tight tracking-[-0.04em] text-charcoal sm:text-[2.35rem]">
               {content.heroStatement}
             </p>
-            <p className="mt-6 text-sm leading-7 text-charcoal/64">{content.availabilityNote}</p>
+            <p className="mt-6 text-sm leading-7 text-charcoal/70">{content.availabilityNote}</p>
           </div>
         </div>
       </section>
@@ -75,7 +75,7 @@ export function ProductPageTemplate({ content }: ProductPageTemplateProps) {
               </h2>
             </div>
             <div className="space-y-4 px-6 py-6">
-              <p className="text-sm font-medium uppercase tracking-[0.16em] text-charcoal/48">
+              <p className="text-sm font-medium uppercase tracking-[0.16em] text-charcoal/62">
                 {content.pricingNote}
               </p>
               <p className="text-base leading-8 text-charcoal/68">{content.pricingContext}</p>

@@ -52,7 +52,7 @@ export default async function PricingPage() {
           </div>
 
           <div className="luxury-panel overflow-hidden rounded-[2.1rem]">
-            <div className="grid grid-cols-[1.1fr_0.8fr_0.8fr] border-b border-charcoal/8 px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-charcoal/48">
+            <div className="grid grid-cols-[1.1fr_0.8fr_0.8fr] border-b border-charcoal/8 px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-charcoal/62">
               <span>Offering</span>
               <span>Starts at</span>
               <span>Lead time</span>

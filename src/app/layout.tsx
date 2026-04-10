@@ -4,12 +4,14 @@ import { Cormorant_Garamond, Inter } from "next/font/google";
 import { buildRootMetadata } from "@/lib/seo";
 
 const displayFont = Cormorant_Garamond({
+  display: "swap",
   subsets: ["latin"],
   variable: "--font-display",
-  weight: ["400", "500", "600", "700"],
+  weight: ["400"],
 });
 
 const bodyFont = Inter({
+  display: "swap",
   subsets: ["latin"],
   variable: "--font-body",
 });

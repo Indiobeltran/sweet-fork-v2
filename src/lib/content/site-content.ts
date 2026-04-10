@@ -280,39 +280,39 @@ export const processSteps = [
 export const galleryItems: GalleryItem[] = [
   {
     id: "gal-01",
-    title: "Vintage heart birthday cake",
-    category: "custom-cake",
-    alt: "Vintage heart-shaped birthday cake with piped buttercream",
+    title: "Tiered wedding cake",
+    category: "wedding-cake",
+    alt: "Tall ivory wedding cake with refined piping and soft floral detail",
   },
   {
     id: "gal-02",
     title: "Floral celebration cake",
     category: "custom-cake",
-    alt: "Custom celebration cake with floral buttercream details",
+    alt: "Floral buttercream celebration cake with soft garden tones and an ivory finish",
   },
   {
     id: "gal-03",
-    title: "Holiday macaron assortment",
+    title: "Macaron arrangement",
     category: "macarons",
-    alt: "Custom macarons arranged in a seasonal assortment",
+    alt: "Elevated macaron arrangement in blush, cream, and champagne tones",
   },
   {
     id: "gal-04",
-    title: "Strawberry sugar cookie set",
+    title: "Decorated cookie favors",
     category: "sugar-cookies",
-    alt: "Decorated strawberry-themed sugar cookies",
+    alt: "Decorated sugar cookies styled as boutique event favors on a soft ivory surface",
   },
   {
     id: "gal-05",
-    title: "Color-themed cupcakes",
+    title: "Cupcake assortment",
     category: "cupcakes",
-    alt: "Custom cupcakes arranged in a coordinated event palette",
+    alt: "Curated cupcake assortment with tonal buttercream finishes in ivory, blush, and soft gold",
   },
   {
     id: "gal-06",
-    title: "Valentine's DIY kit",
+    title: "Premium DIY cookie kit",
     category: "diy-kit",
-    alt: "DIY cookie decorating kit packaged for a holiday activity",
+    alt: "Cookie decorating kit arranged with frosted cookies, piping bags, and sprinkles",
   },
 ];
 

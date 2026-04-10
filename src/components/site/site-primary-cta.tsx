@@ -33,7 +33,7 @@ export function SitePrimaryCta({
       {subtext ? (
         <p
           className={cn(
-            "mt-3 text-sm text-charcoal/58",
+            "mt-3 text-sm text-charcoal/66",
             align === "center" && "text-center",
           )}
         >

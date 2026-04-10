@@ -12,12 +12,16 @@ const bakeryTimeZone = "America/Denver";
 const controlCharacterPattern = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
 const dateInputPattern = /^(\d{4})-(\d{2})-(\d{2})$/;
 const htmlTagPattern = /<[^>]*>/g;
+const instagramHandlePattern = /^@?[a-z0-9._]{1,30}$/i;
+const instagramUrlPattern =
+  /^https?:\/\/(?:www\.)?instagram\.com\/([a-z0-9._]{1,30})(?:[/?#].*)?$/i;
 const zipCodePattern = /^\d{5}(?:-\d{4})?$/;
 const imageMimePattern = /^image\//;
 const phoneAllowedPattern = /^[+\d().\-\s]+$/;
 
 export const MAX_INSPIRATION_UPLOADS = 6;
 export const MAX_INSPIRATION_FILE_SIZE_BYTES = 8 * 1024 * 1024;
+export const MAX_INQUIRY_PAYLOAD_SIZE_BYTES = 75_000;
 
 const trimmedOptionalString = (max: number) =>
   z.string().trim().max(max).optional().or(z.literal(""));
@@ -89,6 +93,62 @@ function sanitizeOptionalTextValue(
 
   const sanitized = sanitizeTextValue(value, options);
   return sanitized.length > 0 ? sanitized : undefined;
+}
+
+function getRecord(value: unknown) {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function toFiniteNumber(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    if (trimmed.length === 0) {
+      return undefined;
+    }
+
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  return undefined;
+}
+
+function normalizeDeliveryZip(value: unknown) {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const normalized = value.replace(/\s+/g, "").trim();
+  return normalized.length > 0 ? normalized.slice(0, 10) : undefined;
+}
+
+function normalizeInstagramHandle(value: unknown) {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const sanitized = sanitizeTextValue(value);
+
+  if (sanitized.length === 0) {
+    return undefined;
+  }
+
+  const urlMatch = instagramUrlPattern.exec(sanitized);
+  const candidate = urlMatch?.[1] ?? sanitized.replace(/^@+/, "");
+  const handle = candidate.replace(/[^a-z0-9._]/gi, "").slice(0, 30);
+
+  return handle.length > 0 ? `@${handle}` : undefined;
+}
+
+function toStringArray(value: unknown) {
+  return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
 }
 
 export function getMinimumInquiryDate(referenceDate = new Date()) {
@@ -248,7 +308,15 @@ export const inquiryContactSchema = z.object({
       const digits = countPhoneDigits(value);
       return digits >= 10 && digits <= 15;
     }, "Enter a valid phone number with area code."),
-  instagramHandle: trimmedOptionalString(60),
+  instagramHandle: z
+    .string()
+    .trim()
+    .max(31)
+    .optional()
+    .or(z.literal(""))
+    .refine((value) => !value || instagramHandlePattern.test(value), {
+      message: "Use an Instagram handle like @sweetfork.",
+    }),
   preferredContact: z.enum(["email", "text", "phone"]),
   howDidYouHear: trimmedOptionalString(120),
   additionalNotes: trimmedOptionalString(2000),
@@ -263,11 +331,14 @@ export const inquirySchema = addEventRefinements(
 
 export type InquiryFormValues = z.infer<typeof inquirySchema>;
 
-export function normalizeInquiryFormValues(values: InquiryFormValues): InquiryFormValues {
-  const orderItems = Array.isArray(values.orderItems)
-    ? values.orderItems
+export function normalizeInquiryFormValues(values: unknown): InquiryFormValues {
+  const source = getRecord(values);
+  const orderItems = Array.isArray(source.orderItems)
+    ? source.orderItems
         .map((item) =>
-          item && typeof item === "object" ? (item as Partial<InquiryFormValues["orderItems"][number]>) : null,
+          item && typeof item === "object"
+            ? (item as Partial<InquiryFormValues["orderItems"][number]>)
+            : null,
         )
         .filter(
           (
@@ -277,73 +348,66 @@ export function normalizeInquiryFormValues(values: InquiryFormValues): InquiryFo
           } => Boolean(item && typeof item.productType === "string"),
         )
     : [];
-  const inspirationLinks = Array.isArray(values.inspirationLinks) ? values.inspirationLinks : [];
+  const inspirationLinks = toStringArray(source.inspirationLinks);
 
   return {
-    ...values,
-    eventType: sanitizeTextValue(typeof values.eventType === "string" ? values.eventType : ""),
-    eventDate: typeof values.eventDate === "string" ? values.eventDate.trim() : "",
+    eventType: sanitizeTextValue(
+      typeof source.eventType === "string" ? source.eventType : "",
+    ),
+    eventDate: typeof source.eventDate === "string" ? source.eventDate.trim() : "",
     guestCount:
-      typeof values.guestCount === "number" && Number.isFinite(values.guestCount)
-        ? values.guestCount
-        : undefined,
+      toFiniteNumber(source.guestCount),
     fulfillmentMethod:
-      typeof values.fulfillmentMethod === "string"
-        ? (values.fulfillmentMethod as InquiryFormValues["fulfillmentMethod"])
+      typeof source.fulfillmentMethod === "string"
+        ? (source.fulfillmentMethod as InquiryFormValues["fulfillmentMethod"])
         : ("" as InquiryFormValues["fulfillmentMethod"]),
-    deliveryZip:
-      typeof values.deliveryZip === "string" ? values.deliveryZip.trim() || undefined : undefined,
+    deliveryZip: normalizeDeliveryZip(source.deliveryZip),
     budgetRange:
-      typeof values.budgetRange === "string"
-        ? (values.budgetRange as InquiryFormValues["budgetRange"])
+      typeof source.budgetRange === "string"
+        ? (source.budgetRange as InquiryFormValues["budgetRange"])
         : ("" as InquiryFormValues["budgetRange"]),
     budgetFlexibility:
-      typeof values.budgetFlexibility === "string"
-        ? (values.budgetFlexibility as InquiryFormValues["budgetFlexibility"])
+      typeof source.budgetFlexibility === "string"
+        ? (source.budgetFlexibility as InquiryFormValues["budgetFlexibility"])
         : ("" as InquiryFormValues["budgetFlexibility"]),
     colorPalette:
-      typeof values.colorPalette === "string"
-        ? sanitizeOptionalTextValue(values.colorPalette)
+      typeof source.colorPalette === "string"
+        ? sanitizeOptionalTextValue(source.colorPalette)
         : undefined,
     inspirationLinks: inspirationLinks
-      .map((link: string) => link.trim())
+      .map((link) => link.trim())
       .filter((link): link is string => Boolean(link)),
     inspirationText:
-      typeof values.inspirationText === "string"
-        ? sanitizeOptionalTextValue(values.inspirationText, { multiline: true })
+      typeof source.inspirationText === "string"
+        ? sanitizeOptionalTextValue(source.inspirationText, { multiline: true })
         : undefined,
     customerName: sanitizeTextValue(
-      typeof values.customerName === "string" ? values.customerName : "",
+      typeof source.customerName === "string" ? source.customerName : "",
     ),
     customerEmail:
-      typeof values.customerEmail === "string" ? values.customerEmail.trim().toLowerCase() : "",
+      typeof source.customerEmail === "string"
+        ? source.customerEmail.trim().toLowerCase()
+        : "",
     customerPhone: sanitizeTextValue(
-      typeof values.customerPhone === "string" ? values.customerPhone : "",
+      typeof source.customerPhone === "string" ? source.customerPhone : "",
     ),
-    instagramHandle:
-      typeof values.instagramHandle === "string"
-        ? sanitizeOptionalTextValue(values.instagramHandle)
-        : undefined,
+    instagramHandle: normalizeInstagramHandle(source.instagramHandle),
     preferredContact:
-      typeof values.preferredContact === "string"
-        ? (values.preferredContact as InquiryFormValues["preferredContact"])
+      typeof source.preferredContact === "string"
+        ? (source.preferredContact as InquiryFormValues["preferredContact"])
         : ("" as InquiryFormValues["preferredContact"]),
     howDidYouHear:
-      typeof values.howDidYouHear === "string"
-        ? sanitizeOptionalTextValue(values.howDidYouHear)
+      typeof source.howDidYouHear === "string"
+        ? sanitizeOptionalTextValue(source.howDidYouHear)
         : undefined,
     additionalNotes:
-      typeof values.additionalNotes === "string"
-        ? sanitizeOptionalTextValue(values.additionalNotes, { multiline: true })
+      typeof source.additionalNotes === "string"
+        ? sanitizeOptionalTextValue(source.additionalNotes, { multiline: true })
         : undefined,
     orderItems: orderItems.map((item) => ({
       productType: item.productType as InquiryFormValues["orderItems"][number]["productType"],
-      quantity:
-        typeof item.quantity === "number" && Number.isFinite(item.quantity) ? item.quantity : 1,
-      servings:
-        typeof item.servings === "number" && Number.isFinite(item.servings)
-          ? item.servings
-          : undefined,
+      quantity: toFiniteNumber(item.quantity) ?? 1,
+      servings: toFiniteNumber(item.servings),
       flavorNotes:
         typeof item.flavorNotes === "string"
           ? sanitizeOptionalTextValue(item.flavorNotes, { multiline: true })
@@ -358,8 +422,7 @@ export function normalizeInquiryFormValues(values: InquiryFormValues): InquiryFo
           : undefined,
       sizeLabel:
         typeof item.sizeLabel === "string" ? sanitizeOptionalTextValue(item.sizeLabel) : undefined,
-      tiers:
-        typeof item.tiers === "number" && Number.isFinite(item.tiers) ? item.tiers : undefined,
+      tiers: toFiniteNumber(item.tiers),
       shape:
         typeof item.shape === "string"
           ? (item.shape as InquiryFormValues["orderItems"][number]["shape"])
@@ -368,26 +431,11 @@ export function normalizeInquiryFormValues(values: InquiryFormValues): InquiryFo
         typeof item.icingStyle === "string"
           ? (item.icingStyle as InquiryFormValues["orderItems"][number]["icingStyle"])
           : undefined,
-      cupcakeCount:
-        typeof item.cupcakeCount === "number" && Number.isFinite(item.cupcakeCount)
-          ? item.cupcakeCount
-          : undefined,
-      cookieCount:
-        typeof item.cookieCount === "number" && Number.isFinite(item.cookieCount)
-          ? item.cookieCount
-          : undefined,
-      macaronCount:
-        typeof item.macaronCount === "number" && Number.isFinite(item.macaronCount)
-          ? item.macaronCount
-          : undefined,
-      kitCount:
-        typeof item.kitCount === "number" && Number.isFinite(item.kitCount)
-          ? item.kitCount
-          : undefined,
-      weddingServings:
-        typeof item.weddingServings === "number" && Number.isFinite(item.weddingServings)
-          ? item.weddingServings
-          : undefined,
+      cupcakeCount: toFiniteNumber(item.cupcakeCount),
+      cookieCount: toFiniteNumber(item.cookieCount),
+      macaronCount: toFiniteNumber(item.macaronCount),
+      kitCount: toFiniteNumber(item.kitCount),
+      weddingServings: toFiniteNumber(item.weddingServings),
       topperText:
         typeof item.topperText === "string"
           ? sanitizeOptionalTextValue(item.topperText)
@@ -415,12 +463,18 @@ export function validateInspirationUploads(
   }
 
   files.forEach((file) => {
+    const fileLabel = file.name || "This upload";
+
+    if (file.size === 0) {
+      issues.push(`${fileLabel} is empty.`);
+    }
+
     if (!imageMimePattern.test(file.type)) {
-      issues.push(`${file.name} is not an image file.`);
+      issues.push(`${fileLabel} is not an image file.`);
     }
 
     if (file.size > MAX_INSPIRATION_FILE_SIZE_BYTES) {
-      issues.push(`${file.name} is larger than 8 MB.`);
+      issues.push(`${fileLabel} is larger than 8 MB.`);
     }
   });
 

@@ -185,7 +185,7 @@ function getStoragePath(inquiryId: string, file: File) {
 }
 
 export async function submitInquiry(
-  rawValues: InquiryFormValues,
+  rawValues: unknown,
   files: File[],
 ): Promise<InquirySubmissionResult> {
   if (!isSupabaseConfigured()) {
