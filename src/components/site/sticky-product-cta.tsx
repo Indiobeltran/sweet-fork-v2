@@ -18,12 +18,14 @@ export function StickyProductCta({
   subtext,
   targetId = "product-final-cta",
 }: StickyProductCtaProps) {
-  const [isVisible, setIsVisible] = useState(true);
+  const [hasScrolledIntoPage, setHasScrolledIntoPage] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const target = document.getElementById(targetId);
 
     if (!target) {
+      setIsVisible(true);
       return;
     }
 
@@ -41,11 +43,29 @@ export function StickyProductCta({
     return () => observer.disconnect();
   }, [targetId]);
 
+  useEffect(() => {
+    const updateScrollState = () => {
+      const revealThreshold = Math.min(window.innerHeight * 0.55, 320);
+      setHasScrolledIntoPage(window.scrollY >= revealThreshold);
+    };
+
+    updateScrollState();
+    window.addEventListener("scroll", updateScrollState, { passive: true });
+    window.addEventListener("resize", updateScrollState);
+
+    return () => {
+      window.removeEventListener("scroll", updateScrollState);
+      window.removeEventListener("resize", updateScrollState);
+    };
+  }, []);
+
+  const shouldShow = hasScrolledIntoPage && isVisible;
+
   return (
     <div
       className={cn(
         "pointer-events-none fixed inset-x-0 bottom-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 transition duration-200 md:hidden",
-        isVisible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0",
+        shouldShow ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0",
       )}
     >
       <div className="pointer-events-auto rounded-[1.75rem] border border-charcoal/10 bg-ivory/92 p-3 shadow-[0_20px_60px_rgba(40,31,24,0.18)] backdrop-blur-xl">

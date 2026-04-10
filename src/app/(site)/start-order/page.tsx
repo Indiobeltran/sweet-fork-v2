@@ -1,5 +1,4 @@
 import { StartOrderWizard } from "@/components/inquiry/start-order-wizard";
-import { Badge } from "@/components/ui/badge";
 import { getStartOrderPageData } from "@/lib/inquiries/catalog";
 import { buildMetadata } from "@/lib/seo";
 
@@ -19,66 +18,8 @@ export default async function StartOrderPage() {
   const hasCatalog = pageData.catalog.length > 0;
 
   return (
-    <div className="start-order-page-shell pb-6 pt-8 sm:pt-10">
-      <section className="start-order-page-hero section-shell pb-8">
-        <div className="grain-surface overflow-hidden rounded-[2.8rem] border border-charcoal/10 bg-paper px-6 py-9 shadow-soft sm:px-8 sm:py-11 lg:px-10">
-          <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
-            <div className="space-y-4">
-              <Badge>Inquiry</Badge>
-              <h1 className="max-w-4xl font-serif text-5xl leading-none tracking-[-0.05em] text-charcoal sm:text-6xl">
-                Start your inquiry with the details Sweet Fork needs most.
-              </h1>
-              <p className="max-w-3xl text-base leading-8 text-charcoal/70">
-                Share the event, choose one or several desserts, add inspiration, and Sweet Fork
-                will usually reply within 24 to 48 hours with quote-ready next steps.
-              </p>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-[1.8rem] border border-charcoal/8 bg-white/85 p-4 sm:p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/58">
-                  Options
-                </p>
-                <p className="mt-3 font-serif text-3xl tracking-[-0.04em] text-charcoal">
-                  {pageData.catalog.length}
-                </p>
-                <p className="mt-2 text-sm leading-7 text-charcoal/62">
-                  {hasCatalog
-                    ? "Custom cakes, wedding cakes, and treats can all be discussed through one inquiry."
-                    : "Public inquiry options are currently paused while availability is updated."}
-                </p>
-              </div>
-              <div className="rounded-[1.8rem] border border-charcoal/8 bg-white/85 p-4 sm:p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/58">
-                  {hasCatalog ? "Response" : "Status"}
-                </p>
-                <p className="mt-3 font-serif text-3xl tracking-[-0.04em] text-charcoal">
-                  {hasCatalog ? "24-48 hrs" : "Updated"}
-                </p>
-                <p className="mt-2 text-sm leading-7 text-charcoal/62">
-                  {hasCatalog
-                    ? "Most inquiries are reviewed personally within 24 to 48 hours."
-                    : "The booking notice above reflects the current public availability status."}
-                </p>
-              </div>
-              <div className="rounded-[1.8rem] border border-charcoal/8 bg-white/85 p-4 sm:p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/58">
-                  {hasCatalog ? "Lead time" : "Offerings"}
-                </p>
-                <p className="mt-3 font-serif text-3xl tracking-[-0.04em] text-charcoal">
-                  {hasCatalog ? "2 weeks" : "Paused"}
-                </p>
-                <p className="mt-2 text-sm leading-7 text-charcoal/62">
-                  {hasCatalog
-                    ? "Most custom orders need at least 2 weeks notice. Wedding cakes usually need 4 to 6 weeks."
-                    : "The public inquiry list does not currently include any active product options."}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
+    <div className="pb-6 pt-8 sm:pt-10">
+      <h1 className="sr-only">Start your inquiry</h1>
       {hasCatalog ? (
         <StartOrderWizard {...pageData} />
       ) : (

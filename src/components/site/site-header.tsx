@@ -157,6 +157,8 @@ export function SiteHeader({
 
       <div
         id="mobile-site-navigation"
+        aria-hidden={!open}
+        inert={!open ? true : undefined}
         className={cn(
           "grid overflow-hidden border-t border-charcoal/8 bg-ivory/98 transition-[grid-template-rows] duration-300 lg:hidden",
           open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",

@@ -45,6 +45,19 @@ function getNoticeValue(rawSearchParams: Record<string, string | string[] | unde
   return Array.isArray(noticeValue) ? noticeValue[0] : noticeValue;
 }
 
+function getToneDotClasses(tone: CalendarDayItem["tone"]) {
+  switch (tone) {
+    case "emerald":
+      return "bg-emerald-500";
+    case "gold":
+      return "bg-gold";
+    case "rose":
+      return "bg-rose";
+    default:
+      return "bg-charcoal/60";
+  }
+}
+
 function getItemClasses(item: Pick<CalendarDayItem, "kind" | "tone">) {
   if (item.kind === "blackout") {
     return "border-rose/24 bg-rose/10 text-charcoal";
@@ -165,16 +178,16 @@ export default async function AdminCalendarPage({ searchParams }: AdminCalendarP
             </h2>
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <Link
               href={`/admin/calendar?month=${data.previousMonthKey}`}
-              className="inline-flex h-12 items-center justify-center rounded-full border border-charcoal/15 bg-ivory/80 px-5 text-sm font-medium tracking-[0.02em] text-charcoal transition hover:border-charcoal/40 hover:bg-white"
+              className="inline-flex h-12 w-full items-center justify-center rounded-full border border-charcoal/15 bg-ivory/80 px-5 text-sm font-medium tracking-[0.02em] text-charcoal transition hover:border-charcoal/40 hover:bg-white sm:w-auto"
             >
               Previous month
             </Link>
             <Link
               href={`/admin/calendar?month=${data.nextMonthKey}`}
-              className="inline-flex h-12 items-center justify-center rounded-full border border-charcoal/15 bg-ivory/80 px-5 text-sm font-medium tracking-[0.02em] text-charcoal transition hover:border-charcoal/40 hover:bg-white"
+              className="inline-flex h-12 w-full items-center justify-center rounded-full border border-charcoal/15 bg-ivory/80 px-5 text-sm font-medium tracking-[0.02em] text-charcoal transition hover:border-charcoal/40 hover:bg-white sm:w-auto"
             >
               Next month
             </Link>
@@ -196,7 +209,61 @@ export default async function AdminCalendarPage({ searchParams }: AdminCalendarP
           </span>
         </div>
 
-        <div className="mt-6 overflow-x-auto">
+        <div className="mt-6 md:hidden">
+          <div className="grid grid-cols-7 gap-2">
+            {weekdayLabels.map((label) => (
+              <div
+                key={`mobile-${label}`}
+                className="text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-charcoal/42"
+              >
+                {label}
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-2 grid grid-cols-7 gap-2">
+            {data.days.map((day) => (
+              <article
+                key={`mobile-${day.dateKey}`}
+                aria-label={`${day.dateKey}, ${day.items.length} item${day.items.length === 1 ? "" : "s"}`}
+                className={cn(
+                  "flex aspect-[0.94] min-w-0 flex-col rounded-[1rem] border px-2 py-2",
+                  day.isCurrentMonth
+                    ? "border-charcoal/10 bg-white/88"
+                    : "border-charcoal/6 bg-paper/70 text-charcoal/45",
+                  day.isToday ? "ring-2 ring-gold/30" : "",
+                )}
+              >
+                <div className="flex items-start justify-between gap-1">
+                  <span className="text-sm font-semibold text-current">{day.dayOfMonth}</span>
+                  {day.items.length > 0 ? (
+                    <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-current/58">
+                      {day.items.length}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="mt-auto flex flex-wrap gap-1">
+                  {day.items.slice(0, 3).map((item, index) => (
+                    <span
+                      key={`${day.dateKey}-${item.id}-${index}`}
+                      className={cn("h-2 w-2 rounded-full", getToneDotClasses(item.tone))}
+                    />
+                  ))}
+                  {day.items.length > 3 ? (
+                    <span className="text-[10px] text-charcoal/52">+{day.items.length - 3}</span>
+                  ) : null}
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <p className="mt-3 text-sm leading-7 text-charcoal/60">
+            Color dots mirror the legend above. Use the agenda below for names, notes, and direct
+            record links.
+          </p>
+        </div>
+
+        <div className="mt-6 hidden overflow-x-auto md:block">
           <div className="min-w-[70rem]">
             <div className="grid grid-cols-7 gap-3">
               {weekdayLabels.map((label) => (

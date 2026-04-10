@@ -351,6 +351,7 @@ export function StartOrderWizard({
   const [submissionResult, setSubmissionResult] = useState<InquirySubmissionResponse | null>(
     null,
   );
+  const wizardTopRef = useRef<HTMLElement | null>(null);
   const stepViewportRef = useRef<HTMLDivElement | null>(null);
   const stepHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -396,14 +397,14 @@ export function StartOrderWizard({
     }
 
     const timeoutId = window.setTimeout(() => {
-      const target = stepViewportRef.current;
+      const target = wizardTopRef.current ?? stepViewportRef.current;
       const shouldFocusHeading = !shouldFocusErrorRef.current;
 
       if (!target) {
         return;
       }
 
-      const offset = window.matchMedia("(min-width: 1024px)").matches ? 104 : 88;
+      const offset = window.matchMedia("(min-width: 1024px)").matches ? 24 : 12;
       const top = target.getBoundingClientRect().top + window.scrollY - offset;
 
       window.scrollTo({
@@ -440,6 +441,18 @@ export function StartOrderWizard({
       }
     }
   }, [currentStep, errors]);
+
+  useEffect(() => {
+    if (!submissionResult || !wizardTopRef.current) {
+      return;
+    }
+
+    const top = wizardTopRef.current.getBoundingClientRect().top + window.scrollY - 12;
+    window.scrollTo({
+      top: Math.max(top, 0),
+      behavior: "smooth",
+    });
+  }, [submissionResult]);
 
   const activeItem =
     selectedItems.find((item) => item.productType === activeItemType) ?? selectedItems[0];
@@ -898,7 +911,7 @@ export function StartOrderWizard({
   }
 
   return (
-    <section className="section-shell pb-20" data-order-wizard-state={hasStarted ? "started" : "intro"}>
+    <section ref={wizardTopRef} className="section-shell pb-20">
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
         <div className="grain-surface overflow-hidden rounded-[2.4rem] border border-charcoal/10 bg-white shadow-soft">
           <div
@@ -1070,7 +1083,7 @@ export function StartOrderWizard({
                 </div>
 
                 <div className="grid gap-6 md:grid-cols-2">
-                  <div>
+                  <div className="min-w-0">
                     <FieldLabel htmlFor="event-date" required>
                       Event date
                     </FieldLabel>
@@ -1097,7 +1110,7 @@ export function StartOrderWizard({
                     </p>
                     <InlineError message={errors.eventDate} />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <Label htmlFor="guest-count">Guest count</Label>
                     <Input
                       id="guest-count"

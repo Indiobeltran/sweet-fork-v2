@@ -74,12 +74,12 @@ export default async function HomePage() {
           </div>
 
           <div className="grid gap-4 section-reveal">
-            <div className="luxury-panel overflow-hidden rounded-[2.4rem] bg-charcoal p-7 text-ivory sm:p-8">
+            <div className="overflow-hidden rounded-[2.4rem] border border-charcoal/12 bg-charcoal p-7 text-ivory shadow-[0_18px_48px_rgba(53,37,29,0.18),0_2px_10px_rgba(53,37,29,0.08)] sm:p-8">
               <p className="text-xs uppercase tracking-[0.22em] text-gold/72">The Sweet Fork</p>
               <p className="mt-6 font-serif text-5xl leading-[0.92] tracking-[-0.05em]">
                 Handcrafted desserts with a quiet luxury finish.
               </p>
-              <div className="mt-8 space-y-4 border-t border-white/10 pt-6 text-sm leading-7 text-ivory/70">
+              <div className="mt-8 space-y-4 border-t border-white/12 pt-6 text-sm leading-7 text-ivory/82">
                 <p>Custom cakes, wedding work, cupcakes, macarons, decorated cookies, and DIY kits.</p>
                 <p>Pickup in Centerville. Local delivery available across nearby Northern Utah communities.</p>
               </div>
