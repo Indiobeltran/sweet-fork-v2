@@ -481,6 +481,31 @@ function prettifyFileName(value: string | null) {
     .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
+function getGalleryAltText({
+  altText,
+  category,
+  title,
+}: {
+  altText: string | null | undefined;
+  category: string | undefined;
+  title: string;
+}) {
+  const trimmedAltText = altText?.trim();
+
+  if (trimmedAltText) {
+    return trimmedAltText;
+  }
+
+  if (!category) {
+    return title;
+  }
+
+  const normalizedCategory = category.trim();
+  return title.toLowerCase().includes(normalizedCategory.toLowerCase())
+    ? title
+    : `${title}, ${normalizedCategory.toLowerCase()}`;
+}
+
 function getContentDefinitionIdentity(definition: ContentSectionDefinition) {
   return `${definition.pageKey}:${definition.sectionKey}:${definition.blockKey}`;
 }
@@ -1045,7 +1070,11 @@ export async function getGalleryItemsForPlacement(
       .map((assignment) => (assignment.target_id ? categoriesById.get(assignment.target_id) ?? null : null))
       .find(Boolean);
     const title = asset.caption?.trim() || prettifyFileName(asset.original_filename);
-    const alt = asset.alt_text?.trim() || title;
+    const alt = getGalleryAltText({
+      altText: asset.alt_text,
+      category: primaryCategory?.name,
+      title,
+    });
 
     return {
       alt,

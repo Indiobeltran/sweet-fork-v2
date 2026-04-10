@@ -21,6 +21,7 @@ export function SiteFooter({ legalLinks, site }: Readonly<SiteFooterProps>) {
             alt={site.name}
             width={340}
             height={193}
+            sizes="188px"
             className="h-auto w-[188px]"
           />
           <p className="max-w-xl text-sm leading-8 text-ivory/72">{site.description}</p>

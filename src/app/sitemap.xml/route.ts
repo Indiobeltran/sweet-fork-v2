@@ -1,11 +1,8 @@
+import { getPublicEnv } from "@/lib/env";
 import { getPublicSitemapPaths } from "@/lib/site/marketing";
 
 export async function GET() {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    (process.env.NODE_ENV === "development"
-      ? "http://localhost:3000"
-      : "https://www.thesweetfork.com");
+  const { siteUrl } = getPublicEnv();
   const updatedAt = new Date().toISOString();
   const routes = await getPublicSitemapPaths();
 
@@ -17,7 +14,7 @@ ${routes
     const changefreq = route === "/" ? "weekly" : "monthly";
 
     return `  <url>
-    <loc>${baseUrl}${route}</loc>
+    <loc>${siteUrl}${route}</loc>
     <lastmod>${updatedAt}</lastmod>
     <changefreq>${changefreq}</changefreq>
     <priority>${priority}</priority>
@@ -29,6 +26,7 @@ ${routes
 
   return new Response(body, {
     headers: {
+      "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
       "Content-Type": "application/xml; charset=utf-8",
     },
   });

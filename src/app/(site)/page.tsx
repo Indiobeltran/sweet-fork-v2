@@ -4,13 +4,55 @@ import { GalleryGrid } from "@/components/site/gallery-grid";
 import { InquiryCta } from "@/components/site/inquiry-cta";
 import { SectionHeading } from "@/components/site/section-heading";
 import { SitePrimaryCta } from "@/components/site/site-primary-cta";
+import { getPublicEnv } from "@/lib/env";
+import { siteConfig } from "@/lib/content/site-content";
+import { buildMetadata } from "@/lib/seo";
 import { getHomePageData } from "@/lib/site/marketing";
+
+export async function generateMetadata() {
+  return buildMetadata({
+    title: "Custom Cakes & Desserts in Centerville, Utah",
+    description:
+      "Custom cakes, wedding cakes, cupcakes, macarons, sugar cookies, and DIY kits crafted in Centerville, Utah with a polished, boutique finish.",
+    path: "/",
+  });
+}
 
 export default async function HomePage() {
   const data = await getHomePageData();
+  const { siteUrl } = getPublicEnv();
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Bakery",
+    name: siteConfig.name,
+    description: siteConfig.description,
+    url: siteUrl,
+    image: `${siteUrl}/brand/logo-social.jpg`,
+    telephone: siteConfig.phone,
+    email: siteConfig.email,
+    address: {
+      "@type": "PostalAddress",
+      addressCountry: "US",
+      addressLocality: "Centerville",
+      addressRegion: "UT",
+    },
+    areaServed: [
+      "Centerville",
+      "Davis County",
+      "Salt Lake County",
+      "Weber County",
+      "Northern Utah",
+    ],
+    sameAs: [`https://www.instagram.com/${siteConfig.instagram}/`],
+    servesCuisine: "Desserts",
+  };
 
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <section className="relative overflow-hidden border-b border-charcoal/8 bg-paper">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/35 to-transparent" />
         <div className="section-shell grid min-h-[calc(100svh-7rem)] gap-12 py-14 lg:grid-cols-[1.08fr_0.92fr] lg:items-end lg:gap-16 lg:py-20">

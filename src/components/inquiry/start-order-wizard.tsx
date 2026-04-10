@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ComponentProps, type ReactNode, useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -41,6 +41,7 @@ import type {
 } from "@/lib/inquiries/types";
 import {
   createEmptyInquiryValues,
+  getMinimumInquiryDate,
   inquiryContactSchema,
   inquiryEventDetailsSchema,
   inquiryItemDetailsSchema,
@@ -98,6 +99,9 @@ function StepMarker({
 }) {
   return (
     <div
+      role="listitem"
+      aria-current={active ? "step" : undefined}
+      aria-label={`Step ${index + 1}: ${title}${complete ? ", complete" : active ? ", current" : ""}`}
       className={cn(
         "flex items-center gap-2 rounded-full transition sm:min-w-0 sm:gap-3",
         active ? "border border-charcoal bg-charcoal px-3 py-2 text-ivory shadow-soft" : "px-0 py-0",
@@ -142,7 +146,11 @@ function InlineError({ message }: { message?: string }) {
     return null;
   }
 
-  return <p className="mt-2 text-sm text-rose-700">{message}</p>;
+  return (
+    <p role="alert" className="mt-2 text-sm text-rose-700">
+      {message}
+    </p>
+  );
 }
 
 function StepAlert({ message }: { message?: string }) {
@@ -151,9 +159,25 @@ function StepAlert({ message }: { message?: string }) {
   }
 
   return (
-    <div className="rounded-[1.4rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+    <div
+      role="alert"
+      className="rounded-[1.4rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"
+    >
       {message}
     </div>
+  );
+}
+
+function FieldLabel({
+  children,
+  required = false,
+  ...props
+}: ComponentProps<typeof Label> & { required?: boolean }) {
+  return (
+    <Label {...props}>
+      <span>{children}</span>
+      {required ? <span className="ml-2 text-[10px] text-charcoal/52">Required</span> : null}
+    </Label>
   );
 }
 
@@ -174,6 +198,7 @@ function SelectionButton({
     <button
       type="button"
       ref={buttonRef}
+      aria-pressed={active}
       className={cn(
         "rounded-full border px-4 py-2 text-left text-sm transition",
         active
@@ -243,12 +268,14 @@ export function StartOrderWizard({
   catalog,
   featureFlags,
 }: StartOrderWizardProps) {
+  const [startedAt] = useState(() => Date.now());
   const [currentStep, setCurrentStep] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
   const [activeItemType, setActiveItemType] = useState<ProductType | null>(null);
   const [values, setValues] = useState<InquiryFormValues>(() => createEmptyInquiryValues());
   const [uploads, setUploads] = useState<UploadDraft[]>([]);
   const [errors, setErrors] = useState<ErrorMap>({});
+  const [honeypotValue, setHoneypotValue] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<InquirySubmissionResponse | null>(
@@ -260,6 +287,10 @@ export function StartOrderWizard({
   const shouldFocusErrorRef = useRef(false);
 
   const normalizedValues = normalizeInquiryFormValues(values);
+  const minimumEventDate = getMinimumInquiryDate();
+  const progressPercentage = Math.round(
+    ((currentStep + 1) / inquiryStepTitles.length) * 100,
+  );
   const selectedItems = normalizedValues.orderItems;
   const catalogMap = catalog.reduce(
     (accumulator, item) => {
@@ -636,6 +667,8 @@ export function StartOrderWizard({
     try {
       const formData = new FormData();
       formData.append("payload", JSON.stringify(result.data));
+      formData.append("startedAt", String(startedAt));
+      formData.append("website", honeypotValue);
 
       uploads.forEach((upload) => {
         formData.append("inspirationFiles", upload.file);
@@ -816,7 +849,30 @@ export function StartOrderWizard({
                 </div>
               </div>
 
-              <div className="flex gap-2 overflow-x-auto pb-1 sm:gap-3">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3 text-xs uppercase tracking-[0.18em] text-charcoal/45">
+                  <span>Progress</span>
+                  <span>{progressPercentage}% complete</span>
+                </div>
+                <div
+                  aria-label="Inquiry progress"
+                  aria-valuemax={100}
+                  aria-valuemin={0}
+                  aria-valuenow={progressPercentage}
+                  role="progressbar"
+                  className="h-2 overflow-hidden rounded-full bg-charcoal/8"
+                >
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-gold to-charcoal"
+                    style={{ width: `${progressPercentage}%` }}
+                  />
+                </div>
+                <p className="text-sm text-charcoal/58">
+                  Fields marked <span className="font-medium text-charcoal">Required</span> are needed for a tailored quote.
+                </p>
+              </div>
+
+              <div className="flex gap-2 overflow-x-auto pb-1 sm:gap-3" role="list" aria-label="Inquiry steps">
                 {inquiryStepTitles.map((title, index) => (
                   <StepMarker
                     key={title}
@@ -835,6 +891,17 @@ export function StartOrderWizard({
             <StepAlert
               message={stepHasError ? "Please review the highlighted fields before continuing." : undefined}
             />
+            <div className="sr-only" aria-hidden="true">
+              <label htmlFor="website">Leave this field empty</label>
+              <input
+                id="website"
+                name="website"
+                tabIndex={-1}
+                autoComplete="off"
+                value={honeypotValue}
+                onChange={(event) => setHoneypotValue(event.target.value)}
+              />
+            </div>
             {currentStep === 0 ? (
               <div className="space-y-6 sm:space-y-8">
                 <div className="grid gap-3 rounded-[2rem] border border-charcoal/8 bg-cream/60 p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
@@ -851,7 +918,9 @@ export function StartOrderWizard({
                 </div>
 
                 <div>
-                  <Label htmlFor="event-type">What are you celebrating?</Label>
+                  <FieldLabel htmlFor="event-type" required>
+                    What are you celebrating?
+                  </FieldLabel>
                   <Input
                     id="event-type"
                     ref={registerFieldRef("eventType")}
@@ -859,6 +928,8 @@ export function StartOrderWizard({
                     onChange={(event) => setFieldValue("eventType", event.target.value)}
                     placeholder="Birthday, wedding, shower, launch, holiday gathering..."
                     className={getFieldErrorClass(errors.eventType)}
+                    required
+                    aria-invalid={Boolean(errors.eventType)}
                   />
                   <InlineError message={errors.eventType} />
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -876,15 +947,27 @@ export function StartOrderWizard({
 
                 <div className="grid gap-6 md:grid-cols-2">
                   <div>
-                    <Label htmlFor="event-date">Event date</Label>
+                    <FieldLabel htmlFor="event-date" required>
+                      Event date
+                    </FieldLabel>
                     <Input
                       id="event-date"
                       ref={registerFieldRef("eventDate")}
                       type="date"
                       value={values.eventDate}
                       onChange={(event) => setFieldValue("eventDate", event.target.value)}
+                      onFocus={(event) => {
+                        event.currentTarget.showPicker?.();
+                      }}
+                      min={minimumEventDate}
                       className={getFieldErrorClass(errors.eventDate)}
+                      required
+                      aria-describedby="event-date-hint"
+                      aria-invalid={Boolean(errors.eventDate)}
                     />
+                    <p id="event-date-hint" className="mt-2 text-sm text-charcoal/58">
+                      Online inquiries accept future dates only and review them in Mountain Time.
+                    </p>
                     <InlineError message={errors.eventDate} />
                   </div>
                   <div>
@@ -904,7 +987,7 @@ export function StartOrderWizard({
 
                 <div className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
                   <div className="space-y-3">
-                    <Label>Fulfillment type</Label>
+                    <FieldLabel required>Fulfillment type</FieldLabel>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <SelectionButton
                         active={values.fulfillmentMethod === "pickup"}
@@ -928,6 +1011,7 @@ export function StartOrderWizard({
                       id="delivery-zip"
                       ref={registerFieldRef("deliveryZip")}
                       inputMode="numeric"
+                      autoComplete="postal-code"
                       value={values.deliveryZip ?? ""}
                       onChange={(event) => setFieldValue("deliveryZip", event.target.value)}
                       placeholder={
@@ -935,20 +1019,24 @@ export function StartOrderWizard({
                           ? "Required for delivery requests"
                           : "Only needed if delivery is selected"
                       }
+                      pattern="\\d{5}(?:-\\d{4})?"
+                      maxLength={10}
                       className={getFieldErrorClass(errors.deliveryZip)}
+                      aria-invalid={Boolean(errors.deliveryZip)}
                     />
                     <InlineError message={errors.deliveryZip} />
                   </div>
                 </div>
 
                 <div>
-                  <Label>Investment comfort range</Label>
+                  <FieldLabel required>Investment comfort range</FieldLabel>
                   <div className="grid gap-3 md:grid-cols-2">
                     {budgetRangeOptions.map((option, index) => (
                       <button
                         key={option.value}
                         type="button"
                         ref={index === 0 ? registerFieldRef("budgetRange") : undefined}
+                        aria-pressed={values.budgetRange === option.value}
                         className={cn(
                           "rounded-[1.6rem] border p-4 text-left transition",
                           values.budgetRange === option.value
@@ -976,13 +1064,14 @@ export function StartOrderWizard({
                 </div>
 
                 <div>
-                  <Label>Budget flexibility</Label>
+                  <FieldLabel required>Budget flexibility</FieldLabel>
                   <div className="grid gap-3 md:grid-cols-3">
                     {budgetFlexibilityOptions.map((option, index) => (
                       <button
                         key={option.value}
                         type="button"
                         ref={index === 0 ? registerFieldRef("budgetFlexibility") : undefined}
+                        aria-pressed={values.budgetFlexibility === option.value}
                         className={cn(
                           "rounded-[1.6rem] border p-4 text-left transition",
                           values.budgetFlexibility === option.value
@@ -1037,6 +1126,7 @@ export function StartOrderWizard({
                         key={product.productType}
                         type="button"
                         ref={index === 0 ? registerFieldRef("orderItems") : undefined}
+                        aria-pressed={selected}
                         className={cn(
                           "rounded-[1.9rem] border p-4 text-left transition sm:p-5",
                           selected
@@ -1672,7 +1762,9 @@ export function StartOrderWizard({
 
                 <div className="grid gap-6 lg:grid-cols-2">
                   <div>
-                    <Label htmlFor="customer-name">Your name</Label>
+                    <FieldLabel htmlFor="customer-name" required>
+                      Your name
+                    </FieldLabel>
                     <Input
                       id="customer-name"
                       ref={registerFieldRef("customerName")}
@@ -1680,11 +1772,16 @@ export function StartOrderWizard({
                       onChange={(event) => setFieldValue("customerName", event.target.value)}
                       placeholder="Full name"
                       className={getFieldErrorClass(errors.customerName)}
+                      autoComplete="name"
+                      required
+                      aria-invalid={Boolean(errors.customerName)}
                     />
                     <InlineError message={errors.customerName} />
                   </div>
                   <div>
-                    <Label htmlFor="customer-email">Email</Label>
+                    <FieldLabel htmlFor="customer-email" required>
+                      Email
+                    </FieldLabel>
                     <Input
                       id="customer-email"
                       ref={registerFieldRef("customerEmail")}
@@ -1693,18 +1790,28 @@ export function StartOrderWizard({
                       onChange={(event) => setFieldValue("customerEmail", event.target.value)}
                       placeholder="hello@yourmail.com"
                       className={getFieldErrorClass(errors.customerEmail)}
+                      autoComplete="email"
+                      required
+                      aria-invalid={Boolean(errors.customerEmail)}
                     />
                     <InlineError message={errors.customerEmail} />
                   </div>
                   <div>
-                    <Label htmlFor="customer-phone">Phone</Label>
+                    <FieldLabel htmlFor="customer-phone" required>
+                      Phone
+                    </FieldLabel>
                     <Input
                       id="customer-phone"
                       ref={registerFieldRef("customerPhone")}
+                      type="tel"
                       value={values.customerPhone}
                       onChange={(event) => setFieldValue("customerPhone", event.target.value)}
                       placeholder="(555) 555-5555"
                       className={getFieldErrorClass(errors.customerPhone)}
+                      autoComplete="tel"
+                      inputMode="tel"
+                      required
+                      aria-invalid={Boolean(errors.customerPhone)}
                     />
                     <InlineError message={errors.customerPhone} />
                   </div>
@@ -1725,7 +1832,7 @@ export function StartOrderWizard({
 
                 <div className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
                   <div>
-                    <Label>Preferred contact method</Label>
+                    <FieldLabel required>Preferred contact method</FieldLabel>
                     <div className="grid gap-3 sm:grid-cols-3">
                       {(["email", "text", "phone"] as const).map((option, index) => (
                         <SelectionButton
@@ -1899,7 +2006,9 @@ export function StartOrderWizard({
                   Your progress stays in place while you move backward or forward.
                 </p>
                 {submitError ? (
-                  <p className="mt-2 text-sm text-rose-700">{submitError}</p>
+                  <p role="alert" className="mt-2 text-sm text-rose-700">
+                    {submitError}
+                  </p>
                 ) : null}
               </div>
               <div className="flex flex-col gap-3 sm:flex-row">

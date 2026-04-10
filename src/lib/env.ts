@@ -17,6 +17,23 @@ function getDefaultSiteUrl() {
     : productionSiteUrl;
 }
 
+function resolveSiteUrl() {
+  const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+
+  if (!configuredSiteUrl) {
+    return getDefaultSiteUrl();
+  }
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    (configuredSiteUrl.includes("localhost") || configuredSiteUrl.includes(".vercel.app"))
+  ) {
+    return productionSiteUrl;
+  }
+
+  return configuredSiteUrl;
+}
+
 export type InquiryFeatureFlagEnvOverrides = {
   uploadEnabled?: boolean;
   linkFallbackEnabled?: boolean;
@@ -27,7 +44,7 @@ export function getPublicEnv() {
   const inquiryOverrides = getInquiryFeatureFlagEnvOverrides();
 
   return {
-    siteUrl: process.env.NEXT_PUBLIC_SITE_URL || getDefaultSiteUrl(),
+    siteUrl: resolveSiteUrl(),
     uploadEnabled: inquiryOverrides.uploadEnabled ?? true,
     linkFallbackEnabled: inquiryOverrides.linkFallbackEnabled ?? true,
     storageBucket: inquiryOverrides.storageBucket || "inspiration",

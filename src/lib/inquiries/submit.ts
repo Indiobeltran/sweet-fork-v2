@@ -26,6 +26,16 @@ type SubmissionCleanup = {
   storagePaths: string[];
 };
 
+export class InquirySubmissionError extends Error {
+  status: number;
+
+  constructor(message: string, status = 400) {
+    super(message);
+    this.name = "InquirySubmissionError";
+    this.status = status;
+  }
+}
+
 export type InquirySubmissionResult = {
   inquiryId: string;
   referenceCode: string;
@@ -179,14 +189,19 @@ export async function submitInquiry(
   files: File[],
 ): Promise<InquirySubmissionResult> {
   if (!isSupabaseConfigured()) {
-    throw new Error("Supabase is not configured for inquiry submission.");
+    throw new InquirySubmissionError(
+      "Inquiry submission is temporarily unavailable. Please try again shortly.",
+      503,
+    );
   }
 
   const values = normalizeInquiryFormValues(rawValues);
   const parsed = inquirySchema.safeParse(values);
 
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Please review the inquiry details.");
+    throw new InquirySubmissionError(
+      parsed.error.issues[0]?.message ?? "Please review the inquiry details.",
+    );
   }
 
   const { catalog, featureFlags, pricingBaseline, deliveryRange } =
@@ -194,7 +209,7 @@ export async function submitInquiry(
   const uploadIssues = validateInspirationUploads(files, featureFlags);
 
   if (uploadIssues.length > 0) {
-    throw new Error(uploadIssues[0]);
+    throw new InquirySubmissionError(uploadIssues[0]);
   }
 
   const catalogMap = getCatalogMap(catalog);
@@ -472,7 +487,15 @@ export async function submitInquiry(
       uploadedAssetCount: files.length,
     };
   } catch (error) {
-    await cleanupFailedSubmission(featureFlags.storageBucket, cleanup);
-    throw error;
+    await cleanupFailedSubmission(featureFlags.storageBucket, cleanup).catch(() => undefined);
+
+    if (error instanceof InquirySubmissionError) {
+      throw error;
+    }
+
+    throw new InquirySubmissionError(
+      "We could not submit the inquiry right now. Please try again in a few minutes.",
+      500,
+    );
   }
 }

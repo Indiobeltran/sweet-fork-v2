@@ -113,6 +113,7 @@ export function SiteHeader({
             width={340}
             height={193}
             priority
+            sizes="(max-width: 640px) 130px, 148px"
             className="h-auto w-[130px] shrink-0 sm:w-[148px]"
           />
         </Link>
@@ -146,6 +147,7 @@ export function SiteHeader({
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-charcoal/10 bg-white/80 text-charcoal transition hover:border-charcoal/22 hover:bg-white"
             onClick={() => setOpen((current) => !current)}
             aria-expanded={open}
+            aria-controls="mobile-site-navigation"
             aria-label={open ? "Close navigation" : "Open navigation"}
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -154,6 +156,7 @@ export function SiteHeader({
       </div>
 
       <div
+        id="mobile-site-navigation"
         className={cn(
           "grid overflow-hidden border-t border-charcoal/8 bg-ivory/98 transition-[grid-template-rows] duration-300 lg:hidden",
           open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",

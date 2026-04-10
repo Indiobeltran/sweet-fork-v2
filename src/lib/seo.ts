@@ -14,6 +14,7 @@ const defaultSocialImage = {
 
 type PageMetadataInput = {
   description?: string;
+  image?: typeof defaultSocialImage;
   path: string;
   title: string;
 };
@@ -33,6 +34,7 @@ export async function buildRootMetadata(): Promise<Metadata> {
       template: `%s | ${seo.titleSuffix}`,
     },
     description: seo.defaultDescription,
+    category: "food",
     alternates: {
       canonical: siteUrl,
     },
@@ -51,6 +53,17 @@ export async function buildRootMetadata(): Promise<Metadata> {
       description: seo.defaultDescription,
       images: [defaultSocialImage.url],
     },
+    robots: {
+      follow: true,
+      index: true,
+      googleBot: {
+        follow: true,
+        index: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
+    },
     icons: {
       icon: [{ type: "image/jpeg", url: "/brand/favicon.jpg" }],
       apple: [{ type: "image/jpeg", url: "/brand/favicon.jpg" }],
@@ -61,16 +74,19 @@ export async function buildRootMetadata(): Promise<Metadata> {
 export async function buildMetadata({
   title,
   description,
+  image,
   path,
 }: PageMetadataInput): Promise<Metadata> {
   const { siteUrl } = getPublicEnv();
   const seo = await getPublicSeoData();
   const resolvedDescription = description ?? seo.defaultDescription;
   const canonicalUrl = getCanonicalUrl(path, siteUrl);
+  const resolvedImage = image ?? defaultSocialImage;
 
   return {
     metadataBase: new URL(siteUrl),
     title,
+    category: "food",
     description: resolvedDescription,
     alternates: {
       canonical: canonicalUrl,
@@ -81,13 +97,13 @@ export async function buildMetadata({
       url: canonicalUrl,
       type: "website",
       siteName: seo.siteName,
-      images: [defaultSocialImage],
+      images: [resolvedImage],
     },
     twitter: {
       card: "summary_large_image",
       title: `${title} | ${seo.titleSuffix}`,
       description: resolvedDescription,
-      images: [defaultSocialImage.url],
+      images: [resolvedImage.url],
     },
   };
 }
