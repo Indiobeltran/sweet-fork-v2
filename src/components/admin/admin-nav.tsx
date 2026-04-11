@@ -45,24 +45,25 @@ export function AdminNav() {
   };
 
   return (
-    <div className="rounded-[1.6rem] border border-charcoal/10 bg-white/92 p-3 shadow-soft sm:p-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3 md:hidden">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-charcoal/42">
-            Admin navigation
+            Section
           </p>
-          <p className="mt-1 text-sm text-charcoal/64">
-            Currently viewing{" "}
-            <span className="font-medium text-charcoal">{activeLink.label}</span>
-          </p>
+          <p className="mt-1 text-sm font-medium text-charcoal">{activeLink.label}</p>
         </div>
 
-        <div className="relative sm:hidden">
+        <div className="relative min-w-0 flex-1">
+          <label htmlFor="admin-section-nav" className="sr-only">
+            Jump to admin section
+          </label>
           <Select
+            id="admin-section-nav"
             aria-label="Jump to admin section"
             value={activeLink.href}
             onChange={(event) => handleSelectChange(event.target.value)}
-            className="pr-10 text-[15px]"
+            className="h-11 rounded-xl border-charcoal/12 bg-white/85 pr-10 text-[15px] font-medium"
           >
             {adminLinks.map((link) => (
               <option key={link.href} value={link.href}>
@@ -74,17 +75,20 @@ export function AdminNav() {
         </div>
       </div>
 
-      <nav className="mt-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none]" aria-label="Admin sections">
-        <div className="flex w-max min-w-full gap-2 lg:w-full lg:flex-wrap">
+      <nav
+        className="hidden overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] md:block"
+        aria-label="Admin sections"
+      >
+        <div className="flex w-max min-w-full items-center gap-1 border-b border-charcoal/10">
           {adminLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               className={cn(
-                "inline-flex h-11 items-center justify-center whitespace-nowrap rounded-full border px-4 text-sm font-medium transition",
+                "inline-flex h-11 items-center justify-center whitespace-nowrap border-b-2 px-4 text-sm font-medium transition",
                 isActiveLink(pathname, link.href)
-                  ? "border-charcoal/22 bg-charcoal text-ivory shadow-soft"
-                  : "border-charcoal/12 bg-white text-charcoal hover:border-charcoal/30 hover:bg-ivory/80",
+                  ? "border-charcoal text-charcoal"
+                  : "border-transparent text-charcoal/56 hover:border-charcoal/18 hover:text-charcoal",
               )}
             >
               {link.label}

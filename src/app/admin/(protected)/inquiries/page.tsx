@@ -95,6 +95,35 @@ function LinkButton({
   );
 }
 
+function InquiryListNotice({ notice }: { notice: string | undefined }) {
+  if (!notice) {
+    return null;
+  }
+
+  const copyByNotice: Record<string, { className: string; text: string }> = {
+    "delete-error": {
+      className: "border-rose/24 bg-rose/10 text-charcoal",
+      text: "The inquiry could not be deleted. Please try again.",
+    },
+    deleted: {
+      className: "border-emerald-200 bg-emerald-50 text-emerald-900",
+      text: "Inquiry deleted.",
+    },
+  };
+
+  const copy = copyByNotice[notice];
+
+  if (!copy) {
+    return null;
+  }
+
+  return (
+    <div className={`rounded-[1.6rem] border px-4 py-3 text-sm font-medium ${copy.className}`}>
+      {copy.text}
+    </div>
+  );
+}
+
 function InquiryCard({ entry }: { entry: InquiryListEntry }) {
   return (
     <article className="rounded-[2rem] border border-charcoal/10 bg-white/88 p-5 shadow-soft transition hover:border-charcoal/20">
@@ -181,11 +210,16 @@ function InquiryCard({ entry }: { entry: InquiryListEntry }) {
 export default async function AdminInquiriesPage({
   searchParams,
 }: AdminInquiryListPageProps) {
-  const filters = parseInquiryListFilters(await searchParams);
+  const resolvedSearchParams = await searchParams;
+  const filters = parseInquiryListFilters(resolvedSearchParams);
   const data = await getInquiryListData(filters);
+  const noticeValue = resolvedSearchParams.notice;
+  const notice = Array.isArray(noticeValue) ? noticeValue[0] : noticeValue;
 
   return (
     <div className="space-y-6">
+      <InquiryListNotice notice={notice} />
+
       <section className="grid gap-4 lg:grid-cols-3">
         {data.summary.map((item) => (
           <div
@@ -213,8 +247,8 @@ export default async function AdminInquiriesPage({
               Narrow the desk to what needs attention most.
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-7 text-charcoal/64">
-              These filters are tuned for day-to-day review rather than technical reporting, so the
-              list stays easy to scan when you’re juggling dates, products, and follow-up timing.
+              Archived inquiries stay out of the default desk, and these filters keep the live list
+              easy to scan when you’re juggling dates, products, and follow-up timing.
             </p>
           </div>
 
@@ -226,6 +260,7 @@ export default async function AdminInquiriesPage({
         <form className="mt-6 grid gap-4 lg:grid-cols-3">
           <FilterCard label="Status">
             <Select name="status" defaultValue={filters.status}>
+              <option value="active">Active desk</option>
               <option value="all">All statuses</option>
               <option value="new">New</option>
               <option value="reviewing">Reviewing</option>

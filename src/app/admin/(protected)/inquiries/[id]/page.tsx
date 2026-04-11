@@ -2,8 +2,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { addInquiryNote, updateInquiryStatus } from "@/app/admin/(protected)/inquiries/actions";
+import {
+  addInquiryNote,
+  deleteInquiry,
+  updateInquiryStatus,
+} from "@/app/admin/(protected)/inquiries/actions";
 import { createOrderFromInquiry } from "@/app/admin/(protected)/orders/actions";
+import { ConfirmSubmitButton } from "@/components/admin/confirm-submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -131,6 +136,10 @@ function NoticeBanner({ notice }: { notice: string | undefined }) {
     "note-error": {
       className: "border-rose/24 bg-rose/10 text-charcoal",
       text: "The note could not be saved. Please try again.",
+    },
+    "delete-error": {
+      className: "border-rose/24 bg-rose/10 text-charcoal",
+      text: "The inquiry could not be deleted. Please try again.",
     },
     "status-error": {
       className: "border-rose/24 bg-rose/10 text-charcoal",
@@ -499,6 +508,28 @@ export default async function AdminInquiryDetailPage({
               ))}
               <DetailRow label="Reference code" value={detail.referenceCode} />
               <DetailRow label="Source" value={toTitleCase(detail.sourceChannel)} />
+            </div>
+
+            <div className="mt-5 rounded-[1.6rem] border border-rose/20 bg-rose/5 p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+                Delete inquiry
+              </p>
+              <p className="mt-3 text-sm leading-7 text-charcoal/68">
+                This permanently removes the inquiry, notes, uploads, and request details from the
+                desk. Any linked order record stays intact but becomes unlinked from this inquiry.
+              </p>
+              <form action={deleteInquiry} className="mt-4">
+                <input type="hidden" name="inquiryId" value={detail.id} />
+                <input type="hidden" name="redirectTo" value="/admin/inquiries" />
+                <ConfirmSubmitButton
+                  type="submit"
+                  variant="secondary"
+                  className="w-full border-rose/30 bg-white text-rose-700 hover:border-rose/45 hover:bg-rose/10 sm:w-auto"
+                  confirmMessage="Delete this inquiry permanently? This cannot be undone."
+                >
+                  Delete inquiry
+                </ConfirmSubmitButton>
+              </form>
             </div>
           </SectionCard>
 

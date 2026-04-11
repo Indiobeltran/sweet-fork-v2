@@ -147,23 +147,6 @@ export default async function AdminCalendarPage({ searchParams }: AdminCalendarP
         }}
       />
 
-      <section className="grid gap-4 lg:grid-cols-4">
-        {data.summary.map((item) => (
-          <div
-            key={item.label}
-            className="rounded-[1.9rem] border border-charcoal/10 bg-white/88 p-5 shadow-soft"
-          >
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-              {item.label}
-            </p>
-            <p className="mt-3 font-serif text-4xl tracking-[-0.04em] text-charcoal">
-              {item.value}
-            </p>
-            <p className="mt-2 text-sm leading-7 text-charcoal/62">{item.detail}</p>
-          </div>
-        ))}
-      </section>
-
       <AdminSectionCard
         title="Operational calendar"
         description="This view stays practical on purpose: order dates, inquiry pressure, blackout ranges, and any manual all-day notes all land in one calm monthly calendar."
@@ -319,6 +302,23 @@ export default async function AdminCalendarPage({ searchParams }: AdminCalendarP
           </div>
         </div>
       </AdminSectionCard>
+
+      <section className="grid gap-4 lg:grid-cols-4">
+        {data.summary.map((item) => (
+          <div
+            key={item.label}
+            className="rounded-[1.9rem] border border-charcoal/10 bg-white/88 p-5 shadow-soft"
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+              {item.label}
+            </p>
+            <p className="mt-3 font-serif text-4xl tracking-[-0.04em] text-charcoal">
+              {item.value}
+            </p>
+            <p className="mt-2 text-sm leading-7 text-charcoal/62">{item.detail}</p>
+          </div>
+        ))}
+      </section>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(22rem,0.9fr)]">
         <AdminSectionCard

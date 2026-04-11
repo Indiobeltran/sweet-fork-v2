@@ -20,6 +20,18 @@ function getSafeRedirectTarget(value: FormDataEntryValue | null, inquiryId: stri
   return `/admin/inquiries/${inquiryId}`;
 }
 
+function getSafeListRedirectTarget(value: FormDataEntryValue | null) {
+  if (typeof value !== "string" || !value.startsWith("/admin/inquiries")) {
+    return "/admin/inquiries";
+  }
+
+  const url = new URL(value, "http://localhost");
+
+  return url.pathname === "/admin/inquiries"
+    ? `${url.pathname}${url.search}`
+    : "/admin/inquiries";
+}
+
 function redirectWithNotice(path: string, notice: string): never {
   const url = new URL(path, "http://localhost");
   url.searchParams.set("notice", notice);
@@ -104,4 +116,27 @@ export async function addInquiryNote(formData: FormData) {
   revalidatePath("/admin/inquiries");
   revalidatePath(`/admin/inquiries/${inquiryId}`);
   redirectWithNotice(redirectTarget, "note-added");
+}
+
+export async function deleteInquiry(formData: FormData) {
+  await requireAdmin(["owner"]);
+
+  const inquiryId = String(formData.get("inquiryId") ?? "").trim();
+  const redirectTarget = getSafeListRedirectTarget(formData.get("redirectTo"));
+
+  if (!inquiryId) {
+    redirectWithNotice(redirectTarget, "delete-error");
+  }
+
+  const supabase = createAdminClient();
+  const { error } = await supabase.from("inquiries").delete().eq("id", inquiryId);
+
+  if (error) {
+    redirectWithNotice(redirectTarget, "delete-error");
+  }
+
+  revalidatePath("/admin/inquiries");
+  revalidatePath(`/admin/inquiries/${inquiryId}`);
+  revalidatePath("/admin/orders");
+  redirectWithNotice(redirectTarget, "deleted");
 }

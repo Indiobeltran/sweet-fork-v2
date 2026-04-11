@@ -125,7 +125,7 @@ export type InquiryListFilters = {
   fulfillmentMethod: Enums<"fulfillment_method"> | "all";
   priority: NonNullable<InquirySignalPriority> | "all";
   productType: Enums<"product_type"> | "all";
-  status: Enums<"inquiry_status"> | "all";
+  status: Enums<"inquiry_status"> | "active" | "all";
   urgency: NonNullable<InquirySignalUrgency> | "all";
 };
 
@@ -300,7 +300,7 @@ const DEFAULT_FILTERS: InquiryListFilters = {
   fulfillmentMethod: "all",
   priority: "all",
   productType: "all",
-  status: "all",
+  status: "active",
   urgency: "all",
 };
 
@@ -568,7 +568,7 @@ export function parseInquiryListFilters(
   const status = normalizeFilterValue(rawSearchParams.status);
   if (
     status &&
-    ["new", "reviewing", "quoted", "approved", "declined", "archived"].includes(status)
+    ["active", "all", "new", "reviewing", "quoted", "approved", "declined", "archived"].includes(status)
   ) {
     next.status = status as InquiryListFilters["status"];
   }
@@ -624,7 +624,15 @@ function matchesFilters(row: InquiryListQueryRow, filters: InquiryListFilters) {
   const budgetRangeValue = getBudgetRangeValue(row);
   const items = row.inquiry_items ?? [];
 
-  if (filters.status !== "all" && row.status !== filters.status) {
+  if (filters.status === "active" && row.status === "archived") {
+    return false;
+  }
+
+  if (
+    filters.status !== "active" &&
+    filters.status !== "all" &&
+    row.status !== filters.status
+  ) {
     return false;
   }
 
@@ -735,6 +743,7 @@ export async function getInquiryListData(filters: InquiryListFilters): Promise<I
   const rushCount = filteredRows.filter((row) => getInquirySignals(row.metadata).urgency === "rush").length;
   const newCount = filteredRows.filter((row) => row.status === "new").length;
   const deliveryCount = filteredRows.filter((row) => row.fulfillment_method === "delivery").length;
+  const archivedCount = statusCounts.archived;
 
   return {
     entries,
@@ -742,7 +751,14 @@ export async function getInquiryListData(filters: InquiryListFilters): Promise<I
     statusCounts,
     summary: [
       {
-        detail: rows.length === filteredRows.length ? "All inquiries currently shown" : `${rows.length} total inquiries in the system`,
+        detail:
+          filters.status === "active"
+            ? archivedCount === 0
+              ? "Archived inquiries stay out of the default desk."
+              : `${archivedCount} archived inquir${archivedCount === 1 ? "y is" : "ies are"} hidden by default.`
+            : rows.length === filteredRows.length
+              ? "All inquiries currently shown"
+              : `${rows.length} total inquiries in the system`,
         label: "Visible inquiries",
         value: String(filteredRows.length),
       },
