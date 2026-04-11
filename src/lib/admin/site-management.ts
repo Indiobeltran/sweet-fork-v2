@@ -75,7 +75,18 @@ function getBooleanValue(record: Record<string, Json> | null, key: string) {
   return typeof value === "boolean" ? value : null;
 }
 
-function getPublicAssetUrl(asset: Pick<MediaAssetRow, "bucket" | "public_url" | "storage_path">) {
+async function getMediaPreviewUrl(
+  admin: ReturnType<typeof createAdminClient>,
+  asset: Pick<MediaAssetRow, "bucket" | "public_url" | "storage_path">,
+) {
+  if (asset.bucket && asset.storage_path) {
+    const { data } = await admin.storage.from(asset.bucket).createSignedUrl(asset.storage_path, 60 * 60);
+
+    if (data?.signedUrl) {
+      return data.signedUrl;
+    }
+  }
+
   if (asset.public_url) {
     return asset.public_url;
   }
@@ -84,7 +95,7 @@ function getPublicAssetUrl(asset: Pick<MediaAssetRow, "bucket" | "public_url" | 
     return null;
   }
 
-  return createAdminClient().storage.from(asset.bucket).getPublicUrl(asset.storage_path).data.publicUrl;
+  return admin.storage.from(asset.bucket).getPublicUrl(asset.storage_path).data.publicUrl;
 }
 
 function getExpectedPriceKinds(productType: ProductRow["product_type"]) {
@@ -206,6 +217,13 @@ export async function getMediaLibraryData(): Promise<MediaLibraryData> {
     };
   }
 
+  const admin = createAdminClient();
+  const previewUrls = new Map(
+    await Promise.all(
+      assets.map(async (asset) => [asset.id, await getMediaPreviewUrl(admin, asset)] as const),
+    ),
+  );
+
   const { data: assignmentData, error: assignmentError } = await supabase
     .from("media_assignments")
     .select("assignment_type, display_order, media_asset_id, page_key, section_key, slot_key, target_id")
@@ -283,7 +301,7 @@ export async function getMediaLibraryData(): Promise<MediaLibraryData> {
         filename: asset.original_filename ?? "Uploaded image",
         id: asset.id,
         pageAssignments,
-        previewUrl: getPublicAssetUrl(asset),
+        previewUrl: previewUrls.get(asset.id) ?? null,
       } satisfies MediaLibraryAsset;
     }),
     categories: (categoryData ?? []) as GalleryCategoryRow[],

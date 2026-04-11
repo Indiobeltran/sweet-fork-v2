@@ -82,6 +82,7 @@ export default async function AdminTestimonialsPage({
       <AdminSectionCard
         title="Add testimonial"
         description="Keep this list polished and selective. Featured items will naturally rise to the top of the homepage rotation."
+        collapsible
       >
         <form action={createTestimonial} className="space-y-4">
           <input type="hidden" name="redirectTo" value="/admin/testimonials" />
@@ -130,6 +131,8 @@ export default async function AdminTestimonialsPage({
       <AdminSectionCard
         title="Testimonial library"
         description="A featured testimonial is simply a stronger homepage candidate. Publishing stays separate so nothing goes live by accident."
+        collapsible
+        defaultOpen={false}
       >
         <div className="space-y-5">
           {testimonials.map((testimonial) => (

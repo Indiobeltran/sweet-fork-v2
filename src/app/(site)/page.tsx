@@ -163,6 +163,7 @@ export default async function HomePage() {
             eyebrow={data.process.eyebrow}
             title={data.process.heading}
             description={data.process.body}
+            tone="inverse"
           />
           <div className="space-y-4">
             {data.process.items.map((item) => (

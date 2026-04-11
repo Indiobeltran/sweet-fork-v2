@@ -96,6 +96,8 @@ export default async function AdminContentPage({ searchParams }: AdminContentPag
       <AdminSectionCard
         title="Structured sections"
         description="These forms only cover the sections already modeled for the public site. That keeps editing flexible enough for day-to-day changes without turning the app into an unrestricted CMS."
+        collapsible
+        defaultOpen={false}
       >
         <div className="space-y-5">
           {sections.map((section) => (

@@ -73,6 +73,7 @@ export default async function AdminFaqPage({ searchParams }: AdminFaqPageProps) 
       <AdminSectionCard
         title="Add FAQ"
         description="Keep answers short, practical, and confidence-building. This list feeds the public FAQ page directly."
+        collapsible
       >
         <form action={createFaqItem} className="space-y-4">
           <input type="hidden" name="redirectTo" value="/admin/faqs" />
@@ -115,6 +116,8 @@ export default async function AdminFaqPage({ searchParams }: AdminFaqPageProps) 
       <AdminSectionCard
         title="FAQ library"
         description="The category key is mostly for internal grouping and ordering. The public page still stays simple and easy to scan."
+        collapsible
+        defaultOpen={false}
       >
         <div className="space-y-5">
           {faqs.map((faq) => (

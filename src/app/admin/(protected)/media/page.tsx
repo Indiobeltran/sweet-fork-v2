@@ -149,6 +149,7 @@ export default async function AdminMediaPage({ searchParams }: AdminMediaPagePro
       <AdminSectionCard
         title="Upload image"
         description="Upload once, then reuse the same image across the homepage gallery, full gallery page, and category tags. Featured images become easy fallback choices for the luxury grid."
+        collapsible
       >
         <form action={uploadMediaAsset} className="space-y-5">
           <input type="hidden" name="redirectTo" value="/admin/media" />
@@ -213,6 +214,8 @@ export default async function AdminMediaPage({ searchParams }: AdminMediaPagePro
       <AdminSectionCard
         title="Gallery categories"
         description="These keep the gallery feeling curated instead of random. The slug stays fixed; name, description, order, and visibility stay editable."
+        collapsible
+        defaultOpen={false}
       >
         <div className="grid gap-5 xl:grid-cols-2">
           {data.categories.map((category) => (
@@ -274,6 +277,8 @@ export default async function AdminMediaPage({ searchParams }: AdminMediaPagePro
       <AdminSectionCard
         title="Media library"
         description="Alt text, caption, featured state, category tags, and page assignments all live here. Nothing gets deleted automatically, which keeps reuse safer."
+        collapsible
+        defaultOpen={false}
       >
         <div className="grid gap-5 xl:grid-cols-2">
           {data.assets.map((asset) => {
@@ -295,6 +300,7 @@ export default async function AdminMediaPage({ searchParams }: AdminMediaPagePro
                     alt={asset.altText || asset.caption || asset.filename}
                     width={1200}
                     height={900}
+                    sizes="(min-width: 1280px) 42vw, 100vw"
                     unoptimized
                     className="h-72 w-full object-cover"
                   />
