@@ -79,7 +79,7 @@ export function AdminShellChrome({
 
   return (
     <div className="min-h-screen pb-[calc(env(safe-area-inset-bottom)+5.75rem)] pt-2 sm:pt-3 md:pb-8">
-      <div className="section-shell relative z-50">
+      <div className="section-shell relative">
         <AdminAppBar
           accountMenu={accountMenu}
           quickAction={quickAction}

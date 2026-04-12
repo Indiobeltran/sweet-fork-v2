@@ -105,7 +105,7 @@ export function MobileBottomNav({
     <div
       aria-hidden={isSuppressedForNativePicker ? "true" : undefined}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-40 transition-[opacity,transform] duration-200 md:hidden",
+        "fixed inset-x-0 bottom-0 z-50 transition-[opacity,transform] duration-200 md:hidden",
         isSuppressedForNativePicker
           ? "pointer-events-none translate-y-[calc(100%+1rem)] opacity-0"
           : "translate-y-0 opacity-100",
