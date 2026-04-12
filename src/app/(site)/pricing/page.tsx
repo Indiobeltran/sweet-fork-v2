@@ -27,18 +27,6 @@ export default async function PricingPage() {
         cta={defaultCta}
       />
 
-      <section className="section-shell py-16 md:py-20">
-        <div className="grid gap-4 md:grid-cols-3">
-          {data.highlights.map((item) => (
-            <article key={item.label} className="luxury-panel rounded-[1.85rem] px-6 py-6">
-              <p className="eyebrow-label">{item.label}</p>
-              <h2 className="mt-5 font-serif text-4xl tracking-[-0.04em] text-charcoal">{item.value}</h2>
-              <p className="mt-3 text-sm leading-7 text-charcoal/66">{item.note}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
       <section className="border-y border-charcoal/8 bg-cream/70 py-16 md:py-20">
         <div className="section-shell grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="space-y-5">
@@ -52,24 +40,60 @@ export default async function PricingPage() {
           </div>
 
           <div className="luxury-panel overflow-hidden rounded-[2.1rem]">
-            <div className="grid grid-cols-[1.1fr_0.8fr_0.8fr] border-b border-charcoal/8 px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-charcoal/62">
+            <div className="hidden grid-cols-[1.1fr_0.8fr_0.8fr] border-b border-charcoal/8 px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-charcoal/62 md:grid">
               <span>Offering</span>
               <span>Starts at</span>
               <span>Lead time</span>
             </div>
-            {data.matrix.map((row) => (
-              <div
-                key={row.product}
-                className="grid gap-3 border-b border-charcoal/8 px-6 py-5 text-sm text-charcoal/68 last:border-none md:grid-cols-[1.1fr_0.8fr_0.8fr]"
-              >
-                <div>
-                  <p className="font-medium text-charcoal">{row.product}</p>
-                  <p className="mt-1 leading-7">{row.rule}</p>
+            <div className="md:hidden">
+              {data.matrix.map((row) => (
+                <article
+                  key={row.product}
+                  className="border-b border-charcoal/8 px-5 py-5 text-charcoal/68 last:border-none"
+                >
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+                      Offering
+                    </p>
+                    <h3 className="font-serif text-[2rem] leading-none tracking-[-0.04em] text-charcoal">
+                      {row.product}
+                    </h3>
+                    <p className="text-sm leading-7">{row.rule}</p>
+                  </div>
+
+                  <dl className="mt-5 grid grid-cols-2 gap-3 rounded-[1.5rem] border border-charcoal/8 bg-cream/55 p-4">
+                    <div className="space-y-1">
+                      <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+                        Starts at
+                      </dt>
+                      <dd className="text-base font-medium text-charcoal">{row.startingAt}</dd>
+                    </div>
+                    <div className="space-y-1">
+                      <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+                        Lead time
+                      </dt>
+                      <dd className="text-base font-medium text-charcoal">{row.leadTime}</dd>
+                    </div>
+                  </dl>
+                </article>
+              ))}
+            </div>
+
+            <div className="hidden md:block">
+              {data.matrix.map((row) => (
+                <div
+                  key={row.product}
+                  className="grid gap-3 border-b border-charcoal/8 px-6 py-5 text-sm text-charcoal/68 last:border-none md:grid-cols-[1.1fr_0.8fr_0.8fr]"
+                >
+                  <div>
+                    <p className="font-medium text-charcoal">{row.product}</p>
+                    <p className="mt-1 leading-7">{row.rule}</p>
+                  </div>
+                  <p className="font-medium text-charcoal">{row.startingAt}</p>
+                  <p>{row.leadTime}</p>
                 </div>
-                <p className="font-medium text-charcoal">{row.startingAt}</p>
-                <p>{row.leadTime}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>

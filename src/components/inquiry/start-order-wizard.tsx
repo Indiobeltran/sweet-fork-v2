@@ -1,6 +1,13 @@
 "use client";
 
-import { type ComponentProps, type ReactNode, useEffect, useRef, useState } from "react";
+import {
+  type ComponentProps,
+  type ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -105,14 +112,14 @@ function StepMarker({
   title: string;
 }) {
   return (
-    <div role="listitem">
+    <div role="listitem" className="min-w-[10.75rem] flex-none lg:min-w-0 lg:flex-1">
       <button
         type="button"
         aria-current={active ? "step" : undefined}
         aria-label={`Step ${index + 1}: ${title}. ${description}${complete ? " Complete." : active ? " Current step." : ""}`}
         disabled={!canSelect}
         className={cn(
-          "flex items-center gap-2 rounded-full transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50 disabled:cursor-default sm:min-w-0 sm:gap-3",
+          "flex w-full min-w-0 items-center gap-2 rounded-full text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50 disabled:cursor-default sm:gap-3 lg:gap-2.5",
           active
             ? "border border-charcoal bg-charcoal px-3 py-2 text-ivory shadow-soft"
             : "px-0 py-0",
@@ -351,6 +358,7 @@ export function StartOrderWizard({
   const [submissionResult, setSubmissionResult] = useState<InquirySubmissionResponse | null>(
     null,
   );
+  const successTopRef = useRef<HTMLElement | null>(null);
   const wizardTopRef = useRef<HTMLElement | null>(null);
   const stepViewportRef = useRef<HTMLDivElement | null>(null);
   const stepHeadingRef = useRef<HTMLHeadingElement | null>(null);
@@ -442,15 +450,17 @@ export function StartOrderWizard({
     }
   }, [currentStep, errors]);
 
-  useEffect(() => {
-    if (!submissionResult || !wizardTopRef.current) {
+  useLayoutEffect(() => {
+    if (!submissionResult || !successTopRef.current) {
       return;
     }
 
-    const top = wizardTopRef.current.getBoundingClientRect().top + window.scrollY - 12;
+    const offset = window.matchMedia("(min-width: 1024px)").matches ? 24 : 12;
+    const top = successTopRef.current.getBoundingClientRect().top + window.scrollY - offset;
+
     window.scrollTo({
       top: Math.max(top, 0),
-      behavior: "smooth",
+      behavior: "auto",
     });
   }, [submissionResult]);
 
@@ -827,9 +837,50 @@ export function StartOrderWizard({
     }
   };
 
+  const currentStepPanel = (
+    <div
+      className={cn(
+        "rounded-[1.8rem] border px-4 py-4 transition-colors duration-300 sm:px-5 sm:py-5",
+        hasStarted ? "border-charcoal/10 bg-cream/65 lg:px-5 lg:py-3.5" : "border-charcoal/8 bg-white",
+      )}
+    >
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+        Current step
+      </p>
+      <p
+        ref={stepHeadingRef}
+        tabIndex={-1}
+        className={cn(
+          "font-serif tracking-[-0.04em] text-charcoal focus:outline-none",
+          hasStarted
+            ? "mt-2 text-[1.9rem] leading-none sm:text-3xl lg:text-[1.55rem]"
+            : "mt-3 text-3xl",
+        )}
+      >
+        {inquiryStepTitles[currentStep]}
+      </p>
+      <p
+        className={cn(
+          "mt-2 text-sm text-charcoal/65",
+          hasStarted ? "leading-6 lg:hidden" : "leading-7",
+        )}
+      >
+        {inquiryStepDescriptions[currentStep]}
+      </p>
+      <p
+        className={cn(
+          "mt-2 text-sm text-charcoal/65",
+          hasStarted ? "leading-6 lg:mt-1.5" : "leading-7",
+        )}
+      >
+        {currentStep + 1} of {inquiryStepTitles.length}
+      </p>
+    </div>
+  );
+
   if (submissionResult) {
     return (
-      <section className="section-shell pb-20">
+      <section ref={successTopRef} className="section-shell pb-20">
         <div className="grain-surface overflow-hidden rounded-[2.4rem] border border-charcoal/10 bg-white p-8 shadow-soft sm:p-10 lg:p-12">
           <div className="max-w-3xl space-y-6">
             <Badge>Inquiry received</Badge>
@@ -921,63 +972,38 @@ export function StartOrderWizard({
             )}
           >
             <div className="flex flex-col gap-4">
-              <div className="flex flex-wrap items-center gap-3">
-                <Badge>Inquiry</Badge>
-                <p className="text-sm text-charcoal/60">
-                  {hasStarted
-                    ? "Stay with the active step. You can move backward without losing progress."
-                    : "One guided inquiry for the full order."}
-                </p>
-              </div>
-
               <div
                 className={cn(
-                  "grid gap-4 transition-[grid-template-columns] duration-300 lg:items-end",
-                  hasStarted ? "lg:grid-cols-[1fr_240px]" : "lg:grid-cols-[1.15fr_0.85fr]",
+                  "flex flex-col gap-4",
+                  hasStarted && "lg:flex-row lg:items-start lg:justify-between lg:gap-6",
                 )}
               >
-                <div
-                  className={cn(
-                    "overflow-hidden transition-[max-height,opacity,transform] duration-300",
-                    hasStarted ? "max-h-0 translate-y-[-8px] opacity-0" : "max-h-60 opacity-100",
-                  )}
-                >
-                  <h2 className="font-serif text-4xl tracking-[-0.04em] text-charcoal sm:text-5xl">
-                    Share the celebration details Sweet Fork needs for a tailored quote.
-                  </h2>
-                  <p className="mt-3 max-w-2xl text-base leading-8 text-charcoal/70">
-                    Add the event details, dessert selections, inspiration, and contact preferences
-                    in one place. Each step keeps the details focused so the inquiry never feels
-                    overwhelming on mobile.
+                <div className="flex flex-wrap items-center gap-3">
+                  <Badge>Inquiry</Badge>
+                  <p className="text-sm text-charcoal/60">
+                    {hasStarted
+                      ? "Stay with the active step. You can move backward without losing progress."
+                      : "One guided inquiry for the full order."}
                   </p>
                 </div>
-                <div
-                  className={cn(
-                    "rounded-[1.8rem] border px-4 py-4 transition-colors duration-300 sm:px-5 sm:py-5",
-                    hasStarted ? "border-charcoal/10 bg-cream/65" : "border-charcoal/8 bg-white",
-                  )}
-                >
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                    Current step
-                  </p>
-                  <p
-                    ref={stepHeadingRef}
-                    tabIndex={-1}
-                    className={cn(
-                      "font-serif tracking-[-0.04em] text-charcoal focus:outline-none",
-                      hasStarted ? "mt-2 text-[1.9rem] leading-none sm:text-3xl" : "mt-3 text-3xl",
-                    )}
-                  >
-                    {inquiryStepTitles[currentStep]}
-                  </p>
-                  <p className="mt-2 text-sm leading-7 text-charcoal/65">
-                    {inquiryStepDescriptions[currentStep]}
-                  </p>
-                  <p className="mt-2 text-sm leading-7 text-charcoal/65">
-                    {currentStep + 1} of {inquiryStepTitles.length}
-                  </p>
-                </div>
+                {hasStarted ? <div className="lg:w-[18rem] lg:flex-none">{currentStepPanel}</div> : null}
               </div>
+
+              {!hasStarted ? (
+                <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
+                  <div className="min-w-0 space-y-3">
+                    <h2 className="font-serif text-4xl tracking-[-0.04em] text-charcoal sm:text-5xl">
+                      Share the celebration details Sweet Fork needs for a tailored quote.
+                    </h2>
+                    <p className="max-w-2xl text-base leading-8 text-charcoal/70">
+                      Add the event details, dessert selections, inspiration, and contact
+                      preferences in one place. Each step keeps the details focused so the inquiry
+                      never feels overwhelming on mobile.
+                    </p>
+                  </div>
+                  {currentStepPanel}
+                </div>
+              ) : null}
 
               <div className="space-y-3">
                 <p className="sr-only" aria-live="polite">
@@ -1006,7 +1032,11 @@ export function StartOrderWizard({
                 </p>
               </div>
 
-              <div className="flex gap-2 overflow-x-auto pb-1 sm:gap-3" role="list" aria-label="Inquiry steps">
+              <div
+                className="flex gap-2 overflow-x-auto pb-1 sm:gap-3 lg:overflow-visible lg:pb-0"
+                role="list"
+                aria-label="Inquiry steps"
+              >
                 {inquiryStepTitles.map((title, index) => (
                   <StepMarker
                     key={title}
