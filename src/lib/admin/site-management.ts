@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   getManagedContentSections,
+  marketingMediaBucket,
   mediaPlacementDefinitions,
   type ManagedContentSection,
 } from "@/lib/site/marketing";
@@ -21,6 +22,7 @@ type ProductPriceRow = Tables<"product_prices">;
 
 export type MediaLibraryAsset = {
   altText: string;
+  bucket: string;
   caption: string;
   categoryAssignments: Array<{
     categoryId: string;
@@ -30,16 +32,21 @@ export type MediaLibraryAsset = {
   featured: boolean;
   filename: string;
   id: string;
+  inquiryId: string | null;
+  libraryKind: "client" | "website";
   pageAssignments: Array<{
     displayOrder: number;
     placementKey: string;
   }>;
   previewUrl: string | null;
+  referenceCode: string | null;
+  sourceKind: MediaAssetRow["source_kind"];
 };
 
 export type MediaLibraryData = {
-  assets: MediaLibraryAsset[];
   categories: GalleryCategoryRow[];
+  clientAssets: MediaLibraryAsset[];
+  websiteAssets: MediaLibraryAsset[];
 };
 
 export type PricingEditorProduct = {
@@ -73,6 +80,29 @@ function getBooleanValue(record: Record<string, Json> | null, key: string) {
 
   const value = record[key];
   return typeof value === "boolean" ? value : null;
+}
+
+function getStringValue(record: Record<string, Json> | null, key: string) {
+  if (!record) {
+    return null;
+  }
+
+  const value = record[key];
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+}
+
+function getMediaLibraryKind(
+  asset: Pick<MediaAssetRow, "bucket">,
+  metadata: Record<string, Json> | null,
+): "client" | "website" {
+  const inquiryId = getStringValue(metadata, "inquiryId");
+  const source = getStringValue(metadata, "source");
+
+  if (asset.bucket !== marketingMediaBucket || inquiryId || source === "start-order-wizard") {
+    return "client";
+  }
+
+  return "website";
 }
 
 async function getMediaPreviewUrl(
@@ -177,7 +207,7 @@ export async function getMediaLibraryData(): Promise<MediaLibraryData> {
       supabase
         .from("media_assets")
         .select(
-          "alt_text, bucket, caption, created_at, id, metadata, original_filename, public_url, storage_path",
+          "alt_text, bucket, caption, created_at, id, metadata, original_filename, public_url, source_kind, storage_path",
         )
         .eq("asset_kind", "image")
         .order("created_at", { ascending: false }),
@@ -206,14 +236,16 @@ export async function getMediaLibraryData(): Promise<MediaLibraryData> {
       | "metadata"
       | "original_filename"
       | "public_url"
+      | "source_kind"
       | "storage_path"
     >
   >;
 
   if (assets.length === 0) {
     return {
-      assets: [],
       categories: (categoryData ?? []) as GalleryCategoryRow[],
+      clientAssets: [],
+      websiteAssets: [],
     };
   }
 
@@ -267,8 +299,7 @@ export async function getMediaLibraryData(): Promise<MediaLibraryData> {
     return accumulator;
   }, new Map());
 
-  return {
-    assets: assets.map((asset) => {
+  const mappedAssets = assets.map((asset) => {
       const assignments = assignmentsByAssetId.get(asset.id) ?? [];
       const categoryAssignments = assignments
         .filter((assignment) => assignment.assignment_type === "gallery-category" && assignment.target_id)
@@ -291,20 +322,31 @@ export async function getMediaLibraryData(): Promise<MediaLibraryData> {
         }))
         .sort((left, right) => left.displayOrder - right.displayOrder);
       const metadata = isRecord(asset.metadata) ? asset.metadata : null;
+      const inquiryId = getStringValue(metadata, "inquiryId");
+      const referenceCode = getStringValue(metadata, "referenceCode");
 
       return {
         altText: asset.alt_text ?? "",
+        bucket: asset.bucket,
         caption: asset.caption ?? "",
         categoryAssignments,
         createdAt: asset.created_at,
         featured: getBooleanValue(metadata, "isFeatured") ?? false,
         filename: asset.original_filename ?? "Uploaded image",
         id: asset.id,
+        inquiryId,
+        libraryKind: getMediaLibraryKind(asset, metadata),
         pageAssignments,
         previewUrl: previewUrls.get(asset.id) ?? null,
+        referenceCode,
+        sourceKind: asset.source_kind,
       } satisfies MediaLibraryAsset;
-    }),
+    });
+
+  return {
     categories: (categoryData ?? []) as GalleryCategoryRow[],
+    clientAssets: mappedAssets.filter((asset) => asset.libraryKind === "client"),
+    websiteAssets: mappedAssets.filter((asset) => asset.libraryKind === "website"),
   };
 }
 

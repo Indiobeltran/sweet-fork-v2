@@ -269,6 +269,92 @@ export async function updateMediaAsset(formData: FormData) {
   redirectWithNotice(redirectTarget, "media-updated");
 }
 
+export async function deleteMediaAsset(formData: FormData) {
+  await requireAdmin();
+
+  const mediaAssetId = parseRequiredString(formData.get("mediaAssetId"));
+  const redirectTarget = getMediaRedirectTarget(formData.get("redirectTo"));
+
+  if (!mediaAssetId) {
+    redirectWithNotice(redirectTarget, "media-error");
+  }
+
+  const admin = createAdminClient();
+  const { data: asset, error: assetError } = await admin
+    .from("media_assets")
+    .select("bucket, storage_path")
+    .eq("id", mediaAssetId)
+    .maybeSingle();
+
+  if (assetError || !asset) {
+    console.error("Unable to load media asset before delete.", assetError);
+    redirectWithNotice(redirectTarget, "media-error");
+  }
+
+  const { data: inquiryAssetData, error: inquiryAssetError } = await admin
+    .from("inquiry_assets")
+    .select("id, inquiry_id")
+    .eq("media_asset_id", mediaAssetId);
+
+  if (inquiryAssetError) {
+    console.error("Unable to load linked inquiry assets before delete.", inquiryAssetError);
+    redirectWithNotice(redirectTarget, "media-error");
+  }
+
+  const linkedInquiryAssets = inquiryAssetData ?? [];
+  const linkedInquiryIds = Array.from(
+    new Set(
+      linkedInquiryAssets
+        .map((assetRow) => assetRow.inquiry_id)
+        .filter((inquiryId): inquiryId is string => typeof inquiryId === "string" && inquiryId.length > 0),
+    ),
+  );
+
+  if (linkedInquiryAssets.length > 0) {
+    const { error: deleteInquiryAssetsError } = await admin
+      .from("inquiry_assets")
+      .delete()
+      .in(
+        "id",
+        linkedInquiryAssets.map((assetRow) => assetRow.id),
+      );
+
+    if (deleteInquiryAssetsError) {
+      console.error("Unable to remove linked inquiry assets before delete.", deleteInquiryAssetsError);
+      redirectWithNotice(redirectTarget, "media-error");
+    }
+  }
+
+  const { error: deleteAssetError } = await admin.from("media_assets").delete().eq("id", mediaAssetId);
+
+  if (deleteAssetError) {
+    console.error("Unable to delete media asset.", deleteAssetError);
+    redirectWithNotice(redirectTarget, "media-error");
+  }
+
+  if (asset.bucket && asset.storage_path) {
+    const { error: storageError } = await admin.storage
+      .from(asset.bucket)
+      .remove([asset.storage_path]);
+
+    if (storageError) {
+      console.error("Unable to remove deleted media asset from storage.", storageError);
+    }
+  }
+
+  revalidatePaths([
+    mediaRedirectPath,
+    "/admin/inquiries",
+    ...linkedInquiryIds.map((inquiryId) => `/admin/inquiries/${inquiryId}`),
+  ]);
+
+  if (asset.bucket === marketingMediaBucket) {
+    revalidateMarketingSite(["/", "/gallery"]);
+  }
+
+  redirectWithNotice(redirectTarget, "media-deleted");
+}
+
 export async function updateGalleryCategory(formData: FormData) {
   await requireAdmin();
 

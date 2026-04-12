@@ -967,6 +967,7 @@ export async function getGalleryItemsForPlacement(
         "alt_text, bucket, caption, created_at, id, metadata, original_filename, public_url, storage_path",
       )
       .in("id", explicitAssetIds)
+      .eq("bucket", marketingMediaBucket)
       .eq("asset_kind", "image");
 
     if (assetError) {
@@ -987,6 +988,7 @@ export async function getGalleryItemsForPlacement(
       .select(
         "alt_text, bucket, caption, created_at, id, metadata, original_filename, public_url, storage_path",
       )
+      .eq("bucket", marketingMediaBucket)
       .eq("asset_kind", "image")
       .order("created_at", { ascending: false });
 
