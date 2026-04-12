@@ -105,7 +105,7 @@ export function MobileBottomNav({
     <div
       aria-hidden={isSuppressedForNativePicker ? "true" : undefined}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] transition-[opacity,transform] duration-200 md:hidden",
+        "fixed inset-x-0 bottom-0 z-40 transition-[opacity,transform] duration-200 md:hidden",
         isSuppressedForNativePicker
           ? "pointer-events-none translate-y-[calc(100%+1rem)] opacity-0"
           : "translate-y-0 opacity-100",
@@ -114,20 +114,20 @@ export function MobileBottomNav({
     >
       <nav
         aria-label="Primary admin navigation"
-        className="mx-auto max-w-md rounded-[1.7rem] border border-charcoal/10 bg-ivory/94 p-2 shadow-[0_18px_48px_rgba(53,37,29,0.14),0_2px_10px_rgba(53,37,29,0.05)] backdrop-blur-xl"
+        className="w-full border-t border-charcoal/10 bg-ivory/96 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl"
       >
-        <div className="grid grid-cols-5 gap-1">
+        <div className="mx-auto grid max-w-md grid-cols-5 gap-1 px-2 pt-2">
           {items.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               aria-current={item.isActive ? "page" : undefined}
               className={cn(
-                "inline-flex min-h-[4.35rem] flex-col items-center justify-center rounded-[1.2rem] px-2 py-2 text-center transition",
+                "inline-flex min-h-[4.35rem] flex-col items-center justify-center rounded-[1rem] px-2 py-2 text-center transition",
                 focusClasses,
                 item.isActive
-                  ? "bg-charcoal text-ivory shadow-soft"
-                  : "text-charcoal/62 hover:bg-white hover:text-charcoal",
+                  ? "bg-charcoal text-ivory"
+                  : "text-charcoal/62 hover:bg-white/72 hover:text-charcoal",
               )}
             >
               <span
@@ -148,11 +148,11 @@ export function MobileBottomNav({
             aria-haspopup="dialog"
             aria-label={moreActive ? `${moreLabel}, current section` : moreLabel}
             className={cn(
-              "inline-flex min-h-[4.35rem] flex-col items-center justify-center rounded-[1.2rem] px-2 py-2 text-center transition",
+              "inline-flex min-h-[4.35rem] flex-col items-center justify-center rounded-[1rem] px-2 py-2 text-center transition",
               focusClasses,
               moreActive || moreOpen
-                ? "bg-charcoal text-ivory shadow-soft"
-                : "text-charcoal/62 hover:bg-white hover:text-charcoal",
+                ? "bg-charcoal text-ivory"
+                : "text-charcoal/62 hover:bg-white/72 hover:text-charcoal",
             )}
             onClick={onMoreClick}
           >
