@@ -1,8 +1,12 @@
 import Link from "next/link";
 
 import { updateNotificationEventState } from "@/app/admin/(protected)/notifications/actions";
+import { ActiveFilterPills, type ActiveFilterPill } from "@/components/admin/active-filter-pills";
 import { AdminNoticeBanner } from "@/components/admin/admin-notice-banner";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
+import { CompactEmptyState } from "@/components/admin/compact-empty-state";
+import { FilterSheet } from "@/components/admin/filter-sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +29,74 @@ type AdminNotificationsPageProps = {
 function getNoticeValue(rawSearchParams: Record<string, string | string[] | undefined>) {
   const noticeValue = rawSearchParams.notice;
   return Array.isArray(noticeValue) ? noticeValue[0] : noticeValue;
+}
+
+function buildNotificationsHref(
+  filters: {
+    channel: NotificationLogEntry["channel"] | "all";
+    search: string;
+    status: NotificationLogEntry["status"] | "all";
+  },
+  overrides: Partial<{
+    channel: NotificationLogEntry["channel"] | "all";
+    search: string;
+    status: NotificationLogEntry["status"] | "all";
+  }> = {},
+) {
+  const next = {
+    ...filters,
+    ...overrides,
+  };
+  const searchParams = new URLSearchParams();
+
+  if (next.search) {
+    searchParams.set("search", next.search);
+  }
+
+  if (next.status !== "all") {
+    searchParams.set("status", next.status);
+  }
+
+  if (next.channel !== "all") {
+    searchParams.set("channel", next.channel);
+  }
+
+  const queryString = searchParams.toString();
+  return queryString ? `/admin/notifications?${queryString}` : "/admin/notifications";
+}
+
+function getActiveFilterPills(filters: {
+  channel: NotificationLogEntry["channel"] | "all";
+  search: string;
+  status: NotificationLogEntry["status"] | "all";
+}): ActiveFilterPill[] {
+  const items: ActiveFilterPill[] = [];
+
+  if (filters.search) {
+    items.push({
+      clearHref: buildNotificationsHref(filters, { search: "" }),
+      label: "Search",
+      value: filters.search,
+    });
+  }
+
+  if (filters.status !== "all") {
+    items.push({
+      clearHref: buildNotificationsHref(filters, { status: "all" }),
+      label: "Status",
+      value: filters.status,
+    });
+  }
+
+  if (filters.channel !== "all") {
+    items.push({
+      clearHref: buildNotificationsHref(filters, { channel: "all" }),
+      label: "Channel",
+      value: filters.channel.toUpperCase(),
+    });
+  }
+
+  return items;
 }
 
 function getStatusClasses(status: NotificationLogEntry["status"]) {
@@ -251,16 +323,11 @@ export default async function AdminNotificationsPage({
     Promise.resolve(getNoticeValue(rawSearchParams)),
     getNotificationsAdminData(filters),
   ]);
-  const redirectTo = `/admin/notifications${filters.search || filters.status !== "all" || filters.channel !== "all" ? `?${new URLSearchParams(
-    Object.entries({
-      channel: filters.channel !== "all" ? filters.channel : "",
-      search: filters.search,
-      status: filters.status !== "all" ? filters.status : "",
-    }).filter(([, value]) => value),
-  ).toString()}` : ""}`;
+  const redirectTo = buildNotificationsHref(filters);
+  const activeFilterPills = getActiveFilterPills(filters);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AdminNoticeBanner
         notice={notice}
         notices={{
@@ -275,26 +342,89 @@ export default async function AdminNotificationsPage({
         }}
       />
 
-      <section className="grid gap-4 lg:grid-cols-4">
-        {data.summary.map((item) => (
-          <div
-            key={item.label}
-            className="rounded-[1.9rem] border border-charcoal/10 bg-white/88 p-5 shadow-soft"
+      <AdminPageHeader
+        hideTitleOnMobile
+        title="Notifications"
+        meta={
+          <span>
+            <span className="font-semibold text-charcoal">{data.summary[1]?.value ?? data.logs.length}</span>{" "}
+            visible logs
+          </span>
+        }
+        actions={
+          <FilterSheet
+            title="Delivery history filters"
+            description="Search, status, and channel filters stay here so recent notification activity remains visible first."
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-              {item.label}
-            </p>
-            <p className="mt-3 font-serif text-4xl tracking-[-0.04em] text-charcoal">
-              {item.value}
-            </p>
-            <p className="mt-2 text-sm leading-7 text-charcoal/62">{item.detail}</p>
-          </div>
-        ))}
-      </section>
+            <form method="get" className="grid gap-4 lg:grid-cols-2">
+              <div>
+                <Label htmlFor="notification-search">Search</Label>
+                <Input
+                  id="notification-search"
+                  name="search"
+                  defaultValue={filters.search}
+                  placeholder="Recipient, subject, event key"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="notification-status">Status</Label>
+                <Select id="notification-status" name="status" defaultValue={filters.status}>
+                  <option value="all">All statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="sent">Sent</option>
+                  <option value="failed">Failed</option>
+                  <option value="skipped">Skipped</option>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="notification-channel">Channel</Label>
+                <Select id="notification-channel" name="channel" defaultValue={filters.channel}>
+                  <option value="all">All channels</option>
+                  <option value="internal">Internal</option>
+                  <option value="email">Email</option>
+                  <option value="sms">SMS</option>
+                </Select>
+              </div>
+
+              <div className="flex flex-col justify-end gap-3 rounded-[1.35rem] border border-charcoal/8 bg-white/85 p-4 sm:flex-row sm:items-end sm:justify-between lg:col-span-2">
+                <p className="text-sm text-charcoal/62">
+                  {data.totalLogCount} recent log row{data.totalLogCount === 1 ? "" : "s"} loaded
+                </p>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <Link
+                    href="/admin/notifications"
+                    className="inline-flex h-11 items-center justify-center rounded-full border border-charcoal/15 bg-ivory/80 px-5 text-sm font-medium tracking-[0.02em] text-charcoal transition hover:border-charcoal/40 hover:bg-white"
+                  >
+                    Clear
+                  </Link>
+                  <Button type="submit">Apply filters</Button>
+                </div>
+              </div>
+            </form>
+          </FilterSheet>
+        }
+      >
+        <div className="flex flex-wrap gap-2">
+          {data.summary.map((item) => (
+            <span
+              key={item.label}
+              className="rounded-full border border-charcoal/8 bg-white/84 px-3 py-1 text-xs text-charcoal/64"
+            >
+              <span className="font-semibold text-charcoal">{item.value}</span> {item.label}
+            </span>
+          ))}
+        </div>
+
+        {activeFilterPills.length > 0 ? (
+          <ActiveFilterPills clearAllHref="/admin/notifications" items={activeFilterPills} />
+        ) : null}
+      </AdminPageHeader>
 
       <AdminSectionCard
         title="Notification events"
-        description="This page is intentionally internal-facing. It shows what the app knows about notification events and what was logged as sent, pending, failed, or skipped. It is visibility first, not a full automation console."
+        description="What the app knows about notification events and whether they are currently active."
       >
         <div className="space-y-4">
           {data.events.length > 0 ? (
@@ -302,70 +432,28 @@ export default async function AdminNotificationsPage({
               <EventCard key={event.id} event={event} redirectTo={redirectTo} />
             ))
           ) : (
-            <div className="rounded-[1.6rem] border border-dashed border-charcoal/12 bg-paper/60 px-5 py-6 text-sm leading-7 text-charcoal/62">
-              No notification events have been recorded yet.
-            </div>
+            <CompactEmptyState
+              align="left"
+              title="No notification events recorded yet"
+              description="The event catalog will show up here once notification rows exist in the system."
+            />
           )}
         </div>
       </AdminSectionCard>
 
       <AdminSectionCard
         title="Delivery history"
-        description="Recent logs are loaded from the existing notification tables so the bakery team can see what the app recorded without opening the database."
+        description="Recent notification logs loaded from the existing tables for practical review."
       >
-        <div className="rounded-[1.7rem] border border-charcoal/10 bg-paper p-5">
-          <form className="grid gap-4 lg:grid-cols-4">
-            <div>
-              <Label htmlFor="notification-search">Search</Label>
-              <Input
-                id="notification-search"
-                name="search"
-                defaultValue={filters.search}
-                placeholder="Recipient, subject, event key"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="notification-status">Status</Label>
-              <Select id="notification-status" name="status" defaultValue={filters.status}>
-                <option value="all">All statuses</option>
-                <option value="pending">Pending</option>
-                <option value="sent">Sent</option>
-                <option value="failed">Failed</option>
-                <option value="skipped">Skipped</option>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="notification-channel">Channel</Label>
-              <Select id="notification-channel" name="channel" defaultValue={filters.channel}>
-                <option value="all">All channels</option>
-                <option value="internal">Internal</option>
-                <option value="email">Email</option>
-                <option value="sms">SMS</option>
-              </Select>
-            </div>
-
-            <div className="flex items-end gap-3">
-              <Button type="submit">Apply filters</Button>
-              <Link
-                href="/admin/notifications"
-                className="inline-flex h-12 items-center justify-center rounded-full border border-charcoal/15 bg-ivory/80 px-5 text-sm font-medium tracking-[0.02em] text-charcoal transition hover:border-charcoal/40 hover:bg-white"
-              >
-                Clear
-              </Link>
-            </div>
-          </form>
-        </div>
-
-        <div className="mt-6 space-y-4">
+        <div className="space-y-4">
           {data.logs.length > 0 ? (
             data.logs.map((log) => <LogCard key={log.id} log={log} />)
           ) : (
-            <div className="rounded-[1.6rem] border border-dashed border-charcoal/12 bg-paper/60 px-5 py-6 text-sm leading-7 text-charcoal/62">
-              No log rows matched this filter. The page currently loads up to the {data.totalLogCount} most recent log row
-              {data.totalLogCount === 1 ? "" : "s"} for practical review.
-            </div>
+            <CompactEmptyState
+              align="left"
+              title="No log rows match this view"
+              description={`The page currently loads up to the ${data.totalLogCount} most recent log row${data.totalLogCount === 1 ? "" : "s"} for practical review.`}
+            />
           )}
         </div>
       </AdminSectionCard>

@@ -1,5 +1,6 @@
 import { saveAdminSetting } from "@/app/admin/(protected)/settings/actions";
 import { AdminNoticeBanner } from "@/components/admin/admin-notice-banner";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -149,7 +150,7 @@ export default async function AdminSettingsPage({ searchParams }: AdminSettingsP
   ]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AdminNoticeBanner
         notice={notice}
         notices={{
@@ -164,22 +165,22 @@ export default async function AdminSettingsPage({ searchParams }: AdminSettingsP
         }}
       />
 
-      <section className="grid gap-4 lg:grid-cols-3">
-        {data.summary.map((item) => (
-          <div
-            key={item.label}
-            className="rounded-[1.9rem] border border-charcoal/10 bg-white/88 p-5 shadow-soft"
-          >
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-              {item.label}
-            </p>
-            <p className="mt-3 font-serif text-4xl tracking-[-0.04em] text-charcoal">
-              {item.value}
-            </p>
-            <p className="mt-2 text-sm leading-7 text-charcoal/62">{item.detail}</p>
-          </div>
-        ))}
-      </section>
+      <AdminPageHeader
+        hideTitleOnMobile
+        title="Settings"
+        description="Business defaults, inquiry controls, and booking notices used across the public site."
+      >
+        <div className="flex flex-wrap gap-2">
+          {data.summary.map((item) => (
+            <span
+              key={item.label}
+              className="rounded-full border border-charcoal/8 bg-white/84 px-3 py-1 text-xs text-charcoal/64"
+            >
+              <span className="font-semibold text-charcoal">{item.value}</span> {item.label}
+            </span>
+          ))}
+        </div>
+      </AdminPageHeader>
 
       {data.sections.map((section) => (
         <AdminSectionCard key={section.key} title={section.title} description={section.description}>
@@ -193,7 +194,9 @@ export default async function AdminSettingsPage({ searchParams }: AdminSettingsP
 
       <AdminSectionCard
         title="Launch readiness"
-        description="These notes keep the launch handoff understandable for the bakery owner and for whoever is helping with the final deployment."
+        description="Operational notes for launch and handoff."
+        collapsible
+        defaultOpen={false}
       >
         <div className="grid gap-5 xl:grid-cols-3">
           {launchReadinessSections.map((section) => (

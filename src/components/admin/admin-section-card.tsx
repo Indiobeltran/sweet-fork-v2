@@ -19,13 +19,15 @@ export function AdminSectionCard({
     return (
       <details
         open={defaultOpen}
-        className="group rounded-[2rem] border border-charcoal/10 bg-white/88 p-5 shadow-soft sm:p-6"
+        className="group rounded-[1.75rem] border border-charcoal/10 bg-white/88 p-4 shadow-soft sm:p-5"
       >
         <summary className="flex cursor-pointer list-none items-start justify-between gap-4 [&::-webkit-details-marker]:hidden">
           <div className="space-y-2">
-            <h2 className="font-serif text-3xl tracking-[-0.04em] text-charcoal">{title}</h2>
+            <h2 className="font-serif text-[2rem] tracking-[-0.04em] text-charcoal sm:text-[2.1rem]">
+              {title}
+            </h2>
             {description ? (
-              <p className="max-w-3xl text-sm leading-7 text-charcoal/64">{description}</p>
+              <p className="max-w-3xl text-sm leading-6 text-charcoal/64">{description}</p>
             ) : null}
           </div>
 
@@ -35,20 +37,22 @@ export function AdminSectionCard({
           </span>
         </summary>
 
-        <div className="mt-5">{children}</div>
+        <div className="mt-4">{children}</div>
       </details>
     );
   }
 
   return (
-    <section className="rounded-[2rem] border border-charcoal/10 bg-white/88 p-5 shadow-soft sm:p-6">
+    <section className="rounded-[1.75rem] border border-charcoal/10 bg-white/88 p-4 shadow-soft sm:p-5">
       <div className="space-y-2">
-        <h2 className="font-serif text-3xl tracking-[-0.04em] text-charcoal">{title}</h2>
+        <h2 className="font-serif text-[2rem] tracking-[-0.04em] text-charcoal sm:text-[2.1rem]">
+          {title}
+        </h2>
         {description ? (
-          <p className="max-w-3xl text-sm leading-7 text-charcoal/64">{description}</p>
+          <p className="max-w-3xl text-sm leading-6 text-charcoal/64">{description}</p>
         ) : null}
       </div>
-      <div className="mt-5">{children}</div>
+      <div className="mt-4">{children}</div>
     </section>
   );
 }

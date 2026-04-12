@@ -47,7 +47,7 @@ export default async function AdminFaqPage({ searchParams }: AdminFaqPageProps) 
   const notice = getNoticeValue(rawSearchParams);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AdminNoticeBanner
         notice={notice}
         notices={{

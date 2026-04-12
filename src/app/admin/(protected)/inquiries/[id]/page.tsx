@@ -97,9 +97,11 @@ function SectionCard({
   title: string;
 }>) {
   return (
-    <section className="rounded-[2rem] border border-charcoal/10 bg-white/88 p-5 shadow-soft sm:p-6">
-      <h2 className="font-serif text-3xl tracking-[-0.04em] text-charcoal">{title}</h2>
-      <div className="mt-5">{children}</div>
+    <section className="rounded-[1.75rem] border border-charcoal/10 bg-white/88 p-4 shadow-soft sm:p-5">
+      <h2 className="font-serif text-[2rem] tracking-[-0.04em] text-charcoal sm:text-[2.1rem]">
+        {title}
+      </h2>
+      <div className="mt-4">{children}</div>
     </section>
   );
 }
@@ -228,8 +230,8 @@ export default async function AdminInquiryDetailPage({
   const redirectTo = `/admin/inquiries/${detail.id}`;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-3">
           <Link
             href="/admin/inquiries"
@@ -248,7 +250,7 @@ export default async function AdminInquiryDetailPage({
             </span>
           </div>
           <div>
-            <h1 className="font-serif text-4xl tracking-[-0.04em] text-charcoal sm:text-5xl">
+            <h1 className="font-serif text-[2.3rem] tracking-[-0.04em] text-charcoal sm:text-[2.8rem]">
               {detail.contact.customerName}
             </h1>
             <p className="mt-2 text-sm leading-7 text-charcoal/66">
@@ -258,7 +260,7 @@ export default async function AdminInquiryDetailPage({
           </div>
         </div>
 
-        <div className="rounded-[1.8rem] border border-charcoal/10 bg-white/88 px-5 py-4 shadow-soft">
+        <div className="rounded-[1.55rem] border border-charcoal/10 bg-white/88 px-4 py-3 shadow-soft">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
             Submitted
           </p>
@@ -274,7 +276,7 @@ export default async function AdminInquiryDetailPage({
       <NoticeBanner notice={notice} />
 
       <div className="grid gap-6 xl:grid-cols-[1.18fr_0.82fr]">
-        <div className="space-y-6">
+        <div className="space-y-4">
           <SectionCard title="Event details">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
@@ -424,7 +426,7 @@ export default async function AdminInquiryDetailPage({
           ) : null}
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           <SectionCard title="Estimate insight">
             <div className="space-y-4">
               <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
@@ -772,7 +774,7 @@ export default async function AdminInquiryDetailPage({
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full sm:w-auto">
+                <Button type="submit">
                   Create order from inquiry
                 </Button>
               </form>

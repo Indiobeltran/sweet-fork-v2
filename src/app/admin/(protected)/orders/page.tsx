@@ -1,6 +1,12 @@
 import Link from "next/link";
 
+import { ActiveFilterPills, type ActiveFilterPill } from "@/components/admin/active-filter-pills";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { CompactEmptyState } from "@/components/admin/compact-empty-state";
+import { FilterSheet } from "@/components/admin/filter-sheet";
+import { StatusChipRow } from "@/components/admin/status-chip-row";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -8,6 +14,7 @@ import {
   getOrderListData,
   parseOrderListFilters,
   type OrderListEntry,
+  type OrderListFilters,
 } from "@/lib/admin/orders";
 import {
   getOrderStatusClasses,
@@ -23,6 +30,52 @@ type AdminOrdersPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
+type OrderQueue = "active" | "awaiting-payment" | "completed" | "upcoming";
+
+const DEFAULT_ORDER_FILTERS: OrderListFilters = {
+  eventDateFrom: "",
+  eventDateTo: "",
+  fulfillmentMethod: "all",
+  paymentState: "all",
+  search: "",
+  status: "all",
+};
+const DEFAULT_QUEUE: OrderQueue = "active";
+const fulfillmentLabels: Record<string, string> = {
+  delivery: "Delivery",
+  pickup: "Pickup",
+};
+const paymentLabels: Record<string, string> = {
+  "deposit-paid": "Deposit paid",
+  paid: "Paid",
+  refunded: "Refunded",
+  unpaid: "Unpaid",
+};
+const queueLabels: Record<OrderQueue, string> = {
+  active: "Active",
+  "awaiting-payment": "Awaiting payment",
+  completed: "Completed",
+  upcoming: "Upcoming",
+};
+
+function getSearchValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] ?? "" : value ?? "";
+}
+
+function getOrderQueue(rawSearchParams: Record<string, string | string[] | undefined>): OrderQueue {
+  const rawQueue = getSearchValue(rawSearchParams.queue);
+
+  if (
+    rawQueue === "awaiting-payment" ||
+    rawQueue === "upcoming" ||
+    rawQueue === "completed"
+  ) {
+    return rawQueue;
+  }
+
+  return DEFAULT_QUEUE;
+}
+
 function FilterCard({
   children,
   label,
@@ -31,7 +84,7 @@ function FilterCard({
   label: string;
 }>) {
   return (
-    <div className="rounded-[1.6rem] border border-charcoal/8 bg-white/85 p-4">
+    <div className="rounded-[1.35rem] border border-charcoal/8 bg-white/85 p-4">
       <Label>{label}</Label>
       {children}
     </div>
@@ -41,23 +94,170 @@ function FilterCard({
 function LinkButton({
   href,
   label,
+  variant = "primary",
 }: {
   href: string;
   label: string;
+  variant?: "primary" | "secondary";
 }) {
   return (
     <Link
       href={href}
-      className="inline-flex h-12 items-center justify-center rounded-full bg-charcoal px-5 text-sm font-medium tracking-[0.02em] text-ivory shadow-soft transition hover:bg-charcoal/90"
+      className={
+        variant === "primary"
+          ? "inline-flex h-11 items-center justify-center rounded-full bg-charcoal px-5 text-sm font-medium tracking-[0.02em] text-ivory shadow-soft transition hover:bg-charcoal/90"
+          : "inline-flex h-11 items-center justify-center rounded-full border border-charcoal/15 bg-ivory/80 px-5 text-sm font-medium tracking-[0.02em] text-charcoal transition hover:border-charcoal/40 hover:bg-white"
+      }
     >
       {label}
     </Link>
   );
 }
 
-function OrderCard({ entry }: { entry: OrderListEntry }) {
+function buildOrdersHref(
+  filters: OrderListFilters,
+  queue: OrderQueue = DEFAULT_QUEUE,
+  overrides: Partial<OrderListFilters> = {},
+) {
+  const nextFilters: OrderListFilters = {
+    ...filters,
+    ...overrides,
+  };
+  const searchParams = new URLSearchParams();
+
+  if (queue !== DEFAULT_QUEUE) {
+    searchParams.set("queue", queue);
+  }
+
+  if (nextFilters.search) {
+    searchParams.set("search", nextFilters.search);
+  }
+
+  if (nextFilters.status !== DEFAULT_ORDER_FILTERS.status) {
+    searchParams.set("status", nextFilters.status);
+  }
+
+  if (nextFilters.paymentState !== DEFAULT_ORDER_FILTERS.paymentState) {
+    searchParams.set("paymentState", nextFilters.paymentState);
+  }
+
+  if (nextFilters.fulfillmentMethod !== DEFAULT_ORDER_FILTERS.fulfillmentMethod) {
+    searchParams.set("fulfillmentMethod", nextFilters.fulfillmentMethod);
+  }
+
+  if (nextFilters.eventDateFrom) {
+    searchParams.set("eventDateFrom", nextFilters.eventDateFrom);
+  }
+
+  if (nextFilters.eventDateTo) {
+    searchParams.set("eventDateTo", nextFilters.eventDateTo);
+  }
+
+  const queryString = searchParams.toString();
+  return queryString ? `/admin/orders?${queryString}` : "/admin/orders";
+}
+
+function isActiveOrder(entry: OrderListEntry) {
+  return entry.status !== "completed" && entry.status !== "cancelled";
+}
+
+function isAwaitingPaymentOrder(entry: OrderListEntry) {
   return (
-    <article className="rounded-[2rem] border border-charcoal/10 bg-white/88 p-5 shadow-soft transition hover:border-charcoal/20">
+    entry.status !== "cancelled" &&
+    entry.paymentState !== "paid" &&
+    entry.paymentState !== "refunded"
+  );
+}
+
+function isUpcomingOrder(entry: OrderListEntry, today: string) {
+  return entry.status !== "cancelled" && entry.eventDate >= today;
+}
+
+function isCompletedOrder(entry: OrderListEntry) {
+  return entry.status === "completed";
+}
+
+function filterOrdersByQueue(
+  entries: OrderListEntry[],
+  queue: OrderQueue,
+  today: string,
+) {
+  switch (queue) {
+    case "awaiting-payment":
+      return entries.filter(isAwaitingPaymentOrder);
+    case "upcoming":
+      return entries.filter((entry) => isUpcomingOrder(entry, today));
+    case "completed":
+      return entries.filter(isCompletedOrder);
+    default:
+      return entries.filter(isActiveOrder);
+  }
+}
+
+function getActiveFilterPills(
+  filters: OrderListFilters,
+  queue: OrderQueue,
+): ActiveFilterPill[] {
+  const pills: ActiveFilterPill[] = [];
+
+  if (filters.search) {
+    pills.push({
+      clearHref: buildOrdersHref(filters, queue, { search: "" }),
+      label: "Search",
+      value: filters.search,
+    });
+  }
+
+  if (filters.status !== DEFAULT_ORDER_FILTERS.status) {
+    pills.push({
+      clearHref: buildOrdersHref(filters, queue, { status: DEFAULT_ORDER_FILTERS.status }),
+      label: "Status",
+      value: toTitleCase(filters.status),
+    });
+  }
+
+  if (filters.paymentState !== DEFAULT_ORDER_FILTERS.paymentState) {
+    pills.push({
+      clearHref: buildOrdersHref(filters, queue, {
+        paymentState: DEFAULT_ORDER_FILTERS.paymentState,
+      }),
+      label: "Payment",
+      value: paymentLabels[filters.paymentState] ?? toTitleCase(filters.paymentState),
+    });
+  }
+
+  if (filters.fulfillmentMethod !== DEFAULT_ORDER_FILTERS.fulfillmentMethod) {
+    pills.push({
+      clearHref: buildOrdersHref(filters, queue, {
+        fulfillmentMethod: DEFAULT_ORDER_FILTERS.fulfillmentMethod,
+      }),
+      label: "Fulfillment",
+      value: fulfillmentLabels[filters.fulfillmentMethod] ?? toTitleCase(filters.fulfillmentMethod),
+    });
+  }
+
+  if (filters.eventDateFrom) {
+    pills.push({
+      clearHref: buildOrdersHref(filters, queue, { eventDateFrom: "" }),
+      label: "From",
+      value: formatDate(filters.eventDateFrom),
+    });
+  }
+
+  if (filters.eventDateTo) {
+    pills.push({
+      clearHref: buildOrdersHref(filters, queue, { eventDateTo: "" }),
+      label: "To",
+      value: formatDate(filters.eventDateTo),
+    });
+  }
+
+  return pills;
+}
+
+function OrderCard({ entry }: Readonly<{ entry: OrderListEntry }>) {
+  return (
+    <article className="rounded-[1.75rem] border border-charcoal/10 bg-white/88 p-4 shadow-soft transition hover:border-charcoal/20">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
@@ -77,7 +277,7 @@ function OrderCard({ entry }: { entry: OrderListEntry }) {
           </div>
 
           <div>
-            <h2 className="font-serif text-3xl tracking-[-0.03em] text-charcoal">
+            <h2 className="font-serif text-[1.9rem] tracking-[-0.03em] text-charcoal">
               {entry.customerLabel}
             </h2>
             <p className="mt-1 text-sm leading-7 text-charcoal/66">
@@ -102,12 +302,11 @@ function OrderCard({ entry }: { entry: OrderListEntry }) {
         <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
           <LinkButton href={`/admin/orders/${entry.id}`} label="Open order" />
           {entry.customerId ? (
-            <Link
+            <LinkButton
               href={`/admin/customers/${entry.customerId}`}
-              className="inline-flex h-12 items-center justify-center rounded-full border border-charcoal/15 bg-ivory/80 px-5 text-sm font-medium tracking-[0.02em] text-charcoal transition hover:border-charcoal/40 hover:bg-white"
-            >
-              Open customer
-            </Link>
+              label="Open customer"
+              variant="secondary"
+            />
           ) : null}
         </div>
       </div>
@@ -116,126 +315,156 @@ function OrderCard({ entry }: { entry: OrderListEntry }) {
 }
 
 export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageProps) {
-  const filters = parseOrderListFilters(await searchParams);
+  const resolvedSearchParams = await searchParams;
+  const filters = parseOrderListFilters(resolvedSearchParams);
+  const queue = getOrderQueue(resolvedSearchParams);
   const data = await getOrderListData(filters);
+  const today = new Date().toISOString().slice(0, 10);
+  const queueEntries = filterOrdersByQueue(data.entries, queue, today);
+  const activeFilterPills = getActiveFilterPills(filters, queue);
+  const queueCounts = {
+    active: data.entries.filter(isActiveOrder).length,
+    "awaiting-payment": data.entries.filter(isAwaitingPaymentOrder).length,
+    completed: data.entries.filter(isCompletedOrder).length,
+    upcoming: data.entries.filter((entry) => isUpcomingOrder(entry, today)).length,
+  } satisfies Record<OrderQueue, number>;
 
   return (
-    <div className="space-y-6">
-      <section className="grid gap-4 lg:grid-cols-3">
-        {data.summary.map((item) => (
-          <div
-            key={item.label}
-            className="rounded-[1.9rem] border border-charcoal/10 bg-white/88 p-5 shadow-soft"
+    <div className="space-y-4">
+      <AdminPageHeader
+        className="!rounded-[1.65rem] !p-4 sm:!p-5"
+        hideTitleOnMobile
+        title="Orders"
+        meta={
+          <span>
+            <span className="font-semibold text-charcoal">{queueEntries.length}</span> {queueLabels[queue].toLowerCase()}
+          </span>
+        }
+        actions={
+          <FilterSheet
+            title="Order filters"
+            description="Search, payment, fulfillment, and date filters live here so the working list stays visible."
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-              {item.label}
-            </p>
-            <p className="mt-3 font-serif text-4xl tracking-[-0.04em] text-charcoal">
-              {item.value}
-            </p>
-            <p className="mt-2 text-sm leading-7 text-charcoal/62">{item.detail}</p>
-          </div>
-        ))}
-      </section>
+            <form method="get" className="grid gap-4 lg:grid-cols-2">
+              {queue !== DEFAULT_QUEUE ? <input type="hidden" name="queue" value={queue} /> : null}
 
-      <section className="rounded-[2.2rem] border border-charcoal/10 bg-paper p-5 shadow-soft sm:p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-              Order filters
-            </p>
-            <h2 className="mt-2 font-serif text-3xl tracking-[-0.04em] text-charcoal">
-              Keep production and payment follow-up visible at a glance.
-            </h2>
-            <p className="mt-2 max-w-3xl text-sm leading-7 text-charcoal/64">
-              This view stays intentionally practical: who the order belongs to, when it is
-              happening, how it will be fulfilled, and whether money is still outstanding.
-            </p>
-          </div>
+              <FilterCard label="Search">
+                <Input
+                  name="search"
+                  defaultValue={filters.search}
+                  placeholder="Customer, event, or reference code"
+                />
+              </FilterCard>
 
-          <div className="rounded-full border border-charcoal/10 bg-white/85 px-4 py-3 text-sm text-charcoal/66">
-            {data.totalCount} total orders in the system
-          </div>
-        </div>
+              <FilterCard label="Status">
+                <Select name="status" defaultValue={filters.status}>
+                  <option value="all">All statuses</option>
+                  <option value="draft">Draft</option>
+                  <option value="quoted">Quoted</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="in-production">In production</option>
+                  <option value="fulfilled">Fulfilled</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </Select>
+              </FilterCard>
 
-        <form className="mt-6 grid gap-4 lg:grid-cols-3">
-          <FilterCard label="Search">
-            <Input
-              name="search"
-              defaultValue={filters.search}
-              placeholder="Customer, event, or reference code"
-            />
-          </FilterCard>
+              <FilterCard label="Payment state">
+                <Select name="paymentState" defaultValue={filters.paymentState}>
+                  <option value="all">All payment states</option>
+                  <option value="unpaid">Unpaid</option>
+                  <option value="deposit-paid">Deposit paid</option>
+                  <option value="paid">Paid</option>
+                  <option value="refunded">Refunded</option>
+                </Select>
+              </FilterCard>
 
-          <FilterCard label="Status">
-            <Select name="status" defaultValue={filters.status}>
-              <option value="all">All statuses</option>
-              <option value="draft">Draft</option>
-              <option value="quoted">Quoted</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="in-production">In production</option>
-              <option value="fulfilled">Fulfilled</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </Select>
-          </FilterCard>
+              <FilterCard label="Fulfillment">
+                <Select name="fulfillmentMethod" defaultValue={filters.fulfillmentMethod}>
+                  <option value="all">Pickup and delivery</option>
+                  <option value="pickup">Pickup</option>
+                  <option value="delivery">Delivery</option>
+                </Select>
+              </FilterCard>
 
-          <FilterCard label="Payment state">
-            <Select name="paymentState" defaultValue={filters.paymentState}>
-              <option value="all">All payment states</option>
-              <option value="unpaid">Unpaid</option>
-              <option value="deposit-paid">Deposit paid</option>
-              <option value="paid">Paid</option>
-              <option value="refunded">Refunded</option>
-            </Select>
-          </FilterCard>
+              <FilterCard label="Event date from">
+                <Input name="eventDateFrom" type="date" defaultValue={filters.eventDateFrom} />
+              </FilterCard>
 
-          <FilterCard label="Fulfillment">
-            <Select name="fulfillmentMethod" defaultValue={filters.fulfillmentMethod}>
-              <option value="all">Pickup and delivery</option>
-              <option value="pickup">Pickup</option>
-              <option value="delivery">Delivery</option>
-            </Select>
-          </FilterCard>
+              <FilterCard label="Event date to">
+                <Input name="eventDateTo" type="date" defaultValue={filters.eventDateTo} />
+              </FilterCard>
 
-          <FilterCard label="Event date from">
-            <Input name="eventDateFrom" type="date" defaultValue={filters.eventDateFrom} />
-          </FilterCard>
+              <div className="flex flex-col gap-3 rounded-[1.35rem] border border-charcoal/8 bg-white/85 p-4 sm:flex-row sm:items-end sm:justify-between lg:col-span-2">
+                <p className="text-sm text-charcoal/62">
+                  {data.totalCount} total orders in the system
+                </p>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <LinkButton
+                    href={buildOrdersHref(DEFAULT_ORDER_FILTERS, queue)}
+                    label="Clear"
+                    variant="secondary"
+                  />
+                  <Button type="submit">Apply filters</Button>
+                </div>
+              </div>
+            </form>
+          </FilterSheet>
+        }
+      >
+        <StatusChipRow
+          ariaLabel="Order queue filters"
+          items={[
+            {
+              count: queueCounts.active,
+              href: buildOrdersHref(filters, "active"),
+              isActive: queue === "active",
+              label: "Active",
+            },
+            {
+              count: queueCounts["awaiting-payment"],
+              href: buildOrdersHref(filters, "awaiting-payment"),
+              isActive: queue === "awaiting-payment",
+              label: "Awaiting payment",
+            },
+            {
+              count: queueCounts.upcoming,
+              href: buildOrdersHref(filters, "upcoming"),
+              isActive: queue === "upcoming",
+              label: "Upcoming",
+            },
+            {
+              count: queueCounts.completed,
+              href: buildOrdersHref(filters, "completed"),
+              isActive: queue === "completed",
+              label: "Completed",
+            },
+          ]}
+        />
 
-          <FilterCard label="Event date to">
-            <Input name="eventDateTo" type="date" defaultValue={filters.eventDateTo} />
-          </FilterCard>
+        {activeFilterPills.length > 0 ? (
+          <ActiveFilterPills
+            clearAllHref={buildOrdersHref(DEFAULT_ORDER_FILTERS, queue)}
+            items={activeFilterPills}
+          />
+        ) : null}
+      </AdminPageHeader>
 
-          <div className="flex gap-3 lg:col-span-3">
-            <button
-              type="submit"
-              className="inline-flex h-12 items-center justify-center rounded-full bg-charcoal px-5 text-sm font-medium tracking-[0.02em] text-ivory shadow-soft transition hover:bg-charcoal/90"
-            >
-              Apply filters
-            </button>
-            <Link
-              href="/admin/orders"
-              className="inline-flex h-12 items-center justify-center rounded-full border border-charcoal/15 bg-ivory/80 px-5 text-sm font-medium tracking-[0.02em] text-charcoal transition hover:border-charcoal/40 hover:bg-white"
-            >
-              Clear
-            </Link>
-          </div>
-        </form>
-      </section>
-
-      <section className="space-y-4">
-        {data.entries.length > 0 ? (
-          data.entries.map((entry) => <OrderCard key={entry.id} entry={entry} />)
+      <section className="space-y-3">
+        {queueEntries.length > 0 ? (
+          queueEntries.map((entry) => <OrderCard key={entry.id} entry={entry} />)
         ) : (
-          <div className="rounded-[2rem] border border-charcoal/10 bg-white/85 p-8 text-center shadow-soft">
-            <h2 className="font-serif text-3xl tracking-[-0.04em] text-charcoal">
-              No orders match these filters.
-            </h2>
-            <p className="mt-3 text-sm leading-7 text-charcoal/62">
-              Try a broader payment state or event date range, or convert a live inquiry into a new
-              order from the inquiry detail page.
-            </p>
-          </div>
+          <CompactEmptyState
+            title="No orders match this view"
+            description="Try widening the payment, date, or search filters to bring more orders back into the working queue."
+            action={
+              <LinkButton
+                href={buildOrdersHref(DEFAULT_ORDER_FILTERS, queue)}
+                label="Reset filters"
+                variant="secondary"
+              />
+            }
+          />
         )}
       </section>
     </div>

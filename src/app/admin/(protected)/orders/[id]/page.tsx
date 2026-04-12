@@ -38,9 +38,11 @@ function SectionCard({
   title: string;
 }>) {
   return (
-    <section className="rounded-[2rem] border border-charcoal/10 bg-white/88 p-5 shadow-soft sm:p-6">
-      <h2 className="font-serif text-3xl tracking-[-0.04em] text-charcoal">{title}</h2>
-      <div className="mt-5">{children}</div>
+    <section className="rounded-[1.75rem] border border-charcoal/10 bg-white/88 p-4 shadow-soft sm:p-5">
+      <h2 className="font-serif text-[2rem] tracking-[-0.04em] text-charcoal sm:text-[2.1rem]">
+        {title}
+      </h2>
+      <div className="mt-4">{children}</div>
     </section>
   );
 }
@@ -137,8 +139,8 @@ export default async function AdminOrderDetailPage({
   const redirectTo = `/admin/orders/${detail.id}`;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-3">
           <Link
             href="/admin/orders"
@@ -167,7 +169,7 @@ export default async function AdminOrderDetailPage({
             </span>
           </div>
           <div>
-            <h1 className="font-serif text-4xl tracking-[-0.04em] text-charcoal sm:text-5xl">
+            <h1 className="font-serif text-[2.3rem] tracking-[-0.04em] text-charcoal sm:text-[2.8rem]">
               {detail.customer?.fullName ?? "Order detail"}
             </h1>
             <p className="mt-2 text-sm leading-7 text-charcoal/66">
@@ -177,7 +179,7 @@ export default async function AdminOrderDetailPage({
           </div>
         </div>
 
-        <div className="rounded-[1.8rem] border border-charcoal/10 bg-white/88 px-5 py-4 shadow-soft">
+        <div className="rounded-[1.55rem] border border-charcoal/10 bg-white/88 px-4 py-3 shadow-soft">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
             Final total
           </p>
@@ -192,8 +194,8 @@ export default async function AdminOrderDetailPage({
 
       <NoticeBanner notice={notice} />
 
-      <div className="grid gap-6 xl:grid-cols-[1.18fr_0.82fr]">
-        <div className="space-y-6">
+      <div className="grid gap-4 xl:grid-cols-[1.18fr_0.82fr]">
+        <div className="space-y-4">
           <SectionCard title="Order details">
             <form action={updateOrderDetails} className="space-y-5">
               <input type="hidden" name="orderId" value={detail.id} />
@@ -444,7 +446,7 @@ export default async function AdminOrderDetailPage({
                 </div>
               </div>
 
-              <Button type="submit" className="w-full sm:w-auto">
+              <Button type="submit">
                 Save order details
               </Button>
             </form>
@@ -706,7 +708,7 @@ export default async function AdminOrderDetailPage({
                 Pin this note near the top
               </label>
 
-              <Button type="submit" className="w-full sm:w-auto">
+              <Button type="submit">
                 Save note
               </Button>
             </form>
@@ -742,7 +744,7 @@ export default async function AdminOrderDetailPage({
           </SectionCard>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           <SectionCard title="Linked records">
             <div className="space-y-4">
               <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">

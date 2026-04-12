@@ -48,7 +48,7 @@ export default async function AdminPricingPage({ searchParams }: AdminPricingPag
   const notice = getNoticeValue(rawSearchParams);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AdminNoticeBanner
         notice={notice}
         notices={{

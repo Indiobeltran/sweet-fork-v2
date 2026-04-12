@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { updateContentSection } from "@/app/admin/(protected)/content/actions";
 import { AdminNoticeBanner } from "@/components/admin/admin-notice-banner";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -54,7 +55,7 @@ export default async function AdminContentPage({ searchParams }: AdminContentPag
   const notice = getNoticeValue(rawSearchParams);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AdminNoticeBanner
         notice={notice}
         notices={{
@@ -69,33 +70,23 @@ export default async function AdminContentPage({ searchParams }: AdminContentPag
         }}
       />
 
-      <div className="rounded-[1.8rem] border border-charcoal/10 bg-white/88 p-5 shadow-soft">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-              Settings moved
-            </p>
-            <h2 className="mt-2 font-serif text-3xl tracking-[-0.04em] text-charcoal">
-              Business and launch settings now live in one place.
-            </h2>
-            <p className="mt-2 max-w-3xl text-sm leading-7 text-charcoal/64">
-              Core site details, inquiry flags, booking notices, and launch notes now live in
-              Settings so this page can stay focused on structured content only.
-            </p>
-          </div>
-
+      <AdminPageHeader
+        hideTitleOnMobile
+        title="Content"
+        description="Structured website sections only. Business defaults, booking notices, and launch settings live in Settings."
+        actions={
           <Link
             href="/admin/settings"
-            className="inline-flex h-12 items-center justify-center rounded-full border border-charcoal/15 bg-ivory/80 px-5 text-sm font-medium tracking-[0.02em] text-charcoal transition hover:border-charcoal/40 hover:bg-white"
+            className="inline-flex h-11 items-center justify-center rounded-full border border-charcoal/15 bg-ivory/80 px-5 text-sm font-medium tracking-[0.02em] text-charcoal transition hover:border-charcoal/40 hover:bg-white"
           >
             Open settings
           </Link>
-        </div>
-      </div>
+        }
+      />
 
       <AdminSectionCard
         title="Structured sections"
-        description="These forms only cover the sections already modeled for the public site. That keeps editing flexible enough for day-to-day changes without turning the app into an unrestricted CMS."
+        description="Only the structured public-site sections live here, which keeps editing practical without turning the admin into a full CMS."
         collapsible
         defaultOpen={false}
       >

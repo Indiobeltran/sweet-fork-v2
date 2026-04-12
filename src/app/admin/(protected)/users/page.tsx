@@ -1,5 +1,6 @@
 import { updateAdminUserRole } from "@/app/admin/(protected)/users/actions";
 import { AdminNoticeBanner } from "@/components/admin/admin-notice-banner";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -37,7 +38,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
   const canManageRoles = admin.role === "owner";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AdminNoticeBanner
         notice={notice}
         notices={{
@@ -52,52 +53,30 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
         }}
       />
 
-      <section className="grid gap-4 lg:grid-cols-3">
-        {data.summary.map((item) => (
-          <div
-            key={item.label}
-            className="rounded-[1.9rem] border border-charcoal/10 bg-white/88 p-5 shadow-soft"
-          >
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-              {item.label}
-            </p>
-            <p className="mt-3 font-serif text-4xl tracking-[-0.04em] text-charcoal">
-              {item.value}
-            </p>
-            <p className="mt-2 text-sm leading-7 text-charcoal/62">{item.detail}</p>
-          </div>
-        ))}
-      </section>
-
-      <AdminSectionCard
-        title="Role guide"
-        description="This pass intentionally keeps access management simple. There is no invitation workflow here yet, just clear visibility into the owner and manager setup that already exists."
+      <AdminPageHeader
+        hideTitleOnMobile
+        title="Users"
+        meta={
+          <span>
+            <span className="font-semibold text-charcoal">{data.adminUsers.length}</span> admin users
+          </span>
+        }
       >
-        <div className="grid gap-5 lg:grid-cols-2">
-          {adminRoleGuide.map((item) => (
-            <article
-              key={item.role}
-              className="rounded-[1.7rem] border border-charcoal/10 bg-paper p-5"
+        <div className="flex flex-wrap gap-2">
+          {data.summary.map((item) => (
+            <span
+              key={item.label}
+              className="rounded-full border border-charcoal/8 bg-white/84 px-3 py-1 text-xs text-charcoal/64"
             >
-              <span
-                className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${getRoleClasses(item.role)}`}
-              >
-                {item.title}
-              </span>
-              <p className="mt-4 text-sm leading-7 text-charcoal/64">{item.detail}</p>
-            </article>
+              <span className="font-semibold text-charcoal">{item.value}</span> {item.label}
+            </span>
           ))}
         </div>
-
-        <div className="mt-5 rounded-[1.6rem] border border-charcoal/10 bg-white/80 px-5 py-4 text-sm leading-7 text-charcoal/64">
-          New admin access is still tied to Supabase Auth plus matching <code>profiles</code> and <code>user_roles</code> rows.
-          That keeps this launch pass safe and understandable without overbuilding invitations.
-        </div>
-      </AdminSectionCard>
+      </AdminPageHeader>
 
       <AdminSectionCard
         title="Admin users"
-        description="These are the accounts that can currently reach the protected bakery admin. Owners can adjust roles here without needing to open the database."
+        description="Accounts that can currently reach the protected bakery admin."
       >
         <div className="space-y-4">
           {data.adminUsers.map((user) => (
@@ -163,6 +142,33 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
               </div>
             </article>
           ))}
+        </div>
+      </AdminSectionCard>
+
+      <AdminSectionCard
+        title="Role guide"
+        description="Access management stays intentionally simple here: visibility first, no invitation workflow."
+        collapsible
+        defaultOpen={false}
+      >
+        <div className="grid gap-4 lg:grid-cols-2">
+          {adminRoleGuide.map((item) => (
+            <article
+              key={item.role}
+              className="rounded-[1.55rem] border border-charcoal/10 bg-paper p-4"
+            >
+              <span
+                className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${getRoleClasses(item.role)}`}
+              >
+                {item.title}
+              </span>
+              <p className="mt-3 text-sm leading-6 text-charcoal/64">{item.detail}</p>
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-4 rounded-[1.45rem] border border-charcoal/10 bg-white/80 px-4 py-3 text-sm leading-6 text-charcoal/64">
+          New admin access is still tied to Supabase Auth plus matching <code>profiles</code> and <code>user_roles</code> rows.
         </div>
       </AdminSectionCard>
 
