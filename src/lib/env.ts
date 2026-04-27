@@ -1,13 +1,15 @@
 type SupabaseEnv = {
   url: string;
-  anonKey: string;
-  serviceRoleKey: string;
+  publicKey: string;
+  adminKey: string;
 };
 
 type PublicSupabaseEnv = {
   url: string;
-  anonKey: string;
+  publicKey: string;
 };
+
+type KeySource = "publishable" | "anon" | "secret" | "service_role" | "missing";
 
 const productionSiteUrl = "https://www.thesweetfork.com";
 
@@ -32,6 +34,30 @@ function resolveSiteUrl() {
   }
 
   return configuredSiteUrl;
+}
+
+function firstNonEmpty(...values: Array<string | undefined>) {
+  return values.map((value) => value?.trim()).find((value): value is string => Boolean(value));
+}
+
+function getPublicSupabaseKey() {
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+
+  return {
+    key: firstNonEmpty(publishableKey, anonKey),
+    source: publishableKey ? "publishable" : anonKey ? "anon" : "missing",
+  } satisfies { key?: string; source: KeySource };
+}
+
+function getAdminSupabaseKey() {
+  const secretKey = process.env.SUPABASE_SECRET_KEY?.trim();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+
+  return {
+    key: firstNonEmpty(secretKey, serviceRoleKey),
+    source: secretKey ? "secret" : serviceRoleKey ? "service_role" : "missing",
+  } satisfies { key?: string; source: KeySource };
 }
 
 export type InquiryFeatureFlagEnvOverrides = {
@@ -66,45 +92,61 @@ export function getInquiryFeatureFlagEnvOverrides(): InquiryFeatureFlagEnvOverri
 }
 
 export function isSupabaseConfigured() {
+  const publicKey = getPublicSupabaseKey();
+  const adminKey = getAdminSupabaseKey();
+
   return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
-      process.env.SUPABASE_SERVICE_ROLE_KEY,
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() &&
+      publicKey.key &&
+      adminKey.key,
   );
 }
 
 export function isSupabaseBrowserConfigured() {
+  const publicKey = getPublicSupabaseKey();
+
   return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() && publicKey.key,
   );
 }
 
-export function getSupabaseEnv(): SupabaseEnv {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+export function getSupabaseKeyStatus() {
+  const publicKey = getPublicSupabaseKey();
+  const adminKey = getAdminSupabaseKey();
 
-  if (!url || !anonKey || !serviceRoleKey) {
+  return {
+    hasUrl: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()),
+    publicKeySource: publicKey.source,
+    adminKeySource: adminKey.source,
+  };
+}
+
+export function getSupabaseEnv(): SupabaseEnv {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const publicKey = getPublicSupabaseKey();
+  const adminKey = getAdminSupabaseKey();
+
+  if (!url || !publicKey.key || !adminKey.key) {
     throw new Error("Missing Supabase environment variables.");
   }
 
   return {
     url,
-    anonKey,
-    serviceRoleKey,
+    publicKey: publicKey.key,
+    adminKey: adminKey.key,
   };
 }
 
 export function getPublicSupabaseEnv(): PublicSupabaseEnv {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const publicKey = getPublicSupabaseKey();
 
-  if (!url || !anonKey) {
+  if (!url || !publicKey.key) {
     throw new Error("Missing public Supabase environment variables.");
   }
 
   return {
     url,
-    anonKey,
+    publicKey: publicKey.key,
   };
 }

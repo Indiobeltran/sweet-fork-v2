@@ -12,7 +12,7 @@ export async function createClient() {
   const cookieStore = await cookies();
   const env = getSupabaseEnv();
 
-  return createServerClient<Database>(env.url, env.anonKey, {
+  return createServerClient<Database>(env.url, env.publicKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();

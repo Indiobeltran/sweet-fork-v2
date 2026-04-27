@@ -6,7 +6,7 @@ import type { Database } from "@/types/supabase.generated";
 export function createAdminClient() {
   const env = getSupabaseEnv();
 
-  return createClient<Database>(env.url, env.serviceRoleKey, {
+  return createClient<Database>(env.url, env.adminKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,

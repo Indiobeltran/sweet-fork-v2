@@ -39,6 +39,10 @@ export const productPageContent: Record<string, ProductPageContent> = {
     intro:
       "Every cake is designed around your gathering, guest count, and overall mood, then finished with the refined details that make a celebration feel considered.",
     heroStatement: "Handcrafted in Centerville with limited weekly availability for custom work.",
+    heroImage: {
+      src: "/placeholders/marketing/garden-cake.jpg",
+      alt: "Floral buttercream celebration cake with soft garden tones and an ivory finish",
+    },
     startingPriceLabel: "$80+",
     pricingNote: "Celebration cakes begin at $80.",
     pricingContext:
@@ -75,6 +79,10 @@ export const productPageContent: Record<string, ProductPageContent> = {
     intro:
       "Each wedding cake is quoted around your guest count, floral or styling direction, and the role the cake plays within the overall dessert presentation.",
     heroStatement: "Designed as a focal point, with companion desserts available through the same inquiry.",
+    heroImage: {
+      src: "/placeholders/marketing/wedding-tier.jpg",
+      alt: "Elegant tiered wedding cake with refined ivory buttercream and floral detail",
+    },
     startingPriceLabel: "$300+",
     pricingNote: "Wedding cakes begin at $300.",
     pricingContext:
@@ -111,6 +119,10 @@ export const productPageContent: Record<string, ProductPageContent> = {
     intro:
       "Cupcakes bring the same custom color story and handmade finish to showers, birthdays, launch parties, and dessert displays.",
     heroStatement: "A versatile option when you want a refined presentation without the formality of a tiered cake.",
+    heroImage: {
+      src: "/placeholders/marketing/cupcake-set.jpg",
+      alt: "Coordinated cupcake set with piped buttercream and polished event styling",
+    },
     startingPriceLabel: "$36+",
     pricingNote: "Cupcake orders begin at $36 per dozen.",
     pricingContext:
@@ -147,6 +159,10 @@ export const productPageContent: Record<string, ProductPageContent> = {
     intro:
       "Buttercream sugar cookies are designed to feel polished and personal, whether they are headed to a shower, a birthday table, or an event welcome box.",
     heroStatement: "Ideal for custom themes, favor sets, and coordinated dessert-table details.",
+    heroImage: {
+      src: "/placeholders/marketing/cookie-favors.jpg",
+      alt: "Decorated sugar cookie favors arranged for gifting and dessert-table styling",
+    },
     startingPriceLabel: "$48+",
     pricingNote: "Decorated sugar cookies begin at $48 per dozen.",
     pricingContext:
@@ -181,6 +197,10 @@ export const productPageContent: Record<string, ProductPageContent> = {
     intro:
       "Macarons bring a polished, giftable finish to showers, weddings, dessert tables, and modern celebration spreads.",
     heroStatement: "Handcrafted with classic technique and tailored around your chosen palette and flavor mix.",
+    heroImage: {
+      src: "/placeholders/marketing/macaron-tower.jpg",
+      alt: "Pastel macaron tower styled for a refined celebration dessert display",
+    },
     startingPriceLabel: "$30+",
     pricingNote: "Macaron orders begin at $30 per dozen.",
     pricingContext:
@@ -216,6 +236,10 @@ export const productPageContent: Record<string, ProductPageContent> = {
     intro:
       "These all-inclusive kits are designed for family nights, classroom treats, party activities, and giftable sweet moments that still feel beautifully put together.",
     heroStatement: "An easy way to bring the Sweet Fork aesthetic into birthdays, holidays, and group activities.",
+    heroImage: {
+      src: "/placeholders/marketing/diy-kit.jpg",
+      alt: "Sweet Fork DIY decorating kit arranged with cookies, frosting, and sprinkles",
+    },
     startingPriceLabel: "$25+",
     pricingNote: "DIY kits begin at $25 each.",
     pricingContext:

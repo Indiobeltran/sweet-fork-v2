@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { GalleryGrid } from "@/components/site/gallery-grid";
@@ -21,6 +22,8 @@ export async function generateMetadata() {
 export default async function HomePage() {
   const data = await getHomePageData();
   const { siteUrl } = getPublicEnv();
+  const heroGalleryItem = data.galleryItems.find((item) => item.imageUrl) ?? null;
+  const featuredTestimonial = data.testimonials[0] ?? null;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Bakery",
@@ -74,14 +77,38 @@ export default async function HomePage() {
           </div>
 
           <div className="grid gap-4 section-reveal">
-            <div className="overflow-hidden rounded-[2.4rem] border border-charcoal/12 bg-charcoal p-7 text-ivory shadow-[0_18px_48px_rgba(53,37,29,0.18),0_2px_10px_rgba(53,37,29,0.08)] sm:p-8">
-              <p className="text-xs uppercase tracking-[0.22em] text-gold/72">The Sweet Fork</p>
-              <p className="mt-6 font-serif text-5xl leading-[0.92] tracking-[-0.05em]">
-                Handcrafted desserts with a quiet luxury finish.
-              </p>
-              <div className="mt-8 space-y-4 border-t border-white/12 pt-6 text-sm leading-7 text-ivory/82">
-                <p>Custom cakes, wedding work, cupcakes, macarons, decorated cookies, and DIY kits.</p>
-                <p>Pickup in Centerville. Local delivery available across nearby Northern Utah communities.</p>
+            <div className="relative overflow-hidden rounded-[2.4rem] border border-charcoal/12 bg-charcoal text-ivory shadow-[0_18px_48px_rgba(53,37,29,0.18),0_2px_10px_rgba(53,37,29,0.08)]">
+              <div className="relative min-h-[24rem] sm:min-h-[30rem] lg:min-h-[34rem]">
+                {heroGalleryItem?.imageUrl ? (
+                  <Image
+                    src={heroGalleryItem.imageUrl}
+                    alt={heroGalleryItem.alt}
+                    fill
+                    priority
+                    quality={82}
+                    sizes="(max-width: 1024px) calc(100vw - 2.5rem), 44vw"
+                    className="object-cover"
+                  />
+                ) : null}
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(48,39,33,0.04),rgba(48,39,33,0.32)_48%,rgba(48,39,33,0.82))]" />
+                <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
+                  <p className="text-xs uppercase tracking-[0.22em] text-gold/82">
+                    The Sweet Fork
+                  </p>
+                  <p className="mt-4 max-w-[25rem] font-serif text-4xl leading-[0.92] tracking-[-0.05em] sm:text-5xl">
+                    Handcrafted desserts with a quiet luxury finish.
+                  </p>
+                  <div className="mt-6 space-y-3 border-t border-white/16 pt-5 text-sm leading-7 text-ivory/84">
+                    <p>
+                      Custom cakes, wedding work, cupcakes, macarons, decorated cookies, and DIY
+                      kits.
+                    </p>
+                    <p>
+                      Pickup in Centerville. Local delivery available across nearby Northern Utah
+                      communities.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -93,6 +120,17 @@ export default async function HomePage() {
                 </div>
               ))}
             </div>
+
+            {featuredTestimonial ? (
+              <blockquote className="rounded-[1.6rem] border border-charcoal/8 bg-white/72 px-5 py-5 shadow-soft">
+                <p className="text-sm leading-7 text-charcoal/72">
+                  “{featuredTestimonial.quote}”
+                </p>
+                <footer className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-charcoal/48">
+                  {featuredTestimonial.name}
+                </footer>
+              </blockquote>
+            ) : null}
           </div>
         </div>
       </section>

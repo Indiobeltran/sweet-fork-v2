@@ -12,5 +12,5 @@ export function createClient() {
 
   const env = getPublicSupabaseEnv();
 
-  return createBrowserClient<Database>(env.url, env.anonKey);
+  return createBrowserClient<Database>(env.url, env.publicKey);
 }

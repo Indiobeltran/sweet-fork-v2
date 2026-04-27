@@ -64,7 +64,10 @@ import type { InquiryProductItem, ProductType } from "@/types/domain";
 
 type StartOrderWizardProps = {
   catalog: InquiryCatalogItem[];
+  catalogSource: "live" | "fallback";
   featureFlags: InquiryFeatureFlags;
+  submissionAvailable: boolean;
+  submissionUnavailableMessage?: string;
 };
 
 type UploadDraft = {
@@ -343,7 +346,10 @@ function findStepForErrors(errors: ErrorMap) {
 
 export function StartOrderWizard({
   catalog,
+  catalogSource,
   featureFlags,
+  submissionAvailable,
+  submissionUnavailableMessage,
 }: StartOrderWizardProps) {
   const [startedAt] = useState(() => Date.now());
   const [currentStep, setCurrentStep] = useState(0);
@@ -763,6 +769,56 @@ export function StartOrderWizard({
     setCurrentStep(stepIndex);
   };
 
+  const buildEmailFallbackHref = () => {
+    const preparedValues = normalizeInquiryFormValues(values);
+    const subject = encodeURIComponent(
+      `Sweet Fork inquiry for ${preparedValues.eventType || "my celebration"}`,
+    );
+    const selectedSummary =
+      preparedValues.orderItems.length > 0
+        ? preparedValues.orderItems
+            .map(
+              (item) =>
+                `${getProductDisplayLabel(item.productType)}: ${formatSelectedItemSummary(item)}`,
+            )
+            .join("\n")
+        : "No dessert selections yet";
+
+    const body = encodeURIComponent(
+      [
+        "Hi Sweet Fork,",
+        "",
+        "I started an inquiry on the website and would like to send the details by email.",
+        "",
+        `Event type: ${preparedValues.eventType || "Not set"}`,
+        `Event date: ${preparedValues.eventDate || "Not set"}`,
+        `Guest count: ${preparedValues.guestCount ?? "Not set"}`,
+        `Fulfillment: ${preparedValues.fulfillmentMethod}`,
+        `Delivery ZIP: ${preparedValues.deliveryZip ?? "Not needed / not set"}`,
+        `Budget range: ${getBudgetRangeLabel(preparedValues.budgetRange)}`,
+        `Budget flexibility: ${getBudgetFlexibilityLabel(preparedValues.budgetFlexibility)}`,
+        "",
+        "Desserts:",
+        selectedSummary,
+        "",
+        `Color palette: ${preparedValues.colorPalette ?? "Not set"}`,
+        `Inspiration notes: ${preparedValues.inspirationText ?? "Not set"}`,
+        `Inspiration links: ${preparedValues.inspirationLinks.join(", ") || "None"}`,
+        "",
+        `Name: ${preparedValues.customerName || "Not set"}`,
+        `Email: ${preparedValues.customerEmail || "Not set"}`,
+        `Phone: ${preparedValues.customerPhone || "Not set"}`,
+        `Preferred contact: ${preparedValues.preferredContact}`,
+        `Instagram: ${preparedValues.instagramHandle ?? "Not set"}`,
+        `How I heard about you: ${preparedValues.howDidYouHear ?? "Not set"}`,
+        "",
+        `Additional notes: ${preparedValues.additionalNotes ?? "None"}`,
+      ].join("\n"),
+    );
+
+    return `mailto:thesweetfork@yahoo.com?subject=${subject}&body=${body}`;
+  };
+
   const submitInquiryForm = async () => {
     setSubmitError(null);
     setErrors({});
@@ -794,6 +850,13 @@ export function StartOrderWizard({
           "Reference links are turned off right now. Use image uploads or notes instead.",
       });
       setCurrentStep(3);
+      return;
+    }
+
+    if (!submissionAvailable) {
+      setSubmitError(
+        "Online submission is paused. Use the email button below to send these details directly.",
+      );
       return;
     }
 
@@ -988,6 +1051,21 @@ export function StartOrderWizard({
                 </div>
                 {hasStarted ? <div className="lg:w-[18rem] lg:flex-none">{currentStepPanel}</div> : null}
               </div>
+
+              {!submissionAvailable ? (
+                <div className="rounded-[1.4rem] border border-gold/28 bg-gold/10 px-4 py-3 text-sm leading-6 text-charcoal/72">
+                  <p className="font-medium text-charcoal">Online submission is paused.</p>
+                  <p className="mt-1">
+                    {submissionUnavailableMessage ??
+                      "You can still prepare your inquiry details here, then email Sweet Fork directly from the review step."}
+                  </p>
+                </div>
+              ) : catalogSource === "fallback" ? (
+                <div className="rounded-[1.4rem] border border-charcoal/10 bg-cream/70 px-4 py-3 text-sm leading-6 text-charcoal/68">
+                  Product options are using the standard Sweet Fork menu while live catalog details
+                  refresh.
+                </div>
+              ) : null}
 
               {!hasStarted ? (
                 <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
@@ -2225,6 +2303,13 @@ export function StartOrderWizard({
                   >
                     Continue
                   </Button>
+                ) : !submissionAvailable ? (
+                  <a
+                    href={buildEmailFallbackHref()}
+                    className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-charcoal px-6 py-3 text-sm font-semibold text-ivory shadow-soft transition hover:bg-charcoal/92 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50 sm:w-auto"
+                  >
+                    Email inquiry details
+                  </a>
                 ) : (
                   <Button
                     type="button"

@@ -224,6 +224,10 @@ export async function getStartOrderPageData(): Promise<StartOrderPageData> {
   if (!isSupabaseConfigured()) {
     return {
       catalog: buildFallbackCatalog(defaultPricingBaseline),
+      catalogSource: "fallback",
+      submissionAvailable: false,
+      submissionUnavailableMessage:
+        "Online submission is temporarily unavailable, but you can still prepare your inquiry details and send them by email.",
       featureFlags: mergeFeatureFlags(),
       pricingBaseline: defaultPricingBaseline,
       deliveryRange: [15, 50],
@@ -233,7 +237,7 @@ export async function getStartOrderPageData(): Promise<StartOrderPageData> {
   const admin = createAdminClient();
 
   try {
-    const [{ data: products }, { data: productPrices }, { data: inquiryFlags }] =
+    const [productsResult, productPricesResult, inquiryFlagsResult] =
       await Promise.all([
         admin
           .from("products")
@@ -254,26 +258,44 @@ export async function getStartOrderPageData(): Promise<StartOrderPageData> {
           .eq("setting_key", "inquiry.flags")
           .maybeSingle(),
       ]);
+    const queryError =
+      productsResult.error ?? productPricesResult.error ?? inquiryFlagsResult.error;
+
+    if (queryError) {
+      throw new Error(queryError.message);
+    }
 
     const activeProducts =
-      (products as ProductRow[] | null)?.filter((product) => product.is_active) ?? [];
-    const activeProductPrices = (productPrices as ProductPriceRow[] | null) ?? [];
+      (productsResult.data as ProductRow[] | null)?.filter((product) => product.is_active) ?? [];
+    const activeProductPrices = (productPricesResult.data as ProductPriceRow[] | null) ?? [];
     const { pricingBaseline, deliveryRange } = buildPricingBaseline(
       activeProducts,
       activeProductPrices,
     );
+    const catalog =
+      activeProducts.length > 0
+        ? buildCatalog(activeProducts, pricingBaseline)
+        : buildFallbackCatalog(pricingBaseline);
 
     return {
-      catalog: buildCatalog(activeProducts, pricingBaseline),
-      featureFlags: parseFeatureFlags(inquiryFlags?.value_json ?? null),
+      catalog,
+      catalogSource: activeProducts.length > 0 ? "live" : "fallback",
+      submissionAvailable: true,
+      featureFlags: parseFeatureFlags(inquiryFlagsResult.data?.value_json ?? null),
       pricingBaseline,
       deliveryRange,
     };
   } catch (error) {
-    console.error("Unable to load live start-order data.", error);
+    console.error("Unable to load live start-order data.", {
+      message: error instanceof Error ? error.message : "Unknown Supabase catalog error",
+    });
 
     return {
-      catalog: [],
+      catalog: buildFallbackCatalog(defaultPricingBaseline),
+      catalogSource: "fallback",
+      submissionAvailable: false,
+      submissionUnavailableMessage:
+        "Online submission is temporarily unavailable, but you can still prepare your inquiry details and send them by email.",
       featureFlags: mergeFeatureFlags(),
       pricingBaseline: defaultPricingBaseline,
       deliveryRange: [15, 50],

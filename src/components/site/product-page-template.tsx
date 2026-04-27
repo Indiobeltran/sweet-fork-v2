@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import { InquiryCta } from "@/components/site/inquiry-cta";
 import { SectionHeading } from "@/components/site/section-heading";
 import { SitePrimaryCta } from "@/components/site/site-primary-cta";
@@ -13,7 +15,7 @@ export function ProductPageTemplate({ content }: ProductPageTemplateProps) {
   const cta = getInquiryCtaBySlug(content.slug);
 
   return (
-    <div className="pb-28 md:pb-0">
+    <div className="pb-24 md:pb-0">
       <section className="relative overflow-hidden border-b border-charcoal/8 bg-paper">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/35 to-transparent" />
         <div className="section-shell grid gap-12 py-14 md:py-18 lg:grid-cols-[1.08fr_0.92fr] lg:items-end lg:gap-16">
@@ -30,12 +32,32 @@ export function ProductPageTemplate({ content }: ProductPageTemplateProps) {
             <SitePrimaryCta href={cta.href} label={cta.label} subtext={cta.subtext} />
           </div>
 
-          <div className="luxury-panel section-reveal p-7 sm:p-8">
-            <p className="eyebrow-label">What makes it premium</p>
-            <p className="mt-4 font-serif text-3xl leading-tight tracking-[-0.04em] text-charcoal sm:text-[2.35rem]">
-              {content.heroStatement}
-            </p>
-            <p className="mt-6 text-sm leading-7 text-charcoal/70">{content.availabilityNote}</p>
+          <div className="grid gap-4 section-reveal">
+            <div className="relative overflow-hidden rounded-[2.4rem] border border-charcoal/12 bg-charcoal shadow-soft">
+              <div className="relative min-h-[22rem] sm:min-h-[28rem] lg:min-h-[31rem]">
+                <Image
+                  src={content.heroImage.src}
+                  alt={content.heroImage.alt}
+                  fill
+                  priority
+                  quality={82}
+                  sizes="(max-width: 1024px) calc(100vw - 2.5rem), 42vw"
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(48,39,33,0.02),rgba(48,39,33,0.24)_50%,rgba(48,39,33,0.72))]" />
+                <div className="absolute inset-x-0 bottom-0 p-6 text-ivory sm:p-8">
+                  <p className="eyebrow-label text-gold/80">What makes it premium</p>
+                  <p className="mt-4 max-w-[28rem] font-serif text-3xl leading-tight tracking-[-0.04em] sm:text-[2.35rem]">
+                    {content.heroStatement}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="luxury-panel p-6 sm:p-7">
+              <p className="text-sm leading-7 text-charcoal/70">
+                {content.availabilityNote}
+              </p>
+            </div>
           </div>
         </div>
       </section>

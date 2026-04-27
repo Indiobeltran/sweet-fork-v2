@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { ImageResponse } from "next/og";
 
 const pageLabels: Record<string, string> = {
@@ -18,8 +19,24 @@ const pageLabels: Record<string, string> = {
   "/wedding-cakes": "Wedding cakes",
 };
 
+const pageImages: Record<string, string> = {
+  "/": "/brand/logo-social.jpg",
+  "/custom-cakes": "/placeholders/marketing/garden-cake.jpg",
+  "/cupcakes": "/placeholders/marketing/cupcake-set.jpg",
+  "/diy-kits": "/placeholders/marketing/diy-kit.jpg",
+  "/gallery": "/placeholders/marketing/wedding-tier.jpg",
+  "/macarons": "/placeholders/marketing/macaron-tower.jpg",
+  "/pricing": "/placeholders/marketing/garden-cake.jpg",
+  "/sugar-cookies": "/placeholders/marketing/cookie-favors.jpg",
+  "/wedding-cakes": "/placeholders/marketing/wedding-tier.jpg",
+};
+
 function getLabel(path: string) {
   return pageLabels[path] ?? "Custom desserts";
+}
+
+function getImagePath(path: string) {
+  return pageImages[path] ?? "/brand/logo-social.jpg";
 }
 
 export function GET(request: Request) {
@@ -27,6 +44,7 @@ export function GET(request: Request) {
   const path = searchParams.get("path")?.trim() || "/";
   const title = searchParams.get("title")?.trim() || "The Sweet Fork";
   const label = getLabel(path);
+  const imageUrl = new URL(getImagePath(path), request.url).toString();
 
   return new ImageResponse(
     (
@@ -104,35 +122,53 @@ export function GET(request: Request) {
 
           <div
             style={{
+              alignItems: "stretch",
               display: "flex",
-              flexDirection: "column",
-              gap: "24px",
-              maxWidth: "860px",
+              gap: "34px",
             }}
           >
             <div
               style={{
                 display: "flex",
-                fontFamily: "Georgia, serif",
-                fontSize: 76,
-                letterSpacing: "-0.05em",
-                lineHeight: 0.98,
+                flexDirection: "column",
+                gap: "24px",
+                maxWidth: "670px",
               }}
             >
-              {title}
+              <div
+                style={{
+                  display: "flex",
+                  fontFamily: "Georgia, serif",
+                  fontSize: 68,
+                  letterSpacing: "-0.05em",
+                  lineHeight: 0.98,
+                }}
+              >
+                {title}
+              </div>
+              <div
+                style={{
+                  color: "rgba(55, 43, 36, 0.76)",
+                  display: "flex",
+                  fontSize: 26,
+                  lineHeight: 1.35,
+                  maxWidth: "650px",
+                }}
+              >
+                Inquiry-first ordering for custom cakes, wedding work, cupcakes, macarons, cookies,
+                and elevated dessert details.
+              </div>
             </div>
-            <div
+            <img
+              src={imageUrl}
+              alt=""
               style={{
-                color: "rgba(55, 43, 36, 0.76)",
-                display: "flex",
-                fontSize: 28,
-                lineHeight: 1.4,
-                maxWidth: "760px",
+                borderRadius: "30px",
+                height: "270px",
+                objectFit: "cover",
+                width: "300px",
               }}
-            >
-              Inquiry-first ordering for custom cakes, wedding work, cupcakes, macarons, cookies,
-              and elevated dessert details.
-            </div>
+            />
           </div>
 
           <div

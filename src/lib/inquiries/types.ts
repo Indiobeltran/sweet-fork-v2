@@ -13,8 +13,13 @@ export type InquiryCatalogItem = {
   startingAt: number;
 };
 
+export type StartOrderCatalogSource = "live" | "fallback";
+
 export type StartOrderPageData = {
   catalog: InquiryCatalogItem[];
+  catalogSource: StartOrderCatalogSource;
+  submissionAvailable: boolean;
+  submissionUnavailableMessage?: string;
   featureFlags: InquiryFeatureFlags;
   pricingBaseline: InquiryPricingBaseline;
   deliveryRange: [number, number];

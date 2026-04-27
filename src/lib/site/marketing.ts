@@ -759,7 +759,7 @@ const getPublicProductRows = cache(async function getPublicProductRows(): Promis
       console.error("Unable to load public products.", error);
     }
 
-    return [];
+    return null;
   }
 
   return (data ?? []) as ProductRow[];

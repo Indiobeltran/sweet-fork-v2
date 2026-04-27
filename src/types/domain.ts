@@ -124,6 +124,10 @@ export type ProductPageContent = {
   eyebrow: string;
   intro: string;
   heroStatement: string;
+  heroImage: {
+    alt: string;
+    src: string;
+  };
   startingPriceLabel: string;
   pricingNote: string;
   pricingContext: string;

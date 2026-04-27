@@ -309,7 +309,7 @@ export function GalleryGrid({
                     alt={activeItem.alt}
                     fill
                     priority
-                    quality={86}
+                    quality={82}
                     sizes={GALLERY_MODAL_SIZES}
                     className="object-cover"
                   />
