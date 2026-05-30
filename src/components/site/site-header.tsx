@@ -160,11 +160,11 @@ export function SiteHeader({
         aria-hidden={!open}
         inert={!open ? true : undefined}
         className={cn(
-          "grid overflow-hidden border-t border-charcoal/8 bg-ivory/98 transition-[grid-template-rows] duration-300 lg:hidden",
+          "grid max-h-[calc(100svh-4.7rem)] overflow-hidden border-t border-charcoal/8 bg-ivory/98 transition-[grid-template-rows] duration-300 lg:hidden",
           open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
         )}
       >
-        <div className="overflow-hidden">
+        <div className="min-h-0 overflow-y-auto overscroll-contain">
           <div className="section-shell pb-6 pt-5">
             <p className="text-[11px] uppercase tracking-[0.22em] text-charcoal/56">{tagline}</p>
 

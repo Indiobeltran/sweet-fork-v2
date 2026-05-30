@@ -1,6 +1,6 @@
 # The Sweet Fork v2
 
-Phase 1 and Phase 2 workspace for a Next.js + Supabase rebuild of The Sweet Fork.
+Production-readiness workspace for a Next.js + Supabase rebuild of The Sweet Fork public site, inquiry flow, and private admin workspace.
 
 ## Stack
 
@@ -19,10 +19,12 @@ src/
     layout.tsx          Root layout
     globals.css         Global styles and design tokens
   components/
-    site/               Public-site presentation components already created
+    inquiry/            Public start-order inquiry wizard
+    site/               Public-site presentation components
     ui/                 Reusable UI primitives
   lib/
-    content/            Hardcoded starter content
+    content/            Public fallback content and launch copy
+    inquiries/          Catalog, pricing, feature flags, and inquiry submission helpers
     supabase/           Browser/server/admin/middleware helper clients
     validations/        Shared validation schemas
     auth.ts             Admin lookup helper
@@ -43,14 +45,19 @@ docs/
 ## Route Groups
 
 - `src/app/(site)` contains the current public-site routes.
-- `src/app/admin` is reserved for internal admin routes but is not implemented yet.
-- API route folders exist as placeholders only and are not implemented yet.
+- `src/app/admin` contains the private inquiry, order, customer, pricing, media, content, calendar, notification, and settings workspace.
+- `src/app/api/inquiries/route.ts` handles public inquiry submissions with server-side validation and spam checks.
 
 ## Environment Variables
 
 Required for Supabase-backed features:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SECRET_KEY`
+
+Legacy key names are still supported during migration:
+
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
@@ -61,25 +68,14 @@ General app configuration:
 - `INQUIRY_LINK_FALLBACK_ENABLED`
 - `SUPABASE_STORAGE_BUCKET`
 
-See [`.env.example`](/Users/indiobeltran/Library/Mobile Documents/com~apple~CloudDocs/The Sweet Fork Business/Website Info'/Sweet Fork v2 Codex/.env.example).
+See `.env.example`.
 
 ## Current Phase Status
 
-- Phase 1 stabilized foundation:
-  - repo config
-  - TypeScript aliasing
-  - Tailwind/PostCSS setup
-  - dependency manifest and lockfile
-  - verification commands
-- Phase 2 implemented:
-  - Supabase/Postgres schema migrations
-  - normalized inquiry, order, pricing, media, content, calendar, and notification tables
-  - starter reference seed data for products, pricing, gallery categories, site settings, and FAQ records
-- Phase 3 files exist in the repo but are intentionally not being expanded during this pass:
-  - public-site routes
-  - hardcoded content layer
-  - starter pricing and inquiry validation utilities
-  - admin/auth helpers not yet wired into full CRUD flows
+- Public marketing routes are implemented with route-level metadata, sitemap, robots, OG image generation, gallery lightbox behavior, and inquiry CTAs.
+- `/start-order` uses a multi-step inquiry wizard with client-side guidance, server-side validation, upload checks, honeypot/timing checks, duplicate detection, and a fallback email path when submissions are unavailable.
+- Supabase-backed public reads degrade to curated fallback content when the backend is unavailable.
+- Admin routes are implemented behind Supabase auth and role checks.
 
 ## Commands
 

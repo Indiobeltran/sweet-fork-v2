@@ -16,7 +16,15 @@ const instagramHandlePattern = /^@?[a-z0-9._]{1,30}$/i;
 const instagramUrlPattern =
   /^https?:\/\/(?:www\.)?instagram\.com\/([a-z0-9._]{1,30})(?:[/?#].*)?$/i;
 const zipCodePattern = /^\d{5}(?:-\d{4})?$/;
-const imageMimePattern = /^image\//;
+const supportedImageMimeTypes = new Set([
+  "image/avif",
+  "image/heic",
+  "image/heif",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
+const supportedImageExtensionPattern = /\.(?:avif|heic|heif|jpe?g|png|webp)$/i;
 const phoneAllowedPattern = /^[+\d().\-\s]+$/;
 
 export const MAX_INSPIRATION_UPLOADS = 6;
@@ -149,6 +157,16 @@ function normalizeInstagramHandle(value: unknown) {
 
 function toStringArray(value: unknown) {
   return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
+}
+
+function isSupportedInspirationImage(file: File) {
+  const fileType = file.type.trim().toLowerCase();
+  const fileName = file.name.trim();
+
+  return (
+    supportedImageMimeTypes.has(fileType) &&
+    (fileName.length === 0 || supportedImageExtensionPattern.test(fileName))
+  );
 }
 
 export function getMinimumInquiryDate(referenceDate = new Date()) {
@@ -469,8 +487,8 @@ export function validateInspirationUploads(
       issues.push(`${fileLabel} is empty.`);
     }
 
-    if (!imageMimePattern.test(file.type)) {
-      issues.push(`${fileLabel} is not an image file.`);
+    if (!isSupportedInspirationImage(file)) {
+      issues.push(`${fileLabel} must be a JPEG, PNG, WebP, AVIF, or HEIC image.`);
     }
 
     if (file.size > MAX_INSPIRATION_FILE_SIZE_BYTES) {

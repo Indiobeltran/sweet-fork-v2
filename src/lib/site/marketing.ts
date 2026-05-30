@@ -469,6 +469,29 @@ function getBooleanValue(record: Record<string, Json>, key: string) {
   return typeof value === "boolean" ? value : null;
 }
 
+function getErrorField(error: unknown, field: "code" | "message") {
+  if (!error || typeof error !== "object" || !(field in error)) {
+    return undefined;
+  }
+
+  const value = (error as Record<string, unknown>)[field];
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+function logPublicDataFallback(message: string, error: unknown) {
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return;
+  }
+
+  console.warn(message, {
+    code: getErrorField(error, "code"),
+    message:
+      error instanceof Error
+        ? error.message
+        : getErrorField(error, "message") ?? "Unknown public content load error",
+  });
+}
+
 function prettifyFileName(value: string | null) {
   if (!value) {
     return "Gallery image";
@@ -590,10 +613,10 @@ const getSiteSettingRows = cache(async function getSiteSettingRows() {
     .in(
       "setting_key",
       siteSettingDefinitions.map((definition) => definition.key),
-    );
+  );
 
   if (error) {
-    console.error("Unable to load managed site settings.", error);
+    logPublicDataFallback("Unable to load managed site settings.", error);
     return [];
   }
 
@@ -610,7 +633,7 @@ const getContentBlockRows = cache(async function getContentBlockRows() {
   const { data, error } = await admin.from("content_blocks").select("*").in("page_key", pageKeys);
 
   if (error) {
-    console.error("Unable to load managed content blocks.", error);
+    logPublicDataFallback("Unable to load managed content blocks.", error);
     return [];
   }
 
@@ -650,7 +673,10 @@ async function getGalleryCategoryMap(categoryIds: string[]) {
     .eq("is_active", true);
 
   if (error) {
-    console.error("Unable to load gallery categories for media placements.", error);
+    logPublicDataFallback(
+      "Unable to load gallery categories for media placements.",
+      error,
+    );
     return new Map<string, GalleryCategoryRow>();
   }
 
@@ -756,7 +782,7 @@ const getPublicProductRows = cache(async function getPublicProductRows(): Promis
 
   if (error || !data) {
     if (error) {
-      console.error("Unable to load public products.", error);
+      logPublicDataFallback("Unable to load public products.", error);
     }
 
     return null;
@@ -800,7 +826,7 @@ export async function getPublicBookingNotice(): Promise<PublicBookingNotice | nu
     .maybeSingle();
 
   if (error) {
-    console.error("Unable to load public booking notice.", error);
+    logPublicDataFallback("Unable to load public booking notice.", error);
     return null;
   }
 
@@ -936,7 +962,7 @@ export async function getGalleryItemsForPlacement(
     .order("display_order", { ascending: true });
 
   if (placementError) {
-    console.error("Unable to load page media placements.", placementError);
+    logPublicDataFallback("Unable to load page media placements.", placementError);
     return fallbackItems;
   }
 
@@ -971,7 +997,7 @@ export async function getGalleryItemsForPlacement(
       .eq("asset_kind", "image");
 
     if (assetError) {
-      console.error("Unable to load placed media assets.", assetError);
+      logPublicDataFallback("Unable to load placed media assets.", assetError);
       return fallbackItems;
     }
 
@@ -993,7 +1019,7 @@ export async function getGalleryItemsForPlacement(
       .order("created_at", { ascending: false });
 
     if (assetError) {
-      console.error("Unable to load marketing media assets.", assetError);
+      logPublicDataFallback("Unable to load marketing media assets.", assetError);
       return fallbackItems;
     }
 
@@ -1013,7 +1039,10 @@ export async function getGalleryItemsForPlacement(
     .order("display_order", { ascending: true });
 
   if (categoryAssignmentsError) {
-    console.error("Unable to load gallery category assignments.", categoryAssignmentsError);
+    logPublicDataFallback(
+      "Unable to load gallery category assignments.",
+      categoryAssignmentsError,
+    );
     return fallbackItems;
   }
 
@@ -1110,7 +1139,7 @@ export async function getPublicTestimonials() {
 
   if (error || !data || data.length === 0) {
     if (error) {
-      console.error("Unable to load public testimonials.", error);
+      logPublicDataFallback("Unable to load public testimonials.", error);
     }
 
     return staticTestimonials.map((item) => ({
@@ -1142,7 +1171,7 @@ export async function getPublicFaqItems(): Promise<PublicFaqItem[]> {
 
   if (error || !data || data.length === 0) {
     if (error) {
-      console.error("Unable to load public FAQs.", error);
+      logPublicDataFallback("Unable to load public FAQs.", error);
     }
 
     return staticFaqItems;
@@ -1244,11 +1273,11 @@ export async function getPublicPricingData(): Promise<{
 
   if (productError || priceError || !productData) {
     if (productError) {
-      console.error("Unable to load public products for pricing.", productError);
+      logPublicDataFallback("Unable to load public products for pricing.", productError);
     }
 
     if (priceError) {
-      console.error("Unable to load public prices.", priceError);
+      logPublicDataFallback("Unable to load public prices.", priceError);
     }
 
     return {

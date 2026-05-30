@@ -286,9 +286,11 @@ export async function getStartOrderPageData(): Promise<StartOrderPageData> {
       deliveryRange,
     };
   } catch (error) {
-    console.error("Unable to load live start-order data.", {
-      message: error instanceof Error ? error.message : "Unknown Supabase catalog error",
-    });
+    if (process.env.NEXT_PHASE !== "phase-production-build") {
+      console.warn("Unable to load live start-order data.", {
+        message: error instanceof Error ? error.message : "Unknown Supabase catalog error",
+      });
+    }
 
     return {
       catalog: buildFallbackCatalog(defaultPricingBaseline),

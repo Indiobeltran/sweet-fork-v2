@@ -2,6 +2,7 @@
 
 import {
   type ComponentProps,
+  type MouseEvent,
   type ReactNode,
   useEffect,
   useLayoutEffect,
@@ -898,6 +899,40 @@ export function StartOrderWizard({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const validateFullInquiry = () => {
+    setSubmitError(null);
+    setErrors({});
+
+    for (let stepIndex = 0; stepIndex < inquiryStepTitles.length; stepIndex += 1) {
+      const valid = validateStep(stepIndex);
+
+      if (!valid) {
+        setCurrentStep(stepIndex);
+        return false;
+      }
+    }
+
+    const result = inquirySchema.safeParse(normalizeInquiryFormValues(values));
+
+    if (!result.success) {
+      const nextErrors = flattenIssues(result.error.issues);
+      shouldFocusErrorRef.current = true;
+      setErrors(nextErrors);
+      setCurrentStep(findStepForErrors(nextErrors));
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleEmailFallbackClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (validateFullInquiry()) {
+      return;
+    }
+
+    event.preventDefault();
   };
 
   const currentStepPanel = (
@@ -2306,6 +2341,7 @@ export function StartOrderWizard({
                 ) : !submissionAvailable ? (
                   <a
                     href={buildEmailFallbackHref()}
+                    onClick={handleEmailFallbackClick}
                     className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-charcoal px-6 py-3 text-sm font-semibold text-ivory shadow-soft transition hover:bg-charcoal/92 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50 sm:w-auto"
                   >
                     Email inquiry details

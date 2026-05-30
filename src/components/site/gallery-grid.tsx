@@ -196,7 +196,7 @@ export function GalleryGrid({
                 ref={(element) => {
                   triggerRefs.current[index] = element;
                 }}
-                className="w-full text-left focus-visible:outline-none"
+                className="w-full text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-6px] focus-visible:outline-gold/70"
                 onClick={() => openItem(index)}
                 aria-haspopup={item.imageUrl ? "dialog" : undefined}
                 aria-label={

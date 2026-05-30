@@ -4,11 +4,17 @@ import { NextResponse } from "next/server";
 
 import { InquirySubmissionError, submitInquiry } from "@/lib/inquiries/submit";
 import {
+  MAX_INSPIRATION_FILE_SIZE_BYTES,
+  MAX_INSPIRATION_UPLOADS,
   MAX_INQUIRY_PAYLOAD_SIZE_BYTES,
   normalizeInquiryFormValues,
 } from "@/lib/validations/inquiry";
 
 const MIN_SUBMISSION_TIME_MS = 3500;
+const MAX_INQUIRY_REQUEST_SIZE_BYTES =
+  MAX_INQUIRY_PAYLOAD_SIZE_BYTES +
+  MAX_INSPIRATION_UPLOADS * MAX_INSPIRATION_FILE_SIZE_BYTES +
+  1_000_000;
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const MAX_SUBMISSIONS_PER_WINDOW = 5;
 const DUPLICATE_SUBMISSION_WINDOW_MS = 15 * 60 * 1000;
@@ -74,6 +80,29 @@ function parsePayload(payload: string) {
   } catch {
     throw new InquirySubmissionError(
       "We couldn't read the inquiry details. Please refresh the page and try again.",
+    );
+  }
+}
+
+function validateRequestSize(request: Request) {
+  const contentLengthHeader = request.headers.get("content-length");
+
+  if (!contentLengthHeader) {
+    return;
+  }
+
+  const contentLength = Number(contentLengthHeader);
+
+  if (!Number.isFinite(contentLength) || contentLength < 0) {
+    throw new InquirySubmissionError(
+      "We couldn't read the inquiry details. Please refresh the page and try again.",
+    );
+  }
+
+  if (contentLength > MAX_INQUIRY_REQUEST_SIZE_BYTES) {
+    throw new InquirySubmissionError(
+      "The inquiry is too large to send at once. Please remove a few images and try again.",
+      413,
     );
   }
 }
@@ -187,6 +216,8 @@ function validateSubmissionTiming(value: FormDataEntryValue | null) {
 
 export async function POST(request: Request) {
   try {
+    validateRequestSize(request);
+
     const formData = await request.formData();
     const honeypot = formData.get("website");
     const payload = formData.get("payload");
