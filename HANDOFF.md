@@ -5,26 +5,46 @@ Update this file before stopping after any substantive repo task.
 ## Current Snapshot
 
 - Date: 2026-05-31.
-- Current branch: `main` (task branch `codex/admin-owner-dashboard` has been successfully merged).
-- Current objective: Complete Phase 2 admin owner dashboard safety review, push, merge, and production verification.
+- Current branch: `main` (task branch `codex/admin-inquiry-action-summary` has been successfully merged).
+- Current objective: Phase 3A/3B admin inquiry detail UX — surface triage actions and internal notes near the top of the inquiry detail page on mobile.
 - Application/source code changes in this task: Yes, verified, hardened, and merged.
 
 ## Last Completed Work
 
-- Conducted comprehensive audit of `codex/admin-owner-dashboard` changes.
-- Identified and fixed a critical bug in `src/lib/admin/navigation.ts` where `isAdminHrefActive` incorrectly matched `/admin` for all other `/admin/*` sub-routes, which would highlight "Dashboard" and set page title to "Dashboard" on other pages like Inquiries or Orders.
-- Successfully verified build validity through `npm run lint`, `npm run typecheck`, and `npm run build`.
-- Pushed `codex/admin-owner-dashboard` task branch to origin.
-- Merged the task branch into `main` and pushed to `origin/main` successfully.
-- Conducted production verification for https://sweet-fork-v2.vercel.app, confirming home, unauthenticated `/admin` redirect, `/admin/login`, and `/admin/inquiries` loading behaviors, all returning valid responses without errors.
+- Conducted a full diff integrity review of `codex/admin-inquiry-action-summary`.
+- Identified and fixed a cosmetic indentation defect in the "Archive and reference" SectionCard (delete `<div>` was rendered at 2-space indent instead of 12-space by the generation script). Fixed via targeted `multi_replace_file_content`.
+- Verified all server action wiring, form field names, hidden inputs, and submit buttons are preserved and intact.
+- Confirmed no backend/Supabase/API route/server action files were modified.
+- Re-ran `npm run lint`, `npm run typecheck`, `npm run build`, and `git diff --check` — all passed cleanly.
+- Amended the commit to include the indentation fix (commit `f64ba6f`).
+- Pushed `codex/admin-inquiry-action-summary` to origin.
+- Fast-forward merged to `main` and pushed to `origin/main`.
+- Confirmed `f64ba6f` is present on `origin/main`.
+- Production verified:
+  - `/` → HTTP 200 ✓
+  - `/admin/login` → HTTP 200 ✓
+  - `/admin/inquiries` (unauthenticated) → HTTP 307 redirect to `/admin/login` ✓
+
+## What Changed
+
+**File:** `src/app/admin/(protected)/inquiries/[id]/page.tsx`
+
+New layout order:
+1. Page header (customer name, status badge, reference code, submission timestamp) — unchanged.
+2. **[NEW] Triage actions** SectionCard — Call link, Email link, Convert to order anchor shortcut, and status update form all visible immediately on load.
+3. **[MOVED] Internal notes** SectionCard — now appears just below triage actions, before all long detail cards.
+4. Detail grid (Event details, Customer & signals, Requested items) — unchanged content, left column.
+5. Right column: Inspiration/Assets, Estimate insight, Convert to order (anchored at `#convert-to-order`), Archive and reference (timestamps, reference code, delete action).
+
+No server actions, form actions, hidden inputs, field names, or mutation logic were changed.
 
 ## In Progress
 
-- Phase 2 admin owner dashboard implementation is 100% complete and verified in production.
+- None. Phase 3A/3B is 100% complete and verified in production.
 
 ## Next Exact Task
 
-- Begin Phase 3 of the admin workstream (e.g., inquiry flow UX hardening / anti-spam protection / operational dashboard integrations).
+- Phase 3C: Inquiry detail density and visual polish (card ordering cleanup, empty state refinement, bottom padding review, tap target audit).
 
 ## Commands Run
 
@@ -33,17 +53,16 @@ Update this file before stopping after any substantive repo task.
 - `git log --oneline -n 6`
 - `git diff HEAD~1..HEAD --stat`
 - `git diff HEAD~1..HEAD --name-only`
-- `npm run lint`
-- `npm run typecheck`
-- `npm run build`
-- `git diff --check`
-- `git add src/lib/admin/navigation.ts && git commit -m "..."`
-- `git push -u origin codex/admin-owner-dashboard`
-- `git checkout main`
-- `git pull origin main`
-- `git merge codex/admin-owner-dashboard`
+- `git diff HEAD~1..HEAD -- src/app/admin/(protected)/inquiries/[id]/page.tsx`
+- `git diff HEAD~1..HEAD --name-only | grep -E "supabase|api|env|auth|middleware|..." || true`
+- `npm run lint && npm run typecheck && npm run build && git diff --check`
+- `git add ... && git commit --amend --no-edit`
+- `git push -u origin codex/admin-inquiry-action-summary`
+- `git checkout main && git pull origin main`
+- `git merge codex/admin-inquiry-action-summary`
 - `git push origin main`
-- `git fetch origin && git log --oneline origin/main -n 8`
+- `git fetch origin && git log --oneline origin/main -n 6`
+- `curl` production route checks for `/`, `/admin/login`, `/admin/inquiries`
 
 ## Commands Still Needed
 
@@ -51,25 +70,21 @@ Update this file before stopping after any substantive repo task.
 
 ## Files Changed Recently By This Task
 
-- `DECISIONS.md`
+- `src/app/admin/(protected)/inquiries/[id]/page.tsx`
 - `HANDOFF.md`
-- `src/app/admin/(protected)/page.tsx`
-- `src/components/admin/admin-app-bar.tsx`
-- `src/components/admin/admin-shell-chrome.tsx`
-- `src/lib/admin/navigation.ts`
 
 ## Verification Results
 
 - `npm run lint`: Passed.
 - `npm run typecheck`: Passed.
-- `npm run build`: Passed.
-- `git diff --check`: Clean.
-- Fetch of production URL `/` and `/admin` redirect verified successfully (HTTP 200 / valid redirects / no HTTP 500).
+- `npm run build`: Passed (22/22 static pages, all admin routes dynamic — no regressions).
+- `git diff --check`: Clean (no whitespace errors).
+- Production HTTP checks: `/` 200, `/admin/login` 200, `/admin/inquiries` 307 to login.
 
 ## Known Issues
 
-- None identified.
+- Authenticated admin browser testing was not performed locally (no live Supabase session available). Functional correctness of form submissions relies on code review and static verification.
 
 ## Open Decisions
 
-- Agree on features and timing for Phase 3 admin panel hardening.
+- Phase 3C scope: determine whether card ordering, empty states, and bottom padding constitute a separate commit or can be batched into a larger visual polish pass.
