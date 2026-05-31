@@ -188,13 +188,6 @@ export async function submitInquiry(
   rawValues: unknown,
   files: File[],
 ): Promise<InquirySubmissionResult> {
-  if (!isSupabaseConfigured()) {
-    throw new InquirySubmissionError(
-      "Inquiry submission is temporarily unavailable. Please try again shortly.",
-      503,
-    );
-  }
-
   const values = normalizeInquiryFormValues(rawValues);
   const parsed = inquirySchema.safeParse(values);
 
@@ -210,6 +203,13 @@ export async function submitInquiry(
 
   if (uploadIssues.length > 0) {
     throw new InquirySubmissionError(uploadIssues[0]);
+  }
+
+  if (!isSupabaseConfigured()) {
+    throw new InquirySubmissionError(
+      "Inquiry submission is temporarily unavailable. Please try again shortly.",
+      503,
+    );
   }
 
   const catalogMap = getCatalogMap(catalog);
