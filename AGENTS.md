@@ -1,5 +1,117 @@
 # AGENTS.md
 
+## Agent operating model
+
+This repository powers **The Sweet Fork v2**. Treat it as a production bakery website and inquiry system, not a sandbox.
+
+Do not change application/source code unless the active user request explicitly asks for code changes. For documentation, repo-operations, planning, or handoff tasks, preserve the app and update only clearly relevant documentation files.
+
+### Shared agent behavior
+
+- Preserve existing decisions, handoff context, roadmap notes, and known constraints.
+- Inspect files before assuming they exist.
+- Prefer small, reviewable changes over broad rewrites.
+- Avoid deleting, renaming, or overwriting important existing files.
+- If an equivalent file already exists, update it carefully instead of replacing it wholesale.
+- Do not add dependencies unless the active task explicitly requires them.
+- Do not expose Supabase keys, internal endpoints, debug details, or secrets.
+- Keep customer-facing work premium, polished, mobile-first, and launch-ready.
+- Keep accessibility, performance, validation, and security in scope when touching the public site or inquiry flow.
+- Summarize changed files and verification before stopping.
+
+### Agent roles
+
+- Codex, Gemini, and Antigravity may all work on this repo.
+- Codex is preferred for structured repo edits, documentation, implementation, debugging, verification, and reviewable code changes.
+- Gemini or Antigravity may be used for a second pass, alternate implementation, or continuation when token budget is tight.
+- All agents share the same rules in `AGENTS.md`, `ROADMAP.md`, `GATES.md`, `HANDOFF.md`, `DECISIONS.md`, and `BACKLOG.md`.
+- `GEMINI.md` is intentionally a short pointer unless a future Gemini-specific workflow requires more detail.
+
+### Token-conscious agent usage
+
+- Use low/standard reasoning for small documentation edits, typo fixes, and simple file alignment.
+- Use medium reasoning for normal planning docs, scoped UI/content changes, and straightforward bug fixes.
+- Use high reasoning for multi-file implementation, validation/security work, data-model changes, metadata/SEO architecture, and production-readiness passes.
+- Use extra-high reasoning only for major architecture, incident investigation, security-sensitive review, or work that requires reconciling conflicting historical decisions.
+- Prefer targeted file reads with `rg`, `sed`, and existing docs before broad exploration.
+- Preserve handoff notes so another agent can continue without rediscovering the same context.
+
+### Branch rules
+
+- `main` is production-only and must remain stable.
+- Do not commit directly to `main`.
+- Do not push directly to `main`.
+- Use `launch-readiness` as the integration branch for coordinated Sweet Fork v2 hardening work once it exists.
+- Use scoped task branches for individual work items, preferably `codex/<short-kebab-scope>`, `gemini/<short-kebab-scope>`, or `antigravity/<short-kebab-scope>`.
+- Start task branches from the current integration branch unless the user explicitly requests a production hotfix.
+- Production hotfix branches should start from `main` and use a clear name such as `hotfix/<short-kebab-scope>`.
+- Keep task branches short-lived and reviewable.
+- Never stage, commit, push, force-push, merge, rebase, or open a PR unless the user explicitly asks.
+- Never revert unrelated user changes. If unrelated changes are present, preserve them and call them out in the final report.
+
+### Required reading before coding
+
+Before making application/source code changes, every agent must read:
+
+- `AGENTS.md`
+- `ROADMAP.md`
+- `GATES.md`
+- `HANDOFF.md`
+- `DECISIONS.md`
+- `BACKLOG.md`
+- `README.md`
+
+For public website or inquiry-flow work, also inspect the actual files for the affected routes, shared layout/navigation, metadata utilities, image components, form schemas, API routes/server actions, middleware, Next.js config, sitemap, and robots generation. Do not guess paths.
+
+For architecture, vendors, integrations, framework choices, tooling, hosting, analytics, auth, data shape, validation, or security decisions, read `DECISIONS.md` before changing files and update it while context is fresh.
+
+### Handoff rules
+
+- Update `HANDOFF.md` before stopping after any substantive repo task.
+- Handoff notes must include current branch, current objective, last completed work, in-progress work, next exact task, commands run, commands still needed, files changed recently, known issues, and open decisions.
+- If Codex stops and Gemini or Antigravity continues, the next agent should start from `AGENTS.md`, `ROADMAP.md`, `GATES.md`, `HANDOFF.md`, `DECISIONS.md`, and `BACKLOG.md`.
+- If Gemini or Antigravity stops and Codex continues, Codex should follow the same handoff flow.
+
+### Required task-end report
+
+Before ending a task, report:
+
+- Current branch.
+- Files created.
+- Files changed.
+- Files intentionally preserved.
+- Commands run.
+- Verification results.
+- Decisions made.
+- Assumptions made.
+- Open questions.
+- Known issues.
+- Recommended next step.
+- Whether changes are staged or unstaged.
+
+### Decision logging
+
+- Record architecture, vendor, tooling, branch/workflow, security, validation, data-shape, hosting, or launch-readiness decisions in `DECISIONS.md`.
+- Record decisions as they are made, not after a large batch.
+- Include date, status, context, options considered, decision, and consequences.
+- Do not bury decisions only in chat; future agents must be able to recover them from the repo.
+
+### Commit, push, and PR rules
+
+- Do not stage, commit, push, or open a PR unless explicitly asked.
+- When asked to commit, inspect `git status --short` first and stage only files that belong to the task.
+- Keep commits focused and use clear messages.
+- Do not include secrets, `.env.local`, build artifacts, cache files, or unrelated user changes.
+- When asked to push or open a PR, run the relevant quality gates first or clearly report which gates were skipped and why.
+- PR descriptions should include summary, files changed, verification, risks, screenshots for visual changes when applicable, and any follow-up work.
+
+### Quality gates
+
+- Detect the package manager from the lockfile. This repo currently uses npm with `package-lock.json`.
+- For documentation-only changes, run a documentation-focused verification: inspect diffs and confirm no app/source files were modified by the task.
+- For application/source changes, run the applicable gates from `GATES.md`.
+- Do not claim tests, builds, accessibility, security, or manual browser verification passed unless they were actually run.
+
 ## Project identity
 This repository powers **The Sweet Fork v2**, a premium custom home bakery website and inquiry experience.
 
@@ -13,8 +125,8 @@ Brand priorities:
 Business context:
 The Sweet Fork is a real bakery serving Centerville, Utah and nearby Northern Utah communities. Public pages must feel trustworthy, premium, and launch-ready.
 
-## Primary objective
-Execute a **production-readiness hardening pass** across the public website and inquiry flow.
+## Product hardening objective
+When the active task explicitly requests application/source work, execute a **production-readiness hardening pass** across the public website and inquiry flow.
 
 This is not a redesign from scratch.
 This is a focused refinement and hardening pass to:
