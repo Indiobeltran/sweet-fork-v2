@@ -34,7 +34,7 @@ export function ProductPageTemplate({ content }: ProductPageTemplateProps) {
 
           <div className="grid gap-4 section-reveal">
             <div className="relative overflow-hidden rounded-[2.4rem] border border-charcoal/12 bg-charcoal shadow-soft">
-              <div className="relative min-h-[22rem] sm:min-h-[28rem] lg:min-h-[31rem]">
+              <div className="relative min-h-[18rem] sm:min-h-[27rem] lg:min-h-[31rem]">
                 <Image
                   src={content.heroImage.src}
                   alt={content.heroImage.alt}

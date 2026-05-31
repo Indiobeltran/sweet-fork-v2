@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { type TouchEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
@@ -55,6 +55,7 @@ export function GalleryGrid({
   const triggerRefs = useRef<Record<number, HTMLButtonElement | null>>({});
   const dialogPanelRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const activeItem = activeIndex === null ? null : items[activeIndex] ?? null;
   const titleId = `${dialogId}-title`;
   const descriptionId = `${dialogId}-description`;
@@ -170,6 +171,51 @@ export function GalleryGrid({
   };
 
   const showGalleryControls = interactiveIndexes.length > 1 && activeIndex !== null;
+  const showPreviousItem = () => {
+    setActiveIndex((current) =>
+      getAdjacentInteractiveIndex(current, interactiveIndexes, "previous"),
+    );
+  };
+  const showNextItem = () => {
+    setActiveIndex((current) =>
+      getAdjacentInteractiveIndex(current, interactiveIndexes, "next"),
+    );
+  };
+  const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0];
+
+    if (!touch) {
+      return;
+    }
+
+    touchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+    };
+  };
+  const handleTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
+    const start = touchStartRef.current;
+    const touch = event.changedTouches[0];
+    touchStartRef.current = null;
+
+    if (!start || !touch || !showGalleryControls) {
+      return;
+    }
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+
+    if (Math.abs(deltaX) < 52 || Math.abs(deltaY) > 80) {
+      return;
+    }
+
+    if (deltaX < 0) {
+      showNextItem();
+      return;
+    }
+
+    showPreviousItem();
+  };
 
   return (
     <>
@@ -270,8 +316,10 @@ export function GalleryGrid({
         >
           <div
             ref={dialogPanelRef}
-            className="relative max-h-[calc(100svh-2rem)] w-full max-w-6xl overflow-y-auto rounded-[2rem] border border-white/10 bg-[#1f1815] p-4 text-ivory shadow-[0_30px_90px_rgba(15,9,7,0.5)] sm:p-5"
+            className="relative flex max-h-[calc(100svh-1.5rem)] w-full max-w-6xl flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-[#1f1815] p-4 text-ivory shadow-[0_30px_90px_rgba(15,9,7,0.5)] sm:p-5"
             onClick={(event) => event.stopPropagation()}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
           >
             <div className="mb-4 flex items-start justify-between gap-4">
               <div className="min-w-0">
@@ -301,9 +349,9 @@ export function GalleryGrid({
               </button>
             </div>
 
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+            <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-5">
               <div className="relative overflow-hidden rounded-[1.7rem] bg-black/10">
-                <div className="relative aspect-[4/5]">
+                <div className="relative h-[min(56svh,34rem)] lg:h-full lg:min-h-[30rem]">
                   <Image
                     src={activeItem.imageUrl}
                     alt={activeItem.alt}
@@ -314,12 +362,32 @@ export function GalleryGrid({
                     className="object-cover"
                   />
                 </div>
+                {showGalleryControls ? (
+                  <>
+                    <button
+                      type="button"
+                      aria-label="Show previous gallery image"
+                      className="absolute left-3 top-1/2 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/16 bg-charcoal/62 text-ivory shadow-[0_12px_32px_rgba(0,0,0,0.28)] backdrop-blur transition hover:border-white/34 hover:bg-charcoal/76 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/70"
+                      onClick={showPreviousItem}
+                    >
+                      <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Show next gallery image"
+                      className="absolute right-3 top-1/2 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/16 bg-charcoal/62 text-ivory shadow-[0_12px_32px_rgba(0,0,0,0.28)] backdrop-blur transition hover:border-white/34 hover:bg-charcoal/76 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/70"
+                      onClick={showNextItem}
+                    >
+                      <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                  </>
+                ) : null}
               </div>
 
-              <div className="flex flex-col justify-between gap-5 rounded-[1.7rem] border border-white/10 bg-white/6 p-5">
-                <div>
+              <div className="flex min-h-0 flex-col justify-between gap-5 rounded-[1.7rem] border border-white/10 bg-white/6 p-5">
+                <div className="min-h-0 overflow-y-auto pr-1">
                   <p className="text-xs uppercase tracking-[0.18em] text-gold/72">
-                    Sweet Fork detail
+                    The Sweet Fork detail
                   </p>
                   <p id={descriptionId} className="mt-3 text-sm leading-7 text-ivory/78">
                     {activeItem.alt}
@@ -331,32 +399,9 @@ export function GalleryGrid({
                 </div>
 
                 {showGalleryControls ? (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <button
-                      type="button"
-                      className="inline-flex items-center justify-center gap-2 rounded-full border border-white/12 px-4 py-3 text-sm font-medium text-ivory transition hover:border-white/28 hover:bg-white/8 focus-visible:border-gold/50 focus-visible:bg-white/12"
-                      onClick={() =>
-                        setActiveIndex((current) =>
-                          getAdjacentInteractiveIndex(current, interactiveIndexes, "previous"),
-                        )
-                      }
-                    >
-                      <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-                      Previous
-                    </button>
-                    <button
-                      type="button"
-                      className="inline-flex items-center justify-center gap-2 rounded-full border border-white/12 px-4 py-3 text-sm font-medium text-ivory transition hover:border-white/28 hover:bg-white/8 focus-visible:border-gold/50 focus-visible:bg-white/12"
-                      onClick={() =>
-                        setActiveIndex((current) =>
-                          getAdjacentInteractiveIndex(current, interactiveIndexes, "next"),
-                        )
-                      }
-                    >
-                      Next
-                      <ChevronRight className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                  </div>
+                  <p className="text-xs uppercase tracking-[0.16em] text-ivory/46">
+                    Swipe or use arrow keys
+                  </p>
                 ) : null}
               </div>
             </div>

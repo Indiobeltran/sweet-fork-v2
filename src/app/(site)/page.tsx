@@ -58,11 +58,11 @@ export default async function HomePage() {
       />
       <section className="relative overflow-hidden border-b border-charcoal/8 bg-paper">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/35 to-transparent" />
-        <div className="section-shell grid min-h-[calc(100svh-7rem)] gap-12 py-14 lg:grid-cols-[1.08fr_0.92fr] lg:items-end lg:gap-16 lg:py-20">
-          <div className="space-y-7 section-reveal">
+        <div className="section-shell grid gap-9 py-10 sm:py-12 lg:min-h-[calc(100svh-7rem)] lg:grid-cols-[1.08fr_0.92fr] lg:items-end lg:gap-16 lg:py-20">
+          <div className="space-y-6 section-reveal">
             <p className="eyebrow-label">{data.hero.eyebrow}</p>
             <div className="space-y-5">
-              <h1 className="max-w-5xl font-serif text-[3.5rem] leading-[0.88] tracking-[-0.06em] text-charcoal sm:text-[4.75rem] lg:text-[6rem]">
+              <h1 className="max-w-5xl font-serif text-[3rem] leading-[0.9] tracking-[-0.04em] text-charcoal sm:text-[4.35rem] lg:text-[6rem] lg:tracking-[-0.06em]">
                 {data.hero.heading}
               </h1>
               <p className="max-w-2xl text-base leading-8 text-charcoal/72 sm:text-lg">
@@ -78,7 +78,7 @@ export default async function HomePage() {
 
           <div className="grid gap-4 section-reveal">
             <div className="relative overflow-hidden rounded-[2.4rem] border border-charcoal/12 bg-charcoal text-ivory shadow-[0_18px_48px_rgba(53,37,29,0.18),0_2px_10px_rgba(53,37,29,0.08)]">
-              <div className="relative min-h-[24rem] sm:min-h-[30rem] lg:min-h-[34rem]">
+              <div className="relative min-h-[19rem] sm:min-h-[28rem] lg:min-h-[34rem]">
                 {heroGalleryItem?.imageUrl ? (
                   <Image
                     src={heroGalleryItem.imageUrl}

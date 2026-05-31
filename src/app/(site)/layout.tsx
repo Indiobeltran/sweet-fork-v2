@@ -1,6 +1,8 @@
+import { BackToTopButton } from "@/components/site/back-to-top-button";
 import { PublicBookingNoticeBanner } from "@/components/site/public-booking-notice";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
+import { SiteRouteScrollRestoration } from "@/components/site/site-route-scroll-restoration";
 import { getPublicSiteChromeData } from "@/lib/site/marketing";
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
@@ -20,12 +22,14 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         secondaryNavigation={chrome.secondaryNavigation}
         tagline={chrome.site.tagline}
       />
+      <SiteRouteScrollRestoration />
       {chrome.bookingNotice ? <PublicBookingNoticeBanner notice={chrome.bookingNotice} /> : null}
       <main id="site-main">{children}</main>
       <SiteFooter
         legalLinks={chrome.footerLegalLinks}
         site={chrome.site}
       />
+      <BackToTopButton />
     </div>
   );
 }
