@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 
@@ -36,9 +37,31 @@ export function MobileBottomNav({
   moreOpen = false,
   onMoreClick,
 }: Readonly<MobileBottomNavProps>) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const focusClasses =
     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50";
   const [isSuppressedForNativePicker, setIsSuppressedForNativePicker] = useState(false);
+
+  // 1. Route/search reset: Ensure suppression clears if a navigation or filter update unmounts the active element
+  useEffect(() => {
+    setIsSuppressedForNativePicker(false);
+  }, [pathname, searchParams]);
+
+  // 2. Visibility safety fallback: Continuously verify focus hasn't been lost to unmounting or sheet closures
+  useEffect(() => {
+    if (!isSuppressedForNativePicker) {
+      return;
+    }
+
+    const fallbackInterval = setInterval(() => {
+      if (!isPickerTriggerElement(document.activeElement)) {
+        setIsSuppressedForNativePicker(false);
+      }
+    }, 1000);
+
+    return () => clearInterval(fallbackInterval);
+  }, [isSuppressedForNativePicker]);
 
   useEffect(() => {
     const syncSuppressedState = () => {
