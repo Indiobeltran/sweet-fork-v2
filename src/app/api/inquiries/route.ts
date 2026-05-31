@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { InquirySubmissionError, submitInquiry } from "@/lib/inquiries/submit";
+import { getPublicEnv } from "@/lib/env";
 import {
   MAX_INSPIRATION_FILE_SIZE_BYTES,
   MAX_INSPIRATION_UPLOADS,
@@ -22,6 +23,7 @@ const DUPLICATE_SUBMISSION_WINDOW_MS = 15 * 60 * 1000;
 const submissionAttempts = new Map<string, number[]>();
 const recentSubmissionFingerprints = new Map<string, number>();
 const pendingSubmissionFingerprints = new Set<string>();
+const textEncoder = new TextEncoder();
 
 function isInquirySubmissionError(
   error: unknown,
@@ -62,8 +64,25 @@ function registerSubmissionAttempt(identifier: string) {
   return recentAttempts.length >= MAX_SUBMISSIONS_PER_WINDOW;
 }
 
+function pruneSubmissionAttempts() {
+  const now = Date.now();
+
+  submissionAttempts.forEach((timestamps, key) => {
+    const recentAttempts = timestamps.filter(
+      (timestamp) => now - timestamp < RATE_LIMIT_WINDOW_MS,
+    );
+
+    if (recentAttempts.length === 0) {
+      submissionAttempts.delete(key);
+      return;
+    }
+
+    submissionAttempts.set(key, recentAttempts);
+  });
+}
+
 function parsePayload(payload: string) {
-  if (payload.length > MAX_INQUIRY_PAYLOAD_SIZE_BYTES) {
+  if (textEncoder.encode(payload).byteLength > MAX_INQUIRY_PAYLOAD_SIZE_BYTES) {
     throw new InquirySubmissionError(
       "Some inquiry details are too long to send at once. Please shorten the notes and try again.",
     );
@@ -80,6 +99,41 @@ function parsePayload(payload: string) {
   } catch {
     throw new InquirySubmissionError(
       "We couldn't read the inquiry details. Please refresh the page and try again.",
+    );
+  }
+}
+
+function validateRequestOrigin(request: Request) {
+  const originHeader = request.headers.get("origin");
+
+  if (!originHeader) {
+    return;
+  }
+
+  let origin: URL;
+
+  try {
+    origin = new URL(originHeader);
+  } catch {
+    throw new InquirySubmissionError(
+      "We couldn't verify this inquiry. Please refresh the page and try again.",
+      403,
+    );
+  }
+
+  const requestOrigin = new URL(request.url).origin;
+  const siteOrigin = new URL(getPublicEnv().siteUrl).origin;
+  const allowedOrigins = new Set([requestOrigin, siteOrigin]);
+
+  if (process.env.NODE_ENV !== "production") {
+    allowedOrigins.add("http://localhost:3000");
+    allowedOrigins.add("http://127.0.0.1:3000");
+  }
+
+  if (!allowedOrigins.has(origin.origin)) {
+    throw new InquirySubmissionError(
+      "We couldn't verify this inquiry. Please refresh the page and try again.",
+      403,
     );
   }
 }
@@ -217,6 +271,8 @@ function validateSubmissionTiming(value: FormDataEntryValue | null) {
 export async function POST(request: Request) {
   try {
     validateRequestSize(request);
+    validateRequestOrigin(request);
+    pruneSubmissionAttempts();
 
     const formData = await request.formData();
     const honeypot = formData.get("website");
