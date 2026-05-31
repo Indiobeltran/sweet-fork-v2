@@ -1,4 +1,4 @@
-export type AdminPrimaryNavKey = "inquiries" | "orders" | "calendar" | "customers";
+export type AdminPrimaryNavKey = "dashboard" | "inquiries" | "orders" | "calendar" | "customers";
 export type AdminMoreNavGroup = "Catalog" | "Site" | "Operations" | "System";
 export type AdminPageKey =
   | AdminPrimaryNavKey
@@ -31,9 +31,10 @@ export type AdminPageMeta = {
   title: string;
 };
 
-export const ADMIN_HOME_HREF = "/admin/inquiries";
+export const ADMIN_HOME_HREF = "/admin";
 
 export const ADMIN_PRIMARY_NAV_ITEMS: AdminPrimaryNavItem[] = [
+  { href: "/admin", key: "dashboard", label: "Dashboard" },
   { href: "/admin/inquiries", key: "inquiries", label: "Inquiries" },
   { href: "/admin/orders", key: "orders", label: "Orders" },
   { href: "/admin/calendar", key: "calendar", label: "Calendar" },
@@ -58,6 +59,7 @@ export const ADMIN_MORE_NAV_ITEMS: AdminMoreNavItem[] = [
 ];
 
 const PRIMARY_TITLE_BY_KEY: Record<AdminPrimaryNavKey, string> = {
+  dashboard: "Dashboard",
   calendar: "Calendar",
   customers: "Customers",
   inquiries: "Inquiries",

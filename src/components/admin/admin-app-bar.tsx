@@ -11,9 +11,11 @@ type AdminAppBarProps = {
   title: string;
 };
 
+import { ADMIN_HOME_HREF } from "@/lib/admin/navigation";
+
 export function AdminAppBar({
   accountMenu,
-  brandHref = "/admin/inquiries",
+  brandHref = ADMIN_HOME_HREF,
   eyebrow = "Sweet Fork Admin",
   quickAction,
   secondaryContent,

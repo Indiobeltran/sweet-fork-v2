@@ -7,6 +7,7 @@ import {
   Ellipsis,
   FileText,
   FolderKanban,
+  LayoutDashboard,
   ShoppingBag,
   Users,
 } from "lucide-react";
@@ -32,6 +33,7 @@ type AdminShellChromeProps = {
 };
 
 const PRIMARY_ICON_BY_KEY: Record<AdminPrimaryNavKey, typeof FileText> = {
+  dashboard: LayoutDashboard,
   calendar: CalendarDays,
   customers: Users,
   inquiries: FileText,
