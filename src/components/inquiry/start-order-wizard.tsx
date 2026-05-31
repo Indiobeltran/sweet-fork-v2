@@ -2,6 +2,7 @@
 
 import {
   type ComponentProps,
+  type DragEvent,
   type MouseEvent,
   type ReactNode,
   useEffect,
@@ -77,6 +78,9 @@ type UploadDraft = {
 };
 
 type ErrorMap = Record<string, string>;
+
+const SUPPORTED_INSPIRATION_IMAGE_ACCEPT =
+  "image/avif,image/heic,image/heif,image/jpeg,image/png,image/webp";
 
 function flattenIssues(issues: Array<{ path: (string | number)[]; message: string }>) {
   return issues.reduce<ErrorMap>((accumulator, issue) => {
@@ -167,13 +171,22 @@ function StepMarker({
   );
 }
 
-function InlineError({ message }: { message?: string }) {
+function getErrorDescriptionId(key: string) {
+  return `${key.replace(/[^a-z0-9_-]+/gi, "-")}-error`;
+}
+
+function getDescribedBy(...ids: Array<string | false | null | undefined>) {
+  const value = ids.filter(Boolean).join(" ");
+  return value.length > 0 ? value : undefined;
+}
+
+function InlineError({ id, message }: { id?: string; message?: string }) {
   if (!message) {
     return null;
   }
 
   return (
-    <p role="alert" className="mt-2 text-sm text-rose-700">
+    <p id={id} role="alert" className="mt-2 text-sm text-rose-700">
       {message}
     </p>
   );
@@ -203,9 +216,12 @@ function FieldLabel({
     <Label {...props}>
       <span>{children}</span>
       {required ? (
-        <span className="ml-2 inline-flex rounded-full border border-charcoal/10 bg-charcoal/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-charcoal/56">
-          Required
-        </span>
+        <>
+          <span className="ml-1 text-rose-700" aria-hidden="true">
+            *
+          </span>
+          <span className="sr-only"> required</span>
+        </>
       ) : null}
     </Label>
   );
@@ -592,6 +608,24 @@ export function StartOrderWizard({
     });
   };
 
+  const handleInspirationDragOver = (event: DragEvent<HTMLLabelElement>) => {
+    if (!featureFlags.uploadsEnabled) {
+      return;
+    }
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+  };
+
+  const handleInspirationDrop = (event: DragEvent<HTMLLabelElement>) => {
+    if (!featureFlags.uploadsEnabled) {
+      return;
+    }
+
+    event.preventDefault();
+    addInspirationFiles(event.dataTransfer.files);
+  };
+
   const removeUpload = (uploadId: string) => {
     setUploads((current) => current.filter((upload) => upload.id !== uploadId));
     setErrors((current) => {
@@ -618,7 +652,13 @@ export function StartOrderWizard({
     );
   };
 
-  const validateStep = (stepIndex: number, nextValues = values, nextUploads = uploads) => {
+  const validateStep = (
+    stepIndex: number,
+    nextValues = values,
+    nextUploads = uploads,
+    options: { focusOnError?: boolean } = {},
+  ) => {
+    const { focusOnError = true } = options;
     const preparedValues = normalizeInquiryFormValues(nextValues);
     let nextErrors: ErrorMap = {};
 
@@ -714,7 +754,9 @@ export function StartOrderWizard({
     });
 
     if (Object.keys(nextErrors).length > 0) {
-      shouldFocusErrorRef.current = true;
+      if (focusOnError) {
+        shouldFocusErrorRef.current = true;
+      }
       if (stepIndex === 2) {
         const firstInvalidItemKey = Object.keys(nextErrors).find((key) =>
           key.startsWith("orderItems."),
@@ -734,6 +776,15 @@ export function StartOrderWizard({
     }
 
     return true;
+  };
+  const validateStepOnBlur = (stepIndex: number) => {
+    if (stepIndex !== currentStep) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      validateStep(stepIndex, values, uploads, { focusOnError: false });
+    }, 0);
   };
 
   const goToNextStep = () => {
@@ -773,7 +824,7 @@ export function StartOrderWizard({
   const buildEmailFallbackHref = () => {
     const preparedValues = normalizeInquiryFormValues(values);
     const subject = encodeURIComponent(
-      `Sweet Fork inquiry for ${preparedValues.eventType || "my celebration"}`,
+      `The Sweet Fork inquiry for ${preparedValues.eventType || "my celebration"}`,
     );
     const selectedSummary =
       preparedValues.orderItems.length > 0
@@ -787,7 +838,7 @@ export function StartOrderWizard({
 
     const body = encodeURIComponent(
       [
-        "Hi Sweet Fork,",
+        "Hello,",
         "",
         "I started an inquiry on the website and would like to send the details by email.",
         "",
@@ -1092,12 +1143,12 @@ export function StartOrderWizard({
                   <p className="font-medium text-charcoal">Online submission is paused.</p>
                   <p className="mt-1">
                     {submissionUnavailableMessage ??
-                      "You can still prepare your inquiry details here, then email Sweet Fork directly from the review step."}
+                      "You can still prepare your inquiry details here, then email The Sweet Fork directly from the review step."}
                   </p>
                 </div>
               ) : catalogSource === "fallback" ? (
                 <div className="rounded-[1.4rem] border border-charcoal/10 bg-cream/70 px-4 py-3 text-sm leading-6 text-charcoal/68">
-                  Product options are using the standard Sweet Fork menu while live catalog details
+                  Product options are using The Sweet Fork&apos;s standard menu while live catalog details
                   refresh.
                 </div>
               ) : null}
@@ -1106,7 +1157,7 @@ export function StartOrderWizard({
                 <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
                   <div className="min-w-0 space-y-3">
                     <h2 className="font-serif text-4xl tracking-[-0.04em] text-charcoal sm:text-5xl">
-                      Share the celebration details Sweet Fork needs for a tailored quote.
+                      Share the celebration details The Sweet Fork needs for a tailored quote.
                     </h2>
                     <p className="max-w-2xl text-base leading-8 text-charcoal/70">
                       Add the event details, dessert selections, inspiration, and contact
@@ -1141,7 +1192,7 @@ export function StartOrderWizard({
                   />
                 </div>
                 <p className="text-sm text-charcoal/58">
-                  Fields marked <span className="font-medium text-charcoal">Required</span> are needed for a tailored quote.
+                  Fields marked <span className="font-medium text-rose-700" aria-label="required">*</span> are needed for a tailored quote.
                 </p>
               </div>
 
@@ -1206,12 +1257,17 @@ export function StartOrderWizard({
                     ref={registerFieldRef("eventType")}
                     value={values.eventType}
                     onChange={(event) => setFieldValue("eventType", event.target.value)}
+                    onBlur={() => validateStepOnBlur(0)}
                     placeholder="Birthday, wedding, shower, launch, holiday gathering..."
                     className={getFieldErrorClass(errors.eventType)}
                     required
+                    aria-required="true"
+                    aria-describedby={
+                      errors.eventType ? getErrorDescriptionId("eventType") : undefined
+                    }
                     aria-invalid={Boolean(errors.eventType)}
                   />
-                  <InlineError message={errors.eventType} />
+                  <InlineError id={getErrorDescriptionId("eventType")} message={errors.eventType} />
                   <div className="mt-3 flex flex-wrap gap-2">
                     {eventTypeSuggestions.map((suggestion) => (
                       <SelectionButton
@@ -1236,6 +1292,7 @@ export function StartOrderWizard({
                       type="date"
                       value={values.eventDate}
                       onChange={(event) => setFieldValue("eventDate", event.target.value)}
+                      onBlur={() => validateStepOnBlur(0)}
                       onKeyDown={(event) => {
                         if ((event.key === "Enter" || event.key === " ") && "showPicker" in event.currentTarget) {
                           event.preventDefault();
@@ -1245,33 +1302,55 @@ export function StartOrderWizard({
                       min={minimumEventDate}
                       className={getFieldErrorClass(errors.eventDate)}
                       required
-                      aria-describedby="event-date-hint"
+                      aria-required="true"
+                      aria-describedby={getDescribedBy(
+                        "event-date-hint",
+                        errors.eventDate && getErrorDescriptionId("eventDate"),
+                      )}
                       aria-invalid={Boolean(errors.eventDate)}
                     />
                     <p id="event-date-hint" className="mt-2 text-sm text-charcoal/58">
-                      Choose a future date. Sweet Fork reviews inquiry timing in Mountain Time.
+                      Choose a future date. The Sweet Fork reviews inquiry timing in Mountain Time.
                     </p>
-                    <InlineError message={errors.eventDate} />
+                    <InlineError id={getErrorDescriptionId("eventDate")} message={errors.eventDate} />
                   </div>
                   <div className="min-w-0">
                     <Label htmlFor="guest-count">Guest count</Label>
                     <Input
                       id="guest-count"
                       ref={registerFieldRef("guestCount")}
+                      type="number"
                       inputMode="numeric"
+                      min={1}
+                      max={1000}
+                      step={1}
                       value={values.guestCount ?? ""}
                       onChange={(event) => setNumericValue("guestCount", event.target.value)}
+                      onBlur={() => validateStepOnBlur(0)}
                       placeholder="Approximate number of guests"
                       className={getFieldErrorClass(errors.guestCount)}
+                      aria-describedby={
+                        errors.guestCount ? getErrorDescriptionId("guestCount") : undefined
+                      }
+                      aria-invalid={Boolean(errors.guestCount)}
                     />
-                    <InlineError message={errors.guestCount} />
+                    <InlineError id={getErrorDescriptionId("guestCount")} message={errors.guestCount} />
                   </div>
                 </div>
 
                 <div className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
                   <div className="space-y-3">
-                    <FieldLabel required>Fulfillment type</FieldLabel>
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <FieldLabel id="fulfillment-type-label" required>Fulfillment type</FieldLabel>
+                    <div
+                      className="grid gap-3 sm:grid-cols-2"
+                      role="group"
+                      aria-labelledby="fulfillment-type-label"
+                      aria-describedby={
+                        errors.fulfillmentMethod
+                          ? getErrorDescriptionId("fulfillmentMethod")
+                          : undefined
+                      }
+                    >
                       <SelectionButton
                         active={values.fulfillmentMethod === "pickup"}
                         onClick={() => setFieldValue("fulfillmentMethod", "pickup")}
@@ -1285,7 +1364,10 @@ export function StartOrderWizard({
                         Delivery
                       </SelectionButton>
                     </div>
-                    <InlineError message={errors.fulfillmentMethod} />
+                    <InlineError
+                      id={getErrorDescriptionId("fulfillmentMethod")}
+                      message={errors.fulfillmentMethod}
+                    />
                   </div>
 
                   <div>
@@ -1297,6 +1379,7 @@ export function StartOrderWizard({
                       autoComplete="postal-code"
                       value={values.deliveryZip ?? ""}
                       onChange={(event) => setFieldValue("deliveryZip", event.target.value)}
+                      onBlur={() => validateStepOnBlur(0)}
                       placeholder={
                         values.fulfillmentMethod === "delivery"
                           ? "Required for delivery requests"
@@ -1305,15 +1388,25 @@ export function StartOrderWizard({
                       pattern="\\d{5}(?:-\\d{4})?"
                       maxLength={10}
                       className={getFieldErrorClass(errors.deliveryZip)}
+                      aria-describedby={
+                        errors.deliveryZip ? getErrorDescriptionId("deliveryZip") : undefined
+                      }
                       aria-invalid={Boolean(errors.deliveryZip)}
                     />
-                    <InlineError message={errors.deliveryZip} />
+                    <InlineError id={getErrorDescriptionId("deliveryZip")} message={errors.deliveryZip} />
                   </div>
                 </div>
 
                 <div>
-                  <FieldLabel required>Investment comfort range</FieldLabel>
-                  <div className="grid gap-3 md:grid-cols-2">
+                  <FieldLabel id="budget-range-label" required>Investment comfort range</FieldLabel>
+                  <div
+                    className="grid gap-3 md:grid-cols-2"
+                    role="group"
+                    aria-labelledby="budget-range-label"
+                    aria-describedby={
+                      errors.budgetRange ? getErrorDescriptionId("budgetRange") : undefined
+                    }
+                  >
                     {budgetRangeOptions.map((option, index) => (
                       <button
                         key={option.value}
@@ -1343,12 +1436,24 @@ export function StartOrderWizard({
                       </button>
                     ))}
                   </div>
-                  <InlineError message={errors.budgetRange} />
+                  <InlineError
+                    id={getErrorDescriptionId("budgetRange")}
+                    message={errors.budgetRange}
+                  />
                 </div>
 
                 <div>
-                  <FieldLabel required>Budget flexibility</FieldLabel>
-                  <div className="grid gap-3 md:grid-cols-3">
+                  <FieldLabel id="budget-flexibility-label" required>Budget flexibility</FieldLabel>
+                  <div
+                    className="grid gap-3 md:grid-cols-3"
+                    role="group"
+                    aria-labelledby="budget-flexibility-label"
+                    aria-describedby={
+                      errors.budgetFlexibility
+                        ? getErrorDescriptionId("budgetFlexibility")
+                        : undefined
+                    }
+                  >
                     {budgetFlexibilityOptions.map((option, index) => (
                       <button
                         key={option.value}
@@ -1378,7 +1483,10 @@ export function StartOrderWizard({
                       </button>
                     ))}
                   </div>
-                  <InlineError message={errors.budgetFlexibility} />
+                  <InlineError
+                    id={getErrorDescriptionId("budgetFlexibility")}
+                    message={errors.budgetFlexibility}
+                  />
                 </div>
               </div>
             ) : null}
@@ -1391,14 +1499,19 @@ export function StartOrderWizard({
                       Product mix
                     </p>
                     <p className="text-sm leading-7 text-charcoal/68">
-                      Select every sweet you want Sweet Fork to consider for this event. One
+                      Select every sweet you want The Sweet Fork to consider for this event. One
                       inquiry can cover the full dessert story.
                     </p>
                   </div>
                   <PartyPopper className="h-6 w-6 text-charcoal/45" />
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
+                <div
+                  className="grid gap-4 md:grid-cols-2"
+                  role="group"
+                  aria-label="Dessert selections"
+                  aria-describedby={errors.orderItems ? getErrorDescriptionId("orderItems") : undefined}
+                >
                   {catalog.map((product, index) => {
                     const selected = selectedItems.some(
                       (item) => item.productType === product.productType,
@@ -1464,7 +1577,7 @@ export function StartOrderWizard({
                     );
                   })}
                 </div>
-                <InlineError message={errors.orderItems} />
+                <InlineError id={getErrorDescriptionId("orderItems")} message={errors.orderItems} />
               </div>
             ) : null}
 
@@ -1522,7 +1635,7 @@ export function StartOrderWizard({
                 </div>
 
                 <div className="rounded-[1.6rem] border border-charcoal/8 bg-cream/45 px-4 py-4 text-sm leading-7 text-charcoal/66">
-                  Counts or servings marked <span className="font-medium text-charcoal">Required</span> are needed before Sweet Fork can review that item confidently.
+                  Counts or servings marked <span className="font-medium text-rose-700" aria-label="required">*</span> are needed before The Sweet Fork can review that item confidently.
                 </div>
 
                 {activeItem ? (
@@ -1557,12 +1670,17 @@ export function StartOrderWizard({
                                 registerFieldRef(itemPath(activeItem.productType, "weddingServings"))(element);
                               }
                             }}
+                            type="number"
                             inputMode="numeric"
+                            min={1}
+                            max={activeItem.productType === "wedding-cake" ? 600 : 500}
+                            step={1}
                             value={
                               activeItem.productType === "wedding-cake"
                                 ? activeItem.weddingServings ?? activeItem.servings ?? ""
                                 : activeItem.servings ?? ""
                             }
+                            onBlur={() => validateStepOnBlur(2)}
                             onChange={(event) =>
                               updateOrderItem(activeItem.productType, {
                                 servings:
@@ -1580,12 +1698,25 @@ export function StartOrderWizard({
                               })
                             }
                             placeholder="How many servings do you need?"
+                            required
+                            aria-required="true"
                             className={getFieldErrorClass(
                               errors[itemPath(activeItem.productType, "servings")],
                               errors[itemPath(activeItem.productType, "weddingServings")],
                             )}
+                            aria-describedby={
+                              errors[itemPath(activeItem.productType, "servings")] ||
+                              errors[itemPath(activeItem.productType, "weddingServings")]
+                                ? getErrorDescriptionId(itemPath(activeItem.productType, "servings"))
+                                : undefined
+                            }
+                            aria-invalid={Boolean(
+                              errors[itemPath(activeItem.productType, "servings")] ||
+                                errors[itemPath(activeItem.productType, "weddingServings")],
+                            )}
                           />
                           <InlineError
+                            id={getErrorDescriptionId(itemPath(activeItem.productType, "servings"))}
                             message={
                               errors[itemPath(activeItem.productType, "servings")] ??
                               errors[itemPath(activeItem.productType, "weddingServings")]
@@ -1597,8 +1728,13 @@ export function StartOrderWizard({
                           <Input
                             id={`${activeItem.productType}-tiers`}
                             ref={registerFieldRef(itemPath(activeItem.productType, "tiers"))}
+                            type="number"
                             inputMode="numeric"
+                            min={1}
+                            max={6}
+                            step={1}
                             value={activeItem.tiers ?? ""}
+                            onBlur={() => validateStepOnBlur(2)}
                             onChange={(event) =>
                               updateOrderItem(activeItem.productType, {
                                 tiers:
@@ -1673,8 +1809,13 @@ export function StartOrderWizard({
                         <Input
                           id="cupcake-count"
                           ref={registerFieldRef(itemPath(activeItem.productType, "cupcakeCount"))}
+                          type="number"
                           inputMode="numeric"
+                          min={12}
+                          max={500}
+                          step={1}
                           value={activeItem.cupcakeCount ?? ""}
+                          onBlur={() => validateStepOnBlur(2)}
                           onChange={(event) =>
                             updateOrderItem("cupcakes", {
                               cupcakeCount:
@@ -1684,9 +1825,20 @@ export function StartOrderWizard({
                             })
                           }
                           placeholder="24 or 48"
+                          required
+                          aria-required="true"
                           className={getFieldErrorClass(errors[itemPath(activeItem.productType, "cupcakeCount")])}
+                          aria-describedby={
+                            errors[itemPath(activeItem.productType, "cupcakeCount")]
+                              ? getErrorDescriptionId(itemPath(activeItem.productType, "cupcakeCount"))
+                              : undefined
+                          }
+                          aria-invalid={Boolean(
+                            errors[itemPath(activeItem.productType, "cupcakeCount")],
+                          )}
                         />
                         <InlineError
+                          id={getErrorDescriptionId(itemPath(activeItem.productType, "cupcakeCount"))}
                           message={errors[itemPath(activeItem.productType, "cupcakeCount")]}
                         />
                       </div>
@@ -1700,8 +1852,13 @@ export function StartOrderWizard({
                         <Input
                           id="cookie-count"
                           ref={registerFieldRef(itemPath(activeItem.productType, "cookieCount"))}
+                          type="number"
                           inputMode="numeric"
+                          min={12}
+                          max={500}
+                          step={1}
                           value={activeItem.cookieCount ?? ""}
+                          onBlur={() => validateStepOnBlur(2)}
                           onChange={(event) =>
                             updateOrderItem("sugar-cookies", {
                               cookieCount:
@@ -1711,9 +1868,20 @@ export function StartOrderWizard({
                             })
                           }
                           placeholder="24 or 48"
+                          required
+                          aria-required="true"
                           className={getFieldErrorClass(errors[itemPath(activeItem.productType, "cookieCount")])}
+                          aria-describedby={
+                            errors[itemPath(activeItem.productType, "cookieCount")]
+                              ? getErrorDescriptionId(itemPath(activeItem.productType, "cookieCount"))
+                              : undefined
+                          }
+                          aria-invalid={Boolean(
+                            errors[itemPath(activeItem.productType, "cookieCount")],
+                          )}
                         />
                         <InlineError
+                          id={getErrorDescriptionId(itemPath(activeItem.productType, "cookieCount"))}
                           message={errors[itemPath(activeItem.productType, "cookieCount")]}
                         />
                       </div>
@@ -1727,8 +1895,13 @@ export function StartOrderWizard({
                         <Input
                           id="macaron-count"
                           ref={registerFieldRef(itemPath(activeItem.productType, "macaronCount"))}
+                          type="number"
                           inputMode="numeric"
+                          min={12}
+                          max={500}
+                          step={1}
                           value={activeItem.macaronCount ?? ""}
+                          onBlur={() => validateStepOnBlur(2)}
                           onChange={(event) =>
                             updateOrderItem("macarons", {
                               macaronCount:
@@ -1738,9 +1911,20 @@ export function StartOrderWizard({
                             })
                           }
                           placeholder="24 or 48"
+                          required
+                          aria-required="true"
                           className={getFieldErrorClass(errors[itemPath(activeItem.productType, "macaronCount")])}
+                          aria-describedby={
+                            errors[itemPath(activeItem.productType, "macaronCount")]
+                              ? getErrorDescriptionId(itemPath(activeItem.productType, "macaronCount"))
+                              : undefined
+                          }
+                          aria-invalid={Boolean(
+                            errors[itemPath(activeItem.productType, "macaronCount")],
+                          )}
                         />
                         <InlineError
+                          id={getErrorDescriptionId(itemPath(activeItem.productType, "macaronCount"))}
                           message={errors[itemPath(activeItem.productType, "macaronCount")]}
                         />
                       </div>
@@ -1754,8 +1938,13 @@ export function StartOrderWizard({
                         <Input
                           id="kit-count"
                           ref={registerFieldRef(itemPath(activeItem.productType, "kitCount"))}
+                          type="number"
                           inputMode="numeric"
+                          min={1}
+                          max={40}
+                          step={1}
                           value={activeItem.kitCount ?? ""}
+                          onBlur={() => validateStepOnBlur(2)}
                           onChange={(event) =>
                             updateOrderItem("diy-kit", {
                               kitCount:
@@ -1765,9 +1954,20 @@ export function StartOrderWizard({
                             })
                           }
                           placeholder="How many kits do you need?"
+                          required
+                          aria-required="true"
                           className={getFieldErrorClass(errors[itemPath(activeItem.productType, "kitCount")])}
+                          aria-describedby={
+                            errors[itemPath(activeItem.productType, "kitCount")]
+                              ? getErrorDescriptionId(itemPath(activeItem.productType, "kitCount"))
+                              : undefined
+                          }
+                          aria-invalid={Boolean(
+                            errors[itemPath(activeItem.productType, "kitCount")],
+                          )}
                         />
                         <InlineError
+                          id={getErrorDescriptionId(itemPath(activeItem.productType, "kitCount"))}
                           message={errors[itemPath(activeItem.productType, "kitCount")]}
                         />
                       </div>
@@ -1911,6 +2111,8 @@ export function StartOrderWizard({
                     <label
                       ref={registerFieldRef("inspirationUploads")}
                       tabIndex={featureFlags.uploadsEnabled ? 0 : -1}
+                      onDragOver={handleInspirationDragOver}
+                      onDrop={handleInspirationDrop}
                       onKeyDown={(event) => {
                         if (!featureFlags.uploadsEnabled) {
                           return;
@@ -1943,7 +2145,7 @@ export function StartOrderWizard({
                         <input
                           ref={fileInputRef}
                           type="file"
-                          accept="image/*"
+                          accept={SUPPORTED_INSPIRATION_IMAGE_ACCEPT}
                           multiple
                           className="sr-only"
                           onChange={(event) => addInspirationFiles(event.target.files)}
@@ -1994,13 +2196,21 @@ export function StartOrderWizard({
                           {values.inspirationLinks.map((link, index) => (
                             <div key={`inspiration-link-${index}`} className="flex gap-3">
                               <Input
+                                id={`inspiration-link-${index}`}
                                 ref={index === 0 ? registerFieldRef("inspirationLinks") : undefined}
                                 value={link}
                                 onChange={(event) =>
                                   setInspirationLink(index, event.target.value)
                                 }
+                                onBlur={() => validateStepOnBlur(3)}
                                 placeholder="Pinterest board, Instagram post, venue gallery..."
                                 className={getFieldErrorClass(errors.inspirationLinks)}
+                                aria-describedby={
+                                  errors.inspirationLinks
+                                    ? getErrorDescriptionId("inspirationLinks")
+                                    : undefined
+                                }
+                                aria-invalid={Boolean(errors.inspirationLinks)}
                               />
                               <button
                               type="button"
@@ -2026,7 +2236,10 @@ export function StartOrderWizard({
                           current options.
                         </p>
                       )}
-                      <InlineError message={errors.inspirationLinks} />
+                      <InlineError
+                        id={getErrorDescriptionId("inspirationLinks")}
+                        message={errors.inspirationLinks}
+                      />
                     </div>
 
                     <div>
@@ -2043,8 +2256,17 @@ export function StartOrderWizard({
                           "min-h-[180px]",
                           getFieldErrorClass(errors.inspirationText),
                         )}
+                        aria-describedby={
+                          errors.inspirationText
+                            ? getErrorDescriptionId("inspirationText")
+                            : undefined
+                        }
+                        aria-invalid={Boolean(errors.inspirationText)}
                       />
-                      <InlineError message={errors.inspirationText} />
+                      <InlineError
+                        id={getErrorDescriptionId("inspirationText")}
+                        message={errors.inspirationText}
+                      />
                     </div>
                   </div>
                 </div>
@@ -2076,13 +2298,18 @@ export function StartOrderWizard({
                       ref={registerFieldRef("customerName")}
                       value={values.customerName}
                       onChange={(event) => setFieldValue("customerName", event.target.value)}
+                      onBlur={() => validateStepOnBlur(4)}
                       placeholder="Full name"
                       className={getFieldErrorClass(errors.customerName)}
                       autoComplete="name"
                       required
+                      aria-required="true"
+                      aria-describedby={
+                        errors.customerName ? getErrorDescriptionId("customerName") : undefined
+                      }
                       aria-invalid={Boolean(errors.customerName)}
                     />
-                    <InlineError message={errors.customerName} />
+                    <InlineError id={getErrorDescriptionId("customerName")} message={errors.customerName} />
                   </div>
                   <div>
                     <FieldLabel htmlFor="customer-email" required>
@@ -2094,13 +2321,18 @@ export function StartOrderWizard({
                       type="email"
                       value={values.customerEmail}
                       onChange={(event) => setFieldValue("customerEmail", event.target.value)}
+                      onBlur={() => validateStepOnBlur(4)}
                       placeholder="hello@yourmail.com"
                       className={getFieldErrorClass(errors.customerEmail)}
                       autoComplete="email"
                       required
+                      aria-required="true"
+                      aria-describedby={
+                        errors.customerEmail ? getErrorDescriptionId("customerEmail") : undefined
+                      }
                       aria-invalid={Boolean(errors.customerEmail)}
                     />
-                    <InlineError message={errors.customerEmail} />
+                    <InlineError id={getErrorDescriptionId("customerEmail")} message={errors.customerEmail} />
                   </div>
                   <div>
                     <FieldLabel htmlFor="customer-phone" required>
@@ -2112,14 +2344,19 @@ export function StartOrderWizard({
                       type="tel"
                       value={values.customerPhone}
                       onChange={(event) => setFieldValue("customerPhone", event.target.value)}
+                      onBlur={() => validateStepOnBlur(4)}
                       placeholder="(555) 555-5555"
                       className={getFieldErrorClass(errors.customerPhone)}
                       autoComplete="tel"
                       inputMode="tel"
                       required
+                      aria-required="true"
+                      aria-describedby={
+                        errors.customerPhone ? getErrorDescriptionId("customerPhone") : undefined
+                      }
                       aria-invalid={Boolean(errors.customerPhone)}
                     />
-                    <InlineError message={errors.customerPhone} />
+                    <InlineError id={getErrorDescriptionId("customerPhone")} message={errors.customerPhone} />
                   </div>
                   <div>
                     <Label htmlFor="instagram-handle">Instagram handle</Label>
@@ -2138,8 +2375,17 @@ export function StartOrderWizard({
 
                 <div className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
                   <div>
-                    <FieldLabel required>Preferred contact method</FieldLabel>
-                    <div className="grid gap-3 sm:grid-cols-3">
+                    <FieldLabel id="preferred-contact-label" required>Preferred contact method</FieldLabel>
+                    <div
+                      className="grid gap-3 sm:grid-cols-3"
+                      role="group"
+                      aria-labelledby="preferred-contact-label"
+                      aria-describedby={
+                        errors.preferredContact
+                          ? getErrorDescriptionId("preferredContact")
+                          : undefined
+                      }
+                    >
                       {(["email", "text", "phone"] as const).map((option, index) => (
                         <SelectionButton
                           key={option}
@@ -2158,7 +2404,10 @@ export function StartOrderWizard({
                         </SelectionButton>
                       ))}
                     </div>
-                    <InlineError message={errors.preferredContact} />
+                    <InlineError
+                      id={getErrorDescriptionId("preferredContact")}
+                      message={errors.preferredContact}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="how-heard">How did you hear about The Sweet Fork?</Label>
@@ -2382,7 +2631,7 @@ export function StartOrderWizard({
               <Sparkles className="h-5 w-5 text-charcoal/40" />
             </div>
             <div className="mt-5 space-y-3 text-sm leading-7 text-charcoal/66">
-              <p>1. Sweet Fork reviews the event details, selected desserts, and inspiration.</p>
+              <p>1. The Sweet Fork reviews the event details, selected desserts, and inspiration.</p>
               <p>2. A quote and next-step details are usually sent within 24 to 48 hours.</p>
               <p>3. If everything looks right, a deposit secures the date on the calendar.</p>
             </div>

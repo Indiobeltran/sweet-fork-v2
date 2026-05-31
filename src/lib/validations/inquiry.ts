@@ -15,6 +15,19 @@ const htmlTagPattern = /<[^>]*>/g;
 const instagramHandlePattern = /^@?[a-z0-9._]{1,30}$/i;
 const instagramUrlPattern =
   /^https?:\/\/(?:www\.)?instagram\.com\/([a-z0-9._]{1,30})(?:[/?#].*)?$/i;
+const publicUrlSchema = z
+  .string()
+  .trim()
+  .max(2048, "Keep inspiration links under 2,048 characters.")
+  .url("Enter a valid inspiration link.")
+  .refine((value) => {
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" || url.protocol === "http:";
+    } catch {
+      return false;
+    }
+  }, "Use a public http or https inspiration link.");
 const zipCodePattern = /^\d{5}(?:-\d{4})?$/;
 const supportedImageMimeTypes = new Set([
   "image/avif",
@@ -307,7 +320,7 @@ export const inquiryItemDetailsSchema = z.object({
 
 export const inquiryInspirationSchema = z.object({
   colorPalette: trimmedOptionalString(160),
-  inspirationLinks: z.array(z.string().trim().url("Enter a valid inspiration link.")).max(6),
+  inspirationLinks: z.array(publicUrlSchema).max(6),
   inspirationText: trimmedOptionalString(1200),
 });
 
