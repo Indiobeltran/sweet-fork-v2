@@ -59,6 +59,10 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     qualities: [75, 82],
     minimumCacheTTL: 60 * 60 * 24 * 14,
+    contentDispositionType: "inline",
+    dangerouslyAllowSVG: false,
+    deviceSizes: [360, 414, 640, 768, 1024, 1280, 1536],
+    imageSizes: [32, 64, 96, 128, 256, 384],
     remotePatterns: [
       {
         protocol: "https",
