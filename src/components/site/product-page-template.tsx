@@ -4,6 +4,8 @@ import { InquiryCta } from "@/components/site/inquiry-cta";
 import { SectionHeading } from "@/components/site/section-heading";
 import { SitePrimaryCta } from "@/components/site/site-primary-cta";
 import { StickyProductCta } from "@/components/site/sticky-product-cta";
+import { getPublicEnv } from "@/lib/env";
+import { siteConfig } from "@/lib/content/site-content";
 import { getInquiryCtaBySlug } from "@/lib/site/cta";
 import type { ProductPageContent } from "@/types/domain";
 
@@ -13,16 +15,50 @@ type ProductPageTemplateProps = {
 
 export function ProductPageTemplate({ content }: ProductPageTemplateProps) {
   const cta = getInquiryCtaBySlug(content.slug);
+  const { siteUrl } = getPublicEnv();
+  const pageUrl = new URL(`/${content.slug}`, siteUrl).toString();
+  const serviceJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: `${content.shortTitle} by ${siteConfig.name}`,
+    description: content.intro,
+    areaServed: [
+      "Centerville",
+      "Davis County",
+      "Salt Lake County",
+      "Weber County",
+      "Northern Utah",
+    ],
+    image: new URL(content.heroImage.src, siteUrl).toString(),
+    provider: {
+      "@type": "Bakery",
+      name: siteConfig.name,
+      url: siteUrl,
+      telephone: siteConfig.phone,
+      email: siteConfig.email,
+      address: {
+        "@type": "PostalAddress",
+        addressCountry: "US",
+        addressLocality: "Centerville",
+        addressRegion: "UT",
+      },
+    },
+    url: pageUrl,
+  };
 
   return (
     <div className="pb-24 md:pb-0">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
+      />
       <section className="relative overflow-hidden border-b border-charcoal/8 bg-paper">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/35 to-transparent" />
-        <div className="section-shell grid gap-12 py-14 md:py-18 lg:grid-cols-[1.08fr_0.92fr] lg:items-end lg:gap-16">
+        <div className="section-shell grid gap-9 py-10 sm:py-12 md:py-18 lg:grid-cols-[1.08fr_0.92fr] lg:items-end lg:gap-16">
           <div className="space-y-6 section-reveal">
             <p className="eyebrow-label">{content.eyebrow}</p>
             <div className="space-y-5">
-              <h1 className="max-w-4xl text-balance font-serif text-5xl leading-[0.92] tracking-[-0.05em] text-charcoal sm:text-6xl lg:text-7xl">
+              <h1 className="max-w-4xl text-balance font-serif text-4xl leading-[0.96] tracking-[-0.035em] text-charcoal sm:text-5xl lg:text-7xl lg:tracking-[-0.05em]">
                 {content.title}
               </h1>
               <p className="max-w-2xl text-base leading-8 text-charcoal/72 sm:text-lg">

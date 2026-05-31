@@ -12,7 +12,7 @@ const socialImageSize = {
 
 const routeTitleOverrides: Record<string, string> = {
   "/about": "About The Sweet Fork",
-  "/faq": "Sweet Fork FAQ",
+  "/faq": "The Sweet Fork FAQ",
   "/gallery": "Cake & Dessert Gallery",
   "/how-to-order": "How To Order",
   "/pricing": "Custom Cake Pricing Guide",
@@ -79,6 +79,9 @@ export async function buildRootMetadata(): Promise<Metadata> {
 
   return {
     metadataBase: new URL(siteUrl),
+    applicationName: seo.siteName,
+    creator: seo.siteName,
+    publisher: seo.siteName,
     title: {
       default: `${seo.siteName} | Custom Cakes & Desserts | Centerville, Utah`,
       template: `%s | ${seo.titleSuffix}`,
@@ -118,6 +121,11 @@ export async function buildRootMetadata(): Promise<Metadata> {
       icon: [{ type: "image/jpeg", url: "/brand/favicon.jpg" }],
       apple: [{ type: "image/jpeg", url: "/brand/favicon.jpg" }],
     },
+    formatDetection: {
+      address: false,
+      email: false,
+      telephone: false,
+    },
   };
 }
 
@@ -142,6 +150,9 @@ export async function buildMetadata({
 
   return {
     metadataBase: new URL(siteUrl),
+    applicationName: seo.siteName,
+    creator: seo.siteName,
+    publisher: seo.siteName,
     title: resolvedTitle,
     category: "food",
     description: resolvedDescription,
@@ -161,6 +172,11 @@ export async function buildMetadata({
       title: `${resolvedTitle} | ${seo.titleSuffix}`,
       description: resolvedDescription,
       images: [resolvedImage.url],
+    },
+    formatDetection: {
+      address: false,
+      email: false,
+      telephone: false,
     },
   };
 }

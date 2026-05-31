@@ -12,7 +12,7 @@ type InquiryCtaProps = {
 export function InquiryCta({
   slug,
   eyebrow = "Limited availability",
-  title = "Reserve a place on the Sweet Fork calendar before your date fills.",
+  title = "Reserve a place on The Sweet Fork calendar before your date fills.",
   description = "Share the event details, dessert needs, and overall design direction in one guided inquiry. Most replies are sent within 24 to 48 hours with quote-ready next steps.",
   urgencyNote = "Dates around weddings, holidays, and peak weekends tend to book first.",
 }: InquiryCtaProps) {

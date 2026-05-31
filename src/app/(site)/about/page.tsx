@@ -40,8 +40,8 @@ export default async function AboutPage() {
         </div>
       </section>
       <InquiryCta
-        title="If the Sweet Fork style feels like the right fit, the next step is easy."
-        description="Submit the inquiry with your date, dessert needs, and design direction, and Sweet Fork will guide the rest from there."
+        title="If The Sweet Fork style feels like the right fit, the next step is easy."
+        description="Submit the inquiry with your date, dessert needs, and design direction, and The Sweet Fork will guide the rest from there."
       />
     </div>
   );

@@ -222,7 +222,7 @@ export default async function HomePage() {
       <section className="section-shell py-16 md:py-20">
         <SectionHeading
           eyebrow="Client notes"
-          title="Kind words from Sweet Fork celebrations."
+          title="Kind words from The Sweet Fork celebrations."
           description="A few of the comments that capture the blend of taste, finish, and hospitality clients remember."
         />
         <div className="mt-10 grid gap-5 lg:grid-cols-3">

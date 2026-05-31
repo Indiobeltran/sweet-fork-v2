@@ -22,7 +22,7 @@ export default async function PricingPage() {
       <PublicPageHero
         eyebrow="Pricing"
         title="A clear starting-point investment guide for custom cakes and desserts."
-        description="Every Sweet Fork order is quoted individually, but these starting prices help set expectations before you submit an inquiry."
+        description="Every order from The Sweet Fork is quoted individually, but these starting prices help set expectations before you submit an inquiry."
         accent="Public pricing stays intentionally high level so the final quote can reflect your real guest count, finish, and service needs."
         cta={defaultCta}
       />
@@ -126,7 +126,7 @@ export default async function PricingPage() {
 
       <InquiryCta
         title="Ready for a quote tailored to your event?"
-        description="The inquiry form is the fastest way to share the details Sweet Fork needs to confirm fit, timing, and next steps."
+        description="The inquiry form is the fastest way to share the details The Sweet Fork needs to confirm fit, timing, and next steps."
       />
     </div>
   );

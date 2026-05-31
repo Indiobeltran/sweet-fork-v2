@@ -37,14 +37,14 @@ export default function HowToOrderPage() {
               {item.step === "01"
                 ? "Event type, date, dessert needs, pickup or delivery, and inspiration if you have it"
                 : item.step === "02"
-                  ? "Quote, timing confirmation, and the next details Sweet Fork needs to move forward"
+                  ? "Quote, timing confirmation, and the next details The Sweet Fork needs to move forward"
                   : "Deposit to secure the date, then final planning before pickup or delivery"}
             </p>
           </article>
         ))}
       </section>
       <InquiryCta
-        title="Ready to begin with the details Sweet Fork needs most?"
+        title="Ready to begin with the details The Sweet Fork needs most?"
         description="The inquiry form keeps the process efficient without losing the custom guidance that makes a boutique order feel personal."
       />
     </div>

@@ -235,10 +235,10 @@ export const productPageContent: Record<string, ProductPageContent> = {
     eyebrow: "DIY decoration kits",
     intro:
       "These all-inclusive kits are designed for family nights, classroom treats, party activities, and giftable sweet moments that still feel beautifully put together.",
-    heroStatement: "An easy way to bring the Sweet Fork aesthetic into birthdays, holidays, and group activities.",
+    heroStatement: "An easy way to bring The Sweet Fork aesthetic into birthdays, holidays, and group activities.",
     heroImage: {
       src: "/placeholders/marketing/diy-kit.jpg",
-      alt: "Sweet Fork DIY decorating kit arranged with cookies, frosting, and sprinkles",
+      alt: "The Sweet Fork DIY decorating kit arranged with cookies, frosting, and sprinkles",
     },
     startingPriceLabel: "$25+",
     pricingNote: "DIY kits begin at $25 each.",

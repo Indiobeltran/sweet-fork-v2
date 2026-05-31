@@ -17,7 +17,7 @@ export default function TermsPage() {
       <PublicPageHero
         eyebrow="Terms"
         title="Policies, lead times, and order terms."
-        description="These terms summarize ordering, payment, pickup, delivery, allergen, and design expectations for Sweet Fork custom orders."
+        description="These terms summarize ordering, payment, pickup, delivery, allergen, and design expectations for The Sweet Fork custom orders."
       />
       <section className="section-shell space-y-8 py-16 md:py-20">
         {termsSections.map((section) => (

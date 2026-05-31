@@ -37,7 +37,7 @@ export default async function FaqPage() {
         eyebrow="FAQ"
         title="Answers to the questions clients ask before they inquire."
         description="These are the details that most often help with timing, customization, pricing expectations, pickup, and delivery before a quote is requested."
-        accent="If anything still feels open-ended, include it in the inquiry and Sweet Fork will address it in the first reply."
+        accent="If anything still feels open-ended, include it in the inquiry and The Sweet Fork will address it in the first reply."
         cta={defaultCta}
       />
       <section className="section-shell space-y-4 py-16 md:py-20">

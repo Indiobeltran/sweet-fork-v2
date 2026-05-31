@@ -23,7 +23,7 @@ export default async function GalleryPage() {
       <PublicPageHero
         eyebrow="Gallery"
         title="A curated look at cakes and desserts created for recent celebrations."
-        description="Browse Sweet Fork work across birthdays, weddings, showers, gifting moments, and dessert tables without losing the calm, editorial feel of the brand."
+        description="Browse The Sweet Fork work across birthdays, weddings, showers, gifting moments, and dessert tables without losing the calm, editorial feel of the brand."
         accent="Based in Centerville and serving celebrations across Davis, Salt Lake, and nearby Weber County communities."
         cta={defaultCta}
       />
@@ -32,7 +32,7 @@ export default async function GalleryPage() {
       </section>
       <InquiryCta
         title="Have a direction in mind after browsing?"
-        description="Share the event details, product mix, and inspiration that feels closest to your celebration, and Sweet Fork will take it from there."
+        description="Share the event details, product mix, and inspiration that feels closest to your celebration, and The Sweet Fork will take it from there."
       />
     </div>
   );
