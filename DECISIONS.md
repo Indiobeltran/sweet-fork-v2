@@ -2,6 +2,57 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
+## 2026-05-31 - Safe Route Match for Home Route (/admin)
+
+### Status
+
+Accepted
+
+### Context
+
+Adding `/admin` as the dashboard route caused the helper `isAdminHrefActive` to incorrectly match it for all `/admin/*` subroutes since they start with `/admin/`. This broke the shell active route indicators and titles.
+
+### Options Considered
+
+- Sort the match routing list by specificity descending.
+- Update the helper `isAdminHrefActive` to only match `/admin` exactly when `href === "/admin"`.
+
+### Decision
+
+Modified the `isAdminHrefActive` helper in `src/lib/admin/navigation.ts` to return `pathname === "/admin"` when `href === "/admin"`.
+
+### Consequences
+
+- Highlights the active navigation tab correctly across all sub-pages under the admin panel (Dashboard, Inquiries, Orders, etc.).
+- Keeps all other sub-route matches completely intact and robust.
+- Compiles, typechecks, and builds successfully.
+
+## 2026-05-31 - Implement Owner-Friendly Admin Dashboard (Phase 2)
+
+### Status
+
+Accepted
+
+### Context
+
+The Sweet Fork bakery owner is non-technical and needs to quickly understand what needs attention from a beautiful, calm dashboard instead of immediately land on a dense list of inquiries.
+
+### Options Considered
+
+- Continue redirecting `/admin` to `/admin/inquiries` directly.
+- Build a generic analytics hub with charts and high-level summaries.
+- Build a premium, mobile-first, and owner-friendly summary dashboard of active inquiries, upcoming event orders, and prominent operational quick actions.
+
+### Decision
+
+Adopted a luxurious, editorial dashboard using existing data-access helpers. The dashboard compiles active and archived counts, shows the most immediate items needing follow-up, and presents four beautiful quick action buttons for daily bakery workflows.
+
+### Consequences
+
+- Dramatically improves the administrative dashboard ease of use, landing on a clear, premium workspace.
+- Safely uses existing read-only data fetching helpers, presenting zero database write or security header risks.
+- Maintains full authentication protection, seamlessly redirecting unauthenticated staff to `/admin/login`.
+
 ## 2026-05-31 - Adopt shared agent operating docs
 
 ### Status
