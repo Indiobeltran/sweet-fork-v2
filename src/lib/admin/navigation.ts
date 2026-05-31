@@ -85,6 +85,9 @@ const DETAIL_ROUTE_META = [
 ];
 
 export function isAdminHrefActive(pathname: string, href: string) {
+  if (href === "/admin") {
+    return pathname === "/admin";
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
