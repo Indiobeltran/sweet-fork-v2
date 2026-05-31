@@ -230,8 +230,8 @@ export default async function AdminInquiryDetailPage({
   const redirectTo = `/admin/inquiries/${detail.id}`;
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-3">
           <Link
             href="/admin/inquiries"
@@ -257,10 +257,13 @@ export default async function AdminInquiryDetailPage({
               {detail.event.eventType} on {formatDate(detail.event.eventDate)} via{" "}
               {detail.event.fulfillmentMethod === "delivery" ? "delivery" : "pickup"}
             </p>
+            <p className="mt-1 text-sm font-medium text-charcoal/70">
+              {detail.items.length} {detail.items.length === 1 ? "item" : "items"} requested
+            </p>
           </div>
         </div>
 
-        <div className="rounded-[1.55rem] border border-charcoal/10 bg-white/88 px-4 py-3 shadow-soft">
+        <div className="shrink-0 rounded-[1.55rem] border border-charcoal/10 bg-white/88 px-4 py-3 shadow-soft">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
             Submitted
           </p>
@@ -275,8 +278,124 @@ export default async function AdminInquiryDetailPage({
 
       <NoticeBanner notice={notice} />
 
+      <SectionCard title="Triage actions">
+        <div className="mb-5 flex flex-wrap items-center gap-3">
+          {detail.contact.customerPhone ? (
+            <a
+              href={`tel:${detail.contact.customerPhone.replace(/\D/g, "")}`}
+              className="inline-flex h-11 items-center justify-center rounded-full border border-charcoal/15 bg-white px-5 text-sm font-medium text-charcoal transition hover:bg-charcoal/5"
+            >
+              Call
+            </a>
+          ) : null}
+          {detail.contact.customerEmail ? (
+            <a
+              href={`mailto:${detail.contact.customerEmail}`}
+              className="inline-flex h-11 items-center justify-center rounded-full border border-charcoal/15 bg-white px-5 text-sm font-medium text-charcoal transition hover:bg-charcoal/5"
+            >
+              Email
+            </a>
+          ) : null}
+          <a
+            href="#convert-to-order"
+            className="inline-flex h-11 items-center justify-center rounded-full bg-charcoal px-5 text-sm font-medium text-ivory transition hover:bg-charcoal/90"
+          >
+            Convert to order ↓
+          </a>
+        </div>
+
+        <form
+          action={updateInquiryStatus}
+          className="flex flex-col gap-3 rounded-[1.4rem] border border-charcoal/8 bg-ivory/70 p-4 sm:flex-row sm:items-end"
+        >
+          <input type="hidden" name="inquiryId" value={detail.id} />
+          <input type="hidden" name="redirectTo" value={redirectTo} />
+
+          <div className="flex-1">
+            <Label htmlFor="status">Inquiry status</Label>
+            <Select id="status" name="status" defaultValue={detail.status}>
+              <option value="new">New</option>
+              <option value="reviewing">Reviewing</option>
+              <option value="quoted">Quoted</option>
+              <option value="approved">Approved</option>
+              <option value="declined">Declined</option>
+              <option value="archived">Archived</option>
+            </Select>
+          </div>
+
+          <Button
+            type="submit"
+            variant="secondary"
+            className="w-full border-charcoal/15 bg-white text-charcoal hover:bg-charcoal/5 sm:w-auto"
+          >
+            Save status
+          </Button>
+        </form>
+      </SectionCard>
+
+      <SectionCard title="Internal notes">
+        <form action={addInquiryNote} className="space-y-4">
+          <input type="hidden" name="inquiryId" value={detail.id} />
+          <input type="hidden" name="redirectTo" value={redirectTo} />
+
+          <div>
+            <Label htmlFor="noteBody" className="sr-only">
+              Add a note
+            </Label>
+            <Textarea
+              id="noteBody"
+              name="noteBody"
+              placeholder="Capture follow-up details, quote context, availability checks, or anything the next review pass should know."
+              required
+            />
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <label className="flex items-center gap-3 rounded-[1.4rem] border border-charcoal/10 bg-ivory/70 px-4 py-3 text-sm text-charcoal/72">
+              <input
+                type="checkbox"
+                name="isPinned"
+                className="h-4 w-4 rounded border border-charcoal/20"
+              />
+              Pin this note near the top
+            </label>
+            <Button type="submit" className="w-full sm:w-auto">
+              Save note
+            </Button>
+          </div>
+        </form>
+
+        <div className="mt-5 space-y-3">
+          {detail.notes.length > 0 ? (
+            detail.notes.map((note) => (
+              <article
+                key={note.id}
+                className="rounded-[1.5rem] border border-charcoal/10 bg-white/82 p-4"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  {note.isPinned ? (
+                    <Badge className="border-gold/25 bg-gold/10 text-charcoal/80">
+                      Pinned
+                    </Badge>
+                  ) : null}
+                  <span className="text-sm font-medium text-charcoal">{note.authorLabel}</span>
+                  <span className="text-sm text-charcoal/52">
+                    {formatDateTime(note.createdAt)}
+                  </span>
+                </div>
+                <p className="mt-3 text-sm leading-8 text-charcoal/72">{note.noteBody}</p>
+              </article>
+            ))
+          ) : (
+            <p className="text-sm leading-7 text-charcoal/62">
+              No internal notes yet. Add one to capture follow-up context for the next pass.
+            </p>
+          )}
+        </div>
+      </SectionCard>
+
       <div className="grid gap-6 xl:grid-cols-[1.18fr_0.82fr]">
-        <div className="space-y-4">
+        <div className="space-y-6">
           <SectionCard title="Event details">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
@@ -414,7 +533,8 @@ export default async function AdminInquiryDetailPage({
               ))}
             </div>
           </SectionCard>
-
+        </div>
+        <div className="space-y-6">
           {detail.assets.length > 0 ? (
             <SectionCard title="Inspiration and uploads">
               <div className="grid gap-4 md:grid-cols-2">
@@ -424,9 +544,7 @@ export default async function AdminInquiryDetailPage({
               </div>
             </SectionCard>
           ) : null}
-        </div>
 
-        <div className="space-y-4">
           <SectionCard title="Estimate insight">
             <div className="space-y-4">
               <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
@@ -478,122 +596,8 @@ export default async function AdminInquiryDetailPage({
             </div>
           </SectionCard>
 
-          <SectionCard title="Status and reference">
-            <form action={updateInquiryStatus} className="space-y-4">
-              <input type="hidden" name="inquiryId" value={detail.id} />
-              <input type="hidden" name="redirectTo" value={redirectTo} />
-
-              <div>
-                <Label htmlFor="status">Inquiry status</Label>
-                <Select id="status" name="status" defaultValue={detail.status}>
-                  <option value="new">New</option>
-                  <option value="reviewing">Reviewing</option>
-                  <option value="quoted">Quoted</option>
-                  <option value="approved">Approved</option>
-                  <option value="declined">Declined</option>
-                  <option value="archived">Archived</option>
-                </Select>
-              </div>
-
-              <Button type="submit" className="w-full">
-                Save status
-              </Button>
-            </form>
-
-            <div className="mt-5 rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
-              {detail.timestamps.map((item) => (
-                <DetailRow
-                  key={item.label}
-                  label={item.label}
-                  value={formatDateTime(item.value)}
-                />
-              ))}
-              <DetailRow label="Reference code" value={detail.referenceCode} />
-              <DetailRow label="Source" value={toTitleCase(detail.sourceChannel)} />
-            </div>
-
-            <div className="mt-5 rounded-[1.6rem] border border-rose/20 bg-rose/5 p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                Delete inquiry
-              </p>
-              <p className="mt-3 text-sm leading-7 text-charcoal/68">
-                This permanently removes the inquiry, notes, uploads, and request details from the
-                desk. Any linked order record stays intact but becomes unlinked from this inquiry.
-              </p>
-              <form action={deleteInquiry} className="mt-4">
-                <input type="hidden" name="inquiryId" value={detail.id} />
-                <input type="hidden" name="redirectTo" value="/admin/inquiries" />
-                <ConfirmSubmitButton
-                  type="submit"
-                  variant="secondary"
-                  className="w-full border-rose/30 bg-white text-rose-700 hover:border-rose/45 hover:bg-rose/10 sm:w-auto"
-                  confirmMessage="Delete this inquiry permanently? This cannot be undone."
-                >
-                  Delete inquiry
-                </ConfirmSubmitButton>
-              </form>
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Internal notes">
-            <form action={addInquiryNote} className="space-y-4">
-              <input type="hidden" name="inquiryId" value={detail.id} />
-              <input type="hidden" name="redirectTo" value={redirectTo} />
-
-              <div>
-                <Label htmlFor="noteBody">Add a note</Label>
-                <Textarea
-                  id="noteBody"
-                  name="noteBody"
-                  placeholder="Capture follow-up details, quote context, availability checks, or anything the next review pass should know."
-                  required
-                />
-              </div>
-
-              <label className="flex items-center gap-3 rounded-[1.4rem] border border-charcoal/10 bg-ivory/70 px-4 py-3 text-sm text-charcoal/72">
-                <input
-                  type="checkbox"
-                  name="isPinned"
-                  className="h-4 w-4 rounded border border-charcoal/20"
-                />
-                Pin this note near the top
-              </label>
-
-              <Button type="submit" className="w-full">
-                Save note
-              </Button>
-            </form>
-
-            <div className="mt-5 space-y-3">
-              {detail.notes.length > 0 ? (
-                detail.notes.map((note) => (
-                  <article
-                    key={note.id}
-                    className="rounded-[1.5rem] border border-charcoal/10 bg-white/82 p-4"
-                  >
-                    <div className="flex flex-wrap items-center gap-2">
-                      {note.isPinned ? (
-                        <Badge className="border-gold/25 bg-gold/10 text-charcoal/80">
-                          Pinned
-                        </Badge>
-                      ) : null}
-                      <span className="text-sm font-medium text-charcoal">{note.authorLabel}</span>
-                      <span className="text-sm text-charcoal/52">
-                        {formatDateTime(note.createdAt)}
-                      </span>
-                    </div>
-                    <p className="mt-3 text-sm leading-8 text-charcoal/72">{note.noteBody}</p>
-                  </article>
-                ))
-              ) : (
-                <p className="text-sm leading-7 text-charcoal/62">
-                  No internal notes yet. Add one to capture follow-up context for the next pass.
-                </p>
-              )}
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Convert to order">
+          <div id="convert-to-order" className="scroll-mt-6">
+            <SectionCard title="Convert to order">
             {conversion?.existingOrder ? (
               <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
                 <div className="flex flex-wrap items-center gap-2">
@@ -779,6 +783,43 @@ export default async function AdminInquiryDetailPage({
                 </Button>
               </form>
             )}
+          </SectionCard>
+          </div>
+
+          <SectionCard title="Archive and reference">
+            <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
+              {detail.timestamps.map((item) => (
+                <DetailRow
+                  key={item.label}
+                  label={item.label}
+                  value={formatDateTime(item.value)}
+                />
+              ))}
+              <DetailRow label="Reference code" value={detail.referenceCode} />
+              <DetailRow label="Source" value={toTitleCase(detail.sourceChannel)} />
+            </div>
+
+            <div className="mt-5 rounded-[1.6rem] border border-rose/20 bg-rose/5 p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+                Delete inquiry
+              </p>
+              <p className="mt-3 text-sm leading-7 text-charcoal/68">
+                This permanently removes the inquiry, notes, uploads, and request details from the
+                desk. Any linked order record stays intact but becomes unlinked from this inquiry.
+              </p>
+              <form action={deleteInquiry} className="mt-4">
+                <input type="hidden" name="inquiryId" value={detail.id} />
+                <input type="hidden" name="redirectTo" value="/admin/inquiries" />
+                <ConfirmSubmitButton
+                  type="submit"
+                  variant="secondary"
+                  className="w-full border-rose/30 bg-white text-rose-700 hover:border-rose/45 hover:bg-rose/10 sm:w-auto"
+                  confirmMessage="Delete this inquiry permanently? This cannot be undone."
+                >
+                  Delete inquiry
+                </ConfirmSubmitButton>
+              </form>
+            </div>
           </SectionCard>
         </div>
       </div>
