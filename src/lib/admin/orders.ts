@@ -194,9 +194,12 @@ export type OrderListFilters = {
 };
 
 export type OrderListEntry = {
+  balanceDue: number;
   balanceDueLabel: string;
   customerId: string | null;
   customerLabel: string;
+  customerPhone: string | null;
+  customerEmail: string | null;
   eventDate: string;
   eventType: string;
   fulfillmentMethod: Enums<"fulfillment_method">;
@@ -644,9 +647,12 @@ export async function getOrderListData(filters: OrderListFilters): Promise<Order
       const paymentState = paymentSummary.paymentStatus || row.payment_status;
 
       return {
+        balanceDue: paymentSummary.balanceDue,
         balanceDueLabel: formatOrderMoneySummary(paymentSummary.balanceDue),
         customerId: row.customers?.id ?? null,
         customerLabel: row.customers?.full_name ?? "Unknown customer",
+        customerPhone: row.customers?.phone ?? null,
+        customerEmail: row.customers?.email ?? null,
         eventDate: row.event_date,
         eventType: row.event_type,
         fulfillmentMethod: row.fulfillment_method,

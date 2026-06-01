@@ -5,69 +5,60 @@ Update this file before stopping after any substantive repo task.
 ## Current Snapshot
 
 - Date: 2026-06-01.
-- Current branch: `codex/admin-compact-top-bar` (commit `0a2a777` created, ready to push).
-- Current objective: Compress the mobile admin top chrome into a single compact toolbar while preserving the premium Sweet Fork feel and all navigation/menu functionality.
+- Current branch: `codex/admin-orders-list-polish` (commit `5e1fb9b` created, ready to push).
+- Current objective: Polish the orders list cards to prominently display fulfillment method (Pickup vs Delivery), emphasize active balance due urgency, provide quick customer call/email links, and add mobile bottom nav layout clearance.
 - Application/source code changes in this task: Yes, completed and verified.
 
 ## Last Completed Work
 
-- Compacted mobile top app bar heights, vertical margins, and layout container margins.
-- Standardized top app bar on mobile to a single horizontal flexbox layout with no wrapping.
-- Shrunk logo width from 88px to 68px on mobile, keeping 104px on desktop.
-- Hid the "Sweet Fork Admin" eyebrow text on small devices (`hidden sm:block`) to save vertical space.
-- Tightened page title font size on mobile (`text-[1.25rem] sm:text-[1.9rem]`) and spacing (`sm:mt-1`).
-- Compacted the avatar account menu button on mobile (`p-1 sm:px-2 sm:py-2` and `h-8 w-8 sm:h-9 sm:w-9` initials size) to perfectly align with the shorter bar height.
-- Re-aligned outer padding in the shell layout on mobile (`pt-1.5 sm:pt-3` and `pt-3 sm:pt-4` spacer) to pull the dashboard and inquiry details content much higher up the screen.
-- Confirmed zero backend/Supabase/API route/server action modifications.
+- Exposed the customer phone, email, and raw balance due numeric fields from Supabase mapper to the list view entry type (`OrderListEntry`).
+- Created distinct styling badges for Pickup (`border-sky-200 bg-sky-50 text-sky-900`) and Delivery (`border-pink-200 bg-pink-50 text-pink-900`) fulfillment methods near the card status row.
+- Added visual focus on active payment balances (highlighting `Balance Due: $X` in rose styling if > 0, and showing a calm, green `No balance due` otherwise).
+- Introduced direct Call/Email links that render conditionally under the customer name only if contact info is present in the customer record.
+- Added `pb-24 sm:pb-8` to the orders list page wrapper to give visual layout clearance over the mobile bottom nav bar.
+- Confirmed zero backend/Supabase/API route modifications.
 - Ran static gates successfully (`npm run lint`, `npm run typecheck`, `npm run build`, `git diff --check`).
-- Conducted local Puppeteer authenticated visual QA against localhost (temporarily adding the new publishable key in `.env.local` to enable local auth sessions).
-- Generated 6 high-fidelity visual screenshots of the mobile and desktop views, confirming layout perfection and zero horizontal overflow at 320px/375px/390px/768px.
-- Restored `.env.local` to its original clean state.
-- Committed changes to branch `codex/admin-compact-top-bar`.
+- Conducted authenticated visual QA checks against local dev and production servers (orders database contains 0 records, confirming the empty state renders cleanly across 320px/375px/390px/768px viewports).
+- Committed changes to branch `codex/admin-orders-list-polish`.
 
 ## What Changed
 
 **Files Modified:**
-- `src/components/admin/admin-app-bar.tsx`
-  - Shrunk py padding on mobile to `py-1.5`, gap to `gap-2`, rounded corners to `rounded-[1.25rem]`.
-  - Compressed logo dimension on mobile to `w-[68px]`, matching `sizes`.
-  - Hid eyebrow text on mobile.
-  - Tighter serif title on mobile `text-[1.25rem] leading-none tracking-[-0.03em]`.
-  - Reduced sticky container top margin on mobile to `top-1.5`.
-- `src/components/admin/admin-account-menu.tsx`
-  - Compacted avatar button padding to `p-1` and initials badge to `h-8 w-8 text-[10px]` on mobile.
-  - Restored full spacious desktop dimensions on `sm` viewport and up.
-- `src/components/admin/admin-shell-chrome.tsx`
-  - Tightened overall page top-padding on mobile to `pt-1.5` and children spacer margin to `pt-3` to gain 6px more vertical space.
+- `src/lib/admin/orders.ts`
+  - Added `balanceDue`, `customerPhone`, and `customerEmail` fields to the `OrderListEntry` type definition.
+  - Mapped those fields dynamically inside the `getOrderListData` entries mapping block using the query's customer profile and payment summaries.
+- `src/app/admin/(protected)/orders/page.tsx`
+  - Added fulfillment method badge displaying dynamic styled labels.
+  - Added visual balance due emphasis with conditional red/green badge rendering.
+  - Implemented Call/Email touch buttons using `tel:` and `mailto:` schemas.
+  - Added bottom padding spacer container to prevent bottom nav coverage on mobile screens.
 
 ## In Progress
 
-- None. Implementation and visual verification are 100% complete.
+- None. Implementation of Phase 4A is 100% complete and verified.
 
 ## Next Exact Task
 
-- Push task branch and open PR: `git push -u origin codex/admin-compact-top-bar` (do not execute without explicit user request).
+- Push task branch and open PR: `git push -u origin codex/admin-orders-list-polish` (do not execute without explicit user request).
 
 ## Commands Run
 
 - `git branch --show-current`
-- `git checkout -b codex/admin-compact-top-bar`
-- `git status --short`
+- `git checkout -b codex/admin-orders-list-polish`
 - `npm run lint && npm run typecheck`
 - `npm run build`
 - `git diff --check`
-- `node /Users/indiobeltran/.gemini/antigravity/scratch/qa/admin-compact-qa.mjs`
-- `git add ... && git commit -m "Compact admin mobile top bar"`
+- `node /Users/indiobeltran/.gemini/antigravity/scratch/qa/orders-local-qa.mjs`
+- `git add ... && git commit -m "Improve admin orders list readability"`
 
 ## Commands Still Needed
 
-- `git push -u origin codex/admin-compact-top-bar` (to be run when user asks to push/merge).
+- `git push -u origin codex/admin-orders-list-polish` (to be run when user asks to push/merge).
 
 ## Files Changed Recently By This Task
 
-- `src/components/admin/admin-app-bar.tsx`
-- `src/components/admin/admin-account-menu.tsx`
-- `src/components/admin/admin-shell-chrome.tsx`
+- `src/lib/admin/orders.ts`
+- `src/app/admin/(protected)/orders/page.tsx`
 - `HANDOFF.md`
 
 ## Verification Results
@@ -76,18 +67,15 @@ Update this file before stopping after any substantive repo task.
 - `npm run typecheck`: Passed cleanly.
 - `npm run build`: Passed cleanly (production assets generated successfully).
 - `git diff --check`: Passed cleanly.
-- Authenticated Visual QA: Checked 320px, 375px, 390px, 768px, 1024px.
-  - Page top app bar is extremely compact and behaves like a single horizontal toolbar.
-  - Content starts significantly higher up the viewport on mobile screens.
-  - Page title truncates cleanly.
-  - Avatar menu remains viewport-safe and fully functional.
+- Visual QA: Checked 320px, 375px, 390px, 768px.
+  - Empty state renders cleanly.
   - Mobile bottom nav remains exactly one row with no wrapping.
   - Zero horizontal overflow or visual clutter detected.
 
 ## Known Issues
 
-- None. The compact mobile top bar has been visually verified as stable, fully functional, and visually premium.
+- None. The orders list layout is clean, stable, and fits mobile perfectly.
 
 ## Open Decisions
 
-- None. The visual improvements are fully aligned with product requirements.
+- None.

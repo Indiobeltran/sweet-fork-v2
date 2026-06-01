@@ -265,6 +265,15 @@ function OrderCard({ entry }: Readonly<{ entry: OrderListEntry }>) {
               {entry.referenceCode}
             </Badge>
             <span
+              className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${
+                entry.fulfillmentMethod === "delivery"
+                  ? "border-pink-200 bg-pink-50 text-pink-900"
+                  : "border-sky-200 bg-sky-50 text-sky-900"
+              }`}
+            >
+              {entry.fulfillmentMethod === "delivery" ? "Delivery" : "Pickup"}
+            </span>
+            <span
               className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${getOrderStatusClasses(entry.status)}`}
             >
               {toTitleCase(entry.status)}
@@ -284,18 +293,46 @@ function OrderCard({ entry }: Readonly<{ entry: OrderListEntry }>) {
               {entry.eventType} on {formatDate(entry.eventDate)} via{" "}
               {entry.fulfillmentMethod === "delivery" ? "delivery" : "pickup"}
             </p>
+
+            {/* Quick Contact Links */}
+            {(entry.customerPhone || entry.customerEmail) ? (
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                {entry.customerPhone ? (
+                  <a
+                    href={`tel:${entry.customerPhone.replace(/\D/g, "")}`}
+                    className="inline-flex h-9 items-center justify-center rounded-full border border-charcoal/10 bg-white px-4 text-xs font-medium text-charcoal/80 transition hover:border-charcoal/30 hover:bg-charcoal/5"
+                  >
+                    Call
+                  </a>
+                ) : null}
+                {entry.customerEmail ? (
+                  <a
+                    href={`mailto:${entry.customerEmail}`}
+                    className="inline-flex h-9 items-center justify-center rounded-full border border-charcoal/10 bg-white px-4 text-xs font-medium text-charcoal/80 transition hover:border-charcoal/30 hover:bg-charcoal/5"
+                  >
+                    Email
+                  </a>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           <div className="flex flex-wrap gap-2">
             <span className="rounded-full border border-charcoal/8 bg-ivory/80 px-3 py-1 text-xs text-charcoal/72">
               {entry.itemCount} item{entry.itemCount === 1 ? "" : "s"}
             </span>
-            <span className="rounded-full border border-charcoal/8 bg-ivory/80 px-3 py-1 text-xs text-charcoal/72">
+            <span className="rounded-full border border-charcoal/8 bg-ivory/80 px-3 py-1 text-xs font-semibold text-charcoal/72">
               Total {entry.totalLabel}
             </span>
-            <span className="rounded-full border border-charcoal/8 bg-ivory/80 px-3 py-1 text-xs text-charcoal/72">
-              Balance {entry.balanceDueLabel}
-            </span>
+            {entry.balanceDue > 0 ? (
+              <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-800">
+                Balance Due: {entry.balanceDueLabel}
+              </span>
+            ) : (
+              <span className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800">
+                No balance due
+              </span>
+            )}
           </div>
         </div>
 
@@ -330,7 +367,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
   } satisfies Record<OrderQueue, number>;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-24 sm:pb-8">
       <AdminPageHeader
         className="!rounded-[1.65rem] !p-4 sm:!p-5"
         hideTitleOnMobile
