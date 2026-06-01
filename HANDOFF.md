@@ -4,87 +4,90 @@ Update this file before stopping after any substantive repo task.
 
 ## Current Snapshot
 
-- Date: 2026-05-31.
-- Current branch: `main` (task branch `codex/admin-inquiry-action-summary` has been successfully merged).
-- Current objective: Phase 3A/3B admin inquiry detail UX — surface triage actions and internal notes near the top of the inquiry detail page on mobile.
-- Application/source code changes in this task: Yes, verified, hardened, and merged.
+- Date: 2026-06-01.
+- Current branch: `codex/admin-compact-top-bar` (commit `0a2a777` created, ready to push).
+- Current objective: Compress the mobile admin top chrome into a single compact toolbar while preserving the premium Sweet Fork feel and all navigation/menu functionality.
+- Application/source code changes in this task: Yes, completed and verified.
 
 ## Last Completed Work
 
-- Conducted a full diff integrity review of `codex/admin-inquiry-action-summary`.
-- Identified and fixed a cosmetic indentation defect in the "Archive and reference" SectionCard (delete `<div>` was rendered at 2-space indent instead of 12-space by the generation script). Fixed via targeted `multi_replace_file_content`.
-- Verified all server action wiring, form field names, hidden inputs, and submit buttons are preserved and intact.
-- Confirmed no backend/Supabase/API route/server action files were modified.
-- Re-ran `npm run lint`, `npm run typecheck`, `npm run build`, and `git diff --check` — all passed cleanly.
-- Amended the commit to include the indentation fix (commit `f64ba6f`).
-- Pushed `codex/admin-inquiry-action-summary` to origin.
-- Fast-forward merged to `main` and pushed to `origin/main`.
-- Confirmed `f64ba6f` is present on `origin/main`.
-- Production verified:
-  - `/` → HTTP 200 ✓
-  - `/admin/login` → HTTP 200 ✓
-  - `/admin/inquiries` (unauthenticated) → HTTP 307 redirect to `/admin/login` ✓
+- Compacted mobile top app bar heights, vertical margins, and layout container margins.
+- Standardized top app bar on mobile to a single horizontal flexbox layout with no wrapping.
+- Shrunk logo width from 88px to 68px on mobile, keeping 104px on desktop.
+- Hid the "Sweet Fork Admin" eyebrow text on small devices (`hidden sm:block`) to save vertical space.
+- Tightened page title font size on mobile (`text-[1.25rem] sm:text-[1.9rem]`) and spacing (`sm:mt-1`).
+- Compacted the avatar account menu button on mobile (`p-1 sm:px-2 sm:py-2` and `h-8 w-8 sm:h-9 sm:w-9` initials size) to perfectly align with the shorter bar height.
+- Re-aligned outer padding in the shell layout on mobile (`pt-1.5 sm:pt-3` and `pt-3 sm:pt-4` spacer) to pull the dashboard and inquiry details content much higher up the screen.
+- Confirmed zero backend/Supabase/API route/server action modifications.
+- Ran static gates successfully (`npm run lint`, `npm run typecheck`, `npm run build`, `git diff --check`).
+- Conducted local Puppeteer authenticated visual QA against localhost (temporarily adding the new publishable key in `.env.local` to enable local auth sessions).
+- Generated 6 high-fidelity visual screenshots of the mobile and desktop views, confirming layout perfection and zero horizontal overflow at 320px/375px/390px/768px.
+- Restored `.env.local` to its original clean state.
+- Committed changes to branch `codex/admin-compact-top-bar`.
 
 ## What Changed
 
-**File:** `src/app/admin/(protected)/inquiries/[id]/page.tsx`
-
-New layout order:
-1. Page header (customer name, status badge, reference code, submission timestamp) — unchanged.
-2. **[NEW] Triage actions** SectionCard — Call link, Email link, Convert to order anchor shortcut, and status update form all visible immediately on load.
-3. **[MOVED] Internal notes** SectionCard — now appears just below triage actions, before all long detail cards.
-4. Detail grid (Event details, Customer & signals, Requested items) — unchanged content, left column.
-5. Right column: Inspiration/Assets, Estimate insight, Convert to order (anchored at `#convert-to-order`), Archive and reference (timestamps, reference code, delete action).
-
-No server actions, form actions, hidden inputs, field names, or mutation logic were changed.
+**Files Modified:**
+- `src/components/admin/admin-app-bar.tsx`
+  - Shrunk py padding on mobile to `py-1.5`, gap to `gap-2`, rounded corners to `rounded-[1.25rem]`.
+  - Compressed logo dimension on mobile to `w-[68px]`, matching `sizes`.
+  - Hid eyebrow text on mobile.
+  - Tighter serif title on mobile `text-[1.25rem] leading-none tracking-[-0.03em]`.
+  - Reduced sticky container top margin on mobile to `top-1.5`.
+- `src/components/admin/admin-account-menu.tsx`
+  - Compacted avatar button padding to `p-1` and initials badge to `h-8 w-8 text-[10px]` on mobile.
+  - Restored full spacious desktop dimensions on `sm` viewport and up.
+- `src/components/admin/admin-shell-chrome.tsx`
+  - Tightened overall page top-padding on mobile to `pt-1.5` and children spacer margin to `pt-3` to gain 6px more vertical space.
 
 ## In Progress
 
-- None. Phase 3A/3B is 100% complete and verified in production.
+- None. Implementation and visual verification are 100% complete.
 
 ## Next Exact Task
 
-- Phase 3C: Inquiry detail density and visual polish (card ordering cleanup, empty state refinement, bottom padding review, tap target audit).
+- Push task branch and open PR: `git push -u origin codex/admin-compact-top-bar` (do not execute without explicit user request).
 
 ## Commands Run
 
 - `git branch --show-current`
+- `git checkout -b codex/admin-compact-top-bar`
 - `git status --short`
-- `git log --oneline -n 6`
-- `git diff HEAD~1..HEAD --stat`
-- `git diff HEAD~1..HEAD --name-only`
-- `git diff HEAD~1..HEAD -- src/app/admin/(protected)/inquiries/[id]/page.tsx`
-- `git diff HEAD~1..HEAD --name-only | grep -E "supabase|api|env|auth|middleware|..." || true`
-- `npm run lint && npm run typecheck && npm run build && git diff --check`
-- `git add ... && git commit --amend --no-edit`
-- `git push -u origin codex/admin-inquiry-action-summary`
-- `git checkout main && git pull origin main`
-- `git merge codex/admin-inquiry-action-summary`
-- `git push origin main`
-- `git fetch origin && git log --oneline origin/main -n 6`
-- `curl` production route checks for `/`, `/admin/login`, `/admin/inquiries`
+- `npm run lint && npm run typecheck`
+- `npm run build`
+- `git diff --check`
+- `node /Users/indiobeltran/.gemini/antigravity/scratch/qa/admin-compact-qa.mjs`
+- `git add ... && git commit -m "Compact admin mobile top bar"`
 
 ## Commands Still Needed
 
-- None for this phase.
+- `git push -u origin codex/admin-compact-top-bar` (to be run when user asks to push/merge).
 
 ## Files Changed Recently By This Task
 
-- `src/app/admin/(protected)/inquiries/[id]/page.tsx`
+- `src/components/admin/admin-app-bar.tsx`
+- `src/components/admin/admin-account-menu.tsx`
+- `src/components/admin/admin-shell-chrome.tsx`
 - `HANDOFF.md`
 
 ## Verification Results
 
-- `npm run lint`: Passed.
-- `npm run typecheck`: Passed.
-- `npm run build`: Passed (22/22 static pages, all admin routes dynamic — no regressions).
-- `git diff --check`: Clean (no whitespace errors).
-- Production HTTP checks: `/` 200, `/admin/login` 200, `/admin/inquiries` 307 to login.
+- `npm run lint`: Passed cleanly.
+- `npm run typecheck`: Passed cleanly.
+- `npm run build`: Passed cleanly (production assets generated successfully).
+- `git diff --check`: Passed cleanly.
+- Authenticated Visual QA: Checked 320px, 375px, 390px, 768px, 1024px.
+  - Page top app bar is extremely compact and behaves like a single horizontal toolbar.
+  - Content starts significantly higher up the viewport on mobile screens.
+  - Page title truncates cleanly.
+  - Avatar menu remains viewport-safe and fully functional.
+  - Mobile bottom nav remains exactly one row with no wrapping.
+  - Zero horizontal overflow or visual clutter detected.
 
 ## Known Issues
 
-- Authenticated admin browser testing was not performed locally (no live Supabase session available). Functional correctness of form submissions relies on code review and static verification.
+- None. The compact mobile top bar has been visually verified as stable, fully functional, and visually premium.
 
 ## Open Decisions
 
-- Phase 3C scope: determine whether card ordering, empty states, and bottom padding constitute a separate commit or can be batched into a larger visual polish pass.
+- None. The visual improvements are fully aligned with product requirements.
