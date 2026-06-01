@@ -135,7 +135,7 @@ export function AdminAccountMenu({ admin }: Readonly<AdminAccountMenuProps>) {
             role="dialog"
             aria-modal="true"
             aria-label="Account menu"
-            className="absolute right-0 top-[calc(100%+0.7rem)] z-[70] w-[18.5rem] max-w-[calc(100vw-1.5rem)] rounded-[1.6rem] border border-charcoal/10 bg-white/96 p-4 shadow-[0_24px_64px_rgba(53,37,29,0.14),0_8px_20px_rgba(53,37,29,0.08)] backdrop-blur-xl"
+            className="absolute right-0 top-[calc(100%+0.7rem)] z-[70] w-[18.5rem] max-w-[calc(100vw-1.5rem)] rounded-[1.6rem] border border-charcoal/10 bg-white/95 p-4 shadow-[0_24px_64px_rgba(53,37,29,0.14),0_8px_20px_rgba(53,37,29,0.08)] backdrop-blur-xl"
           >
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-charcoal/45">
               Sweet Fork Admin
