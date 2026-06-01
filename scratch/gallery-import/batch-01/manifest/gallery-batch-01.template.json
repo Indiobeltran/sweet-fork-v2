@@ -1,0 +1,21 @@
+[
+  {
+    "source_filename": "IMG_0000.PNG",
+    "approved_filename": "sweet-fork-example-custom-cake-centerville-utah.jpg",
+    "category": "Custom Cakes",
+    "title": "Example Custom Cake",
+    "alt_text": "Example custom cake by The Sweet Fork in Centerville, Utah.",
+    "tags": [
+      "custom cake",
+      "birthday cake",
+      "Centerville Utah",
+      "Davis County bakery"
+    ],
+    "visibility": "published",
+    "featured": false,
+    "sort_priority": "medium",
+    "suggested_use": "Customer-facing gallery",
+    "recommended_crop": "4:5 portrait",
+    "notes": "Replace this example with staged batch metadata."
+  }
+]

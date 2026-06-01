@@ -12,3 +12,9 @@ dist
 .eslintcache
 tsconfig.tsbuildinfo
 tsconfig.typecheck.tsbuildinfo
+
+# Gallery import workspaces: keep workflow docs/templates, ignore staged image files.
+scratch/gallery-import/**/originals/*
+!scratch/gallery-import/**/originals/.gitkeep
+scratch/gallery-import/**/processed/*
+!scratch/gallery-import/**/processed/.gitkeep
