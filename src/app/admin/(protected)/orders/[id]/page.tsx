@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { getOrderDetail } from "@/lib/admin/orders";
+import { getOrderDetail, type OrderDetail } from "@/lib/admin/orders";
 import {
   formatOptionalDateTime,
   getDateInputValue,
@@ -32,18 +32,110 @@ type AdminOrderDetailPageProps = {
 
 function SectionCard({
   children,
+  id,
   title,
 }: Readonly<{
   children: React.ReactNode;
+  id?: string;
   title: string;
 }>) {
   return (
-    <section className="rounded-[1.75rem] border border-charcoal/10 bg-white/88 p-4 shadow-soft sm:p-5">
+    <section
+      id={id}
+      className="scroll-mt-24 rounded-[1.75rem] border border-charcoal/10 bg-white/88 p-4 shadow-soft sm:p-5"
+    >
       <h2 className="font-serif text-[2rem] tracking-[-0.04em] text-charcoal sm:text-[2.1rem]">
         {title}
       </h2>
       <div className="mt-4">{children}</div>
     </section>
+  );
+}
+
+function getPhoneHref(value: string | null | undefined) {
+  const digits = value?.replace(/\D/g, "") ?? "";
+
+  if (digits.length < 10) {
+    return null;
+  }
+
+  return `tel:${digits.length === 10 ? `+1${digits}` : `+${digits}`}`;
+}
+
+function getMailtoHref(email: string | null | undefined, orderReference: string) {
+  const trimmedEmail = email?.trim();
+
+  if (!trimmedEmail) {
+    return null;
+  }
+
+  const encodedEmail = encodeURIComponent(trimmedEmail);
+  const subject = encodeURIComponent(`${orderReference} order follow-up`);
+
+  return `mailto:${encodedEmail}?subject=${subject}`;
+}
+
+function getOrderAttentionText(detail: OrderDetail) {
+  if (detail.status === "cancelled") {
+    return "This order is cancelled. Review notes before taking any new action.";
+  }
+
+  if (detail.paymentStatus !== "paid" && detail.balanceDueAmount > 0) {
+    return `Collect or confirm ${formatOrderMoneySummary(detail.balanceDueAmount)} before fulfillment is complete.`;
+  }
+
+  if (detail.notes.some((note) => note.isPinned)) {
+    return "Pinned notes are present. Review them before changing production or fulfillment details.";
+  }
+
+  if (!detail.fulfillmentWindow) {
+    return "Pickup or delivery timing still needs a clear window.";
+  }
+
+  if (detail.status === "draft" || detail.status === "quoted") {
+    return "Confirm order status, payment plan, and fulfillment timing when the customer is ready.";
+  }
+
+  return "No urgent payment issue is showing. Review notes and fulfillment details for the next owner action.";
+}
+
+function TriageStat({
+  label,
+  value,
+}: Readonly<{
+  label: string;
+  value: React.ReactNode;
+}>) {
+  return (
+    <div className="rounded-[1.25rem] border border-charcoal/8 bg-white/70 px-4 py-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-charcoal/45">
+        {label}
+      </p>
+      <div className="mt-2 text-sm font-semibold text-charcoal">{value}</div>
+    </div>
+  );
+}
+
+function QuickLink({
+  href,
+  children,
+  variant = "secondary",
+}: Readonly<{
+  href: string;
+  children: React.ReactNode;
+  variant?: "primary" | "secondary";
+}>) {
+  return (
+    <Link
+      href={href}
+      className={
+        variant === "primary"
+          ? "inline-flex min-h-12 items-center justify-center rounded-full bg-charcoal px-5 py-3 text-sm font-semibold text-ivory shadow-soft transition hover:bg-charcoal/92"
+          : "inline-flex min-h-12 items-center justify-center rounded-full border border-charcoal/12 bg-white/82 px-5 py-3 text-sm font-semibold text-charcoal transition hover:border-charcoal/28 hover:bg-white"
+      }
+    >
+      {children}
+    </Link>
   );
 }
 
@@ -137,6 +229,10 @@ export default async function AdminOrderDetailPage({
   const noticeValue = rawSearchParams.notice;
   const notice = Array.isArray(noticeValue) ? noticeValue[0] : noticeValue;
   const redirectTo = `/admin/orders/${detail.id}`;
+  const orderReference = detail.inquiry?.referenceCode ?? `ORD-${detail.id.slice(0, 8).toUpperCase()}`;
+  const phoneHref = getPhoneHref(detail.customer?.phone);
+  const emailHref = getMailtoHref(detail.customer?.email, orderReference);
+  const attentionText = getOrderAttentionText(detail);
 
   return (
     <div className="space-y-4">
@@ -194,10 +290,465 @@ export default async function AdminOrderDetailPage({
 
       <NoticeBanner notice={notice} />
 
-      <div className="grid gap-4 xl:grid-cols-[1.18fr_0.82fr]">
-        <div className="space-y-4">
-          <SectionCard title="Order details">
-            <form action={updateOrderDetails} className="space-y-5">
+      <section className="rounded-[1.85rem] border border-charcoal/10 bg-white/92 p-4 shadow-soft sm:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0 space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="border-charcoal/10 bg-charcoal/5 text-charcoal/75">
+                {orderReference}
+              </Badge>
+              <span
+                className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${getOrderStatusClasses(detail.status)}`}
+              >
+                {toTitleCase(detail.status)}
+              </span>
+              <span
+                className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${getPaymentStatusClasses(detail.paymentStatus)}`}
+              >
+                {toTitleCase(detail.paymentStatus)}
+              </span>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+                Order triage
+              </p>
+              <h2 className="mt-2 font-serif text-[2rem] leading-none tracking-[-0.04em] text-charcoal sm:text-[2.35rem]">
+                {detail.customer?.fullName ?? "Unknown customer"}
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-charcoal/68">
+                {attentionText}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-2 lg:w-[18rem] lg:flex-none lg:grid-cols-1">
+            {phoneHref ? (
+              <QuickLink href={phoneHref} variant="primary">
+                Call customer
+              </QuickLink>
+            ) : null}
+            {emailHref ? <QuickLink href={emailHref}>Email customer</QuickLink> : null}
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <TriageStat label="Event date" value={formatDate(detail.eventDate)} />
+          <TriageStat
+            label="Fulfillment"
+            value={
+              <span className="capitalize">
+                {detail.fulfillmentMethod === "delivery" ? "Delivery" : "Pickup"}
+              </span>
+            }
+          />
+          <TriageStat label="Total" value={formatOrderMoneySummary(detail.totalAmount)} />
+          <TriageStat
+            label="Balance due"
+            value={formatOrderMoneySummary(detail.balanceDueAmount)}
+          />
+        </div>
+
+        <div className="mt-5 grid gap-2 sm:grid-cols-3">
+          <QuickLink href="#payments">Payments</QuickLink>
+          <QuickLink href="#notes">Notes</QuickLink>
+          <QuickLink href="#edit-order-settings">Edit Order Settings</QuickLink>
+        </div>
+      </section>
+
+      <div className="space-y-4">
+        <SectionCard id="payments" title="Payments">
+          <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+              Add payment record
+            </p>
+            <form action={addOrderPayment} className="mt-4 space-y-4">
+              <input type="hidden" name="orderId" value={detail.id} />
+              <input type="hidden" name="redirectTo" value={redirectTo} />
+
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div>
+                  <Label htmlFor="paymentUiType">Type</Label>
+                  <Select id="paymentUiType" name="paymentUiType" defaultValue="deposit">
+                    <option value="deposit">Deposit</option>
+                    <option value="final">Final</option>
+                    <option value="other">Other</option>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="amount">Amount</Label>
+                  <Input id="amount" name="amount" inputMode="decimal" placeholder="0" required />
+                </div>
+
+                <div>
+                  <Label htmlFor="paymentStatus">Status</Label>
+                  <Select id="paymentStatus" name="status" defaultValue="pending">
+                    <option value="pending">Pending</option>
+                    <option value="paid">Paid</option>
+                    <option value="failed">Failed</option>
+                    <option value="refunded">Refunded</option>
+                    <option value="voided">Voided</option>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="method">Method</Label>
+                  <Select id="method" name="method" defaultValue="invoice">
+                    <option value="invoice">Invoice</option>
+                    <option value="card">Card</option>
+                    <option value="cash">Cash</option>
+                    <option value="bank-transfer">Bank transfer</option>
+                    <option value="other">Other</option>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="dueAt">Due date</Label>
+                  <Input id="dueAt" name="dueAt" type="date" />
+                </div>
+
+                <div>
+                  <Label htmlFor="paidAt">Paid date</Label>
+                  <Input id="paidAt" name="paidAt" type="date" />
+                </div>
+
+                <div>
+                  <Label htmlFor="referenceCode">Reference</Label>
+                  <Input id="referenceCode" name="referenceCode" placeholder="Invoice #, cash note, etc." />
+                </div>
+
+                <div>
+                  <Label htmlFor="providerName">Source</Label>
+                  <Input id="providerName" name="providerName" placeholder="Square, cash, bank transfer, etc." />
+                </div>
+
+                <div>
+                  <Label htmlFor="providerIntentId">Source detail</Label>
+                  <Input id="providerIntentId" name="providerIntentId" placeholder="Manual external reference" />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="paymentNotes">Notes</Label>
+                <Textarea
+                  id="paymentNotes"
+                  name="notes"
+                  placeholder="Manual context for the payment record, like who sent it or what it covered."
+                />
+              </div>
+
+              <Button type="submit">Add payment</Button>
+            </form>
+          </div>
+
+          <div className="mt-5 space-y-4">
+            {detail.payments.length > 0 ? (
+              detail.payments.map((payment) => (
+                <article
+                  key={payment.id}
+                  className="rounded-[1.6rem] border border-charcoal/10 bg-white/82 p-5"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${getPaymentRecordStatusClasses(payment.status)}`}
+                    >
+                      {toTitleCase(payment.status)}
+                    </span>
+                    <span className="text-sm font-medium text-charcoal">{payment.typeLabel}</span>
+                  </div>
+
+                  <form action={updateOrderPayment} className="mt-4 space-y-4">
+                    <input type="hidden" name="orderId" value={detail.id} />
+                    <input type="hidden" name="paymentId" value={payment.id} />
+                    <input type="hidden" name="redirectTo" value={redirectTo} />
+
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      <div>
+                        <Label>Type</Label>
+                        <Select name="paymentUiType" defaultValue={payment.uiType}>
+                          <option value="deposit">Deposit</option>
+                          <option value="final">Final</option>
+                          <option value="other">Other</option>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label>Amount</Label>
+                        <Input name="amount" inputMode="decimal" defaultValue={payment.amount} />
+                      </div>
+
+                      <div>
+                        <Label>Status</Label>
+                        <Select name="status" defaultValue={payment.status}>
+                          <option value="pending">Pending</option>
+                          <option value="paid">Paid</option>
+                          <option value="failed">Failed</option>
+                          <option value="refunded">Refunded</option>
+                          <option value="voided">Voided</option>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label>Method</Label>
+                        <Select name="method" defaultValue={payment.method}>
+                          <option value="invoice">Invoice</option>
+                          <option value="card">Card</option>
+                          <option value="cash">Cash</option>
+                          <option value="bank-transfer">Bank transfer</option>
+                          <option value="other">Other</option>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label>Due date</Label>
+                        <Input name="dueAt" type="date" defaultValue={getDateInputValue(payment.dueAt)} />
+                      </div>
+
+                      <div>
+                        <Label>Paid date</Label>
+                        <Input name="paidAt" type="date" defaultValue={getDateInputValue(payment.paidAt)} />
+                      </div>
+
+                      <div>
+                        <Label>Reference</Label>
+                        <Input name="referenceCode" defaultValue={payment.referenceCode ?? ""} />
+                      </div>
+
+                      <div>
+                        <Label>Source</Label>
+                        <Input name="providerName" defaultValue={payment.providerName ?? ""} />
+                      </div>
+
+                      <div>
+                        <Label>Source detail</Label>
+                        <Input
+                          name="providerIntentId"
+                          defaultValue={payment.providerIntentId ?? ""}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Notes</Label>
+                      <Textarea name="notes" defaultValue={payment.notes ?? ""} />
+                    </div>
+
+                    <Button type="submit" variant="secondary">
+                      Update payment
+                    </Button>
+                  </form>
+                </article>
+              ))
+            ) : (
+              <p className="text-sm leading-7 text-charcoal/62">
+                No payment records yet. Add deposit, final, or other manual payment entries as
+                the order moves forward.
+              </p>
+            )}
+          </div>
+        </SectionCard>
+
+        <SectionCard id="notes" title="Internal notes">
+          <form action={addOrderNote} className="space-y-4">
+            <input type="hidden" name="orderId" value={detail.id} />
+            <input type="hidden" name="redirectTo" value={redirectTo} />
+
+            <div>
+              <Label htmlFor="noteBody">Add a note</Label>
+              <Textarea
+                id="noteBody"
+                name="noteBody"
+                placeholder="Capture follow-up details, production decisions, or anything the next pass should know."
+                required
+              />
+            </div>
+
+            <label className="flex items-center gap-3 rounded-[1.4rem] border border-charcoal/10 bg-ivory/70 px-4 py-3 text-sm text-charcoal/72">
+              <input
+                type="checkbox"
+                name="isPinned"
+                className="h-4 w-4 rounded border border-charcoal/20"
+              />
+              Pin this note near the top
+            </label>
+
+            <Button type="submit">
+              Save note
+            </Button>
+          </form>
+
+          <div className="mt-5 space-y-3">
+            {detail.notes.length > 0 ? (
+              detail.notes.map((note) => (
+                <article
+                  key={note.id}
+                  className="rounded-[1.5rem] border border-charcoal/10 bg-white/82 p-4"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    {note.isPinned ? (
+                      <Badge className="border-gold/25 bg-gold/10 text-charcoal/80">
+                        Pinned
+                      </Badge>
+                    ) : null}
+                    <span className="text-sm font-medium text-charcoal">{note.authorLabel}</span>
+                    <span className="text-sm text-charcoal/52">
+                      {formatOptionalDateTime(note.createdAt)}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-sm leading-8 text-charcoal/72">{note.noteBody}</p>
+                </article>
+              ))
+            ) : (
+              <p className="text-sm leading-7 text-charcoal/62">
+                No internal notes yet. Add one so the next production or follow-up pass has
+                context.
+              </p>
+            )}
+          </div>
+        </SectionCard>
+
+        <div className="grid gap-4 xl:grid-cols-[1.18fr_0.82fr] xl:items-start">
+          <div className="space-y-4">
+            <SectionCard title="Item breakdown">
+              <div className="space-y-4">
+                {detail.items.map((item) => (
+                  <article
+                    key={item.id}
+                    className="rounded-[1.6rem] border border-charcoal/10 bg-ivory/70 p-5"
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-charcoal">{item.productLabel}</h3>
+                        <p className="mt-1 text-sm text-charcoal/62">{item.quantityLabel}</p>
+                      </div>
+                      <div className="text-sm text-charcoal/62">
+                        {item.lineTotal !== null
+                          ? `Line total ${formatOrderMoneySummary(item.lineTotal)}`
+                          : "Line pricing not set yet"}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2 text-sm leading-7 text-charcoal/70">
+                        {item.sizeLabel ? <p>Size: {item.sizeLabel}</p> : null}
+                        {item.flavorNotes ? <p>Flavor notes: {item.flavorNotes}</p> : null}
+                        {item.colorPalette ? <p>Palette: {item.colorPalette}</p> : null}
+                        {item.topperText ? <p>Topper text: {item.topperText}</p> : null}
+                        {item.detailSummary ? <p>Summary: {item.detailSummary}</p> : null}
+                      </div>
+                      <div className="space-y-2 text-sm leading-7 text-charcoal/70">
+                        {item.designNotes ? <p>Design notes: {item.designNotes}</p> : null}
+                        {item.kitchenNotes ? <p>Kitchen notes: {item.kitchenNotes}</p> : null}
+                        {item.unitPrice !== null ? (
+                          <p>Unit price: {formatOrderMoneySummary(item.unitPrice)}</p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </SectionCard>
+          </div>
+
+          <div className="space-y-4">
+            <SectionCard title="Linked records">
+              <div className="space-y-4">
+                <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+                    Customer
+                  </p>
+                  {detail.customer ? (
+                    <>
+                      <p className="mt-3 text-lg font-semibold text-charcoal">
+                        {detail.customer.fullName}
+                      </p>
+                      <p className="mt-2 text-sm leading-7 text-charcoal/68">
+                        {detail.customer.email ?? "No email yet"}
+                        <br />
+                        {detail.customer.phone ?? "No phone yet"}
+                        <br />
+                        Preferred contact: {toTitleCase(detail.customer.preferredContact)}
+                      </p>
+                      <Link
+                        href={`/admin/customers/${detail.customer.id}`}
+                        className="mt-4 inline-flex text-sm font-medium text-charcoal underline decoration-gold/60 underline-offset-4"
+                      >
+                        Open customer record
+                      </Link>
+                    </>
+                  ) : (
+                    <p className="mt-3 text-sm leading-7 text-charcoal/62">
+                      This order is missing a linked customer record.
+                    </p>
+                  )}
+                </div>
+
+                <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+                    Originating inquiry
+                  </p>
+                  {detail.inquiry ? (
+                    <>
+                      <p className="mt-3 text-lg font-semibold text-charcoal">
+                        {detail.inquiry.referenceCode}
+                      </p>
+                      <p className="mt-2 text-sm leading-7 text-charcoal/68">
+                        {detail.inquiry.customerName}
+                        <br />
+                        {detail.inquiry.customerEmail}
+                        <br />
+                        Submitted {formatDate(detail.inquiry.submittedAt)}
+                      </p>
+                      <Link
+                        href={`/admin/inquiries/${detail.inquiry.id}`}
+                        className="mt-4 inline-flex text-sm font-medium text-charcoal underline decoration-gold/60 underline-offset-4"
+                      >
+                        Open inquiry
+                      </Link>
+                    </>
+                  ) : (
+                    <p className="mt-3 text-sm leading-7 text-charcoal/62">
+                      No inquiry is linked to this order.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </SectionCard>
+
+            <SectionCard title="Payment summary">
+              <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
+                <DetailRow
+                  label="Deposit required"
+                  value={formatOrderMoneySummary(detail.depositDueAmount)}
+                />
+                <DetailRow
+                  label="Deposit paid"
+                  value={formatOrderMoneySummary(detail.paymentSummary.depositPaid)}
+                />
+                <DetailRow
+                  label="Final paid"
+                  value={formatOrderMoneySummary(detail.paymentSummary.finalPaid)}
+                />
+                <DetailRow
+                  label="Other paid"
+                  value={formatOrderMoneySummary(detail.paymentSummary.otherPaid)}
+                />
+                <DetailRow
+                  label="Total paid"
+                  value={formatOrderMoneySummary(detail.paymentSummary.totalPaid)}
+                />
+                <DetailRow
+                  label="Balance due"
+                  value={formatOrderMoneySummary(detail.balanceDueAmount)}
+                />
+              </div>
+            </SectionCard>
+          </div>
+        </div>
+
+        <SectionCard id="edit-order-settings" title="Edit order settings">
+          <form action={updateOrderDetails} className="space-y-5">
               <input type="hidden" name="orderId" value={detail.id} />
               <input type="hidden" name="redirectTo" value={redirectTo} />
 
@@ -449,395 +1000,10 @@ export default async function AdminOrderDetailPage({
               <Button type="submit">
                 Save order details
               </Button>
-            </form>
-          </SectionCard>
-
-          <SectionCard title="Item breakdown">
-            <div className="space-y-4">
-              {detail.items.map((item) => (
-                <article
-                  key={item.id}
-                  className="rounded-[1.6rem] border border-charcoal/10 bg-ivory/70 p-5"
-                >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-charcoal">{item.productLabel}</h3>
-                      <p className="mt-1 text-sm text-charcoal/62">{item.quantityLabel}</p>
-                    </div>
-                    <div className="text-sm text-charcoal/62">
-                      {item.lineTotal !== null
-                        ? `Line total ${formatOrderMoneySummary(item.lineTotal)}`
-                        : "Line pricing not set yet"}
-                    </div>
-                  </div>
-
-                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2 text-sm leading-7 text-charcoal/70">
-                      {item.sizeLabel ? <p>Size: {item.sizeLabel}</p> : null}
-                      {item.flavorNotes ? <p>Flavor notes: {item.flavorNotes}</p> : null}
-                      {item.colorPalette ? <p>Palette: {item.colorPalette}</p> : null}
-                      {item.topperText ? <p>Topper text: {item.topperText}</p> : null}
-                      {item.detailSummary ? <p>Summary: {item.detailSummary}</p> : null}
-                    </div>
-                    <div className="space-y-2 text-sm leading-7 text-charcoal/70">
-                      {item.designNotes ? <p>Design notes: {item.designNotes}</p> : null}
-                      {item.kitchenNotes ? <p>Kitchen notes: {item.kitchenNotes}</p> : null}
-                      {item.unitPrice !== null ? (
-                        <p>Unit price: {formatOrderMoneySummary(item.unitPrice)}</p>
-                      ) : null}
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Payments">
-            <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                Add payment record
-              </p>
-              <form action={addOrderPayment} className="mt-4 space-y-4">
-                <input type="hidden" name="orderId" value={detail.id} />
-                <input type="hidden" name="redirectTo" value={redirectTo} />
-
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <div>
-                    <Label htmlFor="paymentUiType">Type</Label>
-                    <Select id="paymentUiType" name="paymentUiType" defaultValue="deposit">
-                      <option value="deposit">Deposit</option>
-                      <option value="final">Final</option>
-                      <option value="other">Other</option>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="amount">Amount</Label>
-                    <Input id="amount" name="amount" inputMode="decimal" placeholder="0" required />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="paymentStatus">Status</Label>
-                    <Select id="paymentStatus" name="status" defaultValue="pending">
-                      <option value="pending">Pending</option>
-                      <option value="paid">Paid</option>
-                      <option value="failed">Failed</option>
-                      <option value="refunded">Refunded</option>
-                      <option value="voided">Voided</option>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="method">Method</Label>
-                    <Select id="method" name="method" defaultValue="invoice">
-                      <option value="invoice">Invoice</option>
-                      <option value="card">Card</option>
-                      <option value="cash">Cash</option>
-                      <option value="bank-transfer">Bank transfer</option>
-                      <option value="other">Other</option>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="dueAt">Due date</Label>
-                    <Input id="dueAt" name="dueAt" type="date" />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="paidAt">Paid date</Label>
-                    <Input id="paidAt" name="paidAt" type="date" />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="referenceCode">Reference</Label>
-                    <Input id="referenceCode" name="referenceCode" placeholder="Invoice #, cash note, etc." />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="providerName">Source</Label>
-                    <Input id="providerName" name="providerName" placeholder="Square, cash, bank transfer, etc." />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="providerIntentId">Source detail</Label>
-                    <Input id="providerIntentId" name="providerIntentId" placeholder="Manual external reference" />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="paymentNotes">Notes</Label>
-                  <Textarea
-                    id="paymentNotes"
-                    name="notes"
-                    placeholder="Manual context for the payment record, like who sent it or what it covered."
-                  />
-                </div>
-
-                <Button type="submit">Add payment</Button>
-              </form>
-            </div>
-
-            <div className="mt-5 space-y-4">
-              {detail.payments.length > 0 ? (
-                detail.payments.map((payment) => (
-                  <article
-                    key={payment.id}
-                    className="rounded-[1.6rem] border border-charcoal/10 bg-white/82 p-5"
-                  >
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${getPaymentRecordStatusClasses(payment.status)}`}
-                      >
-                        {toTitleCase(payment.status)}
-                      </span>
-                      <span className="text-sm font-medium text-charcoal">{payment.typeLabel}</span>
-                    </div>
-
-                    <form action={updateOrderPayment} className="mt-4 space-y-4">
-                      <input type="hidden" name="orderId" value={detail.id} />
-                      <input type="hidden" name="paymentId" value={payment.id} />
-                      <input type="hidden" name="redirectTo" value={redirectTo} />
-
-                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        <div>
-                          <Label>Type</Label>
-                          <Select name="paymentUiType" defaultValue={payment.uiType}>
-                            <option value="deposit">Deposit</option>
-                            <option value="final">Final</option>
-                            <option value="other">Other</option>
-                          </Select>
-                        </div>
-
-                        <div>
-                          <Label>Amount</Label>
-                          <Input name="amount" inputMode="decimal" defaultValue={payment.amount} />
-                        </div>
-
-                        <div>
-                          <Label>Status</Label>
-                          <Select name="status" defaultValue={payment.status}>
-                            <option value="pending">Pending</option>
-                            <option value="paid">Paid</option>
-                            <option value="failed">Failed</option>
-                            <option value="refunded">Refunded</option>
-                            <option value="voided">Voided</option>
-                          </Select>
-                        </div>
-
-                        <div>
-                          <Label>Method</Label>
-                          <Select name="method" defaultValue={payment.method}>
-                            <option value="invoice">Invoice</option>
-                            <option value="card">Card</option>
-                            <option value="cash">Cash</option>
-                            <option value="bank-transfer">Bank transfer</option>
-                            <option value="other">Other</option>
-                          </Select>
-                        </div>
-
-                        <div>
-                          <Label>Due date</Label>
-                          <Input name="dueAt" type="date" defaultValue={getDateInputValue(payment.dueAt)} />
-                        </div>
-
-                        <div>
-                          <Label>Paid date</Label>
-                          <Input name="paidAt" type="date" defaultValue={getDateInputValue(payment.paidAt)} />
-                        </div>
-
-                        <div>
-                          <Label>Reference</Label>
-                          <Input name="referenceCode" defaultValue={payment.referenceCode ?? ""} />
-                        </div>
-
-                        <div>
-                          <Label>Source</Label>
-                          <Input name="providerName" defaultValue={payment.providerName ?? ""} />
-                        </div>
-
-                        <div>
-                          <Label>Source detail</Label>
-                          <Input
-                            name="providerIntentId"
-                            defaultValue={payment.providerIntentId ?? ""}
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label>Notes</Label>
-                        <Textarea name="notes" defaultValue={payment.notes ?? ""} />
-                      </div>
-
-                      <Button type="submit" variant="secondary">
-                        Update payment
-                      </Button>
-                    </form>
-                  </article>
-                ))
-              ) : (
-                <p className="text-sm leading-7 text-charcoal/62">
-                  No payment records yet. Add deposit, final, or other manual payment entries as
-                  the order moves forward.
-                </p>
-              )}
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Internal notes">
-            <form action={addOrderNote} className="space-y-4">
-              <input type="hidden" name="orderId" value={detail.id} />
-              <input type="hidden" name="redirectTo" value={redirectTo} />
-
-              <div>
-                <Label htmlFor="noteBody">Add a note</Label>
-                <Textarea
-                  id="noteBody"
-                  name="noteBody"
-                  placeholder="Capture follow-up details, production decisions, or anything the next pass should know."
-                  required
-                />
-              </div>
-
-              <label className="flex items-center gap-3 rounded-[1.4rem] border border-charcoal/10 bg-ivory/70 px-4 py-3 text-sm text-charcoal/72">
-                <input
-                  type="checkbox"
-                  name="isPinned"
-                  className="h-4 w-4 rounded border border-charcoal/20"
-                />
-                Pin this note near the top
-              </label>
-
-              <Button type="submit">
-                Save note
-              </Button>
-            </form>
-
-            <div className="mt-5 space-y-3">
-              {detail.notes.length > 0 ? (
-                detail.notes.map((note) => (
-                  <article
-                    key={note.id}
-                    className="rounded-[1.5rem] border border-charcoal/10 bg-white/82 p-4"
-                  >
-                    <div className="flex flex-wrap items-center gap-2">
-                      {note.isPinned ? (
-                        <Badge className="border-gold/25 bg-gold/10 text-charcoal/80">
-                          Pinned
-                        </Badge>
-                      ) : null}
-                      <span className="text-sm font-medium text-charcoal">{note.authorLabel}</span>
-                      <span className="text-sm text-charcoal/52">
-                        {formatOptionalDateTime(note.createdAt)}
-                      </span>
-                    </div>
-                    <p className="mt-3 text-sm leading-8 text-charcoal/72">{note.noteBody}</p>
-                  </article>
-                ))
-              ) : (
-                <p className="text-sm leading-7 text-charcoal/62">
-                  No internal notes yet. Add one so the next production or follow-up pass has
-                  context.
-                </p>
-              )}
-            </div>
-          </SectionCard>
-        </div>
+          </form>
+        </SectionCard>
 
         <div className="space-y-4">
-          <SectionCard title="Linked records">
-            <div className="space-y-4">
-              <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                  Customer
-                </p>
-                {detail.customer ? (
-                  <>
-                    <p className="mt-3 text-lg font-semibold text-charcoal">
-                      {detail.customer.fullName}
-                    </p>
-                    <p className="mt-2 text-sm leading-7 text-charcoal/68">
-                      {detail.customer.email ?? "No email yet"}
-                      <br />
-                      {detail.customer.phone ?? "No phone yet"}
-                      <br />
-                      Preferred contact: {toTitleCase(detail.customer.preferredContact)}
-                    </p>
-                    <Link
-                      href={`/admin/customers/${detail.customer.id}`}
-                      className="mt-4 inline-flex text-sm font-medium text-charcoal underline decoration-gold/60 underline-offset-4"
-                    >
-                      Open customer record
-                    </Link>
-                  </>
-                ) : (
-                  <p className="mt-3 text-sm leading-7 text-charcoal/62">
-                    This order is missing a linked customer record.
-                  </p>
-                )}
-              </div>
-
-              <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                  Originating inquiry
-                </p>
-                {detail.inquiry ? (
-                  <>
-                    <p className="mt-3 text-lg font-semibold text-charcoal">
-                      {detail.inquiry.referenceCode}
-                    </p>
-                    <p className="mt-2 text-sm leading-7 text-charcoal/68">
-                      {detail.inquiry.customerName}
-                      <br />
-                      {detail.inquiry.customerEmail}
-                      <br />
-                      Submitted {formatDate(detail.inquiry.submittedAt)}
-                    </p>
-                    <Link
-                      href={`/admin/inquiries/${detail.inquiry.id}`}
-                      className="mt-4 inline-flex text-sm font-medium text-charcoal underline decoration-gold/60 underline-offset-4"
-                    >
-                      Open inquiry
-                    </Link>
-                  </>
-                ) : (
-                  <p className="mt-3 text-sm leading-7 text-charcoal/62">
-                    No inquiry is linked to this order.
-                  </p>
-                )}
-              </div>
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Payment summary">
-            <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
-              <DetailRow
-                label="Deposit required"
-                value={formatOrderMoneySummary(detail.depositDueAmount)}
-              />
-              <DetailRow
-                label="Deposit paid"
-                value={formatOrderMoneySummary(detail.paymentSummary.depositPaid)}
-              />
-              <DetailRow
-                label="Final paid"
-                value={formatOrderMoneySummary(detail.paymentSummary.finalPaid)}
-              />
-              <DetailRow
-                label="Other paid"
-                value={formatOrderMoneySummary(detail.paymentSummary.otherPaid)}
-              />
-              <DetailRow
-                label="Total paid"
-                value={formatOrderMoneySummary(detail.paymentSummary.totalPaid)}
-              />
-              <DetailRow
-                label="Balance due"
-                value={formatOrderMoneySummary(detail.balanceDueAmount)}
-              />
-            </div>
-          </SectionCard>
-
           <SectionCard title="Timestamps">
             <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
               {detail.timestamps.map((item) => (
