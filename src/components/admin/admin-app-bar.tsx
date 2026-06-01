@@ -25,9 +25,9 @@ export function AdminAppBar({
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-2 z-50">
-      <div className="overflow-visible rounded-[1.7rem] border border-charcoal/10 bg-ivory/90 shadow-[0_16px_44px_rgba(53,37,29,0.08),0_2px_10px_rgba(53,37,29,0.04)] backdrop-blur-xl">
-        <div className="flex items-center gap-3 px-3 py-2.5 sm:px-4">
+    <header className="sticky top-1.5 sm:top-2 z-50">
+      <div className="overflow-visible rounded-[1.25rem] sm:rounded-[1.7rem] border border-charcoal/10 bg-ivory/90 shadow-[0_16px_44px_rgba(53,37,29,0.08),0_2px_10px_rgba(53,37,29,0.04)] backdrop-blur-xl">
+        <div className="flex items-center gap-2 sm:gap-3 px-2.5 py-1.5 sm:px-4 sm:py-2.5">
           <Link
             href={brandHref}
             aria-label="Go to admin dashboard"
@@ -36,24 +36,24 @@ export function AdminAppBar({
                 e.preventDefault();
               }
             }}
-            className="inline-flex shrink-0 items-center rounded-[1.35rem] border border-charcoal/8 bg-white/76 px-3 py-2 transition hover:border-charcoal/14 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50"
+            className="inline-flex shrink-0 items-center rounded-lg sm:rounded-[1.35rem] border border-charcoal/8 bg-white/76 px-2 py-1.5 sm:px-3 sm:py-2 transition hover:border-charcoal/14 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50"
           >
             <Image
               src="/brand/logo-dark.png"
               alt="The Sweet Fork"
               width={1024}
               height={582}
-              sizes="(max-width: 640px) 88px, 104px"
-              className="h-auto w-[88px] sm:w-[104px]"
+              sizes="(max-width: 640px) 68px, 104px"
+              className="h-auto w-[68px] sm:w-[104px]"
               priority
             />
           </Link>
 
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-charcoal/48">
+            <p className="hidden sm:block text-[10px] font-semibold uppercase tracking-[0.2em] text-charcoal/48">
               {eyebrow}
             </p>
-            <h1 className="mt-1 truncate font-serif text-[1.65rem] leading-none tracking-[-0.05em] text-charcoal sm:text-[1.9rem]">
+            <h1 className="truncate font-serif text-[1.25rem] leading-none tracking-[-0.03em] text-charcoal sm:mt-1 sm:text-[1.9rem] sm:tracking-[-0.05em]">
               {title}
             </h1>
           </div>

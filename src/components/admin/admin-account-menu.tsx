@@ -98,7 +98,7 @@ export function AdminAccountMenu({ admin }: Readonly<AdminAccountMenuProps>) {
         aria-expanded={isOpen}
         aria-haspopup="dialog"
         aria-label={isOpen ? "Close account menu" : "Open account menu"}
-        className="flex items-center gap-2 rounded-full border border-charcoal/10 bg-white/84 px-2 py-2 text-left shadow-[0_10px_26px_rgba(53,37,29,0.05)] transition hover:border-charcoal/18 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50"
+        className="flex items-center gap-1.5 rounded-full border border-charcoal/10 bg-white/84 p-1 sm:gap-2 sm:px-2 sm:py-2 text-left shadow-[0_10px_26px_rgba(53,37,29,0.05)] transition hover:border-charcoal/18 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50"
         onClick={() => setIsOpen((currentValue) => !currentValue)}
       >
         <span className="hidden min-w-0 pr-1 text-right sm:block">
@@ -110,7 +110,7 @@ export function AdminAccountMenu({ admin }: Readonly<AdminAccountMenuProps>) {
           </span>
         </span>
 
-        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-charcoal text-[11px] font-semibold uppercase tracking-[0.16em] text-ivory shadow-soft">
+        <span className="inline-flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-charcoal text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.16em] text-ivory shadow-soft">
           {initials}
         </span>
         <ChevronDown
