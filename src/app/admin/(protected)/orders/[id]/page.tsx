@@ -111,7 +111,7 @@ function TriageStat({
       <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-charcoal/45">
         {label}
       </p>
-      <div className="mt-2 text-sm font-semibold text-charcoal">{value}</div>
+      <div className="mt-2 break-words text-sm font-semibold text-charcoal">{value}</div>
     </div>
   );
 }
@@ -152,6 +152,155 @@ function DetailRow({
       <div className="max-w-[70%] text-right text-sm font-medium text-charcoal">{value}</div>
     </div>
   );
+}
+
+function PaymentMetric({
+  label,
+  value,
+  emphasis = false,
+}: Readonly<{
+  label: string;
+  value: React.ReactNode;
+  emphasis?: boolean;
+}>) {
+  return (
+    <div
+      className={
+        emphasis
+          ? "rounded-[1.35rem] border border-gold/25 bg-gold/12 px-4 py-3"
+          : "rounded-[1.35rem] border border-charcoal/8 bg-white/72 px-4 py-3"
+      }
+    >
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-charcoal/45">
+        {label}
+      </p>
+      <div className="mt-2 text-sm font-semibold text-charcoal">{value}</div>
+    </div>
+  );
+}
+
+function PaymentSummaryPanel({ detail }: Readonly<{ detail: OrderDetail }>) {
+  return (
+    <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+            Payment snapshot
+          </p>
+          <p className="mt-2 text-sm leading-7 text-charcoal/66">
+            Review what has been collected before adding or correcting a payment record.
+          </p>
+        </div>
+        <span
+          className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${getPaymentStatusClasses(detail.paymentStatus)}`}
+        >
+          {toTitleCase(detail.paymentStatus)}
+        </span>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <PaymentMetric label="Order total" value={formatOrderMoneySummary(detail.totalAmount)} />
+        <PaymentMetric
+          label="Total paid"
+          value={formatOrderMoneySummary(detail.paymentSummary.totalPaid)}
+        />
+        <PaymentMetric
+          label="Balance due"
+          value={formatOrderMoneySummary(detail.balanceDueAmount)}
+          emphasis={detail.balanceDueAmount > 0}
+        />
+        <PaymentMetric
+          label="Deposit required"
+          value={formatOrderMoneySummary(detail.depositDueAmount)}
+        />
+      </div>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+        <PaymentMetric
+          label="Deposit paid"
+          value={formatOrderMoneySummary(detail.paymentSummary.depositPaid)}
+        />
+        <PaymentMetric
+          label="Final paid"
+          value={formatOrderMoneySummary(detail.paymentSummary.finalPaid)}
+        />
+        <PaymentMetric
+          label="Other paid"
+          value={formatOrderMoneySummary(detail.paymentSummary.otherPaid)}
+        />
+      </div>
+    </div>
+  );
+}
+
+function SquareInvoicePanel({ detail }: Readonly<{ detail: OrderDetail }>) {
+  const hasSquareInvoiceInfo = Boolean(
+    detail.squareInvoiceNumber || detail.squareInvoiceStatus || detail.squareInvoiceUrl,
+  );
+
+  return (
+    <div className="rounded-[1.6rem] border border-charcoal/8 bg-white/82 p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+            Square invoice reference
+          </p>
+          <p className="mt-2 text-sm leading-7 text-charcoal/66">
+            {hasSquareInvoiceInfo
+              ? "Manual Square details saved on this order."
+              : "No Square invoice reference has been saved yet."}
+          </p>
+        </div>
+
+        {detail.squareInvoiceUrl ? (
+          <Link
+            href={detail.squareInvoiceUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex min-h-11 w-fit items-center justify-center rounded-full border border-charcoal/12 bg-white px-4 py-2 text-sm font-semibold text-charcoal transition hover:border-charcoal/28 hover:bg-ivory"
+          >
+            Open Square invoice
+          </Link>
+        ) : null}
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <PaymentMetric
+          label="Invoice number"
+          value={detail.squareInvoiceNumber ?? "Not set"}
+        />
+        <PaymentMetric
+          label="Invoice status"
+          value={detail.squareInvoiceStatus ?? "Not set"}
+        />
+        <PaymentMetric
+          label="Invoice link"
+          value={detail.squareInvoiceUrl ? "Saved" : "Not set"}
+        />
+      </div>
+    </div>
+  );
+}
+
+function getPaymentRecordStatusHelp(status: OrderDetail["payments"][number]["status"]) {
+  switch (status) {
+    case "pending":
+      return "Expected or sent, but not confirmed as paid yet.";
+    case "paid":
+      return "Collected and counted toward the order balance.";
+    case "failed":
+      return "Attempt did not go through and does not count as collected.";
+    case "refunded":
+      return "Returned to the customer and subtracted from collected payments.";
+    case "voided":
+      return "Cancelled record kept for history and not counted as collected.";
+    default:
+      return "Review this payment record before relying on it.";
+  }
+}
+
+function formatPaymentDate(value: string | null) {
+  return value ? formatDate(value.slice(0, 10)) : "Not set";
 }
 
 function NoticeBanner({ notice }: { notice: string | undefined }) {
@@ -358,7 +507,12 @@ export default async function AdminOrderDetailPage({
 
       <div className="space-y-4">
         <SectionCard id="payments" title="Payments">
-          <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
+          <div className="space-y-4">
+            <PaymentSummaryPanel detail={detail} />
+            <SquareInvoicePanel detail={detail} />
+          </div>
+
+          <div className="mt-5 rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
               Add payment record
             </p>
@@ -419,12 +573,12 @@ export default async function AdminOrderDetailPage({
                 </div>
 
                 <div>
-                  <Label htmlFor="providerName">Source</Label>
+                  <Label htmlFor="providerName">Payment provider</Label>
                   <Input id="providerName" name="providerName" placeholder="Square, cash, bank transfer, etc." />
                 </div>
 
                 <div>
-                  <Label htmlFor="providerIntentId">Source detail</Label>
+                  <Label htmlFor="providerIntentId">Reference / Square detail</Label>
                   <Input id="providerIntentId" name="providerIntentId" placeholder="Manual external reference" />
                 </div>
               </div>
@@ -449,19 +603,65 @@ export default async function AdminOrderDetailPage({
                   key={payment.id}
                   className="rounded-[1.6rem] border border-charcoal/10 bg-white/82 p-5"
                 >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${getPaymentRecordStatusClasses(payment.status)}`}
-                    >
-                      {toTitleCase(payment.status)}
-                    </span>
-                    <span className="text-sm font-medium text-charcoal">{payment.typeLabel}</span>
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${getPaymentRecordStatusClasses(payment.status)}`}
+                        >
+                          {toTitleCase(payment.status)}
+                        </span>
+                        <span className="text-sm font-semibold text-charcoal">
+                          {payment.typeLabel}
+                        </span>
+                      </div>
+                      <p className="mt-3 text-sm leading-7 text-charcoal/66">
+                        {getPaymentRecordStatusHelp(payment.status)}
+                      </p>
+                    </div>
+
+                    <div className="grid gap-2 sm:grid-cols-2 lg:w-[24rem] lg:flex-none">
+                      <PaymentMetric label="Method" value={payment.methodLabel} />
+                      <PaymentMetric label="Paid date" value={formatPaymentDate(payment.paidAt)} />
+                    </div>
                   </div>
+
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <PaymentMetric
+                      label="Due date"
+                      value={formatPaymentDate(payment.dueAt)}
+                    />
+                    <PaymentMetric
+                      label="Invoice/reference"
+                      value={payment.referenceCode ?? "Not set"}
+                    />
+                    <PaymentMetric
+                      label="Provider"
+                      value={payment.providerName ?? "Not set"}
+                    />
+                    <PaymentMetric
+                      label="Reference detail"
+                      value={payment.providerIntentId ?? "Not set"}
+                    />
+                  </div>
+
+                  {payment.notes ? (
+                    <div className="mt-4 rounded-[1.35rem] border border-charcoal/8 bg-ivory/70 px-4 py-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-charcoal/45">
+                        Payment notes
+                      </p>
+                      <p className="mt-2 text-sm leading-7 text-charcoal/70">{payment.notes}</p>
+                    </div>
+                  ) : null}
 
                   <form action={updateOrderPayment} className="mt-4 space-y-4">
                     <input type="hidden" name="orderId" value={detail.id} />
                     <input type="hidden" name="paymentId" value={payment.id} />
                     <input type="hidden" name="redirectTo" value={redirectTo} />
+
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+                      Edit payment record
+                    </p>
 
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       <div>
@@ -516,12 +716,12 @@ export default async function AdminOrderDetailPage({
                       </div>
 
                       <div>
-                        <Label>Source</Label>
+                        <Label>Payment provider</Label>
                         <Input name="providerName" defaultValue={payment.providerName ?? ""} />
                       </div>
 
                       <div>
-                        <Label>Source detail</Label>
+                        <Label>Reference / Square detail</Label>
                         <Input
                           name="providerIntentId"
                           defaultValue={payment.providerIntentId ?? ""}
