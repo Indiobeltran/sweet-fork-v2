@@ -9,7 +9,6 @@ import {
   FolderKanban,
   LayoutDashboard,
   ShoppingBag,
-  Users,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -35,7 +34,6 @@ type AdminShellChromeProps = {
 const PRIMARY_ICON_BY_KEY: Record<AdminPrimaryNavKey, typeof FileText> = {
   dashboard: LayoutDashboard,
   calendar: CalendarDays,
-  customers: Users,
   inquiries: FileText,
   orders: ShoppingBag,
 };

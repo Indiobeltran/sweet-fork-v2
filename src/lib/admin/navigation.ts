@@ -1,4 +1,4 @@
-export type AdminPrimaryNavKey = "dashboard" | "inquiries" | "orders" | "calendar" | "customers";
+export type AdminPrimaryNavKey = "dashboard" | "inquiries" | "orders" | "calendar";
 export type AdminMoreNavGroup = "Catalog" | "Site" | "Operations" | "System";
 export type AdminPageKey =
   | AdminPrimaryNavKey
@@ -8,6 +8,8 @@ export type AdminPageKey =
   | "media"
   | "faqs"
   | "testimonials"
+  | "customers"
+  | "public-site"
   | "notifications"
   | "users"
   | "settings";
@@ -38,7 +40,6 @@ export const ADMIN_PRIMARY_NAV_ITEMS: AdminPrimaryNavItem[] = [
   { href: "/admin/inquiries", key: "inquiries", label: "Inquiries" },
   { href: "/admin/orders", key: "orders", label: "Orders" },
   { href: "/admin/calendar", key: "calendar", label: "Calendar" },
-  { href: "/admin/customers", key: "customers", label: "Customers" },
 ];
 
 export const ADMIN_MORE_NAV_ITEMS: AdminMoreNavItem[] = [
@@ -48,6 +49,8 @@ export const ADMIN_MORE_NAV_ITEMS: AdminMoreNavItem[] = [
   { group: "Site", href: "/admin/media", key: "media", label: "Media" },
   { group: "Site", href: "/admin/faqs", key: "faqs", label: "FAQs" },
   { group: "Site", href: "/admin/testimonials", key: "testimonials", label: "Testimonials" },
+  { group: "Site", href: "/", key: "public-site", label: "View public site" },
+  { group: "Operations", href: "/admin/customers", key: "customers", label: "Customers" },
   {
     group: "Operations",
     href: "/admin/notifications",
@@ -61,26 +64,28 @@ export const ADMIN_MORE_NAV_ITEMS: AdminMoreNavItem[] = [
 const PRIMARY_TITLE_BY_KEY: Record<AdminPrimaryNavKey, string> = {
   dashboard: "Dashboard",
   calendar: "Calendar",
-  customers: "Customers",
   inquiries: "Inquiries",
   orders: "Orders",
 };
 
-const DETAIL_ROUTE_META = [
+const DETAIL_ROUTE_META: Array<{ href: string; key: AdminPageKey; title: string; activePrimaryKey: AdminPrimaryNavKey | "more" }> = [
   {
     href: "/admin/inquiries",
-    key: "inquiries" as const,
+    key: "inquiries",
     title: "Inquiry detail",
+    activePrimaryKey: "inquiries",
   },
   {
     href: "/admin/orders",
-    key: "orders" as const,
+    key: "orders",
     title: "Order detail",
+    activePrimaryKey: "orders",
   },
   {
     href: "/admin/customers",
-    key: "customers" as const,
+    key: "customers",
     title: "Customer detail",
+    activePrimaryKey: "more",
   },
 ];
 
@@ -120,7 +125,7 @@ export function getAdminPageMeta(pathname: string): AdminPageMeta {
 
   if (detailRoute) {
     return {
-      activePrimaryKey: detailRoute.key,
+      activePrimaryKey: detailRoute.activePrimaryKey,
       key: detailRoute.key,
       title: detailRoute.title,
     };

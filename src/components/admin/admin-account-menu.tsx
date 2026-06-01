@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, X } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 import { signOutAdmin } from "@/app/admin/actions";
@@ -32,30 +32,6 @@ function getAdminInitials(value: string) {
     .map((token) => token.charAt(0))
     .join("")
     .toUpperCase();
-}
-
-function AdminAccountIdentity({
-  email,
-  identity,
-  roleLabel,
-}: Readonly<{
-  email: string;
-  identity: string;
-  roleLabel: string;
-}>) {
-  return (
-    <div className="rounded-[1.4rem] border border-charcoal/8 bg-white/80 px-4 py-4">
-      <p className="text-base font-medium text-charcoal">{identity}</p>
-      <p className="mt-1 text-sm text-charcoal/62">{email}</p>
-
-      <div className="mt-4 rounded-[1.2rem] border border-charcoal/8 bg-paper/72 px-4 py-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-charcoal/42">
-          Role
-        </p>
-        <p className="mt-1 text-sm font-medium text-charcoal">{roleLabel}</p>
-      </div>
-    </div>
-  );
 }
 
 function AdminAccountRoleCard({ roleLabel }: Readonly<{ roleLabel: string }>) {
@@ -151,7 +127,7 @@ export function AdminAccountMenu({ admin }: Readonly<AdminAccountMenuProps>) {
           <button
             type="button"
             aria-label="Close account menu"
-            className="fixed inset-0 z-[60] bg-charcoal/20 backdrop-blur-[2px] md:bg-transparent md:backdrop-blur-0"
+            className="fixed inset-0 z-[60] cursor-default bg-transparent"
             onClick={() => setIsOpen(false)}
           />
 
@@ -159,7 +135,7 @@ export function AdminAccountMenu({ admin }: Readonly<AdminAccountMenuProps>) {
             role="dialog"
             aria-modal="true"
             aria-label="Account menu"
-            className="absolute right-0 top-[calc(100%+0.7rem)] z-[70] hidden w-[18.5rem] rounded-[1.6rem] border border-charcoal/10 bg-white/96 p-4 shadow-[0_24px_64px_rgba(53,37,29,0.14),0_8px_20px_rgba(53,37,29,0.08)] backdrop-blur-xl md:block"
+            className="absolute right-0 top-[calc(100%+0.7rem)] z-[70] w-[18.5rem] max-w-[calc(100vw-1.5rem)] rounded-[1.6rem] border border-charcoal/10 bg-white/96 p-4 shadow-[0_24px_64px_rgba(53,37,29,0.14),0_8px_20px_rgba(53,37,29,0.08)] backdrop-blur-xl"
           >
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-charcoal/45">
               Sweet Fork Admin
@@ -174,46 +150,7 @@ export function AdminAccountMenu({ admin }: Readonly<AdminAccountMenuProps>) {
             <AdminAccountActions onNavigate={() => setIsOpen(false)} />
           </div>
 
-          <div className="fixed inset-x-0 bottom-0 z-[70] px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] md:hidden">
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-label="Account menu"
-              className="rounded-[1.8rem] border border-charcoal/10 bg-ivory/96 p-4 shadow-[0_-24px_64px_rgba(53,37,29,0.18)] backdrop-blur-xl"
-            >
-              <div className="mx-auto h-1.5 w-14 rounded-full bg-charcoal/14" />
 
-              <div className="mt-4 flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                    Sweet Fork Admin
-                  </p>
-                  <h2 className="mt-1.5 font-serif text-[1.9rem] tracking-[-0.04em] text-charcoal">
-                    Account
-                  </h2>
-                </div>
-
-                <button
-                  type="button"
-                  aria-label="Close account menu"
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-charcoal/10 bg-white/82 text-charcoal transition hover:border-charcoal/20 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <X aria-hidden="true" className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="mt-4">
-                <AdminAccountIdentity
-                  email={admin.email}
-                  identity={identity}
-                  roleLabel={roleLabel}
-                />
-              </div>
-
-              <AdminAccountActions onNavigate={() => setIsOpen(false)} />
-            </div>
-          </div>
         </>
       ) : null}
     </div>

@@ -11,6 +11,7 @@ type AdminAppBarProps = {
   title: string;
 };
 
+import { usePathname } from "next/navigation";
 import { ADMIN_HOME_HREF } from "@/lib/admin/navigation";
 
 export function AdminAppBar({
@@ -21,12 +22,20 @@ export function AdminAppBar({
   secondaryContent,
   title,
 }: Readonly<AdminAppBarProps>) {
+  const pathname = usePathname();
+
   return (
     <header className="sticky top-2 z-50">
       <div className="overflow-visible rounded-[1.7rem] border border-charcoal/10 bg-ivory/90 shadow-[0_16px_44px_rgba(53,37,29,0.08),0_2px_10px_rgba(53,37,29,0.04)] backdrop-blur-xl">
         <div className="flex items-center gap-3 px-3 py-2.5 sm:px-4">
           <Link
             href={brandHref}
+            aria-label="Go to admin dashboard"
+            onClick={(e) => {
+              if (pathname === brandHref) {
+                e.preventDefault();
+              }
+            }}
             className="inline-flex shrink-0 items-center rounded-[1.35rem] border border-charcoal/8 bg-white/76 px-3 py-2 transition hover:border-charcoal/14 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50"
           >
             <Image
