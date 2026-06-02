@@ -2,17 +2,23 @@
 
 Update this file before stopping after any substantive repo task.
 
-## Gallery Batch 04 Folder Setup SITREP — 2026-06-02
+## Gallery Batch 04 Source Validation SITREP — 2026-06-02
 
-- **Batch 04 folder setup completed**: Created intake directory structure for Batch 04 gallery import.
-- **Source drop location**: `scratch/gallery-import/batch-04/originals/`
+- **Source folder checked**: `scratch/gallery-import/batch-04/originals/`
 - **Expected photo count**: 11
-- **Manifest path**: `scratch/gallery-import/batch-04/manifest/gallery-batch-04.json`
-- **Current status**: Awaiting user to drop source photos.
-- **Import execution details**:
-  - No images were imported, processed, uploaded, renamed, optimized, deleted, or modified.
-  - No Supabase database records or storage writes were performed.
-- **Next recommended step**: User drops exactly 11 photos into `scratch/gallery-import/batch-04/originals/`. Once added, validate that exactly 11 source images exist in the originals folder, then build/approve the Batch 04 metadata manifest before any import.
+- **Actual photo count found**: 11 (plus `.gitkeep`)
+- **Validation status**: **PASSED**. All 11 files are verified, uncorrupted, and have valid dimensions/properties.
+- **Source inventory path**: `scratch/gallery-import/batch-04/manifest/gallery-batch-04-source-inventory.md`
+- **Image quality concerns**:
+  - `Q95A4-eeij43pyuoql3emt3pdumvmi.JPG` is a high-resolution raw DSLR photo at **14.85 MB**. It must be compressed/downscaled during the processing/import stage to prevent performance issues in the gallery.
+  - 10 of 11 source photos are in Apple HEIC format, which requires automatic progressive JPEG conversion/translation to guarantee browser compatibility.
+- **Category concerns**:
+  - `Q95A4-eeij43pyuoql3emt3pdumvmi.JPG` is a Melissa/Sweet Fork vendor booth lifestyle display image rather than a standard product photo. This event/brand asset needs custom metadata and display rules in the manifest.
+  - Boxed mini pies (`4Fre3-hniucr5bp4tjb62wuaqnwdqu.HEIC` and `cdClX-fp5y3hld7a7fyyhyslcpy23l.HEIC`) could map to either Custom Cakes or Sugar Cookies; they are preliminarily assigned to Sugar Cookies but need custom client approval.
+- **Execution safety check**:
+  - No images were imported, processed, optimized, renamed, uploaded, deleted, or modified.
+  - No Supabase writes, storage objects, or DB records were created or modified.
+- **Next recommended step**: Build the proposed metadata manifest (`scratch/gallery-import/batch-04/manifest/gallery-batch-04.proposed.json`) with approved SEO filenames, titles, alt text, tags, categories, visibility settings, featured flags, display order, and recommended crop choices before running any import script.
 
 ## Gallery Batch 03 Branch Merge & Deployment — 2026-06-02
 
