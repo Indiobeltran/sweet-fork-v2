@@ -2,6 +2,33 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Gallery Batch 03 Media Import Audit — 2026-06-02
+
+- **Current branch**: `codex/gallery-batch-03-setup`.
+- **Audit objective**: Perform a comprehensive import drift audit of the imported Batch 03 media and metadata before merge.
+- **Audit outcome**: **Category A: No issue**.
+  - All actual imported storage paths, titles, alt text, categories, tags, and featured flags in Supabase match the committed manifest at `scratch/gallery-import/batch-03/manifest/gallery-batch-03.proposed.json` with **100% precision (0 mismatches/drift detected)**.
+  - The import was executed with perfect consistency and zero drift.
+- **Audit Summary**:
+  - **Source Files matched**: 20/20.
+  - **Storage Paths matched**: 20/20.
+  - **Titles matched**: 20/20.
+  - **Alt Text matched**: 20/20.
+  - **Categories matched**: 20/20.
+  - **Featured Flags matched**: 20/20.
+  - **Storage Files count**: Exactly 20 under prefix `marketing/gallery-batch-03/`.
+  - **Media Assets count**: Exactly 20.
+  - **Media Assignments count**: Exactly 40 (20 page assignments, 20 category assignments).
+  - **Featured count**: 11.
+  - **Category distribution**: Custom Cakes: 7, Sugar Cookies: 10, Cupcakes: 3, Wedding Cakes: 0, Macarons: 0.
+- **Correction status**: No correction was executed because the import matches the manifest exactly with **100% fidelity**.
+- **Strict Guardrails Preserved**:
+  - No database records were modified or deleted.
+  - No Supabase schema, RLS policies, migrations, or CRUD behaviors were changed.
+  - Untracked files `scratch/qa/orders-prod-qa.mjs`, `.agents/`, and `skills-lock.json` remain untouched.
+  - All Batch 01 and Batch 02 assets remain completely untouched and unmodified.
+- **Next recommended step**: Merge the branch `codex/gallery-batch-03-setup` as the audit is 100% successful and verified.
+
 ## Gallery Batch 03 Media Import — 2026-06-02
 
 - **Current branch**: `codex/gallery-batch-03-setup`.
