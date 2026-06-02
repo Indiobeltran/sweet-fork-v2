@@ -2,6 +2,78 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Gallery Batch 02 Proposed Manifest — 2026-06-01
+
+- **Current branch**: `codex/gallery-batch-02-prep`.
+- **Objective**: Validate all 20 Batch 02 source images and create a full proposed manifest for user review before any import.
+- **User decision**: All 20 Batch 02 images should be included. Duplicate/near-duplicate images are documented in notes, not excluded.
+- **Starting state**:
+  - Started from latest `main`; `git pull origin main` reported already up to date.
+  - Because the Batch 02 setup branch was not present on `main`, the tracked Batch 02 scaffold files were restored from `codex/gallery-batch-02-setup` onto this prep branch.
+  - Pre-existing untracked `.agents/`, `skills-lock.json`, and `scratch/qa/orders-prod-qa.mjs` were preserved.
+  - `scratch/qa/orders-prod-qa.mjs` remained untouched and was not staged.
+- **Source folder validated**: `scratch/gallery-import/batch-02/originals/`.
+- **All 20 expected sources validated**:
+  - `IMG_4697.jpg`
+  - `IMG_4696.jpg`
+  - `IMG_4722.jpg`
+  - `IMG_4698.jpg`
+  - `IMG_4721.jpg`
+  - `IMG_4695.jpg`
+  - `IMG_4677.jpg`
+  - `IMG_4653.jpg`
+  - `IMG_4414.jpg`
+  - `IMG_4531.jpg`
+  - `IMG_4413.jpg`
+  - `IMG_4190.jpg`
+  - `IMG_4189.jpg`
+  - `IMG_4188.jpg`
+  - `IMG_3898.jpg`
+  - `IMG_3897.jpg`
+  - `IMG_3896.jpg`
+  - `062248F9-C5AC-4FAB-9F21-8D2E5AFC2384.jpg`
+  - `0B5C197D-174B-4140-845C-73B7970C06E9.PNG`
+  - `AE8E07C6-4210-4D0F-AFA0-F3EFEFBB7111.PNG`
+- **Validation results**:
+  - 20/20 expected source files are present.
+  - No missing expected source files.
+  - No unexpected source image files.
+  - No duplicate basenames.
+  - All files are readable images.
+  - JPEG sources are `image/jpeg`; PNG sources are `image/png`.
+  - Originals were not processed, optimized, renamed, moved, uploaded, or modified.
+- **Proposed manifest path**: `scratch/gallery-import/batch-02/manifest/gallery-batch-02.proposed.json`.
+- **Proposed category distribution**:
+  - Custom Cakes: 11
+  - Sugar Cookies: 4
+  - Cupcakes: 4
+  - Wedding Cakes: 1
+  - Macarons: 0
+- **Proposed featured count**: 11.
+- **Duplicate/near-duplicate groups documented but kept included**:
+  - Group A, strawberry cake: `IMG_4414.jpg`, `IMG_4413.jpg`.
+  - Group B, woodland baby shower cake: `IMG_4190.jpg`, `IMG_4189.jpg`.
+  - Group C, western/cow/cupcake/cookie set: `IMG_3897.jpg`, `IMG_3896.jpg`, `062248F9-C5AC-4FAB-9F21-8D2E5AFC2384.jpg`, `0B5C197D-174B-4140-845C-73B7970C06E9.PNG`, `AE8E07C6-4210-4D0F-AFA0-F3EFEFBB7111.PNG`.
+- **PNG conversion note**:
+  - `0B5C197D-174B-4140-845C-73B7970C06E9.PNG` and `AE8E07C6-4210-4D0F-AFA0-F3EFEFBB7111.PNG` remain listed by their original source filenames.
+  - Their approved filenames use `.jpg`; they should likely be converted to optimized JPEGs during processing/import unless the final import pipeline requires preserving PNG.
+- **Guardrails confirmed**:
+  - No Supabase import/upload occurred.
+  - No Supabase schema, data, storage, admin media behavior, gallery UI, or app code was changed.
+  - Batch 01 files were not modified.
+  - `.env.local`, Supabase keys, and Vercel env values were not inspected or exposed.
+- **Verification planned/run**:
+  - Source folder listing and file validation scripts.
+  - `python` was unavailable on PATH, so JSON checks were run with `python3`.
+  - `python3 -m json.tool scratch/gallery-import/batch-02/manifest/gallery-batch-02.proposed.json > /tmp/gallery-batch-02-proposed-check.json`.
+  - Manifest source coverage assertion for all 20 expected filenames.
+  - Category/featured count checks.
+  - `git diff --check`.
+  - `git status --short`.
+  - `npm run lint`, `npm run typecheck`, and `npm run build` are intentionally unnecessary because this task changed only documentation/scaffold/manifest files and no app/source code.
+- **Next recommended step**:
+  - User should review and approve `scratch/gallery-import/batch-02/manifest/gallery-batch-02.proposed.json`, then run the Batch 02 final import prompt.
+
 ## Gallery Mobile UX Polish — 2026-06-01
 
 - **Current branch**: `codex/gallery-mobile-polish`.
