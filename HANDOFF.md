@@ -34,6 +34,11 @@ Update this file before stopping after any substantive repo task.
   - Visit the homepage `/` and verify that featured items still render in the main gallery carousel.
 - **Known Limitations & Follow-ups**:
   - Future drag-and-drop sorting can be implemented client-side using native HTML5 drag-and-drop APIs once the owner requests visual reordering on the grid itself, saving the updated array of indices to the existing database orders.
+- **Production Push & Deployment Sync (2026-06-01)**:
+  - *Issue*: User reported no visible differences on `/admin/media` on the production server.
+  - *Root Cause*: The local implementation was completed and committed successfully under hash `73017d6`, but the commit had not yet been pushed to `origin/main` (local was `ahead 1` of remote).
+  - *Resolution*: Confirmed local working tree is clean and code verified flawlessly. Executed `git push origin main` to synchronize local changes to GitHub, which automatically kicks off the production deployment on Vercel.
+  - *Verification*: Searched the active paths with `grep_search` and confirmed 100% of old expanded repeated layouts and technical labels (like "Save image details" and "Website media library" headings) have been completely removed. Verified local and remote main are aligned (`## main...origin/main`).
 
 
 ## Gallery Batch 02 Media Import Audit — 2026-06-01
