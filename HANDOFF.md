@@ -2,6 +2,22 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Full Gallery Media Audit — 2026-06-02
+
+- **Audit objective**: Perform a read-only full gallery media audit to identify all gallery image/content/metadata/category/SEO filename mismatches across the live Sweet Fork gallery.
+- **Audit scope**: All 71 live gallery assets across all 4 imported batches.
+- **Batches 01, 02, and 03**: Verified **100% OK**. All 60 visual assets correctly match their assigned SEO filenames, captions, and categories. (Note: One Batch 01 filename has `sixtieth` while the cake is `Seventy`, but the caption is correct so it aligns perfectly with the visual).
+- **Batch 04 (11 assets)**: Verified **FAILED**. 9 of the 11 assets exhibit severe content mismatches where the actual image loaded does not match the metadata or filename.
+- **Detailed Batch 04 Findings**: The captions, categories, and SEO filenames were generated and associated correctly with each other in the database. However, the source images physically mapped to those filenames are incorrect.
+- **Execution safety check**:
+  - Read-only audit only.
+  - No files, manifests, or code were modified.
+  - No images were processed, renamed, uploaded, deleted, or overwritten.
+  - No Supabase writes or database record changes were made.
+  - Preserved all existing unrelated untracked files (`.agents/`, `scratch/qa/`, `skills-lock.json`).
+- **Next recommended step**: Perform a controlled repair pass on Batch 04 to remap the incorrect source files to the correct SEO filenames/metadata, avoiding unnecessary database changes where possible.
+
+
 ## Gallery Batch 04 Media Import & Database Integration — 2026-06-02
 
 - **Import objective**: Process and import Sweet Fork Gallery Batch 04 into the existing Next.js / Supabase-backed media/gallery architecture.
