@@ -9,17 +9,17 @@
     {
       "source_filename": "4Fre3-hniucr5bp4tjb62wuaqnwdqu.HEIC",
       "source_basename": "4Fre3-hniucr5bp4tjb62wuaqnwdqu",
-      "approved_filename": "sweet-fork-mini-pie-dessert-box-centerville-utah.jpg",
-      "category": "Custom Cakes",
-      "title": "Mini Pie Dessert Box",
-      "alt_text": "Open dessert box with four mini pie-style desserts decorated with buttercream borders, lattice details, and flower accents.",
-      "tags": ["custom desserts", "mini pies", "dessert box", "buttercream desserts", "party desserts", "seasonal desserts"],
+      "approved_filename": "sweet-fork-mini-pie-sugar-cookie-box-centerville-utah.jpg",
+      "category": "Sugar Cookies",
+      "title": "Mini Pie Sugar Cookie Box",
+      "alt_text": "Open dessert box with decorated sugar cookies designed like mini pies with buttercream borders, lattice details, and flower accents.",
+      "tags": ["sugar cookies", "decorated cookies", "pie cookies", "mini pie cookies", "cookie box", "seasonal cookies"],
       "visibility": "published",
       "featured": false,
       "sort_priority": "medium",
       "suggested_use": "Supporting gallery image",
       "recommended_crop": "square",
-      "notes": "Current gallery categories do not have a dedicated mini desserts category. Mapped to Custom Cakes as closest fit."
+      "notes": "These are decorated sugar cookies styled to look like mini pies. Corrected from Custom Cakes to Sugar Cookies."
     },
     {
       "source_filename": "Ej93e-jtl5pood6q2ibg6vfaa7dgyu.HEIC",
@@ -159,17 +159,17 @@
     {
       "source_filename": "cdClX-fp5y3hld7a7fyyhyslcpy23l.HEIC",
       "source_basename": "cdClX-fp5y3hld7a7fyyhyslcpy23l",
-      "approved_filename": "sweet-fork-boxed-mini-pie-desserts-centerville-utah.jpg",
-      "category": "Custom Cakes",
-      "title": "Boxed Mini Pie Desserts",
-      "alt_text": "Boxed mini pie-style desserts with lattice and flower details shown through a bakery box window with The Sweet Fork label.",
-      "tags": ["custom desserts", "mini pies", "boxed desserts", "bakery box", "party desserts", "seasonal desserts"],
+      "approved_filename": "sweet-fork-boxed-mini-pie-sugar-cookies-centerville-utah.jpg",
+      "category": "Sugar Cookies",
+      "title": "Boxed Mini Pie Sugar Cookies",
+      "alt_text": "Boxed decorated sugar cookies designed like mini pies shown through a bakery box window with The Sweet Fork label.",
+      "tags": ["sugar cookies", "decorated cookies", "pie cookies", "boxed cookies", "cookie gift box", "seasonal cookies"],
       "visibility": "published",
       "featured": false,
       "sort_priority": "low",
       "suggested_use": "Supporting gallery or admin-only reference",
       "recommended_crop": "square",
-      "notes": "Useful packaging photo, but less ideal for main gallery because box window glare reduces product clarity."
+      "notes": "These are decorated sugar cookies styled to look like mini pies. Packaging photo is useful as a supporting gallery image, though the box window glare makes it less ideal for featured placement."
     }
   ]
 }

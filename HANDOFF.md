@@ -9,15 +9,15 @@ Update this file before stopping after any substantive repo task.
 - **Number of metadata items**: 11
 - **Category distribution**:
   - Cupcakes: 5
-  - Custom Cakes: 4
-  - Sugar Cookies: 1
+  - Sugar Cookies: 3
   - Macarons: 1
+  - Custom Cakes: 2
   - Wedding Cakes: 0
 - **Featured count**: 4
 - **Filename-to-photo verification and mapping**:
   - Verified and mapped `Q95A4-eeij43pyuoql3emt3pdumvmi.JPG` to the **Raspberry Chocolate Cupcakes** photo (Cupcakes category, high-quality Nikon Z 5 DSLR photo, marked `featured: true` / `sort_priority: high`).
   - Verified and mapped `IMG_0045.HEIC` to the **Sweet Fork Vendor Booth Display** photo (Custom Cakes category, supporting brand/lifestyle display asset, marked `featured: false` / `sort_priority: low`).
-  - Boxed mini pies (`4Fre3-hniucr5bp4tjb62wuaqnwdqu.HEIC` and `cdClX-fp5y3hld7a7fyyhyslcpy23l.HEIC`) have been mapped to `Custom Cakes` as the closest category fit since no dedicated mini desserts category currently exists.
+  - The two mini pie-style dessert photos (`4Fre3-hniucr5bp4tjb62wuaqnwdqu.HEIC` and `cdClX-fp5y3hld7a7fyyhyslcpy23l.HEIC`) are verified to be decorated sugar cookies designed to look like mini pies, and have been correctly mapped to the `Sugar Cookies` category.
 - **Execution safety check**:
   - No images were imported, processed, optimized, renamed, uploaded, deleted, or modified.
   - No Supabase writes, storage objects, or DB records were created or modified.
