@@ -2,6 +2,42 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Gallery Batch 03 Validation & Proposed Manifest — 2026-06-01
+
+- **Current branch**: `codex/gallery-batch-03-setup`.
+- **SITREP**: Completed validation of 20 raw Batch 03 original images and created the proposed manifest at `scratch/gallery-import/batch-03/manifest/gallery-batch-03.proposed.json` for user review.
+- **Source Folder Inspected**: `scratch/gallery-import/batch-03/originals/`
+- **Number of Source Files Found**: Exactly 20 source files (plus `.gitkeep`).
+- **File Type/Dimension Summary**:
+  - JPEGs/JPGs: 13 files (stable resolutions ranging from 896px to 2048px).
+  - PNGs: 2 files (to be converted to JPG during processing/import).
+  - HEICs: 5 files (to be converted to JPG during processing/import).
+- **Proposed Category Distribution**:
+  - Custom Cakes: 7
+  - Sugar Cookies: 10
+  - Cupcakes: 3
+  - Wedding Cakes: 0
+  - Macarons: 0 (Note: Macarons appear in a mixed cookie box `IMG_1792.heic` which is categorized under Sugar Cookies).
+- **Proposed Featured Count**: 11 evergreen, highly polished editorial images.
+- **Duplicate/Near-Duplicate Groups**:
+  - Group 1 (Western Highland Cow Baby Shower Cookies): 5 close-ups (`1000015648` overview tray, and `1000015649` to `1000015652` macro close-ups).
+  - Group 2 (Shark Cupcakes): 3 images (`4AE0774B-D06F-4A44-91E7-1BB086C47AE7` horizontal box, `D4673383-1DFE-4914-92E1-B974972481F9` stand grouping, `IMG_2605` high-end single editorial).
+  - Group 3 (Strawberry Baby Shower Cookies): 2 images (`IMG_1787` cookies only, `IMG_1792` cookies + macarons).
+  - Group 4 (Puppy Theme First Birthday Cookies): 3 images (`IMG_2994`, `IMG_2999`, `IMG_3006` showcasing different cookie drawing shapes from the same order).
+- **PNG/HEIC Conversion Notes**:
+  - 2 PNGs (`4AE0774B-D06F-4A44-91E7-1BB086C47AE7.PNG` and `D4673383-1DFE-4914-92E1-B974972481F9.PNG`) and 5 HEICs (`IMG_1787.heic`, `IMG_1792.heic`, `IMG_2994.heic`, `IMG_2999.heic`, `IMG_3006.heic`) are flagged for conversion to optimized `.jpg` during the import stage.
+- **Metadata Rules Compliance**:
+  - All customer names (like "Simon" or "Michael") have been completely removed from public filenames, titles, and alt text.
+  - The Minecraft brand name has been generalized to `"Pixel Blocks Video Game Birthday Cake"` in the public title.
+  - Approved filenames start with `sweet-fork-` and end with `.jpg`.
+- **Strict Guardrails Preserved**:
+  - **No Supabase import or upload occurred.**
+  - **No images were processed, renamed, optimized, or deleted.**
+  - **Supabase schema, data, storage, and admin media behavior were not changed.**
+  - **Batch 01 and Batch 02 files were not modified.**
+  - **Untracked files `scratch/qa/orders-prod-qa.mjs`, `.agents/`, and `skills-lock.json` remained untouched.**
+- **Next step**: User review and approval of the proposed manifest `scratch/gallery-import/batch-03/manifest/gallery-batch-03.proposed.json`, followed by running the final import stage.
+
 ## Gallery Batch 03 Setup — 2026-06-01
 
 - **Current branch**: `codex/gallery-batch-03-setup`.
