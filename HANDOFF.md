@@ -2,6 +2,112 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Batch 01 Gallery Import Complete — 2026-06-01
+
+- Current branch: `codex/gallery-batch-01-import`.
+- Task objective: import Sweet Fork Gallery Batch 01 into the existing Supabase-backed `media_assets` + `media_assignments` gallery/media architecture without replacing the gallery with static files.
+- Pre-import state:
+  - Started from `main`, which was aligned with `origin/main`.
+  - Pre-existing untracked files were `scratch/gallery-import/batch-01/manifest/gallery-batch-01.json` and `scratch/qa/orders-prod-qa.mjs`.
+  - `scratch/qa/orders-prod-qa.mjs` was preserved and not modified, moved, staged, or committed.
+  - `.env.local` was used for Supabase access but was not printed, staged, or committed.
+- Files changed for this task:
+  - `HANDOFF.md`
+  - `scratch/gallery-import/batch-01/manifest/gallery-batch-01.json`
+- Source folder confirmed: `scratch/gallery-import/batch-01/originals/`.
+- Manifest path: `scratch/gallery-import/batch-01/manifest/gallery-batch-01.json`.
+- Batch size and category distribution:
+  - 20 images total.
+  - Custom Cakes: 9.
+  - Sugar Cookies: 5.
+  - Macarons: 4.
+  - Wedding Cakes: 1.
+  - Cupcakes: 1.
+- Current gallery/media architecture confirmed:
+  - Public `/gallery` calls `getGalleryItemsForPlacement("gallery.grid")`.
+  - Public gallery reads Supabase `media_assignments` for `assignment_type = 'page'`, `page_key = 'gallery'`, `section_key = 'grid'`, `slot_key = 'gallery'`, then reads matching `media_assets` from bucket `marketing`.
+  - Category labels come from `gallery-category` `media_assignments` and `gallery_categories`.
+  - Admin `/admin/media` reads/edits the same records through `getMediaLibraryData`, using `caption` as the display title, `alt_text` for alt text, `metadata.isFeatured` for featured state, and assignment rows for categories/page placements.
+  - Static fallback under `public/placeholders/marketing/` remains untouched.
+- Import approach used:
+  - Preserved originals unchanged.
+  - Created 20 processed JPEG copies in `scratch/gallery-import/batch-01/processed/` using the approved SEO filenames, stable dimensions, and `sips` JPEG output at quality option 86.
+  - Processed files remain ignored by git and are not staged.
+  - Created the missing public Supabase Storage bucket `marketing` using the same bucket name/public-image convention as the existing admin upload flow.
+  - Uploaded processed images to `marketing` bucket storage paths under `marketing/gallery-batch-01/<approved_filename>`.
+  - Inserted 20 `media_assets` rows with `asset_kind = 'image'`, `source_kind = 'upload'`, `caption`, `alt_text`, dimensions, size, checksum, public URL, and manifest metadata.
+  - Inserted 20 `gallery.grid` page assignments and 20 category assignments.
+  - No existing gallery images or records were removed.
+  - No Supabase schema, migration, RLS, policy, API route, or app code changes were made.
+- Unsupported schema/admin UI fields:
+  - `tags`, `visibility`, `sort_priority`, `suggested_use`, `recommended_crop`, source basename, source filename, approved filename, batch id, and notes are preserved in `media_assets.metadata`.
+  - The current admin UI does not expose those metadata fields directly, but it does expose/edit title, alt text, featured state, category tags, page placements, and deletion.
+  - Current frontend does not filter by metadata `visibility`; all imported manifest items are `published`.
+- Admin verification steps:
+  - Open `/admin/media`.
+  - Confirm the Website media library contains the 20 Batch 01 images.
+  - Confirm each image has its approved filename, title/caption, alt text, featured checkbox state, category tag, and Gallery page placement.
+- Customer-facing verification steps:
+  - Open `/gallery`.
+  - Confirm Batch 01 images load from Supabase through Next.js Image optimization.
+  - Confirm lightbox opens images and category labels reflect Custom Cakes, Sugar Cookies, Macarons, Wedding Cakes, and Cupcakes.
+  - Open `/` to spot-check featured images if homepage gallery is using featured marketing assets.
+- Commands run:
+  - `codex mcp add supabase --url https://mcp.supabase.com/mcp?project_ref=renjsmdsrzjnppqpaoaa`
+  - `codex mcp login supabase`
+  - `git branch --show-current`
+  - `git status --short`
+  - `git status -sb`
+  - `git log --oneline -n 12`
+  - `git checkout -b codex/gallery-batch-01-import`
+  - Architecture reads/searches across `src/app/admin/(protected)/media`, `src/app/(site)/gallery`, `src/components/site/gallery-grid.tsx`, `src/lib/site/marketing.ts`, `src/lib/admin/site-management.ts`, `src/types/supabase.generated.ts`, `scripts/`, and `supabase/`.
+  - Manifest/source validation Node scripts.
+  - `sips`-based JPEG processing script.
+  - Supabase import script using `.env.local` without printing credentials.
+  - Supabase post-import verification scripts for storage objects, `media_assets`, and `media_assignments`.
+  - `curl -I -L --max-time 15 <sample public Supabase image URL>`
+  - `npm run lint`
+  - `npm run typecheck`
+  - `npm run build`
+  - `git diff --check`
+- Verification results:
+  - Manifest parses and contains exactly 20 items.
+  - All 20 expected source basenames matched exactly once.
+  - No unexpected source image files beyond the approved batch sources.
+  - All originals are `image/jpeg`.
+  - Original SHA-256 hashes matched the pre-import baseline after processing/import.
+  - Processed folder contains 20 approved output filenames plus `.gitkeep`; no missing or extra processed filenames.
+  - Supabase Storage contains 20 objects under `marketing/gallery-batch-01/`.
+  - Supabase `media_assets` contains 20 Batch 01 records, with no duplicate storage paths.
+  - Supabase `media_assignments` contains 40 Batch 01 assignment rows: 20 `gallery.grid` page assignments and 20 category assignments.
+  - No duplicate page assignment contexts or duplicate category assignment contexts were detected.
+  - 8 imported assets have `metadata.isFeatured = true`.
+  - Sample public Supabase image URL returned HTTP 200 and `content-type: image/jpeg`.
+  - `npm run lint` passed.
+  - `npm run typecheck` passed.
+  - `npm run build` passed.
+  - `git diff --check` passed.
+  - No test script exists in `package.json`.
+- Decisions made:
+  - Used the existing Supabase/admin media model rather than static files.
+  - Created the missing `marketing` bucket because the existing admin upload flow is designed to create it on demand.
+  - Stored final web assets at approved SEO filenames while keeping originals unchanged and local-only.
+  - Did not add an import script to the repo because this was a one-off remote data import and no durable code path was required.
+- Assumptions:
+  - The manifest order is the intended gallery sort order, so page/category assignment `display_order` uses `(manifest index + 1) * 10`.
+  - Batch metadata unsupported by current UI should remain in JSON metadata instead of requiring schema changes.
+- Known issues / limitations:
+  - Admin UI and customer-facing browser QA still need a visual spot-check after deploy or with authenticated local access.
+  - The Supabase public object response includes `x-robots-tag: none`; this is a storage response header and does not affect the public gallery page metadata, but direct storage object indexing is not expected.
+  - Earlier verification attempted a PostgREST embedded join from `media_assignments.target_id` to `gallery_categories`; PostgREST reported no schema-cache relationship for that join, so verification was rerun with separate category lookup queries successfully.
+- Open questions:
+  - Whether selected featured items should also receive explicit `home.gallery` page assignments later, or whether the current featured metadata behavior is sufficient.
+- Staged / unstaged status at handoff time:
+  - Expected to stage only `HANDOFF.md` and `scratch/gallery-import/batch-01/manifest/gallery-batch-01.json`.
+  - Do not stage `.env.local`, `scratch/qa/`, original images, or processed images.
+- Next recommended step:
+  - Commit the focused import metadata/handoff changes, then push branch with `git push -u origin codex/gallery-batch-01-import`.
+
 ## Phase 4C-1 Admin Order Payment Clarity — 2026-06-01
 
 - Current branch: `codex/admin-order-payment-clarity`.
