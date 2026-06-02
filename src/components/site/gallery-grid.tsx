@@ -247,45 +247,48 @@ export function GalleryGrid({
   };
 
   const filterCategories = [
-    "All",
-    "Custom Cakes",
-    "Sugar Cookies",
-    "Macarons",
-    "Cupcakes",
-    "Wedding Cakes"
+    { key: "All", label: "All", mobileLabel: "All" },
+    { key: "Custom Cakes", label: "Custom Cakes", mobileLabel: "Cakes" },
+    { key: "Sugar Cookies", label: "Sugar Cookies", mobileLabel: "Cookies" },
+    { key: "Macarons", label: "Macarons", mobileLabel: "Macarons" },
+    { key: "Cupcakes", label: "Cupcakes", mobileLabel: "Cupcakes" },
+    { key: "Wedding Cakes", label: "Wedding Cakes", mobileLabel: "Wedding" },
   ] as const;
 
   return (
     <>
-      {/* Dynamic Mobile-First Filter Chips */}
-      <div className="mb-12 flex items-center justify-start md:justify-center overflow-x-auto pb-4 md:pb-0 scrollbar-none gap-2 px-1 -mx-4 md:mx-0">
+      {/* Dynamic Mobile-First Filter Chips - Wrapping cleanly on mobile */}
+      <div className="mb-10 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 px-1">
         {filterCategories.map((category) => {
-          const count = category === "All"
+          const count = category.key === "All"
             ? items.length
-            : items.filter(item => getFilterCategory(item.category) === category).length;
+            : items.filter(item => getFilterCategory(item.category) === category.key).length;
 
-          if (count === 0 && category !== "All") return null;
+          if (count === 0 && category.key !== "All") return null;
 
-          const isActive = activeCategory === category;
+          const isActive = activeCategory === category.key;
 
           return (
             <button
-              key={category}
+              key={category.key}
               type="button"
               onClick={() => {
-                setActiveCategory(category);
+                setActiveCategory(category.key);
                 setActiveIndex(null);
               }}
               className={cn(
-                "inline-flex items-center gap-1.5 shrink-0 rounded-full px-5 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition duration-200 border",
+                "inline-flex items-center justify-center gap-1 sm:gap-1.5 shrink-0 rounded-full px-3.5 py-1.5 sm:px-5 sm:py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.14em] transition duration-200 border min-h-[2.25rem]",
                 isActive
                   ? "bg-charcoal border-charcoal text-ivory shadow-sm"
                   : "bg-white/80 border-charcoal/10 text-charcoal/80 hover:border-charcoal/30 hover:text-charcoal"
               )}
             >
-              <span>{category}</span>
+              <span>
+                <span className="sm:hidden">{category.mobileLabel}</span>
+                <span className="hidden sm:inline">{category.label}</span>
+              </span>
               <span className={cn(
-                "text-[10px] font-bold",
+                "text-[9px] sm:text-[10px] font-bold",
                 isActive ? "text-ivory/60" : "text-charcoal/40"
               )}>
                 ({count})
@@ -352,12 +355,12 @@ export function GalleryGrid({
                       </div>
                     </div>
                   )}
-                  <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 flex items-end justify-between gap-2">
-                    <span className="inline-flex rounded-full bg-charcoal/75 px-2.5 py-0.5 text-[9px] sm:text-[10px] uppercase tracking-[0.15em] text-ivory">
-                      {item.category}
+                  <div className="absolute bottom-2.5 left-2.5 right-2.5 sm:bottom-4 sm:left-4 sm:right-4 flex items-center justify-between gap-1 sm:gap-2">
+                    <span className="inline-flex items-center justify-center text-center rounded-full bg-charcoal/75 px-1 w-[72px] sm:w-[90px] h-[36px] sm:h-[44px] text-[7.5px] sm:text-[9px] font-semibold uppercase tracking-[0.12em] text-ivory leading-[1.2] select-none">
+                      {getFilterCategory(item.category)}
                     </span>
                     {item.imageUrl ? (
-                      <span className="rounded-full border border-white/18 bg-white/12 px-2.5 py-0.5 text-[9px] sm:text-[10px] uppercase tracking-[0.14em] text-ivory backdrop-blur">
+                      <span className="inline-flex items-center justify-center text-center rounded-full border border-white/18 bg-white/12 px-1 w-[58px] sm:w-[76px] h-[36px] sm:h-[44px] text-[7.5px] sm:text-[9px] font-semibold uppercase tracking-[0.11em] text-ivory backdrop-blur leading-none select-none">
                         View larger
                       </span>
                     ) : null}
