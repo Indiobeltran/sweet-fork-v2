@@ -414,7 +414,7 @@ export function GalleryGrid({
                     alt={activeItem.alt}
                     fill
                     priority
-                    quality={85}
+                    quality={82}
                     sizes={GALLERY_MODAL_SIZES}
                     className="object-contain"
                   />

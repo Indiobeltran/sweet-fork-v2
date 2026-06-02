@@ -17,15 +17,22 @@ Update this file before stopping after any substantive repo task.
 - **Strict Guardrails Preserved**:
   - Confirmed that this refinement pass is entirely frontend-only.
   - No Supabase schemas, tables, migrations, or keys were exposed or altered.
-  - The admin media model (`/admin/media`) remains fully compatible.
+  - The admin media model (`/admin/media`) and CRUD operations remain fully compatible and untouched.
   - Pre-existing untracked file `scratch/qa/orders-prod-qa.mjs` was completely preserved and untouched.
+- **Lightbox Image Regression & Fix**:
+  - *Issue Discovered*: During initial Visual QA, the lightbox image rendered as a broken image displaying its alt text instead of the actual custom cake/dessert picture.
+  - *Root Cause Analysis*: In the UX redesign, we set `quality={85}` on the Next.js `Image` element in the lightbox. However, `next.config.ts` enforces a strict whitelist of allowed qualities (`qualities: [75, 82]`) to control optimization caches. The invalid quality of `85` caused Next.js's image handler to return a 400 Bad Request, leading to a broken image display.
+  - *Fix Applied*: Reverted `quality={85}` to the whitelisted `quality={82}` in `src/components/site/gallery-grid.tsx`.
+- **Durable Visual QA & Image Load Assertions**:
+  - Created a robust visual QA test runner (`scratch/gallery-visual-qa.mjs`) that programmatically clicks filters, loads the lightbox on mobile and desktop viewports, and asserts that the `<img>` element completes loading with a non-zero size (`complete && naturalWidth > 0`).
+  - *Results*: Both mobile and desktop visual checks passed with **100% successful image rendering** (e.g. `naturalWidth: 335` on mobile, `naturalWidth: 726` on desktop). No broken images or layout regressions exist. All screenshot captures are verified.
 - **Verification Results**:
   - `npm run lint` completed with **zero** warnings or errors.
   - `npm run typecheck` passed cleanly, ensuring full TypeScript integrity.
-  - `npm run build` compiled successfully in 3.6s with static route prerendering for `/gallery` fully verified.
+  - `npm run build` compiled successfully with static route prerendering for `/gallery` fully verified.
   - `git diff --check` completed successfully with all whitespace errors cleared.
 - **Staged / Unstaged Status**:
-  - Changed files will be staged and committed to `codex/gallery-ux-refinement`.
+  - Changed files `src/components/site/gallery-grid.tsx` and `HANDOFF.md` are staged and committed on `codex/gallery-ux-refinement`.
   - `scratch/qa/` and `.agents/` remain untracked.
 - **Next recommended step**:
   - Merge the refined branch `codex/gallery-ux-refinement` into `main`.
