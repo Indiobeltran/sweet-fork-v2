@@ -45,30 +45,59 @@ function getAdjacentInteractiveIndex(
   ] ?? null;
 }
 
+function getFilterCategory(category: string): string {
+  const normalized = category.toLowerCase().replace(/[-_]+/g, " ").trim();
+  if (normalized === "custom cake" || normalized === "custom cakes") {
+    return "Custom Cakes";
+  }
+  if (normalized === "sugar cookies" || normalized === "sugar cookie") {
+    return "Sugar Cookies";
+  }
+  if (normalized === "macarons" || normalized === "macaron") {
+    return "Macarons";
+  }
+  if (normalized === "cupcakes" || normalized === "cupcake") {
+    return "Cupcakes";
+  }
+  if (normalized === "wedding cake" || normalized === "wedding cakes") {
+    return "Wedding Cakes";
+  }
+  return category;
+}
+
 export function GalleryGrid({
   items,
   compact = false,
   priorityCount = 0,
 }: GalleryGridProps) {
+  const [activeCategory, setActiveCategory] = useState<string>("All");
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+  const filteredItems = useMemo(() => {
+    if (activeCategory === "All") {
+      return items;
+    }
+    return items.filter((item) => getFilterCategory(item.category) === activeCategory);
+  }, [items, activeCategory]);
+
   const dialogId = useId();
   const triggerRefs = useRef<Record<number, HTMLButtonElement | null>>({});
   const dialogPanelRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-  const activeItem = activeIndex === null ? null : items[activeIndex] ?? null;
+  const activeItem = activeIndex === null ? null : filteredItems[activeIndex] ?? null;
   const titleId = `${dialogId}-title`;
   const descriptionId = `${dialogId}-description`;
   const interactiveIndexes = useMemo(
     () =>
-      items.reduce<number[]>((accumulator, item, index) => {
+      filteredItems.reduce<number[]>((accumulator, item, index) => {
         if (item.imageUrl) {
           accumulator.push(index);
         }
 
         return accumulator;
       }, []),
-    [items],
+    [filteredItems],
   );
   const activeImagePosition =
     activeIndex === null ? null : interactiveIndexes.indexOf(activeIndex) + 1;
@@ -163,7 +192,7 @@ export function GalleryGrid({
   }, [activeIndex, interactiveIndexes]);
 
   const openItem = (index: number) => {
-    if (!items[index]?.imageUrl) {
+    if (!filteredItems[index]?.imageUrl) {
       return;
     }
 
@@ -217,23 +246,69 @@ export function GalleryGrid({
     showPreviousItem();
   };
 
+  const filterCategories = [
+    "All",
+    "Custom Cakes",
+    "Sugar Cookies",
+    "Macarons",
+    "Cupcakes",
+    "Wedding Cakes"
+  ] as const;
+
   return (
     <>
-      <div
-        className={cn("grid gap-4 sm:grid-cols-2 lg:grid-cols-3", compact && "lg:grid-cols-3")}
-      >
-        {items.map((item, index) => {
-          const isFeatured = index % 3 === 0;
+      {/* Dynamic Mobile-First Filter Chips */}
+      <div className="mb-12 flex items-center justify-start md:justify-center overflow-x-auto pb-4 md:pb-0 scrollbar-none gap-2 px-1 -mx-4 md:mx-0">
+        {filterCategories.map((category) => {
+          const count = category === "All"
+            ? items.length
+            : items.filter(item => getFilterCategory(item.category) === category).length;
 
+          if (count === 0 && category !== "All") return null;
+
+          const isActive = activeCategory === category;
+
+          return (
+            <button
+              key={category}
+              type="button"
+              onClick={() => {
+                setActiveCategory(category);
+                setActiveIndex(null);
+              }}
+              className={cn(
+                "inline-flex items-center gap-1.5 shrink-0 rounded-full px-5 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition duration-200 border",
+                isActive
+                  ? "bg-charcoal border-charcoal text-ivory shadow-sm"
+                  : "bg-white/80 border-charcoal/10 text-charcoal/80 hover:border-charcoal/30 hover:text-charcoal"
+              )}
+            >
+              <span>{category}</span>
+              <span className={cn(
+                "text-[10px] font-bold",
+                isActive ? "text-ivory/60" : "text-charcoal/40"
+              )}>
+                ({count})
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Elegant Uniform aspect-[4/5] Cards Grid */}
+      <div
+        className={cn(
+          "grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6",
+          compact && "md:grid-cols-3"
+        )}
+      >
+        {filteredItems.map((item, index) => {
           return (
             <article
               key={item.id}
-              className={cn(
-                "group relative overflow-hidden rounded-[2rem] border border-charcoal/8 bg-white shadow-soft transition duration-300 hover:-translate-y-1 focus-within:-translate-y-1 focus-within:border-gold/35 focus-within:shadow-[0_18px_48px_rgba(53,37,29,0.14)]",
-                isFeatured ? "lg:row-span-2" : "",
-              )}
+              className="group relative overflow-hidden rounded-[1.5rem] sm:rounded-[2rem] border border-charcoal/8 bg-white shadow-soft transition duration-300 hover:-translate-y-1 focus-within:-translate-y-1 focus-within:border-gold/35 focus-within:shadow-[0_18px_48px_rgba(53,37,29,0.14)]"
               style={{
-                containIntrinsicSize: isFeatured ? "460px" : "360px",
+                containIntrinsicSize: "360px",
                 contentVisibility: "auto",
               }}
             >
@@ -251,12 +326,7 @@ export function GalleryGrid({
                     : `View gallery details for ${item.title}`
                 }
               >
-                <div
-                  className={cn(
-                    "relative min-h-[300px] overflow-hidden bg-gradient-to-br from-cream via-white to-ivory",
-                    isFeatured ? "lg:min-h-[460px]" : "lg:min-h-[360px]",
-                  )}
-                >
+                <div className="relative aspect-[4/5] w-full overflow-hidden bg-gradient-to-br from-cream via-white to-ivory">
                   {item.imageUrl ? (
                     <>
                       <Image
@@ -273,31 +343,31 @@ export function GalleryGrid({
                   ) : (
                     <div className="flex h-full items-end bg-[radial-gradient(circle_at_top_left,rgba(186,154,99,0.16),transparent_26%),linear-gradient(180deg,rgba(255,255,255,0.88),rgba(242,235,227,0.96))] p-6">
                       <div className="max-w-[16rem]">
-                        <span className="inline-flex rounded-full border border-charcoal/10 bg-white/82 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-charcoal/62">
+                        <span className="inline-flex rounded-full border border-charcoal/10 bg-white/82 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-charcoal/62">
                           Selected work
                         </span>
-                        <p className="mt-4 font-serif text-3xl leading-none tracking-[-0.04em] text-charcoal">
+                        <p className="mt-4 font-serif text-2xl leading-none tracking-[-0.04em] text-charcoal">
                           {item.title}
                         </p>
                       </div>
                     </div>
                   )}
-                  <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-4">
-                    <span className="inline-flex rounded-full bg-charcoal/75 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-ivory">
+                  <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 flex items-end justify-between gap-2">
+                    <span className="inline-flex rounded-full bg-charcoal/75 px-2.5 py-0.5 text-[9px] sm:text-[10px] uppercase tracking-[0.15em] text-ivory">
                       {item.category}
                     </span>
                     {item.imageUrl ? (
-                      <span className="rounded-full border border-white/18 bg-white/12 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-ivory backdrop-blur">
+                      <span className="rounded-full border border-white/18 bg-white/12 px-2.5 py-0.5 text-[9px] sm:text-[10px] uppercase tracking-[0.14em] text-ivory backdrop-blur">
                         View larger
                       </span>
                     ) : null}
                   </div>
                 </div>
-                <div className="space-y-2 px-5 py-5">
-                  <h3 className="font-serif text-2xl leading-none tracking-[-0.03em] text-charcoal">
+                <div className="space-y-1 p-4 sm:p-5">
+                  <h3 className="font-serif text-base sm:text-lg md:text-xl leading-tight tracking-[-0.02em] text-charcoal line-clamp-1 group-hover:text-gold transition">
                     {item.title}
                   </h3>
-                  <p className="text-sm leading-6 text-charcoal/70">{item.alt}</p>
+                  <p className="text-xs sm:text-sm leading-normal text-charcoal/70 line-clamp-2">{item.alt}</p>
                 </div>
               </button>
             </article>
@@ -305,9 +375,10 @@ export function GalleryGrid({
         })}
       </div>
 
+      {/* Modern High-End Immersive Lightbox */}
       {activeItem?.imageUrl ? (
         <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-charcoal/88 px-4 py-6 backdrop-blur-sm"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-charcoal/95 px-3 py-4 sm:px-4 sm:py-6 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
@@ -316,32 +387,17 @@ export function GalleryGrid({
         >
           <div
             ref={dialogPanelRef}
-            className="relative flex max-h-[calc(100svh-1.5rem)] w-full max-w-6xl flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-[#1f1815] p-4 text-ivory shadow-[0_30px_90px_rgba(15,9,7,0.5)] sm:p-5"
+            className="relative flex max-h-[calc(100svh-1.5rem)] w-full max-w-6xl flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-[#15100e] p-3 text-ivory shadow-[0_30px_90px_rgba(15,9,7,0.5)] sm:p-5"
             onClick={(event) => event.stopPropagation()}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
-            <div className="mb-4 flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-xs uppercase tracking-[0.22em] text-gold/75">
-                  {activeItem.category}
-                </p>
-                <h3
-                  id={titleId}
-                  className="mt-2 font-serif text-3xl tracking-[-0.04em] text-ivory sm:text-4xl"
-                >
-                  {activeItem.title}
-                </h3>
-                {activeImagePosition ? (
-                  <p className="mt-3 text-sm leading-6 text-ivory/70">
-                    Image {activeImagePosition} of {interactiveIndexes.length}
-                  </p>
-                ) : null}
-              </div>
+            {/* Absolute positioned close button to save massive vertical space */}
+            <div className="absolute right-4 top-4 z-[80]">
               <button
                 ref={closeButtonRef}
                 type="button"
-                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/6 text-ivory transition hover:border-white/28 hover:bg-white/10 focus-visible:border-gold/50 focus-visible:bg-white/12"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/12 bg-charcoal/80 text-ivory transition hover:border-white/28 hover:bg-white/10 focus-visible:border-gold/50 focus-visible:bg-white/12 shadow-[0_4px_12px_rgba(0,0,0,0.5)]"
                 onClick={() => closeItem()}
                 aria-label="Close gallery image"
               >
@@ -349,17 +405,18 @@ export function GalleryGrid({
               </button>
             </div>
 
-            <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-5">
-              <div className="relative overflow-hidden rounded-[1.7rem] bg-black/10">
-                <div className="relative h-[min(56svh,34rem)] lg:h-full lg:min-h-[30rem]">
+            <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6 pt-12 lg:pt-0">
+              {/* Contained full-image container (prevents cropping!) */}
+              <div className="relative overflow-hidden rounded-[1.7rem] bg-black/20 flex-1 flex items-center justify-center min-h-[40svh] lg:min-h-[35rem]">
+                <div className="relative w-full h-[45svh] lg:h-full">
                   <Image
                     src={activeItem.imageUrl}
                     alt={activeItem.alt}
                     fill
                     priority
-                    quality={82}
+                    quality={85}
                     sizes={GALLERY_MODAL_SIZES}
-                    className="object-cover"
+                    className="object-contain"
                   />
                 </div>
                 {showGalleryControls ? (
@@ -384,25 +441,33 @@ export function GalleryGrid({
                 ) : null}
               </div>
 
-              <div className="flex min-h-0 flex-col justify-between gap-5 rounded-[1.7rem] border border-white/10 bg-white/6 p-5">
-                <div className="min-h-0 overflow-y-auto pr-1">
-                  <p className="text-xs uppercase tracking-[0.18em] text-gold/72">
-                    The Sweet Fork detail
-                  </p>
-                  <p id={descriptionId} className="mt-3 text-sm leading-7 text-ivory/78">
-                    {activeItem.alt}
-                  </p>
-                  <p className="mt-4 text-sm leading-7 text-ivory/62">
-                    Use the previous and next buttons, or your arrow keys, to move through the
-                    gallery without closing the lightbox.
-                  </p>
-                </div>
+              {/* Premium streamlined sidebar (completely free of navigation instructions) */}
+              <div className="flex flex-col justify-between gap-4 rounded-[1.7rem] border border-white/10 bg-white/4 p-5 sm:p-6 lg:max-h-[38rem] overflow-y-auto">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <span className="inline-flex rounded-full bg-gold/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-gold border border-gold/25">
+                      {activeItem.category}
+                    </span>
+                    {activeImagePosition ? (
+                      <span className="text-[10px] uppercase tracking-[0.16em] text-ivory/50 font-medium">
+                        {activeImagePosition} / {interactiveIndexes.length}
+                      </span>
+                    ) : null}
+                  </div>
 
-                {showGalleryControls ? (
-                  <p className="text-xs uppercase tracking-[0.16em] text-ivory/46">
-                    Swipe or use arrow keys
-                  </p>
-                ) : null}
+                  <h3 id={titleId} className="font-serif text-2xl sm:text-3xl tracking-tight text-ivory leading-tight">
+                    {activeItem.title}
+                  </h3>
+
+                  <div className="border-t border-white/10 pt-4">
+                    <p className="text-[10px] uppercase tracking-[0.15em] text-gold/72 mb-2">
+                      Details
+                    </p>
+                    <p id={descriptionId} className="text-sm leading-relaxed text-ivory/80">
+                      {activeItem.alt}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

@@ -2,6 +2,34 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Gallery Browsing and Lightbox UX Refinement — 2026-06-01
+
+- **Current branch**: `codex/gallery-ux-refinement`.
+- **Objective**: Perform a mobile-first UX refinement pass on the customer-facing `/gallery` page and lightbox, improving filtering, image sizing, and layout readability on all viewports without modifying the database, Supabase schema, or admin media model.
+- **Files changed**:
+  - `src/components/site/gallery-grid.tsx`
+  - `HANDOFF.md`
+- **Key UX Refinements & Additions**:
+  - **Category Filtering**: Added a modern, mobile-friendly category filter bar at the top of the gallery page that horizontally scrolls on small viewports and centers on desktop. Filter chips display real-time counts calculated dynamically from active data, matching category strings dynamically between DB objects and static fallback representations (`Custom Cakes`, `Sugar Cookies`, `Macarons`, `Cupcakes`, `Wedding Cakes`).
+  - **Uniform Cards Grid**: Refined the cards layout into a consistent, browseable `aspect-[4/5]` vertical grid that prevents oversized images on mobile viewports. On mobile, it uses a highly engaging 2-column layout (`grid-cols-2`) and truncates descriptions to keep heights even and clean.
+  - **Uncropped Lightbox (object-contain)**: Changed the lightbox detail view from cropping `object-cover` to uncropped `object-contain` centering, preserving the full aspect ratio of custom cakes and desserts without cutoffs.
+  - **Streamlined Metadata & Copy**: Completely removed redundant helper text (e.g. instruction blocks like "Use the previous and next buttons...") and simplified the layout. Built an elegant sidebar that displays the Category, Title, Image Count (`1 / 20` style), and the alt/details description in a clean, uncluttered layout.
+- **Strict Guardrails Preserved**:
+  - Confirmed that this refinement pass is entirely frontend-only.
+  - No Supabase schemas, tables, migrations, or keys were exposed or altered.
+  - The admin media model (`/admin/media`) remains fully compatible.
+  - Pre-existing untracked file `scratch/qa/orders-prod-qa.mjs` was completely preserved and untouched.
+- **Verification Results**:
+  - `npm run lint` completed with **zero** warnings or errors.
+  - `npm run typecheck` passed cleanly, ensuring full TypeScript integrity.
+  - `npm run build` compiled successfully in 3.6s with static route prerendering for `/gallery` fully verified.
+  - `git diff --check` completed successfully with all whitespace errors cleared.
+- **Staged / Unstaged Status**:
+  - Changed files will be staged and committed to `codex/gallery-ux-refinement`.
+  - `scratch/qa/` and `.agents/` remain untracked.
+- **Next recommended step**:
+  - Merge the refined branch `codex/gallery-ux-refinement` into `main`.
+
 ## Batch 01 Gallery PR Merge / Deploy Verification — 2026-06-01
 
 - Current branch: `main`.
