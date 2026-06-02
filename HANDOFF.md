@@ -2,6 +2,40 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Gallery Filter Labels + First Impression Polish — 2026-06-02
+
+- **Objective**: Implement the next production polish item from the deployed visual audit: public gallery filter labels and above-the-fold gallery first impression.
+- **Current branch**: `main` per the user request not to create a new branch.
+- **Starting working tree**: Tracked tree was clean. Existing unrelated untracked files were preserved: `.agents/`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, and `skills-lock.json`.
+- **Audit finding addressed**: Gallery filters used shortened mobile labels (`Cakes`, `Cookies`, `Wedding`) instead of customer-facing service names, and the first gallery viewport spent too much space on intro copy before showing actual work.
+- **Files changed**:
+  - `src/app/(site)/gallery/page.tsx`
+  - `src/components/site/gallery-grid.tsx`
+  - `HANDOFF.md`
+- **Implementation approach**:
+  - Preserved Supabase media/gallery fetching, category values, assignments, storage paths, tags, featured flags, card rendering behavior, and lightbox/modal logic.
+  - Replaced the generic full public-page hero on `/gallery` with a tighter gallery-specific header that keeps local service context and the start-inquiry CTA while reducing vertical space.
+  - Reduced the gallery section top spacing and passed `priorityCount={6}` for above-the-fold gallery images.
+  - Removed mobile-only shortened filter labels so filters now show `Custom Cakes`, `Sugar Cookies`, `Macarons`, `Cupcakes`, and `Wedding Cakes` at all viewport sizes.
+  - Kept filter keys/count logic unchanged; visible counts continue to derive from the rendered gallery items.
+- **Browser/visual QA performed**:
+  - Started a local production server with `npm start -- --hostname 127.0.0.1 --port 3000`.
+  - Ran viewport-controlled Playwright/Chrome QA at `390x844`, `430x932`, and `1440x900`.
+  - Tested `/gallery`, All, Custom Cakes, Sugar Cookies, Macarons, Cupcakes, and Wedding Cakes filters.
+  - Opened and closed gallery lightboxes and verified previous/next controls where multiple images were available.
+  - Confirmed no horizontal page scroll, no broken visible image cards, no console warnings/errors, full filter labels are visible/readable, and gallery cards appear in the first viewport.
+  - Local production QA rendered the curated fallback gallery set because the local build did not load the full Supabase-backed production set; this patch does not touch data fetching or assignments.
+  - QA screenshots/results were saved outside the repo under `/tmp/sweet-fork-v2-gallery-qa/`.
+- **Commands run and results**:
+  - `git branch --show-current`: `main`
+  - `git status --short`: tracked tree initially clean; unrelated untracked files listed above.
+  - `npm run lint`: passed.
+  - `npm run typecheck`: passed.
+  - `npm run build`: passed.
+  - Local Playwright/Chrome QA script: passed with zero issues and zero console warnings/errors.
+- **Commands still needed after commit/push**: none for this scoped patch.
+- **Known issues / follow-up**: No remaining follow-up for this scoped patch. Re-verify the full 71-image Supabase-backed gallery on the deployed build after Vercel finishes deploying the pushed commit if deployment-level confirmation is required.
+
 ## Mobile Inquiry Flow Controls Polish — 2026-06-02
 
 - **Objective**: Implement the highest-priority production polish item from the deployed visual audit: mobile inquiry-flow step controls, selected-product detail navigation, and technical upload/link microcopy.

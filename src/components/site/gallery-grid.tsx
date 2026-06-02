@@ -247,18 +247,17 @@ export function GalleryGrid({
   };
 
   const filterCategories = [
-    { key: "All", label: "All", mobileLabel: "All" },
-    { key: "Custom Cakes", label: "Custom Cakes", mobileLabel: "Cakes" },
-    { key: "Sugar Cookies", label: "Sugar Cookies", mobileLabel: "Cookies" },
-    { key: "Macarons", label: "Macarons", mobileLabel: "Macarons" },
-    { key: "Cupcakes", label: "Cupcakes", mobileLabel: "Cupcakes" },
-    { key: "Wedding Cakes", label: "Wedding Cakes", mobileLabel: "Wedding" },
+    { key: "All", label: "All" },
+    { key: "Custom Cakes", label: "Custom Cakes" },
+    { key: "Sugar Cookies", label: "Sugar Cookies" },
+    { key: "Macarons", label: "Macarons" },
+    { key: "Cupcakes", label: "Cupcakes" },
+    { key: "Wedding Cakes", label: "Wedding Cakes" },
   ] as const;
 
   return (
     <>
-      {/* Dynamic Mobile-First Filter Chips - Wrapping cleanly on mobile */}
-      <div className="mb-10 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 px-1">
+      <div className="mb-5 flex flex-wrap items-center justify-start gap-1.5 px-0 sm:mb-8 sm:justify-center sm:gap-2 sm:px-1">
         {filterCategories.map((category) => {
           const count = category.key === "All"
             ? items.length
@@ -277,15 +276,14 @@ export function GalleryGrid({
                 setActiveIndex(null);
               }}
               className={cn(
-                "inline-flex items-center justify-center gap-1 sm:gap-1.5 shrink-0 rounded-full px-3.5 py-1.5 sm:px-5 sm:py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.14em] transition duration-200 border min-h-[2.25rem]",
+                "inline-flex min-h-[2.35rem] shrink-0 items-center justify-center gap-1 rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.11em] transition duration-200 sm:min-h-[2.5rem] sm:gap-1.5 sm:px-5 sm:py-2 sm:text-xs sm:tracking-[0.14em]",
                 isActive
                   ? "bg-charcoal border-charcoal text-ivory shadow-sm"
                   : "bg-white/80 border-charcoal/10 text-charcoal/80 hover:border-charcoal/30 hover:text-charcoal"
               )}
             >
               <span>
-                <span className="sm:hidden">{category.mobileLabel}</span>
-                <span className="hidden sm:inline">{category.label}</span>
+                {category.label}
               </span>
               <span className={cn(
                 "text-[9px] sm:text-[10px] font-bold",
