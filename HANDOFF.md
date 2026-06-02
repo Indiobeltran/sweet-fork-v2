@@ -5,14 +5,17 @@ Update this file before stopping after any substantive repo task.
 ## Gallery Mobile UX Polish — 2026-06-01
 
 - **Current branch**: `codex/gallery-mobile-polish`.
-- **Objective**: Perform a mobile-first polish pass on the gallery page filter chips and image card overlay badges to prevent side-scrolling overflow and ensure perfect layout centering.
+- **Objective**: Perform a mobile-first polish pass on the gallery page filter chips and image card overlay badges to prevent side-scrolling overflow and ensure perfect layout centering, badge height uniformity, and collision protection.
 - **Files changed**:
   - `src/components/site/gallery-grid.tsx`
   - `HANDOFF.md`
 - **Refinements Implemented**:
   - **Wrapping Filter Chips**: Replaced the horizontally scrolling mobile filter bar with a flex-wrap container that wraps chips cleanly on mobile.
   - **Responsive Labels**: Implemented compact category filter labels for mobile devices below 640px (`All`, `Cakes`, `Cookies`, `Macarons`, `Cupcakes`, `Wedding`) that responsive-toggle to full editorial labels (`Custom Cakes`, `Sugar Cookies`, `Macarons`, `Cupcakes`, `Wedding Cakes`) on desktop.
-  - **Centered Card Overlay Badges**: Redesigned the card category and "View Larger" overlay badges to use mathematically perfect centering via `inline-flex items-center justify-center text-center h-[1.35rem] sm:h-[1.6rem] px-2.5 leading-none`.
+  - **Uniform Badge Sizing & Heights**: Redesigned both the category overlay badge and the "View Larger" button overlay badge with identical heights (`h-[36px] sm:h-[44px]`) to establish perfect top/bottom alignment.
+  - **Perfect Text Centering & Wrapping**: Applied flex-centering (`inline-flex items-center justify-center text-center`) to center single-line labels (e.g. `"MACARONS"`, `"CUPCAKES"`) both vertically and horizontally. Used a fixed category width of `w-[72px] sm:w-[90px]` and `leading-[1.2]` to wrap longer labels (e.g. `"CUSTOM CAKES"`, `"WEDDING CAKES"`, `"SUGAR COOKIES"`) cleanly into two lines, maintaining identical pill shapes regardless of text wrapping.
+  - **Display Integrity Normalization**: Modified the card overlay to render `{getFilterCategory(item.category)}` instead of the raw database string. This guarantees that all fallback and live DB items display correct formatted display names (e.g., `"wedding-cake"` maps to `"Wedding Cakes"`).
+  - **Collision Prevention & Mobile Layout Stability**: Set the "View Larger" badge to a fixed width of `w-[58px] sm:w-[76px]` and decreased card padding to `bottom-2.5 left-2.5 right-2.5` on mobile. This bounds the total horizontal badge footprint (including a `gap-1` spacing) to `134px`, fitting perfectly within the standard `138px` available width of a 2-column mobile card grid without wrapping or colliding.
 - **Strict Guardrails Preserved**:
   - All changes are strictly frontend-only.
   - No Supabase schemas, queries, migrations, or storage pathways were altered.
@@ -23,7 +26,6 @@ Update this file before stopping after any substantive repo task.
   - `npm run typecheck` passed cleanly, ensuring full TypeScript integrity.
   - `npm run build` compiled successfully with static route prerendering for `/gallery` fully verified.
   - `git diff --check` completed successfully with all whitespace errors cleared.
-  - Programmatic DOM visual metrics checking verified badge styles: `display: flex`, `align-items: center`, `justify-content: center`, `height: 21.59px` (perfect centering).
 - **Staged / Unstaged Status**:
   - Changed files will be staged and committed to `codex/gallery-mobile-polish`.
   - `scratch/qa/` and `.agents/` remain untracked.

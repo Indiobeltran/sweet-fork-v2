@@ -355,12 +355,12 @@ export function GalleryGrid({
                       </div>
                     </div>
                   )}
-                  <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 flex items-center justify-between gap-2">
-                    <span className="inline-flex items-center justify-center text-center rounded-full bg-charcoal/75 px-2.5 h-[1.35rem] sm:h-[1.6rem] text-[9px] sm:text-[10px] uppercase tracking-[0.15em] text-ivory leading-none">
-                      {item.category}
+                  <div className="absolute bottom-2.5 left-2.5 right-2.5 sm:bottom-4 sm:left-4 sm:right-4 flex items-center justify-between gap-1 sm:gap-2">
+                    <span className="inline-flex items-center justify-center text-center rounded-full bg-charcoal/75 px-1 w-[72px] sm:w-[90px] h-[36px] sm:h-[44px] text-[7.5px] sm:text-[9px] font-semibold uppercase tracking-[0.12em] text-ivory leading-[1.2] select-none">
+                      {getFilterCategory(item.category)}
                     </span>
                     {item.imageUrl ? (
-                      <span className="inline-flex items-center justify-center text-center rounded-full border border-white/18 bg-white/12 px-2.5 h-[1.35rem] sm:h-[1.6rem] text-[9px] sm:text-[10px] uppercase tracking-[0.14em] text-ivory backdrop-blur leading-none">
+                      <span className="inline-flex items-center justify-center text-center rounded-full border border-white/18 bg-white/12 px-1 w-[58px] sm:w-[76px] h-[36px] sm:h-[44px] text-[7.5px] sm:text-[9px] font-semibold uppercase tracking-[0.11em] text-ivory backdrop-blur leading-none select-none">
                         View larger
                       </span>
                     ) : null}
