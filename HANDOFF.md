@@ -2,6 +2,39 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Gallery Batch 02 Intake Setup — 2026-06-01
+
+- **Current branch**: `codex/gallery-batch-02-setup`.
+- **Objective**: Set up the local intake folder scaffold for Sweet Fork Gallery Batch 02 only, so source photos can be added safely before validation, manifest approval, and import work begins.
+- **Starting state**:
+  - Started from `main` after `git pull origin main`; `main` was already up to date.
+  - Recent `main` history includes merged Batch 01 import work plus gallery UX/filtering/lightbox/mobile polish.
+  - Pre-existing untracked files/folders were present: `.agents/`, `skills-lock.json`, and `scratch/qa/`.
+  - `scratch/qa/orders-prod-qa.mjs` remained untouched and was not staged.
+- **Folder structure created**:
+  - `scratch/gallery-import/batch-02/README.md`
+  - `scratch/gallery-import/batch-02/originals/.gitkeep`
+  - `scratch/gallery-import/batch-02/processed/.gitkeep`
+  - `scratch/gallery-import/batch-02/manifest/.gitkeep`
+- **Guardrails confirmed**:
+  - No Batch 02 images were imported, processed, optimized, renamed, cropped, moved, or uploaded.
+  - No Supabase upload/import occurred.
+  - No Supabase schema, data, storage, admin media behavior, gallery UI, or app code was changed.
+  - Existing Batch 01 files and folders were not modified.
+  - `.env.local`, Supabase keys, and Vercel env values were not inspected or exposed.
+- **Intended Batch 02 workflow**:
+  - User should add source photos to `scratch/gallery-import/batch-02/originals/`.
+  - Keep original files unchanged.
+  - Use `processed/` only for generated import-ready copies after validation and manifest approval.
+  - Use `manifest/` for proposed/final Batch 02 manifest JSON.
+- **Verification planned/run for this setup**:
+  - `find scratch/gallery-import/batch-02 -maxdepth 3 -type f -print | sort`
+  - `git status --short`
+  - `git diff --check`
+  - `npm run lint`, `npm run typecheck`, and `npm run build` are intentionally unnecessary because this is documentation/folder-only and no app/source code changed.
+- **Next recommended step**:
+  - Add Batch 02 source photos to `scratch/gallery-import/batch-02/originals/`, then run the Batch 02 validation/manifest-prep prompt before any import.
+
 ## Gallery Mobile UX Polish — 2026-06-01
 
 - **Current branch**: `codex/gallery-mobile-polish`.
