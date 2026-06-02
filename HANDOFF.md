@@ -6,13 +6,13 @@ Update this file before stopping after any substantive repo task.
 
 - **Batch 04 folder setup completed**: Created intake directory structure for Batch 04 gallery import.
 - **Source drop location**: `scratch/gallery-import/batch-04/originals/`
-- **Expected photo count**: 20
+- **Expected photo count**: 11
 - **Manifest path**: `scratch/gallery-import/batch-04/manifest/gallery-batch-04.json`
 - **Current status**: Awaiting user to drop source photos.
 - **Import execution details**:
   - No images were imported, processed, uploaded, renamed, optimized, deleted, or modified.
   - No Supabase database records or storage writes were performed.
-- **Next recommended step**: User drops exactly 20 photos into `scratch/gallery-import/batch-04/originals/`. Once added, validate that exactly 20 source images exist in the originals folder, then build/approve the Batch 04 metadata manifest before any import.
+- **Next recommended step**: User drops exactly 11 photos into `scratch/gallery-import/batch-04/originals/`. Once added, validate that exactly 11 source images exist in the originals folder, then build/approve the Batch 04 metadata manifest before any import.
 
 ## Gallery Batch 03 Branch Merge & Deployment — 2026-06-02
 
