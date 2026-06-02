@@ -30,6 +30,26 @@ Update this file before stopping after any substantive repo task.
   - `npm run typecheck`: **PASSED** cleanly.
   - `npm run build`: **PASSED** cleanly (dynamic admin routes compile successfully, static pages generated perfectly).
   - Verified sample asset dimensions and files in the Supabase remote database successfully.
+- **Remote Push & Production Deployment**:
+  - Pushed main successfully to GitHub (`Indiobeltran/sweet-fork-v2.git`) with commit `72e19e7`.
+  - Deployment completed successfully on Vercel (`dpl_Gt1dvrfUFF87ZpynJanCZTwVHhKo` / production environment) and was automatically aliased to `https://sweet-fork-v2.vercel.app`.
+  - Directly verified build compilation metrics (Fast Load JS: 102 kB, build duration ~52 seconds).
+- **Live Production Smoke Checks & Verification**:
+  - Live homepage `/` returned HTTP 200 and loaded dynamically.
+  - Live gallery `/gallery` successfully updated to **71 total assets** (60 + 11 new Batch 04 assets).
+  - Verified live category filter chip counts perfectly matched database mappings:
+    - All: 71 (from 60)
+    - Custom Cakes: 29 (from 27)
+    - Sugar Cookies: 22 (from 19)
+    - Cupcakes: 13 (from 8)
+    - Macarons: 5 (from 4)
+    - Wedding Cakes: 2 (no new Wedding Cakes added)
+  - Confirmed the mini pie-style sugar cookies (`sweet-fork-mini-pie-sugar-cookie-box` and `sweet-fork-boxed-mini-pie-sugar-cookies`) appear on the live site under Sugar Cookies.
+  - Confirmed the Nikon DSLR cupcakes photo and the vendor booth display custom cake photo are correctly loaded and optimized.
+- **Admin Visual QA**:
+  - Authenticated admin panel visual QA was skipped because authenticated context was not available in this workspace.
+- **Scratch Import Script Decision**:
+  - Preserved `scratch/process-import-batch-04.mjs` as an untracked scratch utility. It parses credentials dynamically from `.env.local` without hardcoding any secrets, making it safe to retain in the workspace.
 
 ## Gallery Batch 04 Metadata & Approved Manifest SITREP — 2026-06-02
 

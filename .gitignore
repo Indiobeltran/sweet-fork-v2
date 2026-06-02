@@ -18,3 +18,4 @@ scratch/gallery-import/**/originals/*
 !scratch/gallery-import/**/originals/.gitkeep
 scratch/gallery-import/**/processed/*
 !scratch/gallery-import/**/processed/.gitkeep
+.vercel
