@@ -2,6 +2,63 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Gallery Batch 04 Image-Content Repair — 2026-06-02
+
+- **Repair objective**: Perform the controlled Batch 04 image-content/source-mapping repair using the independent Codex audit at `scratch/gallery-import/batch-03-04-independent-audit-report.md` as the source of truth.
+- **Starting branch/state**: `main`; local branch was already ahead of `origin/main` by one audit/documentation commit (`3d543c2 docs: full read-only gallery media audit (Batches 01-04)`).
+- **Independent audit result confirmed**:
+  - Batch 03: 20 reviewed, 20 OK, 0 mismatches. Batch 03 was left untouched.
+  - Batch 04: 11 reviewed, 2 OK, 9 image-content/source-mapping mismatches.
+- **Root cause**: Batch 04 public metadata, SEO filenames, titles, categories, assignments, and featured flags were already internally correct, but the manifest `source_filename` mapping pointed nine approved filenames at the wrong original images. That caused wrong image content behind correct SEO filenames/metadata.
+- **Manifest repaired**: Updated only `source_filename` and `source_basename` in `scratch/gallery-import/batch-04/manifest/gallery-batch-04.json`. Approved filenames, title/caption, alt text, category, tags, visibility, featured flags, sort priority, suggested use, and recommended crop were preserved.
+- **Corrected source-to-approved filename mapping**:
+  - `IMG_0821.heic` -> `sweet-fork-mini-pie-sugar-cookie-box-centerville-utah.jpg`
+  - `Ej93e-jtl5pood6q2ibg6vfaa7dgyu.HEIC` -> `sweet-fork-lemon-birthday-cake-centerville-utah.jpg`
+  - `IMG_9985.heic` -> `sweet-fork-vendor-booth-dessert-display-centerville-utah.jpg`
+  - `cdClX-fp5y3hld7a7fyyhyslcpy23l.HEIC` -> `sweet-fork-blue-white-buttercream-cupcake-set-centerville-utah.jpg`
+  - `4Fre3-hniucr5bp4tjb62wuaqnwdqu.HEIC` -> `sweet-fork-blue-white-pearl-cupcakes-centerville-utah.jpg`
+  - `IMG_0045.HEIC` -> `sweet-fork-lemon-cupcake-display-centerville-utah.jpg`
+  - `IMG_1091.heic` -> `sweet-fork-confetti-sprinkle-cupcakes-centerville-utah.jpg`
+  - `IMG_1120.heic` -> `sweet-fork-christmas-decorated-sugar-cookies-centerville-utah.jpg`
+  - `IMG_1782.heic` -> `sweet-fork-pink-coral-macaron-box-centerville-utah.jpg`
+  - `Q95A4-eeij43pyuoql3emt3pdumvmi.JPG` -> `sweet-fork-raspberry-chocolate-cupcakes-centerville-utah.jpg`
+  - `IMG_0824.heic` -> `sweet-fork-boxed-mini-pie-sugar-cookies-centerville-utah.jpg`
+- **Image processing**: Re-created all 11 Batch 04 processed JPGs from the corrected mapping using `sips` JPEG conversion at quality 85 and max dimension 2048px. Original source files in `scratch/gallery-import/batch-04/originals/` were preserved unchanged and verified by size plus SHA-256.
+- **Storage repair strategy used**: Versioned-path repair to avoid stale same-URL Vercel/Next image optimizer cache.
+  - Uploaded corrected JPGs to Supabase Storage bucket `marketing` under `marketing/gallery-batch-04-repaired/<approved_filename>`.
+  - Old `marketing/gallery-batch-04/<approved_filename>` storage objects were not deleted; no current `media_assets` DB rows reference the old prefix. Treat old objects as cleanup follow-up only if a future storage audit confirms safe deletion.
+- **Database repair**: Updated the existing 11 Batch 04 `media_assets` rows only. No new `media_assets` records or `media_assignments` records were created.
+  - Updated `storage_path`, `public_url`, `original_filename`, `file_size_bytes`, `width`, `height`, `checksum`, `metadata.sourceFilename`, `metadata.sourceBasename`, and repair metadata.
+  - Preserved captions/titles, alt text, category/page assignments, display order, featured flags, visibility, and approved SEO filenames.
+- **Supabase verification results**:
+  - Exactly 11 Batch 04 `media_assets`.
+  - Exactly 11 Batch 04 gallery page assignments and exactly 11 gallery-category assignments.
+  - Category distribution remained: Cupcakes 5, Sugar Cookies 3, Macarons 1, Custom Cakes 2, Wedding Cakes 0.
+  - Featured count remained 4.
+  - Every Batch 04 `storage_path` and `public_url` ends with/includes the approved SEO filename and uses `gallery-batch-04-repaired`.
+  - Every Batch 04 asset metadata/source tracking now points to the corrected source filename.
+  - Direct Supabase public URLs loaded as `image/jpeg` and byte-matched the corrected local processed JPGs.
+  - Batch 03 DB snapshot remained unchanged.
+- **Live deployment/cache action**:
+  - Initial live `/gallery` check still rendered old `gallery-batch-04/` URLs, indicating stale static/deployment cache.
+  - Ran `npx vercel --prod --yes`.
+  - Production deployment completed: `dpl_4AmcnfttKQjgY5iUtfDGRBNsFbmF`, aliased to `https://sweet-fork-v2.vercel.app`.
+- **Live verification results**:
+  - Live `/gallery` HTML now references `gallery-batch-04-repaired` for Batch 04 and has zero `gallery-batch-04/` old-prefix references.
+  - Live category chip counts remain: All 71, Custom Cakes 29, Sugar Cookies 22, Cupcakes 13, Macarons 5, Wedding Cakes 2.
+  - All 11 live Batch 04 image URLs from production HTML were downloaded and byte-matched against corrected local processed JPGs.
+  - Next.js optimized image endpoints for all 11 repaired Batch 04 URLs returned valid image responses.
+- **Files changed intentionally**:
+  - `HANDOFF.md`
+  - `scratch/gallery-import/batch-04/manifest/gallery-batch-04.json`
+  - `scratch/gallery-import/batch-03-04-independent-audit-report.md`
+- **Preserved intentionally**:
+  - Batch 01, Batch 02, and Batch 03 media/data.
+  - Batch 04 original source images.
+  - Ignored Batch 04 processed image binaries, which were re-created locally but not staged.
+  - Unrelated untracked files: `.agents/`, `scratch/qa/`, `scratch/qa/orders-prod-qa.mjs`, `skills-lock.json`, and `scratch/process-import-batch-04.mjs`.
+- **Remaining follow-up**: Old incorrect storage objects under `marketing/gallery-batch-04/` are now unreferenced by `media_assets`; leave them in place unless a future explicit cleanup task verifies and removes orphaned Batch 04 storage objects safely.
+
 ## Full Gallery Media Audit — 2026-06-02
 
 - **Audit objective**: Perform a read-only full gallery media audit to identify all gallery image/content/metadata/category/SEO filename mismatches across the live Sweet Fork gallery.
