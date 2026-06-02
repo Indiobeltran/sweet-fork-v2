@@ -2,6 +2,34 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Gallery Mobile UX Polish — 2026-06-01
+
+- **Current branch**: `codex/gallery-mobile-polish`.
+- **Objective**: Perform a mobile-first polish pass on the gallery page filter chips and image card overlay badges to prevent side-scrolling overflow and ensure perfect layout centering.
+- **Files changed**:
+  - `src/components/site/gallery-grid.tsx`
+  - `HANDOFF.md`
+- **Refinements Implemented**:
+  - **Wrapping Filter Chips**: Replaced the horizontally scrolling mobile filter bar with a flex-wrap container that wraps chips cleanly on mobile.
+  - **Responsive Labels**: Implemented compact category filter labels for mobile devices below 640px (`All`, `Cakes`, `Cookies`, `Macarons`, `Cupcakes`, `Wedding`) that responsive-toggle to full editorial labels (`Custom Cakes`, `Sugar Cookies`, `Macarons`, `Cupcakes`, `Wedding Cakes`) on desktop.
+  - **Centered Card Overlay Badges**: Redesigned the card category and "View Larger" overlay badges to use mathematically perfect centering via `inline-flex items-center justify-center text-center h-[1.35rem] sm:h-[1.6rem] px-2.5 leading-none`.
+- **Strict Guardrails Preserved**:
+  - All changes are strictly frontend-only.
+  - No Supabase schemas, queries, migrations, or storage pathways were altered.
+  - No changes were made to admin media CRUD handlers or views.
+  - Pre-existing untracked file `scratch/qa/orders-prod-qa.mjs` was completely preserved and untouched.
+- **Verification Results**:
+  - `npm run lint` completed with **zero** warnings or errors.
+  - `npm run typecheck` passed cleanly, ensuring full TypeScript integrity.
+  - `npm run build` compiled successfully with static route prerendering for `/gallery` fully verified.
+  - `git diff --check` completed successfully with all whitespace errors cleared.
+  - Programmatic DOM visual metrics checking verified badge styles: `display: flex`, `align-items: center`, `justify-content: center`, `height: 21.59px` (perfect centering).
+- **Staged / Unstaged Status**:
+  - Changed files will be staged and committed to `codex/gallery-mobile-polish`.
+  - `scratch/qa/` and `.agents/` remain untracked.
+- **Next recommended step**:
+  - Merge the refined branch `codex/gallery-mobile-polish` into `main`.
+
 ## Gallery Browsing and Lightbox UX Refinement — 2026-06-01
 
 - **Current branch**: `main` (merged from `codex/gallery-ux-refinement`).
