@@ -2,6 +2,40 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Admin Media UX Redesign — 2026-06-01
+
+- **Current branch**: `main`.
+- **Objective**: Simplify the `/admin/media` dashboard so the media library is wife-friendly, compact, mobile-responsive, and manageable as gallery batches grow.
+- **UX Pattern Implemented**:
+  - Replaced the fully expanded vertical media forms with a clean, responsive thumbnail card grid showing photo, friendly title, category tags, and a featured badge.
+  - Added a premium slide drawer (desktop) / bottom sheet (mobile) to house all editing details only when a photo is selected.
+  - Integrated client-side dynamic search (by title, alt text, filename) and category filter chips (with dynamic count badges) for rapid, painless media library navigation.
+  - Aligned all technical terms with owner-friendly labels inside the editor drawer and "Upload Photo" card.
+  - Protected the dangerous "Remove Photo" action inside the collapsible advanced details panel in the editor drawer.
+  - Implemented unsaved changes safety warning if the user attempts to close the drawer with modifications.
+- **Drag/Drop Reordering**: Intentionally deferred to prevent risky schema changes or external bundle bloat. Reordering inputs are cleanly housed inside the collapsible "Display Order" drawer section with a simple explanation ("Lower numbers show first"). Drag/drop is documented as a key follow-up item.
+- **Files Changed**:
+  - `src/app/admin/(protected)/media/page.tsx`: Replaced the website media loop with `<MediaLibraryManager>` and simplified technical labels in the "Upload Photo" card.
+  - `src/components/admin/media-library-manager.tsx` (NEW): Built the client-side thumbnail grid, search/filter controls, and slide drawer Selected Photo editor.
+  - `HANDOFF.md`: Updated with task sitrep.
+- **Verification Performed**:
+  - Programmative and static checks: `npm run lint` (passed with 0 warnings/errors), `npm run typecheck` (passed cleanly), `npm run build` (Next.js compiled successfully with dynamic admin/media and static gallery pages fully verified).
+  - Webpack "server-only" import regression diagnosed and successfully fixed by passing placement definitions as a prop (`placements`) from the Server Component to the Client Component, maintaining 100% database decoupling.
+- **How to Verify Admin Media UX**:
+  - Open `/admin/media`.
+  - Confirm the "Website Photos" card defaults to open and displays all Batch 01 and Batch 02 media in a tight, elegant, 6-column thumbnail grid (desktop).
+  - Verify that typing in the search box or clicking on category filter chips filters the grid in real time and updates the count badges.
+  - Click any photo to see the right-hand slide drawer open. Confirm fields are organized into Basic Details, Where This Photo Shows, Display Order, and Advanced.
+  - Change a title or toggle "Feature this photo", then click "Save Photo" to verify successful redirection and DB update with the "Media details updated" notification.
+  - Change a field, click the drawer close button `X` or backdrop, and verify the unsaved changes warning triggers.
+  - Verify usability on mobile viewports (grid wraps neatly to 2 columns, bottom sheet covers screen cleanly, and the save footer remains locked at the viewport bottom above the navigation).
+- **How to Verify Customer Gallery Remains Intact**:
+  - Visit `/gallery` and verify that all Batch 01 and Batch 02 custom cake/dessert media render correctly and filtering works.
+  - Visit the homepage `/` and verify that featured items still render in the main gallery carousel.
+- **Known Limitations & Follow-ups**:
+  - Future drag-and-drop sorting can be implemented client-side using native HTML5 drag-and-drop APIs once the owner requests visual reordering on the grid itself, saving the updated array of indices to the existing database orders.
+
+
 ## Gallery Batch 02 Media Import Audit — 2026-06-01
 
 - **Current branch**: `codex/gallery-batch-02-prep`.

@@ -4,7 +4,6 @@ import Link from "next/link";
 import {
   deleteMediaAsset,
   updateGalleryCategory,
-  updateMediaAsset,
   uploadMediaAsset,
 } from "@/app/admin/(protected)/media/actions";
 import { AdminNoticeBanner } from "@/components/admin/admin-notice-banner";
@@ -21,6 +20,7 @@ import {
 } from "@/lib/admin/site-management";
 import { mediaPlacementDefinitions } from "@/lib/site/marketing";
 import { formatDate } from "@/lib/utils";
+import { MediaLibraryManager } from "@/components/admin/media-library-manager";
 
 export const metadata = {
   title: "Admin Media",
@@ -204,15 +204,15 @@ export default async function AdminMediaPage({ searchParams }: AdminMediaPagePro
       />
 
       <AdminSectionCard
-        title="Upload image"
-        description="Upload website-ready photos here. These assets can be assigned to the homepage, gallery, and category tags without mixing in client inspiration uploads."
+        title="Upload Photo"
+        description="Upload website-ready photos here. These assets can be assigned to the homepage gallery and categories without mixing in client inspiration uploads."
         collapsible
       >
         <form action={uploadMediaAsset} className="space-y-5">
           <input type="hidden" name="redirectTo" value="/admin/media" />
 
           <div>
-            <Label htmlFor="media-image">Image file</Label>
+            <Label htmlFor="media-image">Photo File</Label>
             <input
               id="media-image"
               name="image"
@@ -225,17 +225,17 @@ export default async function AdminMediaPage({ searchParams }: AdminMediaPagePro
 
           <div className="grid gap-4 lg:grid-cols-2">
             <div>
-              <Label htmlFor="media-alt">Alt text</Label>
-              <Input id="media-alt" name="altText" placeholder="Describe the image for accessibility." />
+              <Label htmlFor="media-alt">Google / Accessibility Description</Label>
+              <Input id="media-alt" name="altText" placeholder="Describe the image for search engines & accessibility." />
             </div>
 
             <div>
-              <Label htmlFor="media-caption">Caption or display title</Label>
+              <Label htmlFor="media-caption">Photo Title</Label>
               <Input id="media-caption" name="caption" placeholder="Textured wedding tiers" />
             </div>
           </div>
 
-          <ToggleField defaultChecked={false} label="Mark as featured" name="featured" />
+          <ToggleField defaultChecked={false} label="Feature this photo" name="featured" />
 
           <div className="grid gap-4 xl:grid-cols-2">
             <AssignmentEditor
@@ -248,23 +248,23 @@ export default async function AdminMediaPage({ searchParams }: AdminMediaPagePro
                 value: category.id,
               }))}
               orderPrefix="categoryOrder"
-              title="Category tags"
+              title="Where should this photo show?"
             />
             <AssignmentEditor
               checkboxName="pagePlacementKeys"
               items={mediaPlacementDefinitions.map((placement, index) => ({
                 checked: false,
-                description: "Safe reuse means the same image can appear in more than one section.",
+                description: "This same photo can safely appear in multiple website sections.",
                 label: placement.label,
                 order: (index + 1) * 10,
                 value: placement.key,
               }))}
               orderPrefix="placementOrder"
-              title="Page placements"
+              title="Website Sections"
             />
           </div>
 
-          <Button type="submit">Upload image</Button>
+          <Button type="submit">Upload Photo</Button>
         </form>
       </AdminSectionCard>
 
@@ -332,117 +332,16 @@ export default async function AdminMediaPage({ searchParams }: AdminMediaPagePro
       </AdminSectionCard>
 
       <AdminSectionCard
-        title="Website media library"
-        description="These are the images intended for the live website. Alt text, captions, featured state, category tags, page placements, and deletion all live here."
+        title="Website Photos"
+        description="These are the photos shown on the live website. Search, filter, edit details, assign categories, set display orders, or remove photos here."
         collapsible
-        defaultOpen={false}
+        defaultOpen={true}
       >
-        {data.websiteAssets.length > 0 ? (
-          <div className="grid gap-5 xl:grid-cols-2">
-            {data.websiteAssets.map((asset) => {
-              const categoryOrderMap = new Map(
-                asset.categoryAssignments.map((assignment) => [assignment.categoryId, assignment.displayOrder]),
-              );
-              const pageOrderMap = new Map(
-                asset.pageAssignments.map((assignment) => [assignment.placementKey, assignment.displayOrder]),
-              );
-
-              return (
-                <article
-                  key={asset.id}
-                  className="overflow-hidden rounded-[1.8rem] border border-charcoal/10 bg-paper"
-                >
-                  <AssetPreview asset={asset} />
-
-                  <div className="space-y-5 p-5">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="rounded-full border border-charcoal/10 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-charcoal/68">
-                        Website image
-                      </span>
-                      <span className="rounded-full border border-charcoal/10 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-charcoal/68">
-                        {asset.filename}
-                      </span>
-                      <span className="rounded-full border border-charcoal/10 bg-ivory/80 px-3 py-1 text-xs text-charcoal/66">
-                        Added {formatDate(asset.createdAt)}
-                      </span>
-                    </div>
-
-                    <form action={updateMediaAsset} className="space-y-5">
-                      <input type="hidden" name="mediaAssetId" value={asset.id} />
-                      <input type="hidden" name="redirectTo" value="/admin/media" />
-
-                      <div className="grid gap-4 lg:grid-cols-2">
-                        <div>
-                          <Label htmlFor={`asset-alt-${asset.id}`}>Alt text</Label>
-                          <Input
-                            id={`asset-alt-${asset.id}`}
-                            name="altText"
-                            defaultValue={asset.altText}
-                            placeholder="Describe the image for accessibility."
-                          />
-                        </div>
-
-                        <div>
-                          <Label htmlFor={`asset-caption-${asset.id}`}>Caption or display title</Label>
-                          <Input
-                            id={`asset-caption-${asset.id}`}
-                            name="caption"
-                            defaultValue={asset.caption}
-                            placeholder="Short label for the gallery card"
-                          />
-                        </div>
-                      </div>
-
-                      <ToggleField
-                        defaultChecked={asset.featured}
-                        label="Mark as featured"
-                        name="featured"
-                      />
-
-                      <div className="grid gap-4 xl:grid-cols-2">
-                        <AssignmentEditor
-                          checkboxName="galleryCategoryIds"
-                          items={data.categories.map((category) => ({
-                            checked: categoryOrderMap.has(category.id),
-                            description: category.description ?? undefined,
-                            label: category.name,
-                            order: categoryOrderMap.get(category.id) ?? category.display_order,
-                            value: category.id,
-                          }))}
-                          orderPrefix="categoryOrder"
-                          title="Category tags"
-                        />
-                        <AssignmentEditor
-                          checkboxName="pagePlacementKeys"
-                          items={mediaPlacementDefinitions.map((placement, index) => ({
-                            checked: pageOrderMap.has(placement.key),
-                            description: "This same image can safely appear in multiple page sections.",
-                            label: placement.label,
-                            order: pageOrderMap.get(placement.key) ?? (index + 1) * 10,
-                            value: placement.key,
-                          }))}
-                          orderPrefix="placementOrder"
-                          title="Page placements"
-                        />
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-3">
-                        <Button type="submit">Save image details</Button>
-                        <DeleteMediaAssetForm assetId={asset.id} label="Delete image" />
-                      </div>
-                    </form>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        ) : (
-          <CompactEmptyState
-            align="left"
-            title="No website images yet"
-            description="Upload polished bakery photos here to build the live gallery and page placements without mixing in inquiry inspiration files."
-          />
-        )}
+        <MediaLibraryManager
+          categories={data.categories}
+          websiteAssets={data.websiteAssets}
+          placements={mediaPlacementDefinitions}
+        />
       </AdminSectionCard>
 
       <AdminSectionCard
