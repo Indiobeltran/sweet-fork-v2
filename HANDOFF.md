@@ -2,6 +2,54 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Gallery Batch 03/04 Filename + Storage Path Normalization — 2026-06-02
+
+- **Objective**: Audit and repair filename/storage-path convention drift across Batches 03 and 04 without changing image content, titles, alt text, categories, tags, featured flags, display order, or assignments.
+- **Starting branch/state**: `main` at `df2f203 fix: repair gallery batch 04 image mappings`; tracked working tree was clean. Known unrelated untracked files were preserved (`.agents/`, `scratch/process-import-batch-04.mjs`, `scratch/qa/orders-prod-qa.mjs`, `skills-lock.json`).
+- **Affected set confirmed**: The suspected 31 convention-issue photos were exactly Batch 03 (20 assets) plus Batch 04 (11 assets).
+- **Convention established from Batches 01/02**:
+  - Bucket: `marketing`
+  - `storage_path`: `marketing/gallery-batch-XX/<approved SEO filename>.jpg`
+  - `public_url`: Supabase public URL for bucket `marketing` plus the same `storage_path`
+  - `metadata.approvedFilename`: approved SEO filename
+  - `metadata.sourceFilename`: original source filename
+  - `media_assets.original_filename`: approved SEO filename, not the raw source filename
+- **Audit findings before repair**:
+  - Batch 03: 20/20 storage paths and public URLs already matched the Batch 01/02 convention; 20/20 `original_filename` values still used source filenames and needed normalization.
+  - Batch 04: 11/11 image contents were correct after `df2f203`, but 11/11 paths still used the temporary `marketing/gallery-batch-04-repaired/` prefix and 11/11 `original_filename` values still used source filenames.
+  - No image-content mismatch remained; no human review blocker was found.
+- **Final normalized paths**:
+  - Batch 03: `marketing/gallery-batch-03/<approved_filename>`
+  - Batch 04: `marketing/gallery-batch-04/<approved_filename>`
+- **Repair performed**:
+  - Batch 03: updated 20 existing `media_assets.original_filename` values to approved SEO filenames and added path normalization metadata. No Batch 03 storage objects were uploaded or changed.
+  - Batch 04: uploaded the 11 currently correct processed JPGs to `marketing/gallery-batch-04/<approved_filename>` with overwrite/upsert behavior, then updated the existing 11 `media_assets` rows from `gallery-batch-04-repaired` back to the normalized Batch 04 prefix.
+  - No original source images were modified.
+  - No storage objects were deleted. Old repaired-prefix objects and old overwritten-prefix history are left as cleanup follow-up after final human verification.
+  - No `media_assets` or `media_assignments` records were created or duplicated.
+- **Supabase verification results**:
+  - Batch 03 remains exactly 20 assets; Batch 04 remains exactly 11 assets; combined normalized assets: 31.
+  - Batch 03 assignments remain 20 gallery page assignments + 20 gallery-category assignments.
+  - Batch 04 assignments remain 11 gallery page assignments + 11 gallery-category assignments.
+  - Batch 03 category distribution remains Sugar Cookies 10, Cupcakes 3, Custom Cakes 7.
+  - Batch 04 category distribution remains Cupcakes 5, Sugar Cookies 3, Macarons 1, Custom Cakes 2, Wedding Cakes 0.
+  - Featured counts remain Batch 03 = 11 and Batch 04 = 4.
+  - Every Batch 03 and Batch 04 `storage_path`, `public_url`, and `original_filename` now follows the Batch 01/02 convention.
+  - No Batch 03/04 DB public URLs reference `gallery-batch-04-repaired` or raw/source filenames where approved SEO filenames are expected.
+  - Batch 04 direct public URLs byte-match the corrected local processed JPGs.
+- **Live deployment/cache action**:
+  - Initial live `/gallery` still showed stale `gallery-batch-04-repaired` paths after the DB update.
+  - Ran `npx vercel --prod --yes`.
+  - Production deployment completed successfully: `dpl_2LdQ1KvUfop5uu7yWmJeWATx1rZC`, aliased to `https://sweet-fork-v2.vercel.app`.
+- **Live gallery verification results**:
+  - Live `/gallery` now references normal `gallery-batch-03/` and `gallery-batch-04/` paths.
+  - Live `/gallery` has zero `gallery-batch-04-repaired` references.
+  - Live category chip counts remain All 71, Custom Cakes 29, Sugar Cookies 22, Cupcakes 13, Macarons 5, Wedding Cakes 2.
+  - Batch 04 live direct URLs match corrected local processed JPGs.
+  - Batch 04 live Next.js optimized card images were visually checked for the prior high-risk mappings: mini pie cookies, boxed mini pie cookies, blue/white pearl cupcakes, macaron box, vendor booth, lemon cupcakes, confetti cupcakes, Christmas cookies, lemon cake, and raspberry cupcakes all render correctly.
+  - Batch 03 live HTML contains all 20 normalized Batch 03 URLs; sampled optimized endpoints returned valid images.
+- **Remaining follow-up**: Old orphaned storage prefixes/objects can be audited and cleaned up later after explicit final human verification. Do not delete them as part of unrelated work.
+
 ## Gallery Batch 04 Image-Content Repair — 2026-06-02
 
 - **Repair objective**: Perform the controlled Batch 04 image-content/source-mapping repair using the independent Codex audit at `scratch/gallery-import/batch-03-04-independent-audit-report.md` as the source of truth.
