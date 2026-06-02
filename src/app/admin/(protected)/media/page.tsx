@@ -203,10 +203,26 @@ export default async function AdminMediaPage({ searchParams }: AdminMediaPagePro
         }}
       />
 
+      {/* 1. Website Photos — expanded by default */}
+      <AdminSectionCard
+        title="Website Photos"
+        description="These are the photos shown on the live website. Search, filter, and click a photo to edit details."
+        collapsible
+        defaultOpen={true}
+      >
+        <MediaLibraryManager
+          categories={data.categories}
+          websiteAssets={data.websiteAssets}
+          placements={mediaPlacementDefinitions}
+        />
+      </AdminSectionCard>
+
+      {/* 2. Upload Photo — collapsed by default */}
       <AdminSectionCard
         title="Upload Photo"
-        description="Upload website-ready photos here. These assets can be assigned to the homepage gallery and categories without mixing in client inspiration uploads."
+        description="Use this only when adding new photos to the website. These assets can be assigned to the homepage gallery and categories without mixing in client inspiration uploads."
         collapsible
+        defaultOpen={false}
       >
         <form action={uploadMediaAsset} className="space-y-5">
           <input type="hidden" name="redirectTo" value="/admin/media" />
@@ -268,8 +284,9 @@ export default async function AdminMediaPage({ searchParams }: AdminMediaPagePro
         </form>
       </AdminSectionCard>
 
+      {/* 3. Gallery Category Settings — collapsed by default */}
       <AdminSectionCard
-        title="Gallery categories"
+        title="Gallery Category Settings"
         description="These keep the gallery feeling curated instead of random. The slug stays fixed; name, description, order, and visibility stay editable."
         collapsible
         defaultOpen={false}
@@ -331,19 +348,7 @@ export default async function AdminMediaPage({ searchParams }: AdminMediaPagePro
         </div>
       </AdminSectionCard>
 
-      <AdminSectionCard
-        title="Website Photos"
-        description="These are the photos shown on the live website. Search, filter, edit details, assign categories, set display orders, or remove photos here."
-        collapsible
-        defaultOpen={true}
-      >
-        <MediaLibraryManager
-          categories={data.categories}
-          websiteAssets={data.websiteAssets}
-          placements={mediaPlacementDefinitions}
-        />
-      </AdminSectionCard>
-
+      {/* 4. Client Uploads — collapsed by default */}
       <AdminSectionCard
         title="Client uploads"
         description="These inspiration files came from inquiries and stay separate from the live website media library. Review them here, jump to the linked inquiry, or delete them when they are no longer needed."

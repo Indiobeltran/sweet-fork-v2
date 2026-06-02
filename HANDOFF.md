@@ -39,6 +39,14 @@ Update this file before stopping after any substantive repo task.
   - *Root Cause*: The local implementation was completed and committed successfully under hash `73017d6`, but the commit had not yet been pushed to `origin/main` (local was `ahead 1` of remote).
   - *Resolution*: Confirmed local working tree is clean and code verified flawlessly. Executed `git push origin main` to synchronize local changes to GitHub, which automatically kicks off the production deployment on Vercel.
   - *Verification*: Searched the active paths with `grep_search` and confirmed 100% of old expanded repeated layouts and technical labels (like "Save image details" and "Website media library" headings) have been completely removed. Verified local and remote main are aligned (`## main...origin/main`).
+- **Admin Media Section Reordering (2026-06-01)**:
+  - *Objective*: Prioritize the most common owner workflow (managing existing website photos) and eliminate initial page-load scrolling.
+  - *Layout & Collapse Changes*:
+    - Moved the **Website Photos** section card to the top of the DOM and kept it expanded by default (`defaultOpen={true}`). This ensures the search bar, filter chips, and compact thumbnail card grid are immediately visible first.
+    - Moved the **Upload Photo** section card below Website Photos and set it to collapsed by default (`defaultOpen={false}`). Added a clear owner-friendly warning tip: *“Use this only when adding new photos to the website.”*
+    - Renamed *“Gallery categories”* to **“Gallery Category Settings”**, moved it to third in layout sequence, and set it to collapsed by default (`defaultOpen={false}`).
+    - Kept **Client Uploads** at the bottom, collapsed by default (`defaultOpen={false}`).
+  - *Verification*: Performed successful `npm run build` static compilation check. Verified that grid, drawer, uploads, and categories all remain completely operational with zero regression.
 
 
 ## Gallery Batch 02 Media Import Audit — 2026-06-01
