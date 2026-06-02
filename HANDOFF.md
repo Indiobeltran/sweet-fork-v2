@@ -2,6 +2,38 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Mobile Inquiry Flow Controls Polish — 2026-06-02
+
+- **Objective**: Implement the highest-priority production polish item from the deployed visual audit: mobile inquiry-flow step controls, selected-product detail navigation, and technical upload/link microcopy.
+- **Current branch**: `main` per the user request not to create a new branch.
+- **Starting working tree**: Tracked tree had no local modifications. Existing unrelated untracked files were preserved: `.agents/`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, and `skills-lock.json`.
+- **Audit finding addressed**: The deployed `/start-order` mobile inquiry flow was close to production-ready, but step/progress controls could clip off-screen on mobile, multi-product detail tabs could extend awkwardly past the viewport, and upload/link labels such as `Enabled` felt too technical for a premium customer-facing flow.
+- **Files changed**:
+  - `src/components/inquiry/start-order-wizard.tsx`
+  - `HANDOFF.md`
+- **Implementation approach**:
+  - Kept the existing five-step inquiry architecture, form state, validation behavior, payload shape, submission path, product selection behavior, and final review flow unchanged.
+  - Reworked the mobile step controls into a compact five-slot layout so all step controls are visible and tappable at 390px and 430px widths; desktop keeps the existing labeled stepper treatment.
+  - Changed selected-product detail navigation from a horizontal scroller to a responsive grid/stack, with a clearer active product state and `aria-pressed` on the active detail button.
+  - Replaced technical inspiration labels with customer-facing copy: `Inspiration photos`, `Inspiration links`, and `Optional` / `Currently unavailable`.
+- **Browser/mobile QA performed**:
+  - Started a local production server with `npm start -- --hostname 127.0.0.1 --port 3000`.
+  - Ran viewport-controlled Playwright/Chrome QA at `390x844`, `430x932`, and `1440x900`.
+  - Covered Step 1 event details, Step 2 product selection, Step 3 one-product details, Step 3 multi-product details, Step 4 inspiration upload/link area, and Step 5 review/contact state.
+  - Covered multi-product switching between Custom Cakes, Wedding Cakes, and Cupcakes.
+  - Stopped before submitting a real inquiry.
+  - Result: no horizontal page scroll, no step-list internal overflow, no browser console warnings/errors, active step/product states were visible, and upload/link copy no longer used `Enabled`.
+  - QA screenshots/results were saved outside the repo under `/tmp/sweet-fork-v2-inquiry-qa/`.
+- **Commands run and results**:
+  - `git branch --show-current`: `main`
+  - `git status --short`: tracked tree initially clean; unrelated untracked files listed above.
+  - `npm run lint`: passed.
+  - `npm run typecheck`: passed.
+  - `npm run build`: passed after the final code change.
+  - Local Playwright/Chrome QA script: passed with zero reported issues.
+- **Commands still needed after commit/push**: none for this scoped patch.
+- **Known issues / follow-up**: No remaining follow-up for this scoped patch. Unrelated untracked files are intentionally preserved and should not be staged with this work.
+
 ## Gallery Batch 03/04 Filename + Storage Path Normalization — 2026-06-02
 
 - **Objective**: Audit and repair filename/storage-path convention drift across Batches 03 and 04 without changing image content, titles, alt text, categories, tags, featured flags, display order, or assignments.

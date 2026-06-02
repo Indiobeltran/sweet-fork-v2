@@ -107,6 +107,7 @@ function StepMarker({
   canSelect,
   complete,
   index,
+  markerRef,
   onSelect,
   description,
   title,
@@ -115,21 +116,26 @@ function StepMarker({
   canSelect: boolean;
   complete: boolean;
   index: number;
+  markerRef?: (element: HTMLDivElement | null) => void;
   onSelect: () => void;
   description: string;
   title: string;
 }) {
   return (
-    <div role="listitem" className="min-w-[10.75rem] flex-none lg:min-w-0 lg:flex-1">
+    <div
+      ref={markerRef}
+      role="listitem"
+      className="min-w-0 lg:flex-1"
+    >
       <button
         type="button"
         aria-current={active ? "step" : undefined}
         aria-label={`Step ${index + 1}: ${title}. ${description}${complete ? " Complete." : active ? " Current step." : ""}`}
         disabled={!canSelect}
         className={cn(
-          "flex w-full min-w-0 items-center gap-2 rounded-full text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50 disabled:cursor-default sm:gap-3 lg:gap-2.5",
+          "flex min-h-11 w-full min-w-0 items-center justify-center rounded-full text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50 disabled:cursor-default lg:justify-start lg:gap-2.5",
           active
-            ? "border border-charcoal bg-charcoal px-3 py-2 text-ivory shadow-soft"
+            ? "bg-charcoal p-1 text-ivory shadow-soft lg:border lg:border-charcoal lg:px-3 lg:py-2"
             : "px-0 py-0",
           !active && canSelect && "hover:opacity-100",
           !canSelect && !active && "opacity-85",
@@ -138,7 +144,7 @@ function StepMarker({
       >
         <div
           className={cn(
-            "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition",
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition lg:h-9 lg:w-9",
             complete
               ? "border-charcoal bg-charcoal text-ivory"
               : active
@@ -148,7 +154,7 @@ function StepMarker({
         >
           {complete ? <Check className="h-4 w-4" /> : index + 1}
         </div>
-        <div className={cn("min-w-0", active ? "block" : "hidden sm:block")}>
+        <div className="hidden min-w-0 lg:block">
           <p
             className={cn(
               "text-[10px] uppercase tracking-[0.18em]",
@@ -384,6 +390,7 @@ export function StartOrderWizard({
   const successTopRef = useRef<HTMLElement | null>(null);
   const wizardTopRef = useRef<HTMLElement | null>(null);
   const stepViewportRef = useRef<HTMLDivElement | null>(null);
+  const stepMarkerRefs = useRef<Array<HTMLDivElement | null>>([]);
   const stepHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const hasMountedRef = useRef(false);
@@ -426,6 +433,12 @@ export function StartOrderWizard({
       hasMountedRef.current = true;
       return;
     }
+
+    stepMarkerRefs.current[currentStep]?.scrollIntoView({
+      block: "nearest",
+      inline: "center",
+      behavior: "smooth",
+    });
 
     const timeoutId = window.setTimeout(() => {
       const target = wizardTopRef.current ?? stepViewportRef.current;
@@ -1197,7 +1210,7 @@ export function StartOrderWizard({
               </div>
 
               <div
-                className="flex gap-2 overflow-x-auto pb-1 sm:gap-3 lg:overflow-visible lg:pb-0"
+                className="grid grid-cols-5 gap-2 pb-1 lg:flex lg:gap-3 lg:overflow-visible lg:pb-0"
                 role="list"
                 aria-label="Inquiry steps"
               >
@@ -1209,6 +1222,9 @@ export function StartOrderWizard({
                     complete={index < currentStep}
                     description={inquiryStepDescriptions[index]}
                     index={index}
+                    markerRef={(element) => {
+                      stepMarkerRefs.current[index] = element;
+                    }}
                     onSelect={() => goToStep(index)}
                     title={title}
                   />
@@ -1596,7 +1612,7 @@ export function StartOrderWizard({
                   <Sparkles className="h-6 w-6 text-charcoal/45" />
                 </div>
 
-                <div className="flex gap-3 overflow-x-auto pb-1">
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {selectedItems.map((item) => {
                     const ready = inquiryItemDetailsSchema.safeParse({
                       orderItems: [item],
@@ -1606,17 +1622,25 @@ export function StartOrderWizard({
                       <button
                         key={item.productType}
                         type="button"
+                        aria-pressed={activeItem?.productType === item.productType}
                         className={cn(
-                          "min-w-fit rounded-full border px-4 py-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50",
+                          "w-full rounded-[1.35rem] border px-4 py-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50",
                           activeItem?.productType === item.productType
                             ? "border-charcoal bg-charcoal text-ivory"
                             : "border-charcoal/10 bg-white text-charcoal",
                         )}
                         onClick={() => setActiveItemType(item.productType)}
                       >
-                        <p className="text-sm font-medium">
-                          {catalogMap[item.productType]?.name ?? getProductDisplayLabel(item.productType)}
-                        </p>
+                        <div className="flex min-w-0 items-center justify-between gap-3">
+                          <p className="min-w-0 text-sm font-medium">
+                            {catalogMap[item.productType]?.name ?? getProductDisplayLabel(item.productType)}
+                          </p>
+                          {activeItem?.productType === item.productType ? (
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ivory text-charcoal">
+                              <Check className="h-3.5 w-3.5" />
+                            </span>
+                          ) : null}
+                        </div>
                         <p
                           className={cn(
                             "mt-1 text-xs uppercase tracking-[0.16em]",
@@ -2103,9 +2127,9 @@ export function StartOrderWizard({
                 <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-3">
-                      <Label className="mb-0">Image uploads</Label>
+                      <Label className="mb-0">Inspiration photos</Label>
                       <p className="text-xs uppercase tracking-[0.16em] text-charcoal/45">
-                        {featureFlags.uploadsEnabled ? "Enabled" : "Unavailable"}
+                        {featureFlags.uploadsEnabled ? "Optional" : "Currently unavailable"}
                       </p>
                     </div>
                     <label
@@ -2186,9 +2210,9 @@ export function StartOrderWizard({
                   <div className="space-y-6">
                     <div>
                       <div className="flex items-center justify-between gap-3">
-                        <Label className="mb-0">Reference links</Label>
+                        <Label className="mb-0">Inspiration links</Label>
                         <p className="text-xs uppercase tracking-[0.16em] text-charcoal/45">
-                          {featureFlags.linkFallbackEnabled ? "Enabled" : "Hidden"}
+                          {featureFlags.linkFallbackEnabled ? "Optional" : "Currently unavailable"}
                         </p>
                       </div>
                       {featureFlags.linkFallbackEnabled ? (
@@ -2232,8 +2256,7 @@ export function StartOrderWizard({
                         </div>
                       ) : (
                         <p className="mt-3 text-sm leading-7 text-charcoal/60">
-                          Link fallback is disabled, so image uploads or written notes are the
-                          current options.
+                          Share photos or written notes instead when links are unavailable.
                         </p>
                       )}
                       <InlineError
