@@ -2,6 +2,41 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Gallery Browsing and Lightbox UX Refinement — 2026-06-01
+
+- **Current branch**: `codex/gallery-ux-refinement`.
+- **Objective**: Perform a mobile-first UX refinement pass on the customer-facing `/gallery` page and lightbox, improving filtering, image sizing, and layout readability on all viewports without modifying the database, Supabase schema, or admin media model.
+- **Files changed**:
+  - `src/components/site/gallery-grid.tsx`
+  - `HANDOFF.md`
+- **Key UX Refinements & Additions**:
+  - **Category Filtering**: Added a modern, mobile-friendly category filter bar at the top of the gallery page that horizontally scrolls on small viewports and centers on desktop. Filter chips display real-time counts calculated dynamically from active data, matching category strings dynamically between DB objects and static fallback representations (`Custom Cakes`, `Sugar Cookies`, `Macarons`, `Cupcakes`, `Wedding Cakes`).
+  - **Uniform Cards Grid**: Refined the cards layout into a consistent, browseable `aspect-[4/5]` vertical grid that prevents oversized images on mobile viewports. On mobile, it uses a highly engaging 2-column layout (`grid-cols-2`) and truncates descriptions to keep heights even and clean.
+  - **Uncropped Lightbox (object-contain)**: Changed the lightbox detail view from cropping `object-cover` to uncropped `object-contain` centering, preserving the full aspect ratio of custom cakes and desserts without cutoffs.
+  - **Streamlined Metadata & Copy**: Completely removed redundant helper text (e.g. instruction blocks like "Use the previous and next buttons...") and simplified the layout. Built an elegant sidebar that displays the Category, Title, Image Count (`1 / 20` style), and the alt/details description in a clean, uncluttered layout.
+- **Strict Guardrails Preserved**:
+  - Confirmed that this refinement pass is entirely frontend-only.
+  - No Supabase schemas, tables, migrations, or keys were exposed or altered.
+  - The admin media model (`/admin/media`) and CRUD operations remain fully compatible and untouched.
+  - Pre-existing untracked file `scratch/qa/orders-prod-qa.mjs` was completely preserved and untouched.
+- **Lightbox Image Regression & Fix**:
+  - *Issue Discovered*: During initial Visual QA, the lightbox image rendered as a broken image displaying its alt text instead of the actual custom cake/dessert picture.
+  - *Root Cause Analysis*: In the UX redesign, we set `quality={85}` on the Next.js `Image` element in the lightbox. However, `next.config.ts` enforces a strict whitelist of allowed qualities (`qualities: [75, 82]`) to control optimization caches. The invalid quality of `85` caused Next.js's image handler to return a 400 Bad Request, leading to a broken image display.
+  - *Fix Applied*: Reverted `quality={85}` to the whitelisted `quality={82}` in `src/components/site/gallery-grid.tsx`.
+- **Durable Visual QA & Image Load Assertions**:
+  - Created a robust visual QA test runner (`scratch/gallery-visual-qa.mjs`) that programmatically clicks filters, loads the lightbox on mobile and desktop viewports, and asserts that the `<img>` element completes loading with a non-zero size (`complete && naturalWidth > 0`).
+  - *Results*: Both mobile and desktop visual checks passed with **100% successful image rendering** (e.g. `naturalWidth: 335` on mobile, `naturalWidth: 726` on desktop). No broken images or layout regressions exist. All screenshot captures are verified.
+- **Verification Results**:
+  - `npm run lint` completed with **zero** warnings or errors.
+  - `npm run typecheck` passed cleanly, ensuring full TypeScript integrity.
+  - `npm run build` compiled successfully with static route prerendering for `/gallery` fully verified.
+  - `git diff --check` completed successfully with all whitespace errors cleared.
+- **Staged / Unstaged Status**:
+  - Changed files `src/components/site/gallery-grid.tsx` and `HANDOFF.md` are staged and committed on `codex/gallery-ux-refinement`.
+  - `scratch/qa/` and `.agents/` remain untracked.
+- **Next recommended step**:
+  - Merge the refined branch `codex/gallery-ux-refinement` into `main`.
+
 ## Batch 01 Gallery PR Merge / Deploy Verification — 2026-06-01
 
 - Current branch: `main`.
