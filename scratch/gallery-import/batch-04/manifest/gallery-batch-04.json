@@ -1,6 +1,6 @@
 {
   "batch": "batch-04",
-  "status": "metadata-approved",
+  "status": "imported",
   "expected_count": 11,
   "source_folder": "scratch/gallery-import/batch-04/originals/",
   "processed_folder": "scratch/gallery-import/batch-04/processed/",
@@ -13,7 +13,14 @@
       "category": "Sugar Cookies",
       "title": "Mini Pie Sugar Cookie Box",
       "alt_text": "Open dessert box with decorated sugar cookies designed like mini pies with buttercream borders, lattice details, and flower accents.",
-      "tags": ["sugar cookies", "decorated cookies", "pie cookies", "mini pie cookies", "cookie box", "seasonal cookies"],
+      "tags": [
+        "sugar cookies",
+        "decorated cookies",
+        "pie cookies",
+        "mini pie cookies",
+        "cookie box",
+        "seasonal cookies"
+      ],
       "visibility": "published",
       "featured": false,
       "sort_priority": "medium",
@@ -28,7 +35,14 @@
       "category": "Custom Cakes",
       "title": "Lemon Birthday Cake",
       "alt_text": "White birthday cake decorated with yellow lemon slices, lemon shapes, green leaves, and gold birthday lettering.",
-      "tags": ["custom cake", "birthday cake", "lemon cake", "citrus cake", "floral cake", "celebration cake"],
+      "tags": [
+        "custom cake",
+        "birthday cake",
+        "lemon cake",
+        "citrus cake",
+        "floral cake",
+        "celebration cake"
+      ],
       "visibility": "published",
       "featured": true,
       "sort_priority": "high",
@@ -43,7 +57,14 @@
       "category": "Custom Cakes",
       "title": "Sweet Fork Vendor Booth Display",
       "alt_text": "The Sweet Fork vendor booth display with packaged desserts, menu signage, samples, and bakery branding at an indoor event.",
-      "tags": ["vendor event", "dessert display", "bakery booth", "local bakery", "Sweet Fork", "Centerville Utah"],
+      "tags": [
+        "vendor event",
+        "dessert display",
+        "bakery booth",
+        "local bakery",
+        "Sweet Fork",
+        "Centerville Utah"
+      ],
       "visibility": "published",
       "featured": false,
       "sort_priority": "low",
@@ -58,7 +79,14 @@
       "category": "Cupcakes",
       "title": "Blue and White Buttercream Cupcake Set",
       "alt_text": "Blue and white buttercream cupcakes with pearl and gold accents arranged on a wooden serving tray.",
-      "tags": ["cupcakes", "custom cupcakes", "buttercream cupcakes", "blue cupcakes", "pearl cupcakes", "event desserts"],
+      "tags": [
+        "cupcakes",
+        "custom cupcakes",
+        "buttercream cupcakes",
+        "blue cupcakes",
+        "pearl cupcakes",
+        "event desserts"
+      ],
       "visibility": "published",
       "featured": false,
       "sort_priority": "medium",
@@ -73,7 +101,14 @@
       "category": "Cupcakes",
       "title": "Blue and White Pearl Cupcakes",
       "alt_text": "Box of blue and white frosted cupcakes decorated with gold and pearl sprinkles.",
-      "tags": ["cupcakes", "custom cupcakes", "blue cupcakes", "pearl cupcakes", "buttercream cupcakes", "party desserts"],
+      "tags": [
+        "cupcakes",
+        "custom cupcakes",
+        "blue cupcakes",
+        "pearl cupcakes",
+        "buttercream cupcakes",
+        "party desserts"
+      ],
       "visibility": "published",
       "featured": true,
       "sort_priority": "high",
@@ -88,7 +123,14 @@
       "category": "Cupcakes",
       "title": "Lemon Cupcake Display",
       "alt_text": "Lemon-themed cupcakes with white buttercream, yellow lemon decorations, and green leaf accents on a dessert table.",
-      "tags": ["cupcakes", "lemon cupcakes", "custom cupcakes", "event cupcakes", "buttercream cupcakes", "dessert table"],
+      "tags": [
+        "cupcakes",
+        "lemon cupcakes",
+        "custom cupcakes",
+        "event cupcakes",
+        "buttercream cupcakes",
+        "dessert table"
+      ],
       "visibility": "published",
       "featured": false,
       "sort_priority": "medium",
@@ -103,7 +145,14 @@
       "category": "Cupcakes",
       "title": "Confetti Sprinkle Cupcakes",
       "alt_text": "Box of white frosted confetti cupcakes topped with colorful round sprinkles.",
-      "tags": ["cupcakes", "confetti cupcakes", "sprinkle cupcakes", "birthday cupcakes", "party cupcakes", "buttercream cupcakes"],
+      "tags": [
+        "cupcakes",
+        "confetti cupcakes",
+        "sprinkle cupcakes",
+        "birthday cupcakes",
+        "party cupcakes",
+        "buttercream cupcakes"
+      ],
       "visibility": "published",
       "featured": false,
       "sort_priority": "medium",
@@ -118,7 +167,14 @@
       "category": "Sugar Cookies",
       "title": "Christmas Sugar Cookie Set",
       "alt_text": "Decorated Christmas sugar cookies shaped like candy canes, stars, snowflakes, and Christmas trees.",
-      "tags": ["sugar cookies", "decorated cookies", "Christmas cookies", "holiday cookies", "cookie box", "seasonal treats"],
+      "tags": [
+        "sugar cookies",
+        "decorated cookies",
+        "Christmas cookies",
+        "holiday cookies",
+        "cookie box",
+        "seasonal treats"
+      ],
       "visibility": "published",
       "featured": false,
       "sort_priority": "medium",
@@ -133,7 +189,14 @@
       "category": "Macarons",
       "title": "Pink and Coral Macaron Box",
       "alt_text": "Box of pink and coral macarons arranged in two rows with cream filling.",
-      "tags": ["macarons", "pink macarons", "coral macarons", "macaron box", "French macarons", "party desserts"],
+      "tags": [
+        "macarons",
+        "pink macarons",
+        "coral macarons",
+        "macaron box",
+        "French macarons",
+        "party desserts"
+      ],
       "visibility": "published",
       "featured": true,
       "sort_priority": "high",
@@ -148,7 +211,14 @@
       "category": "Cupcakes",
       "title": "Raspberry Chocolate Cupcakes",
       "alt_text": "Chocolate cupcakes topped with pink raspberry buttercream, fresh raspberries, and small green leaf accents.",
-      "tags": ["cupcakes", "chocolate cupcakes", "raspberry cupcakes", "pink cupcakes", "custom cupcakes", "buttercream cupcakes"],
+      "tags": [
+        "cupcakes",
+        "chocolate cupcakes",
+        "raspberry cupcakes",
+        "pink cupcakes",
+        "custom cupcakes",
+        "buttercream cupcakes"
+      ],
       "visibility": "published",
       "featured": true,
       "sort_priority": "high",
@@ -163,7 +233,14 @@
       "category": "Sugar Cookies",
       "title": "Boxed Mini Pie Sugar Cookies",
       "alt_text": "Boxed decorated sugar cookies designed like mini pies shown through a bakery box window with The Sweet Fork label.",
-      "tags": ["sugar cookies", "decorated cookies", "pie cookies", "boxed cookies", "cookie gift box", "seasonal cookies"],
+      "tags": [
+        "sugar cookies",
+        "decorated cookies",
+        "pie cookies",
+        "boxed cookies",
+        "cookie gift box",
+        "seasonal cookies"
+      ],
       "visibility": "published",
       "featured": false,
       "sort_priority": "low",
@@ -171,5 +248,6 @@
       "recommended_crop": "square",
       "notes": "These are decorated sugar cookies styled to look like mini pies. Packaging photo is useful as a supporting gallery image, though the box window glare makes it less ideal for featured placement."
     }
-  ]
+  ],
+  "imported_at": "2026-06-02T04:12:21.750Z"
 }

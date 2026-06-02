@@ -2,6 +2,35 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Gallery Batch 04 Media Import & Database Integration — 2026-06-02
+
+- **Import objective**: Process and import Sweet Fork Gallery Batch 04 into the existing Next.js / Supabase-backed media/gallery architecture.
+- **Batch Size & Specifications**: Exactly 11 source photos (10 HEIC files and 1 DSLR Nikon JPEG).
+- **Processing and downscaling details**:
+  - Successfully ran Apple `sips` for format conversion and downscaling to a maximum dimension of 2048px at JPEG quality level 85.
+  - Reduced overall payload sizes dramatically (e.g. downscaled DSLR photo `Q95A4-eeij43pyuoql3emt3pdumvmi.JPG` from **14.85 MB** to **679 KB**, representing a **95.4% file size reduction**).
+  - All original HEIC and JPEG source files inside `originals/` remain untouched.
+- **Storage and database registration**:
+  - Uploaded exactly 11 optimized `.jpg` images to the `marketing` bucket under prefix `marketing/gallery-batch-04/`.
+  - Registered exactly 11 corresponding `media_assets` records.
+  - Linked exactly 22 `media_assignments` records: 11 page assignments for `gallery.grid` layout context and 11 category assignments pointing to respective category UUIDs.
+  - Display orders sequential, starting from `210` to `310` to avoid collision with existing batches.
+- **Category assignments verified**:
+  - Cupcakes: 5
+  - Sugar Cookies: 3 (including the two mini pie-style cookie photos correctly mapped to Sugar Cookies category)
+  - Macarons: 1
+  - Custom Cakes: 2
+- **Featured assets count**: Exactly 4.
+- **Strict Guardrails Preserved**:
+  - All pre-existing media assets and assignments from Batch 01, Batch 02, and Batch 03 remain 100% untouched.
+  - Untracked files `.agents/`, `scratch/qa/`, and `skills-lock.json` were strictly preserved.
+  - No database schema or Supabase RLS changes were introduced.
+- **Verification and quality gates**:
+  - `npm run lint`: **PASSED** with 0 warnings/errors.
+  - `npm run typecheck`: **PASSED** cleanly.
+  - `npm run build`: **PASSED** cleanly (dynamic admin routes compile successfully, static pages generated perfectly).
+  - Verified sample asset dimensions and files in the Supabase remote database successfully.
+
 ## Gallery Batch 04 Metadata & Approved Manifest SITREP — 2026-06-02
 
 - **Metadata manifest completed**: Successfully populated the approved metadata manifest file.
