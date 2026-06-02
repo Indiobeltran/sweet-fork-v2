@@ -6,7 +6,13 @@
     "category": "Sugar Cookies",
     "title": "Western Highland Cow Baby Shower Cookies",
     "alt_text": "A premium tray of custom sugar cookies decorated with lavender baby onesies with wings, green saguaro cacti, cowboy boots with flowers, and cute highland cow designs.",
-    "tags": ["sugar-cookies", "baby-shower", "highland-cow", "western-theme", "lavender"],
+    "tags": [
+      "sugar-cookies",
+      "baby-shower",
+      "highland-cow",
+      "western-theme",
+      "lavender"
+    ],
     "visibility": "published",
     "featured": true,
     "sort_priority": "high",
@@ -21,13 +27,19 @@
     "category": "Sugar Cookies",
     "title": "Highland Cow Custom Sugar Cookie",
     "alt_text": "An extreme close-up of a custom sugar cookie shaped like an arch, decorated with white frosting, a brown textured highland cow face, and a little pink flower.",
-    "tags": ["sugar-cookies", "baby-shower", "highland-cow", "custom-cookies", "macro"],
+    "tags": [
+      "sugar-cookies",
+      "baby-shower",
+      "highland-cow",
+      "custom-cookies",
+      "macro"
+    ],
     "visibility": "published",
     "featured": false,
     "sort_priority": "medium",
     "suggested_use": "gallery.grid",
     "recommended_crop": "",
-    "notes": "Macro close-up on the highland cow design."
+    "notes": "Similar detail angle from western/highland cow cookie set."
   },
   {
     "source_filename": "1000015650.jpeg",
@@ -36,13 +48,19 @@
     "category": "Sugar Cookies",
     "title": "Saguaro Cactus Custom Sugar Cookie",
     "alt_text": "A close-up of a custom sugar cookie decorated with vibrant green frosting details to look like a saguaro cactus with small orange flowers and white sprinkles.",
-    "tags": ["sugar-cookies", "baby-shower", "cactus", "western-theme", "custom-cookies"],
+    "tags": [
+      "sugar-cookies",
+      "baby-shower",
+      "cactus",
+      "western-theme",
+      "custom-cookies"
+    ],
     "visibility": "published",
     "featured": false,
     "sort_priority": "medium",
     "suggested_use": "gallery.grid",
     "recommended_crop": "",
-    "notes": "Macro close-up on the cactus design."
+    "notes": "Similar detail angle from western/highland cow cookie set."
   },
   {
     "source_filename": "1000015651.jpeg",
@@ -51,13 +69,19 @@
     "category": "Sugar Cookies",
     "title": "Lavender Onesie Custom Sugar Cookie",
     "alt_text": "A close-up of a custom sugar cookie shaped like a baby onesie, decorated with textured lavender frosting, white wings, and a single orange flower.",
-    "tags": ["sugar-cookies", "baby-shower", "onesie", "lavender", "custom-cookies"],
+    "tags": [
+      "sugar-cookies",
+      "baby-shower",
+      "onesie",
+      "lavender",
+      "custom-cookies"
+    ],
     "visibility": "published",
     "featured": false,
     "sort_priority": "medium",
     "suggested_use": "gallery.grid",
     "recommended_crop": "",
-    "notes": "Macro close-up on the baby onesie design."
+    "notes": "Similar detail angle from western/highland cow cookie set."
   },
   {
     "source_filename": "1000015652.jpeg",
@@ -66,22 +90,35 @@
     "category": "Sugar Cookies",
     "title": "Cowboy Boot and Rattle Sugar Cookies",
     "alt_text": "A close-up of custom sugar cookies featuring a textured brown cowboy boot decorated with lavender flowers and round baby rattles with green cacti.",
-    "tags": ["sugar-cookies", "baby-shower", "cowboy-boot", "rattle", "western-theme"],
+    "tags": [
+      "sugar-cookies",
+      "baby-shower",
+      "cowboy-boot",
+      "rattle",
+      "western-theme"
+    ],
     "visibility": "published",
     "featured": false,
     "sort_priority": "medium",
     "suggested_use": "gallery.grid",
     "recommended_crop": "",
-    "notes": "Macro close-up on the cowboy boot and rattles."
+    "notes": "Similar detail angle from western/highland cow cookie set."
   },
   {
     "source_filename": "4AE0774B-D06F-4A44-91E7-1BB086C47AE7.PNG",
     "source_basename": "4AE0774B-D06F-4A44-91E7-1BB086C47AE7",
     "approved_filename": "sweet-fork-shark-birthday-cupcakes-centerville-utah.jpg",
     "category": "Cupcakes",
-    "title": "Shark Fin Birthday Cupcakes",
+    "title": "Shark Cupcake Stand",
     "alt_text": "A group of five custom shark-themed cupcakes on a round wooden pedestal stand, featuring blue and white swirled wave frosting, grey shark fin toppers, and ocean-colored wave wrappers.",
-    "tags": ["cupcakes", "birthday", "shark-fin", "ocean-theme", "wave-wrapper", "boys-birthday"],
+    "tags": [
+      "cupcakes",
+      "birthday",
+      "shark-fin",
+      "ocean-theme",
+      "wave-wrapper",
+      "boys-birthday"
+    ],
     "visibility": "published",
     "featured": false,
     "sort_priority": "medium",
@@ -94,9 +131,16 @@
     "source_basename": "D4673383-1DFE-4914-92E1-B974972481F9",
     "approved_filename": "sweet-fork-shark-birthday-bakery-box-cupcakes-centerville-utah.jpg",
     "category": "Cupcakes",
-    "title": "Shark Fin Celebration Cupcakes Box",
+    "title": "Shark Cupcake Box",
     "alt_text": "A horizontal bakery box filled with twelve custom shark cupcakes featuring white and blue swirled wave frosting, grey shark fin toppers, and ocean-colored wave wrappers.",
-    "tags": ["cupcakes", "birthday", "shark-fin", "bakery-box", "celebration", "party"],
+    "tags": [
+      "cupcakes",
+      "birthday",
+      "shark-fin",
+      "bakery-box",
+      "celebration",
+      "party"
+    ],
     "visibility": "published",
     "featured": false,
     "sort_priority": "medium",
@@ -111,7 +155,14 @@
     "category": "Sugar Cookies",
     "title": "Strawberry Baby Shower Sugar Cookies",
     "alt_text": "A set of premium custom sugar cookies arranged in a white bakery box, featuring iced red strawberries, pink baby onesies with white wings, and white daisies with pink swirls.",
-    "tags": ["sugar-cookies", "baby-shower", "strawberry", "pink-onesie", "daisy", "bakery-box"],
+    "tags": [
+      "sugar-cookies",
+      "baby-shower",
+      "strawberry",
+      "pink-onesie",
+      "daisy",
+      "bakery-box"
+    ],
     "visibility": "published",
     "featured": true,
     "sort_priority": "high",
@@ -124,11 +175,18 @@
     "source_basename": "IMG_1792",
     "approved_filename": "sweet-fork-strawberry-and-macaron-baby-shower-cookies-centerville-utah.jpg",
     "category": "Sugar Cookies",
-    "title": "Strawberry Cookies and Macarons Box",
+    "title": "Strawberry Baby Shower Cookie and Macaron Box",
     "alt_text": "A top-down view of a bakery box filled with pink and red macarons mixed with custom strawberry sugar cookies, daisy cookies, and pink baby onesie cookies.",
-    "tags": ["sugar-cookies", "macarons", "baby-shower", "strawberry", "mixed-box", "pink"],
+    "tags": [
+      "sugar-cookies",
+      "macarons",
+      "baby-shower",
+      "strawberry",
+      "mixed-box",
+      "pink"
+    ],
     "visibility": "published",
-    "featured": false,
+    "featured": true,
     "sort_priority": "medium",
     "suggested_use": "gallery.grid",
     "recommended_crop": "",
@@ -137,11 +195,18 @@
   {
     "source_filename": "IMG_2605.jpg",
     "source_basename": "IMG_2605",
-    "approved_filename": "sweet-fork-single-shark-birthday-cupcake-centerville-utah.jpg",
+    "approved_filename": "sweet-fork-shark-cupcake-centerville-utah.jpg",
     "category": "Cupcakes",
-    "title": "Editorial Shark Fin Birthday Cupcake",
+    "title": "Shark Cupcake",
     "alt_text": "A highly professional, elegant vertical shot of a single shark-themed cupcake displayed on a mini glass pedestal stand on a white marble countertop, styled with small seashells and lavender flowers.",
-    "tags": ["cupcakes", "birthday", "shark-fin", "editorial", "glass-pedestal", "marble"],
+    "tags": [
+      "cupcakes",
+      "birthday",
+      "shark-fin",
+      "editorial",
+      "glass-pedestal",
+      "marble"
+    ],
     "visibility": "published",
     "featured": true,
     "sort_priority": "high",
@@ -152,62 +217,90 @@
   {
     "source_filename": "IMG_2684 2.jpg",
     "source_basename": "IMG_2684 2",
-    "approved_filename": "sweet-fork-playful-chocolate-birthday-cake-centerville-utah.jpg",
+    "approved_filename": "sweet-fork-funny-chocolate-birthday-cake-centerville-utah.jpg",
     "category": "Custom Cakes",
-    "title": "Playful Chocolate Birthday Cake",
-    "alt_text": "A rich double-layer chocolate birthday cake on a dark wood and gold cake stand, beautifully piped with chocolate frosting and decorated with cute chocolate poop emojis with edible eyes.",
-    "tags": ["custom-cakes", "birthday", "chocolate-cake", "emoji", "playful", "wood-stand"],
+    "title": "Funny Chocolate Birthday Cake",
+    "alt_text": "Chocolate birthday cake with playful frosting decorations, candy eyes, and piped chocolate details on a wooden cake stand.",
+    "tags": [
+      "custom-cakes",
+      "birthday",
+      "chocolate-cake",
+      "emoji",
+      "playful",
+      "wood-stand"
+    ],
     "visibility": "published",
     "featured": true,
     "sort_priority": "high",
     "suggested_use": "gallery.grid",
     "recommended_crop": "",
-    "notes": "Clean poop emoji cake. Avoids 'poop emoji' in the main public title for premium tone but keeps it in tags and alt text."
+    "notes": "Playful humor-themed custom birthday cake."
   },
   {
     "source_filename": "IMG_2994.heic",
     "source_basename": "IMG_2994",
     "approved_filename": "sweet-fork-puppy-first-birthday-sugar-cookies-centerville-utah.jpg",
     "category": "Sugar Cookies",
-    "title": "Puppy Themed First Birthday Cookies",
-    "alt_text": "A white box containing custom sugar cookies in a puppy theme, including dog houses, party hats, bone-shaped cookies, number ones, and drawing-style puppy cookies in light blue.",
-    "tags": ["sugar-cookies", "birthday", "puppy-theme", "dog-house", "party-hat", "first-birthday"],
+    "title": "Puppy First Birthday Sugar Cookies",
+    "alt_text": "Blue and white puppy first birthday sugar cookies with dog house, party hat, bone, number one, and dog portrait designs.",
+    "tags": [
+      "sugar-cookies",
+      "birthday",
+      "puppy-theme",
+      "dog-house",
+      "party-hat",
+      "first-birthday"
+    ],
     "visibility": "published",
     "featured": true,
     "sort_priority": "high",
     "suggested_use": "gallery.grid",
     "recommended_crop": "",
-    "notes": "Puppy themed birthday set. Avoids customer name 'Simon' in public details. Will be converted from HEIC to JPG during import."
+    "notes": "Puppy themed birthday set. Overview angle."
   },
   {
     "source_filename": "IMG_2999.heic",
     "source_basename": "IMG_2999",
-    "approved_filename": "sweet-fork-puppy-first-birthday-dalmatian-cookies-centerville-utah.jpg",
+    "approved_filename": "sweet-fork-blue-puppy-birthday-sugar-cookies-centerville-utah.jpg",
     "category": "Sugar Cookies",
-    "title": "Puppy Birthday Dalmatian Sugar Cookies",
-    "alt_text": "A bakery box with light blue first birthday puppy cookies, featuring a dalmatian cookie, a dachshund cookie, dog houses, party hats, and dog bones.",
-    "tags": ["sugar-cookies", "birthday", "puppy-theme", "dalmatian", "dachshund", "first-birthday"],
+    "title": "Blue Puppy Birthday Sugar Cookies",
+    "alt_text": "Blue and white puppy first birthday sugar cookies featuring a dalmatian design, dog house, and bones.",
+    "tags": [
+      "sugar-cookies",
+      "birthday",
+      "puppy-theme",
+      "dalmatian",
+      "dachshund",
+      "first-birthday"
+    ],
     "visibility": "published",
     "featured": false,
     "sort_priority": "medium",
     "suggested_use": "gallery.grid",
     "recommended_crop": "",
-    "notes": "Dalmatian/dachshund cookie drawings angle. Will be converted from HEIC to JPG."
+    "notes": "Dalmatian/dachshund cookie drawings angle from puppy birthday set."
   },
   {
     "source_filename": "IMG_3006.heic",
     "source_basename": "IMG_3006",
-    "approved_filename": "sweet-fork-puppy-first-birthday-collie-cookies-centerville-utah.jpg",
+    "approved_filename": "sweet-fork-puppy-party-sugar-cookie-box-centerville-utah.jpg",
     "category": "Sugar Cookies",
-    "title": "Puppy Birthday Collie Sugar Cookies",
-    "alt_text": "A box of light blue custom puppy first birthday sugar cookies featuring a border collie drawing, dog houses, party hats, and dog bones.",
-    "tags": ["sugar-cookies", "birthday", "puppy-theme", "border-collie", "dog-house", "first-birthday"],
+    "title": "Puppy Party Sugar Cookies",
+    "alt_text": "Blue and white puppy first birthday sugar cookies featuring a border collie design, dog house, and bone cookies.",
+    "tags": [
+      "sugar-cookies",
+      "birthday",
+      "puppy-theme",
+      "border-collie",
+      "dog-house",
+      "first-birthday"
+    ],
     "visibility": "published",
     "featured": false,
     "sort_priority": "medium",
     "suggested_use": "gallery.grid",
     "recommended_crop": "",
-    "notes": "Collie/tan-brown dog drawings angle. Will be converted from HEIC to JPG."
+    "notes": "Collie/tan-brown dog drawings angle from puppy birthday set."
   },
   {
     "source_filename": "IMG_3183.jpg",
@@ -216,7 +309,15 @@
     "category": "Custom Cakes",
     "title": "Vintage Pink Lambeth Heart Cake",
     "alt_text": "An elegant double-layer pink heart-shaped vintage Lambeth cake on a glass cake stand, piped with ornate pink borders, decorated with silver beads and dragées, with '22' piped in silver on top.",
-    "tags": ["custom-cakes", "lambeth-cake", "vintage", "pink-cake", "heart-cake", "birthday-cake", "glass-stand"],
+    "tags": [
+      "custom-cakes",
+      "lambeth-cake",
+      "vintage",
+      "pink-cake",
+      "heart-cake",
+      "birthday-cake",
+      "glass-stand"
+    ],
     "visibility": "published",
     "featured": true,
     "sort_priority": "high",
@@ -231,7 +332,15 @@
     "category": "Custom Cakes",
     "title": "Classic German Chocolate Cake",
     "alt_text": "A premium German chocolate cake on a glass stand styled on a marble countertop with pecans and forks. Features smooth chocolate frosting, rich chocolate drip, toasted coconut and chopped pecan border, and rosettes with pecan halves.",
-    "tags": ["custom-cakes", "german-chocolate", "chocolate-cake", "pecans", "coconut", "drip-cake", "editorial"],
+    "tags": [
+      "custom-cakes",
+      "german-chocolate",
+      "chocolate-cake",
+      "pecans",
+      "coconut",
+      "drip-cake",
+      "editorial"
+    ],
     "visibility": "published",
     "featured": true,
     "sort_priority": "high",
@@ -246,7 +355,14 @@
     "category": "Custom Cakes",
     "title": "Classic Cream Cheese Carrot Cake",
     "alt_text": "A round carrot cake on a glass pedestal stand, featuring smooth cream cheese frosting, a bottom border of cake crumbs, whipped rosettes topped with little piped carrots, and a center of spiced crumbs.",
-    "tags": ["custom-cakes", "carrot-cake", "cream-cheese", "carrots", "spiced-crumbs", "glass-stand"],
+    "tags": [
+      "custom-cakes",
+      "carrot-cake",
+      "cream-cheese",
+      "carrots",
+      "spiced-crumbs",
+      "glass-stand"
+    ],
     "visibility": "published",
     "featured": true,
     "sort_priority": "high",
@@ -261,7 +377,14 @@
     "category": "Custom Cakes",
     "title": "Vintage Off-White Lambeth Cake",
     "alt_text": "An ornate off-white vintage Lambeth cake on a glass stand, featuring smooth buttercream base, elaborate shell borders, swags, and a piped heart on the side.",
-    "tags": ["custom-cakes", "lambeth-cake", "vintage", "cream-cake", "wedding-cake", "glass-stand"],
+    "tags": [
+      "custom-cakes",
+      "lambeth-cake",
+      "vintage",
+      "cream-cake",
+      "wedding-cake",
+      "glass-stand"
+    ],
     "visibility": "published",
     "featured": true,
     "sort_priority": "high",
@@ -272,11 +395,18 @@
   {
     "source_filename": "IMG_3807.jpg",
     "source_basename": "IMG_3807",
-    "approved_filename": "sweet-fork-pixel-blocks-birthday-cake-centerville-utah.jpg",
+    "approved_filename": "sweet-fork-pixel-blocks-video-game-birthday-cake-centerville-utah.jpg",
     "category": "Custom Cakes",
     "title": "Pixel Blocks Video Game Birthday Cake",
-    "alt_text": "A premium two-tier birthday cake designed like video game pixel blocks on a stone-colored stand, decorated with green and brown square tiles, a stone-textured number six, and pixel character toppers.",
-    "tags": ["custom-cakes", "birthday", "pixel-blocks", "video-game", "fondant-tiles", "boys-birthday"],
+    "alt_text": "Green and brown pixel block style birthday cake with a large number six topper and video game inspired decorations.",
+    "tags": [
+      "custom-cakes",
+      "birthday",
+      "pixel-blocks",
+      "video-game",
+      "fondant-tiles",
+      "boys-birthday"
+    ],
     "visibility": "published",
     "featured": false,
     "sort_priority": "medium",
@@ -291,7 +421,14 @@
     "category": "Custom Cakes",
     "title": "Whimsical Pastel Birthday Cake",
     "alt_text": "A fun and colorful pastel peach birthday cake on a purple glass stand, decorated with rainbow sprinkles on the borders and an assortment of tall gold, twisted colorful, and star-shaped candles with balloons in the background.",
-    "tags": ["custom-cakes", "birthday", "rainbow-sprinkles", "pastel-cake", "whimsical-candles", "balloons"],
+    "tags": [
+      "custom-cakes",
+      "birthday",
+      "rainbow-sprinkles",
+      "pastel-cake",
+      "whimsical-candles",
+      "balloons"
+    ],
     "visibility": "published",
     "featured": true,
     "sort_priority": "high",

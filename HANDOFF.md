@@ -2,6 +2,58 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Gallery Batch 03 Media Import — 2026-06-02
+
+- **Current branch**: `codex/gallery-batch-03-setup`.
+- **Objective**: Apply final metadata recommendations and import all 20 Batch 03 gallery images into Supabase Storage and media database tables (converting PNGs and HEICs to optimized JPEGs) while preserving existing Batch 01 and Batch 02 data.
+- **Manifest path**: `scratch/gallery-import/batch-03/manifest/gallery-batch-03.proposed.json`.
+- **Source folder**: `scratch/gallery-import/batch-03/originals/`.
+- **Processed folder**: `scratch/gallery-import/batch-03/processed/`.
+- **Images imported**: Exactly 20.
+- **Final Category distribution**:
+  - Custom Cakes: 7
+  - Sugar Cookies: 10
+  - Cupcakes: 3
+  - Wedding Cakes: 0
+  - Macarons: 0
+- **Final Featured count**: 11 (assets with `metadata.isFeatured = true`).
+- **Public metadata cleanup applied**:
+  - Customer names removed (e.g. "Simon" or "Michael" are completely removed from titles, alt text, and filenames).
+  - Protected brand/game wording generalized (Minecraft cake generalized to `"Pixel Blocks Video Game Birthday Cake"` in titles, filenames, and alt text).
+  - Crude cake wording avoided in public metadata, maintaining a premium brand tone.
+  - Approved filenames start with `sweet-fork-` and end with `.jpg`.
+- **Processing/import approach used**:
+  - Handled using `sips` native macOS JPEG rendering at quality option 86.
+  - Converted HEIC-to-JPG and PNG-to-JPG copies dynamically into `processed/` directory.
+  - Original source files left 100% untouched.
+- **Storage path**: `marketing/gallery-batch-03/`
+- **Supabase media record/assignment counts**:
+  - `media_assets`: Exactly 20 new assets created.
+  - `media_assignments`: Exactly 40 new assignments (20 page assignments for `gallery.grid` page layout + 20 category assignments pointing to respective category UUIDs).
+  - Stored unsupported schema fields safely inside `media_assets.metadata` JSON, maintaining consistency with the Batch 01 and Batch 02 patterns.
+- **Confirmation**:
+  - Pre-existing database/storage records for Batch 01 and Batch 02 were not modified or deleted.
+  - Untracked files `scratch/qa/orders-prod-qa.mjs`, `.agents/`, and `skills-lock.json` were preserved untouched.
+  - No Supabase schema/admin CRUD changes were made.
+- **Verification performed**:
+  - Dynamic verification script successfully executed.
+  - 100% verified 20 storage objects exist.
+  - 100% verified 20 `media_assets` and 40 `media_assignments` exist.
+  - 100% verified all category mappings, featured counts, and file sizes.
+  - Fetched public image URLs and verified HTTP 200 with content-type `image/jpeg`.
+  - Quality gates: `npm run lint` (passed with 0 warnings/errors), `npm run typecheck` (passed with 0 errors), `npm run build` (Next.js compiled successfully and prerendered all static routes).
+- **Admin verification steps**:
+  - Open `/admin/media`.
+  - Confirm the Website media library contains the 20 Batch 03 images.
+  - Confirm each image has its approved filename, title/caption, alt text, featured checkbox state, category tag, and Gallery page placement.
+- **Customer-facing verification steps**:
+  - Open `/gallery`.
+  - Confirm Batch 03 images load dynamically from Supabase.
+  - Confirm category filters (Custom Cakes, Sugar Cookies, Cupcakes) include/count and display the new images correctly.
+  - Confirm lightbox opens full images correctly with uncropped editorial display.
+  - Confirm mobile card badges remain perfectly polished.
+  - Open `/` to spot-check featured homepage behavior.
+
 ## Gallery Batch 03 Validation & Proposed Manifest — 2026-06-01
 
 - **Current branch**: `codex/gallery-batch-03-setup`.
