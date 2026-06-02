@@ -2,6 +2,27 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Gallery Batch 03 Branch Merge & Deployment — 2026-06-02
+
+- **Merge branch**: `codex/gallery-batch-03-setup` merged into `main`.
+- **Merge PR / commit**: GitHub PR #5, merge commit `f490f7c`.
+- **Remote branch cleanup**: Remote branch `codex/gallery-batch-03-setup` was successfully deleted.
+- **Vercel production deployment status**: **SUCCESS**. Rebuilt and deployed cleanly.
+- **Live /gallery verification counts**:
+  - All: 60 (Expected 60) — Verified.
+  - Custom Cakes: 27 (Expected 27) — Verified.
+  - Sugar Cookies: 19 (Expected 19) — Verified.
+  - Cupcakes: 8 (Expected 8) — Verified.
+  - Wedding Cakes: 2 (Expected 2) — Verified.
+  - Macarons: 4 (Expected 4) — Verified.
+- **Smoke checks**:
+  - Live `/gallery` loads dynamically from Supabase and filter chips filter/isolate categories cleanly.
+  - Lightbox opens and renders contained, uncropped Batch 03 images (verified with `sweet-fork-western-highland-cow-baby-shower-sugar-cookies-centerville-utah.jpg`).
+  - Homepage `/` returns HTTP 200 and featured assets load dynamically.
+  - Admin login page `/admin/login` returns HTTP 200.
+  - No Supabase schema, storage configuration, or admin media CRUD behavior changes were made.
+  - Untracked files `scratch/qa/orders-prod-qa.mjs`, `.agents/`, and `skills-lock.json` were preserved untouched.
+
 ## Gallery Batch 03 Media Import Audit — 2026-06-02
 
 - **Current branch**: `codex/gallery-batch-03-setup`.
