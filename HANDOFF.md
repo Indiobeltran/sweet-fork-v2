@@ -102,11 +102,24 @@ Update this file before stopping after any substantive repo task.
   - Earlier verification attempted a PostgREST embedded join from `media_assignments.target_id` to `gallery_categories`; PostgREST reported no schema-cache relationship for that join, so verification was rerun with separate category lookup queries successfully.
 - Open questions:
   - Whether selected featured items should also receive explicit `home.gallery` page assignments later, or whether the current featured metadata behavior is sufficient.
-- Staged / unstaged status at handoff time:
-  - Expected to stage only `HANDOFF.md` and `scratch/gallery-import/batch-01/manifest/gallery-batch-01.json`.
-  - Do not stage `.env.local`, `scratch/qa/`, original images, or processed images.
+- Verification & Push Status (Completed 2026-06-01):
+  - Branch successfully pushed: `codex/gallery-batch-01-import` has been pushed to remote origin.
+  - Untracked file `scratch/qa/orders-prod-qa.mjs` was completely untouched (neither modified, moved, staged, nor committed).
+  - Database verification passed completely:
+    - 20 unique imported media assets verified under `marketing/gallery-batch-01/` storage paths.
+    - 40 media assignments verified (20 page assignments for `gallery.grid` and 20 `gallery-category` assignments).
+    - Category distribution matches the manifest exactly: Custom Cakes (9), Sugar Cookies (5), Macarons (4), Wedding Cakes (1), Cupcakes (1).
+    - Exactly 8 featured assets have `metadata.isFeatured = true`.
+  - Static gates checked and passed:
+    - `npm run lint` passed.
+    - `npm run typecheck` passed.
+    - `npm run build` compiled successfully.
+    - `git diff --check` passed cleanly.
+- Staged / unstaged status:
+  - All files staged and committed.
+  - `scratch/qa/` remains untracked.
 - Next recommended step:
-  - Commit the focused import metadata/handoff changes, then push branch with `git push -u origin codex/gallery-batch-01-import`.
+  - Create and merge a Pull Request for `codex/gallery-batch-01-import`.
 
 ## Phase 4C-1 Admin Order Payment Clarity — 2026-06-01
 
