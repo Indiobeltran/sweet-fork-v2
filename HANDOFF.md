@@ -2,6 +2,18 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Gallery Batch 04 Folder Setup SITREP — 2026-06-02
+
+- **Batch 04 folder setup completed**: Created intake directory structure for Batch 04 gallery import.
+- **Source drop location**: `scratch/gallery-import/batch-04/originals/`
+- **Expected photo count**: 20
+- **Manifest path**: `scratch/gallery-import/batch-04/manifest/gallery-batch-04.json`
+- **Current status**: Awaiting user to drop source photos.
+- **Import execution details**:
+  - No images were imported, processed, uploaded, renamed, optimized, deleted, or modified.
+  - No Supabase database records or storage writes were performed.
+- **Next recommended step**: User drops exactly 20 photos into `scratch/gallery-import/batch-04/originals/`. Once added, validate that exactly 20 source images exist in the originals folder, then build/approve the Batch 04 metadata manifest before any import.
+
 ## Gallery Batch 03 Branch Merge & Deployment — 2026-06-02
 
 - **Merge branch**: `codex/gallery-batch-03-setup` merged into `main`.

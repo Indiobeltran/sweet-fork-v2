@@ -1,0 +1,9 @@
+{
+  "batch": "batch-04",
+  "status": "awaiting-source-photos",
+  "expected_count": 20,
+  "source_folder": "scratch/gallery-import/batch-04/originals/",
+  "processed_folder": "scratch/gallery-import/batch-04/processed/",
+  "manifest_version": 1,
+  "items": []
+}
