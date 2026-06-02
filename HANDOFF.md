@@ -2,23 +2,26 @@
 
 Update this file before stopping after any substantive repo task.
 
-## Gallery Batch 04 Source Validation SITREP — 2026-06-02
+## Gallery Batch 04 Metadata & Approved Manifest SITREP — 2026-06-02
 
-- **Source folder checked**: `scratch/gallery-import/batch-04/originals/`
-- **Expected photo count**: 11
-- **Actual photo count found**: 11 (plus `.gitkeep`)
-- **Validation status**: **PASSED**. All 11 files are verified, uncorrupted, and have valid dimensions/properties.
-- **Source inventory path**: `scratch/gallery-import/batch-04/manifest/gallery-batch-04-source-inventory.md`
-- **Image quality concerns**:
-  - `Q95A4-eeij43pyuoql3emt3pdumvmi.JPG` is a high-resolution raw DSLR photo at **14.85 MB**. It must be compressed/downscaled during the processing/import stage to prevent performance issues in the gallery.
-  - 10 of 11 source photos are in Apple HEIC format, which requires automatic progressive JPEG conversion/translation to guarantee browser compatibility.
-- **Category concerns**:
-  - `Q95A4-eeij43pyuoql3emt3pdumvmi.JPG` is a Melissa/Sweet Fork vendor booth lifestyle display image rather than a standard product photo. This event/brand asset needs custom metadata and display rules in the manifest.
-  - Boxed mini pies (`4Fre3-hniucr5bp4tjb62wuaqnwdqu.HEIC` and `cdClX-fp5y3hld7a7fyyhyslcpy23l.HEIC`) could map to either Custom Cakes or Sugar Cookies; they are preliminarily assigned to Sugar Cookies but need custom client approval.
+- **Metadata manifest completed**: Successfully populated the approved metadata manifest file.
+- **Manifest path**: `scratch/gallery-import/batch-04/manifest/gallery-batch-04.json`
+- **Number of metadata items**: 11
+- **Category distribution**:
+  - Cupcakes: 5
+  - Custom Cakes: 4
+  - Sugar Cookies: 1
+  - Macarons: 1
+  - Wedding Cakes: 0
+- **Featured count**: 4
+- **Filename-to-photo verification and mapping**:
+  - Verified and mapped `Q95A4-eeij43pyuoql3emt3pdumvmi.JPG` to the **Raspberry Chocolate Cupcakes** photo (Cupcakes category, high-quality Nikon Z 5 DSLR photo, marked `featured: true` / `sort_priority: high`).
+  - Verified and mapped `IMG_0045.HEIC` to the **Sweet Fork Vendor Booth Display** photo (Custom Cakes category, supporting brand/lifestyle display asset, marked `featured: false` / `sort_priority: low`).
+  - Boxed mini pies (`4Fre3-hniucr5bp4tjb62wuaqnwdqu.HEIC` and `cdClX-fp5y3hld7a7fyyhyslcpy23l.HEIC`) have been mapped to `Custom Cakes` as the closest category fit since no dedicated mini desserts category currently exists.
 - **Execution safety check**:
   - No images were imported, processed, optimized, renamed, uploaded, deleted, or modified.
   - No Supabase writes, storage objects, or DB records were created or modified.
-- **Next recommended step**: Build the proposed metadata manifest (`scratch/gallery-import/batch-04/manifest/gallery-batch-04.proposed.json`) with approved SEO filenames, titles, alt text, tags, categories, visibility settings, featured flags, display order, and recommended crop choices before running any import script.
+- **Next recommended step**: Process Batch 04 original images into optimized progressive JPEGs and import/upload them through the existing Supabase media and database architecture using the manifest data.
 
 ## Gallery Batch 03 Branch Merge & Deployment — 2026-06-02
 
