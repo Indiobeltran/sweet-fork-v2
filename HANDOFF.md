@@ -4,8 +4,18 @@ Update this file before stopping after any substantive repo task.
 
 ## Gallery Browsing and Lightbox UX Refinement — 2026-06-01
 
-- **Current branch**: `codex/gallery-ux-refinement`.
+- **Current branch**: `main` (merged from `codex/gallery-ux-refinement`).
 - **Objective**: Perform a mobile-first UX refinement pass on the customer-facing `/gallery` page and lightbox, improving filtering, image sizing, and layout readability on all viewports without modifying the database, Supabase schema, or admin media model.
+- **Pull Request & Merge Status**:
+  - PR Number: `#2` (URL: `https://github.com/Indiobeltran/sweet-fork-v2/pull/2`)
+  - Title: `"Refine gallery browsing and lightbox UX"`
+  - Merge Method: Standard merge commit via GitHub CLI (`gh pr merge --merge --delete-branch`)
+  - Status: **Merged & Deployed**
+  - Remote feature branch `origin/codex/gallery-ux-refinement` was deleted successfully.
+- **Production Deployment Status**:
+  - Live Website: `https://sweet-fork-v2.vercel.app`
+  - Vercel Build & Deployment: Completed successfully from `main` branch.
+  - Live smoke checks verified `/`, `/gallery`, and `/admin/login` return healthy status (HTTP 200).
 - **Files changed**:
   - `src/components/site/gallery-grid.tsx`
   - `HANDOFF.md`
@@ -23,19 +33,19 @@ Update this file before stopping after any substantive repo task.
   - *Issue Discovered*: During initial Visual QA, the lightbox image rendered as a broken image displaying its alt text instead of the actual custom cake/dessert picture.
   - *Root Cause Analysis*: In the UX redesign, we set `quality={85}` on the Next.js `Image` element in the lightbox. However, `next.config.ts` enforces a strict whitelist of allowed qualities (`qualities: [75, 82]`) to control optimization caches. The invalid quality of `85` caused Next.js's image handler to return a 400 Bad Request, leading to a broken image display.
   - *Fix Applied*: Reverted `quality={85}` to the whitelisted `quality={82}` in `src/components/site/gallery-grid.tsx`.
-- **Durable Visual QA & Image Load Assertions**:
-  - Created a robust visual QA test runner (`scratch/gallery-visual-qa.mjs`) that programmatically clicks filters, loads the lightbox on mobile and desktop viewports, and asserts that the `<img>` element completes loading with a non-zero size (`complete && naturalWidth > 0`).
-  - *Results*: Both mobile and desktop visual checks passed with **100% successful image rendering** (e.g. `naturalWidth: 335` on mobile, `naturalWidth: 726` on desktop). No broken images or layout regressions exist. All screenshot captures are verified.
+- **Durable Live Production QA & Image Load Assertions**:
+  - Created a robust visual QA test runner (`scratch/gallery-prod-visual-qa.mjs`) that programmatically connects to the live production deployment URL (`https://sweet-fork-v2.vercel.app`), clicks filters, loads the lightbox on mobile and desktop viewports, and asserts that the `<img>` element completes loading with a non-zero size (`complete && naturalWidth > 0`).
+  - *Results*: Both mobile and desktop visual checks passed successfully with **100% successful live image rendering** (e.g. `naturalWidth: 335` on mobile, `naturalWidth: 726` on desktop). No broken images or layout regressions exist on production. All screenshot captures are verified and archived.
 - **Verification Results**:
   - `npm run lint` completed with **zero** warnings or errors.
   - `npm run typecheck` passed cleanly, ensuring full TypeScript integrity.
-  - `npm run build` compiled successfully with static route prerendering for `/gallery` fully verified.
+  - `npm run build` compiled successfully post-merge on `main` with static route prerendering for `/gallery` fully verified.
   - `git diff --check` completed successfully with all whitespace errors cleared.
 - **Staged / Unstaged Status**:
-  - Changed files `src/components/site/gallery-grid.tsx` and `HANDOFF.md` are staged and committed on `codex/gallery-ux-refinement`.
+  - Changed files are fully committed to `main` and pushed to remote origin.
   - `scratch/qa/` and `.agents/` remain untracked.
 - **Next recommended step**:
-  - Merge the refined branch `codex/gallery-ux-refinement` into `main`.
+  - Standard development tasks on the Sweet Fork v2 roadmap can resume on clean feature branches.
 
 ## Batch 01 Gallery PR Merge / Deploy Verification — 2026-06-01
 
