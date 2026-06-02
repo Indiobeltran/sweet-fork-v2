@@ -2,6 +2,56 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Batch 01 Gallery PR Merge / Deploy Verification — 2026-06-01
+
+- Current branch: `main`.
+- Objective: open/review/merge `codex/gallery-batch-01-import` into `main`, then verify local `main` and deployment status.
+- PR:
+  - Number: `#1`.
+  - URL: `https://github.com/Indiobeltran/sweet-fork-v2/pull/1`.
+  - Title: `Import gallery batch 01 media`.
+  - Base: `main`.
+  - Head: `codex/gallery-batch-01-import`.
+  - Mergeability before merge: `MERGEABLE`.
+  - Pre-merge diff was limited to `HANDOFF.md` and `scratch/gallery-import/batch-01/manifest/gallery-batch-01.json`.
+- Merge status:
+  - Merged with GitHub CLI using `gh pr merge 1 --merge --delete-branch`.
+  - Merge commit on `main`: `0c215f966e95062eda445ff2fc21ecba030f5e9d`.
+  - Remote feature branch `origin/codex/gallery-batch-01-import` was deleted.
+- Main sync:
+  - Local `main` is aligned with `origin/main`.
+  - `scratch/qa/orders-prod-qa.mjs` remains untracked and was not touched.
+- Verification on `main`:
+  - `npm run lint`: passed.
+  - `npm run typecheck`: passed.
+  - `npm run build`: passed.
+  - `git diff --check`: passed.
+  - No `test` script exists in `package.json`.
+- Deployment status:
+  - GitHub/Vercel status for merge commit `0c215f9`: `success`.
+  - GitHub deployment record `4898263013`: Production deployment completed successfully.
+  - Vercel production deployment URL reported by GitHub: `https://sweet-fork-v2-csesbsil1-indiobeltran-5798s-projects.vercel.app`.
+  - That deployment-specific Vercel URL returned `401 Unauthorized` for `/`, `/gallery`, `/admin/login`, and `/admin/media`, so it is protected and is not the public URL to use for smoke checks.
+  - Vercel project listing identifies the public production alias as `https://sweet-fork-v2.vercel.app`.
+  - `https://sweet-fork-v2.vercel.app/`, `/gallery`, and `/admin/login` returned HTTP 200.
+  - `https://sweet-fork-v2.vercel.app/gallery` contains Batch 01 titles and Supabase image URLs, including `Strawberry First Birthday Cake`, `Blue Macaron Number Cake`, and project ref `renjsmdsrzjnppqpaoaa`.
+  - `https://www.thesweetfork.com/`, `/gallery`, and `/admin/login` returned HTTP 200, but response headers showed `server: Netlify`; this appears separate from the verified Vercel production deployment and should not be used to verify the v2 Vercel deployment.
+- Gallery visibility diagnosis:
+  - Batch 01 is merged to `main` and deployed to Vercel production.
+  - The local production build artifact `.next/server/app/gallery.rsc` contains Batch 01 media records and Supabase image URLs, proving the gallery code uses Supabase `media_assets` / `media_assignments` when built with the correct env.
+  - `/gallery` is prerendered as static content at build time, so it does not refetch Supabase media records on every request.
+  - Local env points to Supabase project `renjsmdsrzjnppqpaoaa`, where verification confirmed 20 Batch 01 assets and 20 `gallery.grid` assignments.
+  - Vercel production env names include `SUPABASE_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SITE_URL`, and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY`.
+  - The app reads `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` first and falls back to `NEXT_PUBLIC_SUPABASE_ANON_KEY`; Vercel does not currently have `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, but the gallery build still rendered Batch 01 through the server-side secret key path.
+  - No evidence of a gallery query/rendering bug was found.
+  - If images are not visible, the most likely cause is checking the wrong URL: the protected deployment-specific URL or the Netlify-backed custom domain, not the public Vercel alias.
+- Visual QA limitations:
+  - Confirmed Batch 01 text/data presence on the public Vercel alias by HTML inspection, but did not perform interactive browser/lightbox QA in a rendered browser during this pass.
+  - Could not authenticate into `/admin/media` during this merge verification pass.
+- Next recommended step:
+  - Use `https://sweet-fork-v2.vercel.app/gallery` for public Vercel visual QA, not the deployment-specific protected URL or `www.thesweetfork.com`.
+  - Verify `/gallery` Batch 01 images, lightbox behavior, homepage featured media, and `/admin/media` records visually with an authenticated browser session.
+
 ## Batch 01 Gallery Import Complete — 2026-06-01
 
 - Current branch: `codex/gallery-batch-01-import`.
