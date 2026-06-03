@@ -202,3 +202,28 @@ Use `The Sweet Fork` in public headings, body copy, alt text, metadata, social p
 
 - Public copy, metadata, and future content updates have a single brand standard.
 - A concise brand style guide now documents the rule for future agents.
+
+## 2026-06-03 - Conservative HSTS and CSP Header Refinement
+
+### Status
+
+Accepted
+
+### Context
+
+Baseline security headers were needed to harden the application before launch. However, overly aggressive HSTS configuration (using `includeSubDomains; preload`) on preview/staging domains (like `*.vercel.app`) can permanently force HTTPS for all subdomains, creating risks before the production domain configuration is finalized. Additionally, the existing pragmatic CSP correctly allows essential assets (Supabase images/storage, Next.js hydration, local development hot-reloads) and needs to be preserved to prevent customer-facing runtime errors.
+
+### Options Considered
+
+- Maintain aggressive HSTS (`includeSubDomains; preload`) and restrict CSP further.
+- Adopt a conservative baseline HSTS (`max-age=31536000` only) and add standard `X-DNS-Prefetch-Control: on` while preserving the verified, error-free CSP rules.
+
+### Decision
+
+Implement the conservative baseline. Removed `includeSubDomains` and `preload` from HSTS, added `X-DNS-Prefetch-Control: on`, and verified that the CSP allows all routes (including `/`, `/gallery`, `/start-order`, and `/admin/login`) to function without console violations.
+
+### Consequences
+
+- Eliminates SSL/subdomain lockout risks on temporary preview URLs.
+- Minimizes risk of broken image assets, font errors, or client-side form routing issues.
+- Confirms production build, linting, typechecking, and browser screenshots succeed with zero regressions.

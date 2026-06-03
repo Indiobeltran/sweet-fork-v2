@@ -2,6 +2,43 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Baseline Security Headers Refinement — 2026-06-03
+
+- **Objective**: Implement safe baseline security headers for Sweet Fork v2, ensuring a strong security posture while preventing breakages in Supabase, admin auth, font rendering, or page layout.
+- **Current branch**: `codex/security-headers`
+- **Changes implemented**:
+  - Refined `next.config.ts` to adjust `Strict-Transport-Security` (HSTS): removed `; includeSubDomains; preload` and kept a conservative `max-age=31536000` to prevent breaking Vercel preview/staging domains.
+  - Added `X-DNS-Prefetch-Control: on` to the baseline headers list in `next.config.ts`.
+  - Preserved the existing `Content-Security-Policy`, `Permissions-Policy`, `Referrer-Policy`, `X-Content-Type-Options`, and `X-Frame-Options` configurations which were verified to work cleanly.
+- **Files changed**:
+  - `next.config.ts`
+- **Verification performed**:
+  - `npm run lint`: passed
+  - `npm run typecheck`: passed
+  - `npm run build`: passed cleanly
+  - Git format check: `git diff --check` passed
+  - Header verification with `curl -I` on `/`, `/gallery`, `/start-order`, and `/admin/login` returned:
+    - `HTTP/1.1 200 OK`
+    - `Content-Security-Policy: default-src 'self' ...`
+    - `Permissions-Policy: camera=(), geolocation=(), microphone=(), payment=(), usb=()`
+    - `Referrer-Policy: strict-origin-when-cross-origin`
+    - `X-Content-Type-Options: nosniff`
+    - `X-Frame-Options: DENY`
+    - `X-DNS-Prefetch-Control: on`
+    - `Strict-Transport-Security: max-age=31536000` (in production)
+- **Browser/visual QA results**:
+  - Run with viewport 390x844 (mobile) and 1440x900 (desktop) for `/`, `/gallery`, `/start-order`, and `/admin/login`.
+  - Confirmed all pages loaded with no console errors or warnings.
+  - Confirmed gallery Supabase images load successfully and lightbox opens/closes with correct layout.
+  - Confirmed start-order flow step progression works.
+  - Admin login page renders correctly.
+  - Screenshots saved under `/Users/indiobeltran/.gemini/antigravity/brain/50c15c8d-4a43-4ba8-a59e-d749236f1c4e/qa-screenshots/`.
+- **HSTS / CSP Decisions**:
+  - HSTS: Configured HSTS conservatively using `max-age=31536000` without subdomains/preload for Vercel environments until a custom domain strategy is production-finalized.
+  - CSP: Retained existing robust CSP as it is pragmatic, fully supportive of Supabase and Next.js assets, and verified error-free.
+- **Commit**: Committed to `codex/security-headers` as `fix: refine baseline security headers`.
+- **Staged status**: Staged and committed.
+
 ## Inquiry Validation and Anti-Spam Hardening Audit — 2026-06-03
 
 - **Objective**: Implement server-side validation, honeypot, and timing-based anti-spam hardening for the inquiry form as requested, based on the prior audit's findings.
