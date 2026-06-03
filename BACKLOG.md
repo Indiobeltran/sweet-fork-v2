@@ -19,6 +19,8 @@ Use this backlog for agent-visible repo operations and public-site readiness wor
 ## Production Readiness
 
 - [ ] Re-run the public-site hardening audit from `AGENTS.md` when explicitly requested.
+- [ ] Configure Netlify deploy settings (Environment Variables, Build Settings) and verify Preview deployments.
+- [ ] Implement robust transactional email delivery (Resend/Postmark) or Netlify Forms once Netlify migration is validated.
 - [x] Verify performance and image delivery on homepage, gallery, and product pages.
 - [x] Verify `/start-order` inquiry UX, validation, future-date behavior, and mobile flow.
 - [x] Verify server-side validation, sanitization, and spam protection.

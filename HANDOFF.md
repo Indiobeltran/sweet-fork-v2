@@ -2,6 +2,19 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Prepare Netlify Deployment Migration — 2026-06-03
+
+- **Objective**: Add minimal Netlify config to allow deployment parity with Vercel while preserving Supabase/admin inquiry architecture.
+- **Current branch**: `codex/netlify-migration`
+- **Changes implemented**:
+  - Created `netlify.toml` with minimal `[build]` configuration.
+  - Updated `src/lib/env.ts` to support `.netlify.app` in site URL resolution.
+  - Added `x-nf-client-connection-ip` to `getClientIdentifier` in `src/app/api/inquiries/route.ts` to preserve rate-limiting and anti-spam on Netlify.
+  - Evaluated Netlify Forms; determined that transactional email (Resend/Postmark) remains the fallback as forms handling is best kept in Supabase/API logic without changing the UI architecture.
+- **Next steps**: 
+  - Complete the migration visually and interactively on a Netlify deploy preview before pointing the canonical domain to Netlify.
+  - Implement Resend/Postmark if Netlify Forms is deemed unnecessary/too disruptive to the existing `start-order` flow.
+
 ## Defer Deployed Inquiry Email Notifications to Netlify Migration — 2026-06-03
 
 - **Objective**: Document the decision to defer actual email notification delivery configuration until the upcoming Netlify migration.

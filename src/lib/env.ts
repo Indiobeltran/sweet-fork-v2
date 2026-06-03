@@ -28,7 +28,9 @@ function resolveSiteUrl() {
 
   if (
     process.env.NODE_ENV === "production" &&
-    (configuredSiteUrl.includes("localhost") || configuredSiteUrl.includes(".vercel.app"))
+    (configuredSiteUrl.includes("localhost") ||
+      configuredSiteUrl.includes(".vercel.app") ||
+      configuredSiteUrl.includes(".netlify.app"))
   ) {
     return productionSiteUrl;
   }

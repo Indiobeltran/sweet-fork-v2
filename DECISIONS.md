@@ -2,6 +2,34 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
+## 2026-06-03 - Netlify Deployment Parity and Notification Strategy
+
+### Status
+
+Accepted
+
+### Context
+
+The site is currently deployed on Vercel with a Supabase backend for inquiry management. A migration to Netlify is requested. Netlify Forms was proposed for email notifications to avoid adding a transactional email dependency.
+
+### Options Considered
+
+- Complete switch to Netlify Forms (changes frontend architecture and validation).
+- Send transactional emails via Resend/Postmark within the API route.
+- Defer notification layer until Netlify deployment is fully verified.
+
+### Decision
+
+- Migrate to Netlify by ensuring parity first: add a minimal `netlify.toml` and update IP headers (`x-nf-client-connection-ip`) and URL resolvers (`.netlify.app`) to support deploy previews.
+- Keep the current Supabase/admin inquiry architecture intact.
+- Evaluate Netlify Forms during the Netlify migration; if it introduces too much friction or disrupts the API flow, fall back to an external transactional email provider (Resend/Postmark).
+
+### Consequences
+
+- The app remains deployable on Vercel and Netlify interchangeably for now.
+- `start-order` functionality is preserved exactly as-is.
+- Email delivery remains deferred until a firm choice is tested on Netlify.
+
 ## 2026-05-31 - Safe Route Match for Home Route (/admin)
 
 ### Status

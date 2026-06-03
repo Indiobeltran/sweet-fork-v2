@@ -39,12 +39,14 @@ function isInquirySubmissionError(
 }
 
 function getClientIdentifier(request: Request) {
+  const netlifyClientIp = request.headers.get("x-nf-client-connection-ip");
   const vercelForwardedFor = request.headers.get("x-vercel-forwarded-for");
   const forwardedFor = request.headers.get("x-forwarded-for");
   const realIp = request.headers.get("x-real-ip");
   const connectingIp = request.headers.get("cf-connecting-ip");
 
   return (
+    netlifyClientIp?.split(",")[0]?.trim() ||
     vercelForwardedFor?.split(",")[0]?.trim() ||
     forwardedFor?.split(",")[0]?.trim() ||
     connectingIp?.trim() ||
