@@ -227,3 +227,33 @@ Implement the conservative baseline. Removed `includeSubDomains` and `preload` f
 - Eliminates SSL/subdomain lockout risks on temporary preview URLs.
 - Minimizes risk of broken image assets, font errors, or client-side form routing issues.
 - Confirms production build, linting, typechecking, and browser screenshots succeed with zero regressions.
+
+## 2026-06-03 - Defer Deployed Inquiry Email Notifications to Netlify Migration Planning
+
+### Status
+
+Accepted
+
+### Context
+
+During the deployed end-to-end inquiry test, customer submission and admin triage/archiving successfully worked, and notification event logs were successfully created. However, transactional email dispatch (to `thesweetfork@yahoo.com`) remains pending because no transactional email provider (such as Resend, Postmark, or SendGrid) is configured or integrated into the current Vercel setup.
+
+### Options Considered
+
+- Integrate a transactional email provider (e.g. Resend, Postmark) on Vercel immediately.
+- Defer actual email notification delivery configuration until the planned migration to Netlify, where Netlify Forms and native Netlify notification triggers can be evaluated.
+
+### Decision
+
+Defer transactional email delivery integration until the Netlify migration.
+- The admin dashboard (`/admin/inquiries`) remains the primary source of truth for incoming custom orders.
+- Until the Netlify notification strategy is finalized, the bakery owner/admin must monitor the `/admin/inquiries` page manually.
+- During Netlify migration, Netlify Forms should be evaluated as an email trigger/helper layer, not as a replacement for the existing Supabase database schema and admin workflow (unless all detailed product selections and custom multi-step fields can be fully preserved).
+- If Netlify Forms does not integrate cleanly with the wizard's JSON payload or multi-step structure, we will revisit a clean transactional API provider integration (such as Resend or Postmark) directly in the Next.js app.
+- Email notification delivery status is marked as a pending/deferred pre-launch cutover checklist item in the backlog.
+
+### Consequences
+
+- Avoids setting up unnecessary third-party accounts and environment secrets on Vercel that may change during the upcoming Netlify migration.
+- Keeps deployment dependencies lean.
+- Requires admin to manually poll the dashboard for new inquiries in the short term.

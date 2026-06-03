@@ -26,6 +26,7 @@ Use this backlog for agent-visible repo operations and public-site readiness wor
 - [x] Verify accessibility basics across navigation, footer, gallery, FAQ, and inquiry flow.
 - [x] Verify gallery interaction, captions, alt text, and mobile usability.
 - [x] Verify route-level metadata, sitemap, robots, OG tags, and Twitter tags.
+- [ ] Defer inquiry email notification delivery to Netlify migration (admin dashboard `/admin/inquiries` remains the source of truth; evaluate Netlify Forms or transactional email providers like Resend/Postmark during Netlify planning).
 
 ## Quality and Release
 

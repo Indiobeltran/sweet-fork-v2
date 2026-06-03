@@ -2,6 +2,22 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Defer Deployed Inquiry Email Notifications to Netlify Migration — 2026-06-03
+
+- **Objective**: Document the decision to defer actual email notification delivery configuration until the upcoming Netlify migration.
+- **Current branch**: `main`
+- **Documented Decision**:
+  - The E2E inquiry test successfully submitted custom cake + sugar cookie inquiry details, wrote to Supabase, and verified admin triage/archiving.
+  - Notification log rows are generated as `pending` but no email is sent to `thesweetfork@yahoo.com`.
+  - Transactional email setup is deferred to the Netlify migration to evaluate if Netlify Forms or transactional email APIs (Resend/Postmark) fits the final hosting pattern best.
+  - Owners/admins must monitor `/admin/inquiries` manually in the interim.
+- **Files updated**:
+  - `HANDOFF.md` (untracked, but updated in workspace)
+  - `BACKLOG.md`
+  - `DECISIONS.md`
+- **Verification performed**:
+  - Run checks for diffs and status.
+
 ## Baseline Security Headers Refinement — 2026-06-03
 
 - **Objective**: Implement safe baseline security headers for Sweet Fork v2, ensuring a strong security posture while preventing breakages in Supabase, admin auth, font rendering, or page layout.
