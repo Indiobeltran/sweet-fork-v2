@@ -270,7 +270,7 @@ export default async function AdminMediaPage({ searchParams }: AdminMediaPagePro
               checkboxName="pagePlacementKeys"
               items={mediaPlacementDefinitions.map((placement, index) => ({
                 checked: false,
-                description: "This same photo can safely appear in multiple website sections.",
+                description: placement.description,
                 label: placement.label,
                 order: (index + 1) * 10,
                 value: placement.key,

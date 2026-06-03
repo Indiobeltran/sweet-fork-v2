@@ -22,7 +22,7 @@ import {
   testimonials as staticTestimonials,
   websiteContentSections,
 } from "@/lib/content/site-content";
-import type { ProductType, GalleryItem } from "@/types/domain";
+import type { ProductPageContent, ProductType, GalleryItem } from "@/types/domain";
 import type { Enums, Json, Tables } from "@/types/supabase.generated";
 
 type SiteSettingKey =
@@ -75,6 +75,7 @@ export type ContentSectionDefinition = {
 };
 
 export type MediaPlacementDefinition = {
+  description: string;
   key: string;
   label: string;
   pageKey: string;
@@ -150,6 +151,7 @@ export type HomePageData = {
   hero: ManagedContentSection["value"];
   offerings: Array<{
     eyebrow: string;
+    image: GalleryItem | null;
     intro: string;
     name: string;
     shortTitle: string;
@@ -213,13 +215,63 @@ export const marketingMediaBucket = "marketing";
 
 export const mediaPlacementDefinitions: MediaPlacementDefinition[] = [
   {
+    description: "Curated photos used for the homepage hero and small gallery teaser.",
     key: "home.gallery",
-    label: "Homepage gallery",
+    label: "Homepage hero and gallery teaser",
     pageKey: "home",
     sectionKey: "gallery",
     slotKey: "gallery",
   },
   {
+    description: "Image shown on the Custom Cakes card in Signature Offerings.",
+    key: "home.offering.custom-cakes",
+    label: "Signature Offering - Custom Cakes",
+    pageKey: "home",
+    sectionKey: "offerings",
+    slotKey: "custom-cakes",
+  },
+  {
+    description: "Image shown on the Wedding Cakes card in Signature Offerings.",
+    key: "home.offering.wedding-cakes",
+    label: "Signature Offering - Wedding Cakes",
+    pageKey: "home",
+    sectionKey: "offerings",
+    slotKey: "wedding-cakes",
+  },
+  {
+    description: "Image shown on the Cupcakes card in Signature Offerings.",
+    key: "home.offering.cupcakes",
+    label: "Signature Offering - Cupcakes",
+    pageKey: "home",
+    sectionKey: "offerings",
+    slotKey: "cupcakes",
+  },
+  {
+    description: "Image shown on the Sugar Cookies card in Signature Offerings.",
+    key: "home.offering.sugar-cookies",
+    label: "Signature Offering - Sugar Cookies",
+    pageKey: "home",
+    sectionKey: "offerings",
+    slotKey: "sugar-cookies",
+  },
+  {
+    description: "Image shown on the Macarons card in Signature Offerings.",
+    key: "home.offering.macarons",
+    label: "Signature Offering - Macarons",
+    pageKey: "home",
+    sectionKey: "offerings",
+    slotKey: "macarons",
+  },
+  {
+    description: "Image shown on the DIY Kits card in Signature Offerings.",
+    key: "home.offering.diy-kits",
+    label: "Signature Offering - DIY Kits",
+    pageKey: "home",
+    sectionKey: "offerings",
+    slotKey: "diy-kits",
+  },
+  {
+    description: "Primary portfolio photos shown on the dedicated Gallery page.",
     key: "gallery.grid",
     label: "Gallery page grid",
     pageKey: "gallery",
@@ -766,6 +818,124 @@ function getStaticProductCards() {
   }));
 }
 
+function getProductHeroGalleryItem(content: ProductPageContent): GalleryItem {
+  return {
+    alt: content.heroImage.alt,
+    category: content.shortTitle,
+    id: `fallback-${content.slug}`,
+    imageUrl: content.heroImage.src,
+    title: content.shortTitle,
+  };
+}
+
+function getFallbackOfferingImage(slug: string) {
+  const content = productPageContent[slug];
+
+  return content ? getProductHeroGalleryItem(content) : null;
+}
+
+async function getOfferingImagesBySlug(slugs: string[]) {
+  const fallbackImagesBySlug = new Map(
+    slugs.map((slug) => [slug, getFallbackOfferingImage(slug)] as const),
+  );
+
+  if (!isSupabaseConfigured() || slugs.length === 0) {
+    return fallbackImagesBySlug;
+  }
+
+  const admin = createAdminClient();
+  const { data: placementData, error: placementError } = await admin
+    .from("media_assignments")
+    .select("display_order, media_asset_id, slot_key")
+    .eq("assignment_type", "page")
+    .eq("page_key", "home")
+    .eq("section_key", "offerings")
+    .in("slot_key", slugs)
+    .order("slot_key", { ascending: true })
+    .order("display_order", { ascending: true });
+
+  if (placementError) {
+    logPublicDataFallback("Unable to load offering media placements.", placementError);
+    return fallbackImagesBySlug;
+  }
+
+  const firstPlacementBySlug = ((placementData ?? []) as Array<
+    Pick<MediaAssignmentRow, "display_order" | "media_asset_id" | "slot_key">
+  >).reduce<Map<string, Pick<MediaAssignmentRow, "display_order" | "media_asset_id" | "slot_key">>>(
+    (accumulator, placement) => {
+      if (placement.slot_key && !accumulator.has(placement.slot_key)) {
+        accumulator.set(placement.slot_key, placement);
+      }
+
+      return accumulator;
+    },
+    new Map(),
+  );
+  const assetIds = Array.from(
+    new Set(
+      Array.from(firstPlacementBySlug.values()).map((placement) => placement.media_asset_id),
+    ),
+  );
+
+  if (assetIds.length === 0) {
+    return fallbackImagesBySlug;
+  }
+
+  const { data: assetData, error: assetError } = await admin
+    .from("media_assets")
+    .select("alt_text, bucket, caption, id, original_filename, public_url, storage_path")
+    .in("id", assetIds)
+    .eq("bucket", marketingMediaBucket)
+    .eq("asset_kind", "image");
+
+  if (assetError) {
+    logPublicDataFallback("Unable to load offering media assets.", assetError);
+    return fallbackImagesBySlug;
+  }
+
+  const assetMap = new Map(
+    ((assetData ?? []) as Array<
+      Pick<
+        MediaAssetRow,
+        | "alt_text"
+        | "bucket"
+        | "caption"
+        | "id"
+        | "original_filename"
+        | "public_url"
+        | "storage_path"
+      >
+    >)
+      .filter((asset) => isApprovedMarketingAsset(asset))
+      .map((asset) => [asset.id, asset]),
+  );
+  const resolvedImagesBySlug = new Map(fallbackImagesBySlug);
+
+  firstPlacementBySlug.forEach((placement, slug) => {
+    const asset = assetMap.get(placement.media_asset_id);
+    const fallbackImage = fallbackImagesBySlug.get(slug) ?? null;
+
+    if (!asset) {
+      return;
+    }
+
+    const title = asset.caption?.trim() || fallbackImage?.title || prettifyFileName(asset.original_filename);
+    resolvedImagesBySlug.set(slug, {
+      alt: getGalleryAltText({
+        altText: asset.alt_text,
+        category: fallbackImage?.category,
+        title,
+      }),
+      category: fallbackImage?.category ?? "Signature offering",
+      id: asset.id,
+      imageUrl: getMediaPublicUrl(asset),
+      title,
+    });
+  });
+
+  return resolvedImagesBySlug;
+}
+
 const getPublicProductRows = cache(async function getPublicProductRows(): Promise<ProductRow[] | null> {
   if (!isSupabaseConfigured()) {
     return null;
@@ -1222,10 +1392,16 @@ export async function getPublicOfferingCards() {
   const activeProducts = await getPublicProductRows();
 
   if (activeProducts === null) {
-    return getStaticProductCards();
+    const staticCards = getStaticProductCards();
+    const imagesBySlug = await getOfferingImagesBySlug(staticCards.map((card) => card.slug));
+
+    return staticCards.map((card) => ({
+      ...card,
+      image: imagesBySlug.get(card.slug) ?? null,
+    }));
   }
 
-  return activeProducts
+  const cards = activeProducts
     .filter((product) => Boolean(productPageContent[product.slug]))
     .map((product) => {
       const fallback = productPageContent[product.slug];
@@ -1240,6 +1416,12 @@ export async function getPublicOfferingCards() {
         slug: product.slug,
       };
     });
+  const imagesBySlug = await getOfferingImagesBySlug(cards.map((card) => card.slug));
+
+  return cards.map((card) => ({
+    ...card,
+    image: imagesBySlug.get(card.slug) ?? null,
+  }));
 }
 
 export async function getPublicPricingData(): Promise<{

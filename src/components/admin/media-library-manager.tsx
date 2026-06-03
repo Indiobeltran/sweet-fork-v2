@@ -24,6 +24,7 @@ type GalleryCategoryRow = {
 };
 
 type MediaPlacementDefinition = {
+  description: string;
   key: string;
   label: string;
   pageKey: string;
@@ -449,7 +450,7 @@ export function MediaLibraryManager({
                       onChange={(e) => setFeatured(e.target.checked)}
                       className="h-4 w-4 rounded border-charcoal/20 text-charcoal focus:ring-gold/20"
                     />
-                    <span>Feature this photo (shows on homepage gallery)</span>
+                    <span>Feature this photo for curated homepage and gallery picks</span>
                   </label>
                 </div>
 
@@ -522,7 +523,7 @@ export function MediaLibraryManager({
                             <div>
                               <span className="block font-semibold text-charcoal">{placement.label}</span>
                               <span className="block text-[10px] text-charcoal/52">
-                                key: {placement.key}
+                                {placement.description}
                               </span>
                             </div>
                           </label>

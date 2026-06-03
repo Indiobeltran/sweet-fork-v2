@@ -2,6 +2,77 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Homepage Conversion Flow Refactor — 2026-06-03
+
+- **Objective**: Refactor the homepage/landing page based on stakeholder feedback to reduce wordiness and scroll fatigue, improve mobile-first engagement, prioritize inquiry conversion, remove duplicated gallery browsing, and make Signature Offerings more visual and admin-manageable.
+- **Current branch**: `main`. The active user request explicitly said not to create a new branch and to commit/push after verification, so this task intentionally stayed on `main` despite the standing repo preference for task branches.
+- **Starting working tree**: Tracked tree was clean. Existing unrelated untracked files were preserved: `.agents/`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, and `skills-lock.json`.
+- **Homepage audit findings**:
+  - Homepage repeated the gallery as a full filterable `GalleryGrid`, making the landing page feel like a duplicate portfolio destination instead of a teaser.
+  - Signature Offerings were text-only cards sourced from product content, which made the section less scannable and less visually compelling.
+  - Inquiry CTAs existed but the page sequence delayed the "how to inquire" path behind longer browsing sections.
+  - Mobile scroll height was materially driven by stacked offering cards; the final implementation uses a tighter two-column mobile offerings grid.
+- **Stakeholder feedback addressed**:
+  - Reduced perceived content density by shortening the hero support structure, removing repeated gallery filters, tightening vertical section padding, and using concise section copy.
+  - Moved inquiry-driving CTAs higher: hero primary CTA, Signature Offerings CTA, process-band CTA, and final CTA remain available.
+  - Replaced the homepage gallery grid with a curated gallery teaser that routes users to `/gallery` for full portfolio browsing.
+  - Rebuilt Signature Offerings as image-backed cards with shorter descriptions and clearer "View details" paths.
+  - Preserved premium/editorial brand direction, existing typography, palette, public routes, gallery route behavior, and inquiry submission behavior.
+- **Files changed**:
+  - `src/app/(site)/page.tsx`
+  - `src/lib/site/marketing.ts`
+  - `src/components/admin/media-library-manager.tsx`
+  - `src/app/admin/(protected)/media/page.tsx`
+  - `HANDOFF.md`
+- **Homepage restructuring approach**:
+  - Kept the existing CMS/content-block data for hero, process, wedding highlight, testimonials, and product-derived offering cards.
+  - Added a local homepage image helper for stable `next/image` rendering and existing product-image fallback behavior.
+  - Reordered the page into: focused hero, image-led Signature Offerings, inquiry process band, curated gallery teaser, wedding planning note, compact testimonials, final inquiry CTA.
+  - Removed homepage `GalleryGrid` usage entirely; the dedicated `/gallery` page remains the full browsing/filtering destination.
+- **Signature Offerings admin/media implementation details**:
+  - Reused the existing `media_assignments` page-placement system; no schema, storage, upload, or auth changes were made.
+  - Added homepage offering placement definitions:
+    - `home.offering.custom-cakes`
+    - `home.offering.wedding-cakes`
+    - `home.offering.cupcakes`
+    - `home.offering.sugar-cookies`
+    - `home.offering.macarons`
+    - `home.offering.diy-kits`
+  - Public resolver now attaches the first assigned offering image by slug, falling back to the existing product hero image when no admin-selected media exists.
+  - Admin media upload/editor screens now show owner-friendly placement descriptions, so admins can assign existing website photos to Signature Offering cards through the existing Website Photos manager.
+- **Browser/visual QA performed**:
+  - Local production server: `http://127.0.0.1:3000`.
+  - Browser plugin was used after recovering from a stale documented plugin path; viewport capability was used and reset after QA.
+  - Viewports checked: `390x844`, `430x932`, `768x1024`, `1440x900`, and `1536x960`.
+  - Captured and visually inspected first-viewport screenshots at all requested sizes, plus scrolled Signature Offerings and gallery teaser states.
+  - Verified no horizontal page scroll at all checked widths (`scrollWidth === clientWidth`).
+  - Verified no broken visible images and no console warnings/errors caused by the changes.
+  - Verified mobile header navigation opens and locks body scroll.
+  - Verified hero inquiry CTA routes to `/start-order`.
+  - Verified gallery teaser routes to `/gallery`, and the dedicated gallery page still presents gallery filters.
+  - Verified homepage text no longer contains duplicated gallery filter-count UI.
+- **Admin workflow validation results**:
+  - Authenticated admin media visual workflow could not be completed in-browser because the local browser session had no admin auth context; `/admin/media` correctly redirected to `/admin/login`.
+  - Code/build validation confirms the existing media upload/editor workflow now receives the new Signature Offering placement definitions and descriptions.
+  - No Supabase schema, RLS, storage bucket, or auth behavior changed.
+- **Commands run and results**:
+  - `git branch --show-current`: `main`.
+  - `git status --short`: tracked tree initially clean; unrelated untracked files listed above.
+  - Read required docs: `AGENTS.md`, `ROADMAP.md`, `GATES.md`, `HANDOFF.md`, `DECISIONS.md`, `BACKLOG.md`, `README.md`.
+  - Inspected homepage route, shared layout/header, metadata utilities, gallery implementation, admin media/content pages, media actions, marketing data loader, middleware, Next config, sitemap/robots status.
+  - `curl -L --fail --silent https://supabase.com/changelog.md`: completed; no relevant schema/storage implementation changes were needed.
+  - `npm run lint`: passed after removing one unused helper.
+  - `npm run typecheck`: passed.
+  - `npm run build`: passed.
+  - Browser viewport and interaction QA via in-app Browser: passed with no console warnings/errors.
+- **Commands still needed**: `git diff --check`, `git diff --cached --check`, final `git status --short`, commit, push, and optional deployed smoke check after the pushed deployment is available.
+- **Whether deployed smoke check was possible**: Not yet performed at this handoff update point; local production smoke/visual QA was completed. A live deployed smoke check should be done after push if the deployment finishes in time.
+- **Known issues / follow-up**:
+  - Authenticated admin media workflow still needs a logged-in admin browser session or production/staging admin context for full visual confirmation.
+  - Consider a future stakeholder pass on whether all six offerings should stay visible on the homepage or whether a three-to-four item editorial subset would be even stronger for lead generation.
+- **Open decisions**:
+  - Active task overrode branch guidance by requiring no new branch and requiring commit/push from `main`.
+
 ## Gallery Filter Labels + First Impression Polish — 2026-06-02
 
 - **Objective**: Implement the next production polish item from the deployed visual audit: public gallery filter labels and above-the-fold gallery first impression.
