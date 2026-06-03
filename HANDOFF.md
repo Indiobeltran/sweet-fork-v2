@@ -65,8 +65,14 @@ Update this file before stopping after any substantive repo task.
   - `npm run typecheck`: passed.
   - `npm run build`: passed.
   - Browser viewport and interaction QA via in-app Browser: passed with no console warnings/errors.
-- **Commands still needed**: `git diff --check`, `git diff --cached --check`, final `git status --short`, commit, push, and optional deployed smoke check after the pushed deployment is available.
-- **Whether deployed smoke check was possible**: Not yet performed at this handoff update point; local production smoke/visual QA was completed. A live deployed smoke check should be done after push if the deployment finishes in time.
+  - `git diff --check`: passed.
+  - `git diff --cached --check`: passed before and after staging.
+  - `git commit -m "feat: refactor homepage conversion flow"`: created commit `108d732`.
+  - `git push`: pushed `main` to GitHub.
+  - `curl -I https://sweet-fork-v2.vercel.app/`: returned HTTP 200 from Vercel.
+  - `curl -L https://sweet-fork-v2.vercel.app/ | rg "A few details, not the whole portfolio|Choose the dessert path|Signature Offering|Gallery preview"`: did not find the new homepage copy at check time, indicating the live deployment/cache had not yet picked up the pushed commit.
+- **Commands still needed**: Optional deployed smoke check after the Vercel deployment/cache reflects the pushed commit.
+- **Whether deployed smoke check was possible**: Attempted after push, but the live site still served the previous homepage at check time. Local production smoke/visual QA was completed.
 - **Known issues / follow-up**:
   - Authenticated admin media workflow still needs a logged-in admin browser session or production/staging admin context for full visual confirmation.
   - Consider a future stakeholder pass on whether all six offerings should stay visible on the homepage or whether a three-to-four item editorial subset would be even stronger for lead generation.
