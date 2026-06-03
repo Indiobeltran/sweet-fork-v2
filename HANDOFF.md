@@ -2,7 +2,28 @@
 
 Update this file before stopping after any substantive repo task.
 
-## Quiet Luxury Homepage Visual Refinement — 2026-06-03
+## Inquiry Validation and Anti-Spam Hardening Audit — 2026-06-03
+
+- **Objective**: Implement server-side validation, honeypot, and timing-based anti-spam hardening for the inquiry form as requested, based on the prior audit's findings.
+- **Current branch**: `codex/inquiry-validation-hardening`
+- **Audit findings**:
+  - The previous production-readiness audit incorrectly flagged server-side validation and anti-spam protection as missing due to an out-of-sync read of the project backlog.
+  - **Server-side validation**: Already robustly implemented. The `POST` route in `src/app/api/inquiries/route.ts` calls `submitInquiry`, which applies strict Zod validation via `inquirySchema.safeParse` (from `src/lib/validations/inquiry.ts`). This includes strong type checks, required fields, max lengths, and format validation (email, phone, future dates).
+  - **Sanitization**: Already implemented. `normalizeInquiryFormValues` strictly sanitizes all free-text fields by removing control characters, trimming whitespace, and stripping HTML tags before the Zod parse.
+  - **Honeypot**: Already implemented. The client appends the hidden `website` field, and the server rejects the payload with a generic "couldn't verify" error if it contains any value.
+  - **Timing check**: Already implemented. The server requires `startedAt` to be at least 3500ms in the past before accepting the payload.
+  - **Rate Limiting**: An in-memory rate limit using `submissionAttempts` Map is present, limiting to 5 submissions per 10 minutes per IP/client identifier. While in-memory state is ephemeral on Vercel Serverless Functions, it provides a lightweight baseline without requiring Redis or external dependencies.
+- **Implementation actions taken**:
+  - Code inspection verified the robustness of the existing Zod schemas, honeypot, and timing logic.
+  - No redundant code or third-party rate limiting services were added, honoring the constraint to avoid new external dependencies unless absolutely necessary.
+- **Verification performed**:
+  - `npm run lint`: passed.
+  - `npm run typecheck`: passed.
+  - `npm run build`: passed cleanly.
+  - Manual code verification confirms the validation boundary is fully secure.
+- **Remaining follow-up**: None required for this feature. Future rate-limiting improvements could use Vercel Edge Middleware or Upstash Redis if the in-memory rate limit proves insufficient for production traffic, but the current lightweight implementation satisfies the immediate launch requirements.
+
+Quiet Luxury Homepage Visual Refinement — 2026-06-03
 
 - **Objective**: Perform a restrained quiet-luxury visual refinement pass on the Sweet Fork v2 homepage and public site shell while preserving the recent conversion-focused homepage architecture, inquiry behavior, gallery behavior, and Signature Offering media placement workflow.
 - **Current branch**: `main`. The active user request explicitly said not to create a new branch and to commit/push after verification, so this task intentionally stayed on `main` despite the standing repo preference for task branches.
