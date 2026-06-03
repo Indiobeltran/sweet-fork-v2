@@ -13,7 +13,7 @@ type SiteFooterProps = {
 
 export function SiteFooter({ legalLinks, site }: Readonly<SiteFooterProps>) {
   return (
-    <footer className="border-t border-charcoal/8 bg-charcoal text-ivory">
+    <footer className="border-t border-gold/12 bg-[linear-gradient(180deg,rgb(var(--color-charcoal)),rgba(44,36,27,0.96))] text-ivory">
       <div className="section-shell grid gap-10 py-14 md:grid-cols-[1.1fr_0.9fr] md:items-end">
         <div className="space-y-5">
           <Image
@@ -57,7 +57,7 @@ export function SiteFooter({ legalLinks, site }: Readonly<SiteFooterProps>) {
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-full border border-white/10 px-4 py-2 text-sm text-ivory/82 transition hover:border-white/24 hover:text-ivory focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50"
+                className="rounded-full border border-white/12 bg-white/[0.03] px-4 py-2 text-sm text-ivory/82 transition hover:border-white/26 hover:bg-white/[0.06] hover:text-ivory focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50"
               >
                 {item.label}
               </Link>

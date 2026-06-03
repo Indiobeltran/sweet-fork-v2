@@ -32,7 +32,7 @@ export function SectionHeading({
       <div className="space-y-4">
         <h2
           className={cn(
-            "text-balance font-serif text-4xl leading-[0.92] tracking-[-0.04em] sm:text-5xl",
+            "text-balance font-serif text-4xl leading-[0.96] sm:text-5xl",
             isInverse ? "text-ivory" : "text-charcoal",
           )}
         >

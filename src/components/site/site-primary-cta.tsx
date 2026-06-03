@@ -24,7 +24,7 @@ export function SitePrimaryCta({
       <Link
         href={href}
         className={cn(
-          "inline-flex min-h-14 w-full items-center justify-center rounded-full bg-charcoal px-6 py-4 text-center text-sm font-semibold tracking-[0.02em] text-ivory shadow-soft transition duration-200 hover:-translate-y-0.5 hover:bg-charcoal/94 active:scale-[0.985] sm:w-auto",
+          "inline-flex min-h-14 w-full items-center justify-center rounded-full bg-charcoal px-6 py-4 text-center text-sm font-semibold tracking-[0.02em] text-ivory shadow-[0_18px_38px_rgba(44,36,27,0.16)] transition duration-200 hover:-translate-y-0.5 hover:bg-charcoal/92 active:scale-[0.985] sm:w-auto",
           buttonClassName,
         )}
       >

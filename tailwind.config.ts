@@ -17,11 +17,11 @@ const config: Config = {
         sans: ["var(--font-body)", "sans-serif"],
       },
       boxShadow: {
-        soft: "0 18px 60px rgba(40, 31, 24, 0.08)",
+        soft: "0 18px 50px rgba(44, 36, 27, 0.075)",
       },
       backgroundImage: {
         paper:
-          "radial-gradient(circle at top, rgba(214, 181, 122, 0.18), transparent 32%), linear-gradient(180deg, rgba(255, 251, 246, 0.96), rgba(251, 245, 238, 0.98))",
+          "radial-gradient(circle at 28% 0%, rgba(184, 150, 92, 0.13), transparent 34%), linear-gradient(180deg, rgba(255, 253, 249, 0.98), rgba(250, 246, 240, 0.98))",
       },
       keyframes: {
         "fade-up": {

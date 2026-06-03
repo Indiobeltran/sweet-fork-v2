@@ -2,6 +2,89 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Quiet Luxury Homepage Visual Refinement — 2026-06-03
+
+- **Objective**: Perform a restrained quiet-luxury visual refinement pass on the Sweet Fork v2 homepage and public site shell while preserving the recent conversion-focused homepage architecture, inquiry behavior, gallery behavior, and Signature Offering media placement workflow.
+- **Current branch**: `main`. The active user request explicitly said not to create a new branch and to commit/push after verification, so this task intentionally stayed on `main` despite the standing repo preference for task branches.
+- **Starting working tree**: Tracked tree was clean. Existing unrelated untracked files were preserved: `.agents/`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, and `skills-lock.json`.
+- **Homepage/public shell audit findings**:
+  - The current homepage conversion structure was already in the desired order: hero, Signature Offerings, process CTA band, small gallery teaser, wedding note, client notes, and final inquiry CTA.
+  - Homepage gallery duplication was already removed; the homepage uses three gallery teaser links while `/gallery` remains the full browsing destination.
+  - Signature Offering cards already consumed `item.image` from the existing media placement resolver, so no admin upload/storage/schema work was needed.
+  - Existing font setup already uses Cormorant Garamond for display and Inter for body text; no new font dependency was warranted.
+  - Mobile hero CTAs were visible, but small-screen proof chips/testimonial pushed the first hero image farther down than desired for a more visual first impression.
+- **Visual refinement summary**:
+  - Warmed public brand tokens toward off-white, cream, espresso, muted gold, and dusty rose while preserving existing token names and accessible dark text contrast.
+  - Softened shared public surfaces, header navigation, footer/legal chips, primary CTA elevation, and final inquiry/process dark bands.
+  - Removed tight negative headline tracking in touched shared/homepage heading surfaces and adjusted line-height for a calmer editorial feel.
+  - Reduced desktop hero scroll fatigue by removing the previous `lg:min-h-[calc(100svh-7rem)]` requirement.
+  - Improved mobile hero image presence by showing the hero image earlier and reserving hero proof chips/testimonial for `sm` and larger screens.
+  - Refined Signature Offering cards with warmer white surfaces, softer shadows, mobile square image framing, lighter overlays, compact copy, and preserved product-page links.
+  - Polished gallery teaser cards and customer-facing section copy without reintroducing a homepage gallery grid.
+- **Files changed**:
+  - `src/app/(site)/page.tsx`
+  - `src/app/globals.css`
+  - `src/components/site/inquiry-cta.tsx`
+  - `src/components/site/section-heading.tsx`
+  - `src/components/site/site-footer.tsx`
+  - `src/components/site/site-header.tsx`
+  - `src/components/site/site-primary-cta.tsx`
+  - `tailwind.config.ts`
+  - `HANDOFF.md`
+- **Files intentionally preserved**:
+  - Inquiry submission routes, validation, payload shape, and wizard behavior were not modified.
+  - Gallery fetching, filters, cards, lightbox behavior, and `/gallery` route functionality were not modified.
+  - Signature Offering media placement definitions, resolver logic, admin assignment workflow, Supabase schema, storage, auth, migrations, imports, and deployment settings were not modified.
+  - Public route structure, metadata utilities, and product/service page content were not modified.
+- **Design decisions made**:
+  - Kept the current homepage conversion flow instead of rebuilding the page.
+  - Reused existing Cormorant/Inter typography and Tailwind/theme tokens rather than adding dependencies.
+  - Used token-level color refinement so the public shell inherits warmth consistently with minimal source churn.
+  - Kept mobile navigation behavior unchanged; only surface colors, borders, and shadows were softened.
+  - Kept the homepage gallery as a curated teaser and preserved `/gallery` as the portfolio browsing destination.
+- **Proposed but not implemented**:
+  - No sticky bottom mobile nav was added; it remains a possible future experiment if analytics show mobile inquiry discovery needs another entry point.
+  - No 100vh/full-screen hero was added; the patch intentionally reduced hero height pressure.
+  - No scroll-reveal or animation dependency was added; existing transition patterns were only subtly refined.
+  - No new image masks beyond rounded editorial card frames were added, avoiding crop risk for bakery photos.
+- **Browser/visual QA performed**:
+  - Local production server: `http://127.0.0.1:3000`.
+  - Browser plugin was used with explicit viewport control and reset after QA.
+  - Viewports checked: `390x844`, `430x932`, `768x1024`, `1440x900`, and `1536x960`.
+  - Captured QA screenshots outside the repo under `/tmp/sweet-fork-v2-quiet-luxury-qa/`.
+  - Visually inspected homepage first viewport at all required sizes, mobile nav, Signature Offering/scrolled homepage segments, gallery smoke page, and `/start-order` mobile smoke page.
+  - Confirmed homepage initial load had no horizontal scroll at all checked widths.
+  - Confirmed no broken visible images on homepage viewports and no console warnings/errors from the Browser QA pass.
+  - Confirmed hero CTA routes to `/start-order`.
+  - Confirmed gallery teaser routes to `/gallery`.
+  - Confirmed `/gallery` still renders the filterable gallery destination.
+  - Confirmed `/start-order` mobile smoke loads the existing inquiry wizard step controls without visual regression.
+  - Confirmed mobile header navigation opens, sets `aria-hidden="false"` on the menu, locks body overflow, and exposes an inquiry link.
+- **Admin workflow validation results**:
+  - Browser smoke of `/admin/media` redirected to `/admin/login`, indicating no authenticated admin session was available.
+  - Code inspection confirmed this patch did not alter the existing Signature Offering media placement architecture or admin media assignment workflow.
+- **Commands run and results**:
+  - `git branch --show-current`: `main`.
+  - `git status --short`: tracked tree initially clean; unrelated untracked files listed above.
+  - Read required docs: `AGENTS.md`, `ROADMAP.md`, `GATES.md`, `HANDOFF.md`, `DECISIONS.md`, `BACKLOG.md`, `README.md`.
+  - Inspected homepage route/components, site layout/header/footer, shared CTA/heading components, global CSS/theme variables, Tailwind config, current font setup, gallery route, `/start-order` route, and Signature Offering media resolver in `src/lib/site/marketing.ts`.
+  - `npm run lint`: passed after initial edit set and again after the mobile hero hierarchy refinement.
+  - `npm run typecheck`: passed after initial edit set and again after the mobile hero hierarchy refinement.
+  - `npm run build`: passed after initial edit set and again after the mobile hero hierarchy refinement.
+  - `git diff --check`: passed before final handoff update; final diff checks still need to run after this `HANDOFF.md` update.
+  - Browser QA via in-app Browser: passed at requested viewports/routes with no horizontal scroll, no broken visible images, and no console warnings/errors.
+- **Commands still needed in this turn**:
+  - Run final `git diff --check`, `git diff --cached --check`, and `git status --short` after staging.
+  - Commit with `style: refine quiet luxury homepage visuals`.
+  - Push `main`.
+- **Whether deployed smoke check was possible**: Not yet attempted for this patch; local production build and Browser smoke/visual QA were completed before commit.
+- **Known issues / follow-up**:
+  - Full authenticated admin media assignment visual QA still requires a logged-in admin browser session or staging/production admin context.
+  - Consider a future analytics-backed mobile bottom inquiry experiment, but keep it out of this patch.
+  - Consider a future stakeholder content pass on whether all six Signature Offerings should remain on the homepage or become a smaller editorial subset.
+- **Open decisions**:
+  - Active task overrode branch guidance by requiring no new branch and requiring commit/push from `main`.
+
 ## Homepage Conversion Flow Refactor — 2026-06-03
 
 - **Objective**: Refactor the homepage/landing page based on stakeholder feedback to reduce wordiness and scroll fatigue, improve mobile-first engagement, prioritize inquiry conversion, remove duplicated gallery browsing, and make Signature Offerings more visual and admin-manageable.

@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --color-ivory: 249 244 237;
-  --color-cream: 242 235 227;
-  --color-gold: 186 154 99;
-  --color-charcoal: 55 43 36;
-  --color-stone: 127 112 99;
-  --color-rose: 177 149 137;
+  --color-ivory: 253 251 247;
+  --color-cream: 248 242 234;
+  --color-gold: 184 150 92;
+  --color-charcoal: 44 36 27;
+  --color-stone: 111 98 87;
+  --color-rose: 185 152 143;
   --font-display: "Cormorant Garamond", Georgia, serif;
   --font-body: "Inter", "Segoe UI", Helvetica, Arial, sans-serif;
 }
@@ -28,8 +28,8 @@ body {
   min-height: 100vh;
   margin: 0;
   background:
-    radial-gradient(circle at top left, rgba(186, 154, 99, 0.12), transparent 24%),
-    radial-gradient(circle at bottom right, rgba(177, 149, 137, 0.1), transparent 26%),
+    radial-gradient(circle at top left, rgba(184, 150, 92, 0.08), transparent 25%),
+    radial-gradient(circle at bottom right, rgba(185, 152, 143, 0.07), transparent 28%),
     rgb(var(--color-ivory));
   color: rgb(var(--color-charcoal));
   font-family: var(--font-body), sans-serif;
@@ -90,7 +90,7 @@ img {
   position: absolute;
   inset: 0;
   z-index: -1;
-  opacity: 0.2;
+  opacity: 0.14;
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.08)),
     repeating-linear-gradient(
@@ -111,13 +111,13 @@ img {
 }
 
 .luxury-panel {
-  border: 1px solid rgba(var(--color-charcoal), 0.08);
+  border: 1px solid rgba(var(--color-charcoal), 0.07);
   border-radius: 2rem;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 253, 249, 0.88);
   backdrop-filter: blur(18px);
   box-shadow:
-    0 14px 40px rgba(53, 37, 29, 0.08),
-    0 2px 10px rgba(53, 37, 29, 0.04);
+    0 18px 48px rgba(44, 36, 27, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .eyebrow-label {
@@ -125,7 +125,7 @@ img {
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(var(--color-charcoal), 0.58);
+  color: rgba(var(--color-charcoal), 0.54);
 }
 
 .site-bottom-spacing {

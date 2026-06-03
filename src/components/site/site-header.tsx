@@ -46,10 +46,10 @@ function NavLink({
         compact
           ? isActive
             ? "bg-charcoal text-ivory px-3 py-2 text-[13px] shadow-soft"
-            : "px-3 py-2 text-[13px] text-charcoal/72 hover:bg-charcoal/5 hover:text-charcoal"
+            : "px-3 py-2 text-[13px] text-charcoal/68 hover:bg-charcoal/5 hover:text-charcoal"
           : isActive
             ? "bg-charcoal text-ivory px-4 py-2.5 text-sm shadow-soft"
-            : "px-4 py-2.5 text-sm text-charcoal/78 hover:bg-charcoal/5 hover:text-charcoal",
+            : "px-4 py-2.5 text-sm text-charcoal/74 hover:bg-charcoal/5 hover:text-charcoal",
       )}
       onClick={onClick}
     >
@@ -84,10 +84,10 @@ export function SiteHeader({
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-charcoal/8 bg-ivory/90 backdrop-blur-xl">
-      <div className="hidden border-b border-charcoal/8 lg:block">
+    <header className="sticky top-0 z-50 border-b border-charcoal/6 bg-ivory/92 shadow-[0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-xl">
+      <div className="hidden border-b border-charcoal/6 lg:block">
         <div className="section-shell flex h-11 items-center justify-between gap-6">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-charcoal/56">{tagline}</p>
+          <p className="text-[11px] uppercase tracking-[0.22em] text-charcoal/52">{tagline}</p>
           <nav className="flex items-center gap-1">
             {secondaryNavigation.map((item) => (
               <NavLink
@@ -118,7 +118,7 @@ export function SiteHeader({
           />
         </Link>
 
-        <nav className="hidden items-center rounded-full border border-charcoal/8 bg-white/74 p-1 lg:flex">
+        <nav className="hidden items-center rounded-full border border-charcoal/7 bg-white/76 p-1 shadow-[0_12px_36px_rgba(44,36,27,0.055)] lg:flex">
           {primaryNavigation.map((item) => (
             <NavLink key={item.href} href={item.href} label={item.label} pathname={pathname} />
           ))}
@@ -128,7 +128,7 @@ export function SiteHeader({
           <Link
             href={defaultInquiryCta.href}
             aria-current={pathname === defaultInquiryCta.href ? "page" : undefined}
-            className="inline-flex h-12 items-center justify-center rounded-full bg-charcoal px-5 text-sm font-semibold tracking-[0.02em] text-ivory shadow-soft transition duration-200 hover:-translate-y-0.5 hover:bg-charcoal/94"
+            className="inline-flex h-12 items-center justify-center rounded-full bg-charcoal px-5 text-sm font-semibold tracking-[0.02em] text-ivory shadow-[0_16px_34px_rgba(44,36,27,0.16)] transition duration-200 hover:-translate-y-0.5 hover:bg-charcoal/92"
           >
             {defaultInquiryCta.label}
           </Link>
@@ -138,13 +138,13 @@ export function SiteHeader({
           <Link
             href={defaultInquiryCta.href}
             aria-current={pathname === defaultInquiryCta.href ? "page" : undefined}
-            className="inline-flex h-10 items-center justify-center rounded-full border border-charcoal/10 bg-white/80 px-4 text-sm font-medium text-charcoal transition hover:border-charcoal/22 hover:bg-white"
+            className="inline-flex h-10 items-center justify-center rounded-full border border-charcoal/10 bg-white/86 px-4 text-sm font-medium text-charcoal transition hover:border-charcoal/22 hover:bg-white"
           >
             Inquire
           </Link>
           <button
             type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-charcoal/10 bg-white/80 text-charcoal transition hover:border-charcoal/22 hover:bg-white"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-charcoal/10 bg-white/86 text-charcoal transition hover:border-charcoal/22 hover:bg-white"
             onClick={() => setOpen((current) => !current)}
             aria-expanded={open}
             aria-controls="mobile-site-navigation"
@@ -160,13 +160,13 @@ export function SiteHeader({
         aria-hidden={!open}
         inert={!open ? true : undefined}
         className={cn(
-          "grid max-h-[calc(100svh-4.7rem)] overflow-hidden border-t border-charcoal/8 bg-ivory/98 transition-[grid-template-rows] duration-300 lg:hidden",
+          "grid max-h-[calc(100svh-4.7rem)] overflow-hidden border-t border-charcoal/8 bg-ivory/98 shadow-[0_18px_50px_rgba(44,36,27,0.08)] transition-[grid-template-rows] duration-300 lg:hidden",
           open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
         )}
       >
         <div className="min-h-0 overflow-y-auto overscroll-contain">
           <div className="section-shell pb-6 pt-5">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-charcoal/56">{tagline}</p>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-charcoal/52">{tagline}</p>
 
             <div className="mt-6">
               <p className="eyebrow-label">Shop by category</p>
@@ -180,7 +180,7 @@ export function SiteHeader({
                       "rounded-[1.35rem] px-4 py-3 text-sm font-medium transition",
                       pathname === item.href
                         ? "bg-charcoal text-ivory shadow-soft"
-                        : "bg-white/82 text-charcoal hover:bg-white",
+                        : "bg-white/88 text-charcoal hover:bg-white",
                     )}
                     onClick={() => setOpen(false)}
                   >
@@ -202,7 +202,7 @@ export function SiteHeader({
                       "rounded-[1.2rem] px-4 py-3 text-sm transition",
                       pathname === item.href
                         ? "bg-charcoal text-ivory shadow-soft"
-                        : "text-charcoal/78 hover:bg-white/82 hover:text-charcoal",
+                        : "text-charcoal/74 hover:bg-white/88 hover:text-charcoal",
                     )}
                     onClick={() => setOpen(false)}
                   >

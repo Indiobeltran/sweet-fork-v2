@@ -21,12 +21,13 @@ export function InquiryCta({
   return (
     <section
       id="product-final-cta"
-      className="border-t border-charcoal/8 bg-charcoal px-5 py-16 text-ivory sm:px-8 md:py-20"
+      className="relative overflow-hidden border-t border-gold/12 bg-[linear-gradient(135deg,rgb(var(--color-charcoal)),rgba(44,36,27,0.94))] px-5 py-16 text-ivory sm:px-8 md:py-20"
     >
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/35 to-transparent" />
       <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1.08fr_0.92fr] lg:items-end">
         <div className="space-y-4">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gold/70">{eyebrow}</p>
-          <h2 className="max-w-3xl text-balance font-serif text-4xl leading-[0.92] tracking-[-0.04em] sm:text-5xl">
+          <h2 className="max-w-3xl text-balance font-serif text-4xl leading-[0.96] sm:text-5xl">
             {title}
           </h2>
         </div>
