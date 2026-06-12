@@ -30,11 +30,11 @@ Update this file before stopping after any substantive repo task.
   - `git diff --check`: passed before this handoff update.
   - Pushed code fix commit `b20df1b` to `origin/codex/netlify-migration`.
 - **Post-redeploy Netlify validation**:
-  - Netlify connector found project `sweet-fork-v2` with current deploy `6a2c0fcd10e0990008224517` in `ready` state.
-  - Primary URL `https://sweet-fork-v2.netlify.app` and branch URL `https://codex-netlify-migration--sweet-fork-v2.netlify.app` both returned HTTP 503 for controlled no-upload `POST /api/inquiries` with body `Inquiry submission is temporarily unavailable. Please try again shortly.`
-  - `/start-order` on both deploys renders `submissionAvailable: false`, `catalogSource: "fallback"`, and the visible banner `Online submission is paused.`
-  - `/gallery` on both deploys also renders fallback content instead of the expected Supabase-backed gallery data.
-  - Smoke status checks returned HTTP 200 for `/gallery`, `/start-order`, and `/admin/login` on both primary and branch deploy URLs.
+  - Netlify connector found project `sweet-fork-v2` with current deploy `6a2c17b2ec52db0008095e00` in `ready` state for commit `d2d7ae1`.
+  - Primary URL `https://sweet-fork-v2.netlify.app` returned HTTP 503 for valid controlled no-upload and one-upload `POST /api/inquiries` requests with body `Inquiry submission is temporarily unavailable. Please try again shortly.`
+  - `/start-order` renders the live product catalog but keeps `submissionAvailable: false` with the visible banner `Online submission is paused.`
+  - `/gallery` renders the Supabase-backed gallery again with 71 filter items / 73 images in the browser smoke check.
+  - Smoke status checks returned HTTP 200 for `/gallery`, `/start-order`, and `/admin/login` on the primary deploy URL.
   - Netlify CLI did not return env metadata for this project, so the exact remote state cannot be safely distinguished between missing privileged key and present-but-unprivileged key. The failing selector path is `isSupabaseConfigured()` -> `getAdminSupabaseKey()` -> no privileged candidate from `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY`.
 - **Files changed recently**:
   - `src/lib/env.ts`
