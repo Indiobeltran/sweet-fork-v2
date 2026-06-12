@@ -9,7 +9,13 @@ type PublicSupabaseEnv = {
   publicKey: string;
 };
 
-type KeySource = "publishable" | "anon" | "secret" | "service_role" | "missing";
+type KeySource =
+  | "publishable"
+  | "anon"
+  | "secret"
+  | "service_role"
+  | "unprivileged"
+  | "missing";
 
 const productionSiteUrl = "https://www.thesweetfork.com";
 
@@ -42,6 +48,39 @@ function firstNonEmpty(...values: Array<string | undefined>) {
   return values.map((value) => value?.trim()).find((value): value is string => Boolean(value));
 }
 
+function decodeBase64UrlJson(value: string) {
+  try {
+    const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    return JSON.parse(globalThis.atob(padded)) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function getJwtRole(value: string) {
+  const [, payload] = value.split(".");
+
+  if (!payload) {
+    return null;
+  }
+
+  const decoded = decodeBase64UrlJson(payload);
+  return typeof decoded?.role === "string" ? decoded.role : null;
+}
+
+function isPrivilegedSupabaseAdminKey(value: string) {
+  if (value.startsWith("sb_secret_")) {
+    return true;
+  }
+
+  if (value.startsWith("sb_publishable_")) {
+    return false;
+  }
+
+  return getJwtRole(value) === "service_role";
+}
+
 function getPublicSupabaseKey() {
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
@@ -55,10 +94,19 @@ function getPublicSupabaseKey() {
 function getAdminSupabaseKey() {
   const secretKey = process.env.SUPABASE_SECRET_KEY?.trim();
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const candidates = [
+    { key: secretKey, source: "secret" },
+    { key: serviceRoleKey, source: "service_role" },
+  ] satisfies Array<{ key?: string; source: KeySource }>;
+  const privilegedKey = candidates.find(
+    (candidate) => candidate.key && isPrivilegedSupabaseAdminKey(candidate.key),
+  );
 
   return {
-    key: firstNonEmpty(secretKey, serviceRoleKey),
-    source: secretKey ? "secret" : serviceRoleKey ? "service_role" : "missing",
+    key: privilegedKey?.key,
+    source:
+      privilegedKey?.source ??
+      (firstNonEmpty(secretKey, serviceRoleKey) ? "unprivileged" : "missing"),
   } satisfies { key?: string; source: KeySource };
 }
 

@@ -2,6 +2,47 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Netlify Inquiry Submission Error Fix — 2026-06-12
+
+- **Objective**: Fix the Netlify `/start-order` inquiry submission error before merge/domain cutover.
+- **Current branch**: `codex/netlify-migration`.
+- **Root cause**: The server-side Supabase admin key resolver blindly preferred `SUPABASE_SECRET_KEY` when present. Netlify could therefore run inquiry writes with a present but unprivileged public/publishable key while a valid privileged `SUPABASE_SERVICE_ROLE_KEY` was also available. Reads such as `/gallery` still worked because they use public access, but inquiry inserts, item inserts, upload asset inserts, and notification log inserts require the privileged server key under RLS.
+- **Fix implemented**:
+  - Updated `src/lib/env.ts` so admin key selection verifies that the chosen key is privileged before using it.
+  - The resolver now accepts current `sb_secret_...` keys and legacy JWT keys with `role: service_role`, rejects `sb_publishable_...` keys for admin writes, and falls back from an unprivileged `SUPABASE_SECRET_KEY` to a valid `SUPABASE_SERVICE_ROLE_KEY`.
+  - Updated `src/components/inquiry/start-order-wizard.tsx` so unexpected platform/runtime submission errors are replaced with the safe customer message: `We could not submit the inquiry right now. Please try again in a few minutes.`
+- **Validation performed so far**:
+  - Reproduced Netlify API failure before the fix with direct `POST https://sweet-fork-v2.netlify.app/api/inquiries`: HTTP 500 and safe JSON error body.
+  - Reproduced both Netlify no-upload and one-upload wizard submissions failing before persistence; Supabase queries found no Netlify-created inquiry rows from those failed attempts.
+  - Confirmed normal local production server submissions succeeded before the fix, isolating the failure to deployed key/env selection.
+  - Simulated the Netlify key-order locally by setting `SUPABASE_SECRET_KEY` to the public key and `SUPABASE_SERVICE_ROLE_KEY` to the valid privileged key.
+  - Simulated no-upload submission returned HTTP 201 with `SF-A733DE16`; Supabase confirmed one inquiry row, two `inquiry_items` rows, zero inquiry assets, and one pending internal `notification_logs` row for `inquiry.submitted.web`.
+  - Simulated one-upload submission returned HTTP 201 with `SF-8D7E59E9`; Supabase confirmed one inquiry row, two `inquiry_items` rows, one `image-upload` inquiry asset, and one pending internal `notification_logs` row for `inquiry.submitted.web`.
+  - `npm run lint`: passed.
+  - `npm run typecheck`: passed.
+  - `npm run build`: passed.
+- **Files changed recently**:
+  - `src/lib/env.ts`
+  - `src/components/inquiry/start-order-wizard.tsx`
+  - `DECISIONS.md`
+  - `HANDOFF.md`
+- **Files intentionally preserved**:
+  - `.agents/`
+  - `scratch/process-import-batch-04.mjs`
+  - `scratch/qa/`
+  - `skills-lock.json`
+  - Supabase storage/data was not deleted or modified outside controlled test inquiry submissions.
+  - Gallery import scripts, schema migrations, pricing/business logic, DNS, and main-branch merge state were not touched.
+- **Next exact task**:
+  - Run `git diff --check`.
+  - Commit and push the scoped fix to `origin/codex/netlify-migration`.
+  - After Netlify redeploys, submit controlled no-upload and one-upload inquiries against `https://sweet-fork-v2.netlify.app/start-order`.
+  - Confirm the deployed inquiries appear in Supabase/admin with `inquiry_items`, inquiry assets for upload, and pending notification log rows.
+  - Smoke-check `https://sweet-fork-v2.netlify.app/gallery`, `/start-order`, and `/admin/login`.
+- **Known issues / cutover status**:
+  - Domain cutover remains blocked until the pushed fix is redeployed on Netlify and the deployed no-upload and one-upload inquiry submissions pass.
+  - If Netlify does not have any privileged admin key configured, the code will now avoid using an unprivileged key and show a safe temporary-unavailable submission state; Netlify env would still need to be corrected before cutover.
+
 ## Mobile Inquiry Wizard Item Focus Fix — 2026-06-12
 
 - **Objective**: Fix the `/start-order` mobile multi-product item-details bug before Netlify/domain cutover.

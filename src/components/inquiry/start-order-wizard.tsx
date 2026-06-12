@@ -295,6 +295,29 @@ function getStepErrorMessage(stepIndex: number) {
   }
 }
 
+function getSafeSubmissionErrorMessage(error: unknown) {
+  const fallback = "We could not submit the inquiry right now. Please try again in a few minutes.";
+
+  if (!(error instanceof Error) || error.message.trim().length === 0) {
+    return fallback;
+  }
+
+  const message = error.message.trim();
+  const isExpectedSubmissionMessage =
+    message.startsWith("We ") ||
+    message.startsWith("Please ") ||
+    message.startsWith("This inquiry") ||
+    message.startsWith("The inquiry") ||
+    message.startsWith("Too many ") ||
+    message.startsWith("Online submission") ||
+    message.startsWith("Image ") ||
+    message.startsWith("Reference ") ||
+    message.includes("upload") ||
+    message.includes("inspiration");
+
+  return isExpectedSubmissionMessage ? message : fallback;
+}
+
 function isErrorForStep(key: string, stepIndex: number) {
   if (stepIndex === 0) {
     return (
@@ -941,25 +964,26 @@ export function StartOrderWizard({
         method: "POST",
         body: formData,
       });
-      const payload = (await response.json()) as
-        | InquirySubmissionResponse
-        | { error?: string };
+      const responseText = await response.text();
+      const payload = responseText
+        ? (JSON.parse(responseText) as InquirySubmissionResponse | { error?: string })
+        : null;
 
       if (!response.ok) {
         throw new Error(
-          "error" in payload && payload.error
+          payload && "error" in payload && payload.error
             ? payload.error
             : "We could not submit the inquiry right now.",
         );
       }
 
+      if (!payload || "error" in payload) {
+        throw new Error("We could not submit the inquiry right now.");
+      }
+
       setSubmissionResult(payload as InquirySubmissionResponse);
     } catch (error) {
-      setSubmitError(
-        error instanceof Error
-          ? error.message
-          : "We could not submit the inquiry right now.",
-      );
+      setSubmitError(getSafeSubmissionErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }

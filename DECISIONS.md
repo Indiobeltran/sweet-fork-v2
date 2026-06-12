@@ -2,6 +2,32 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
+## 2026-06-12 - Require Privileged Supabase Admin Key for Inquiry Writes
+
+### Status
+
+Accepted
+
+### Context
+
+The Netlify `/start-order` deployment accepted inquiry form data but failed during submission while public Supabase-backed reads such as the gallery still worked. The app supports multiple Supabase key environment variable names during the hosting migration.
+
+### Options Considered
+
+- Continue preferring `SUPABASE_SECRET_KEY` whenever it is present.
+- Rename environment variables and require immediate Netlify dashboard cleanup only.
+- Validate candidate server keys and select the first key that is actually privileged for server-side writes.
+
+### Decision
+
+Validate the server-side Supabase admin key before using it. Accept current `sb_secret_...` keys and legacy JWT keys whose payload role is `service_role`; reject publishable/public keys for admin writes and fall back to `SUPABASE_SERVICE_ROLE_KEY` when it is the privileged candidate.
+
+### Consequences
+
+- Netlify can tolerate a stale or mis-set `SUPABASE_SECRET_KEY` as long as `SUPABASE_SERVICE_ROLE_KEY` is correctly configured.
+- Inquiry writes fail closed instead of attempting privileged inserts with a public key.
+- Public browser Supabase reads remain unchanged.
+
 ## 2026-06-03 - Netlify Deployment Parity and Notification Strategy
 
 ### Status
