@@ -3,10 +3,11 @@ import "server-only";
 import { cache } from "react";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createPublicDataClient } from "@/lib/supabase/public";
 import { defaultPricingBaseline } from "@/lib/pricing";
 import { resolveGalleryPlaceholderImageUrl } from "@/lib/site/placeholder-images";
 import { formatCurrency } from "@/lib/utils";
-import { isSupabaseConfigured } from "@/lib/env";
+import { isSupabaseBrowserConfigured, isSupabaseConfigured } from "@/lib/env";
 import {
   footerNavigation,
   faqItems as staticFaqItems,
@@ -713,12 +714,12 @@ export async function getManagedContentSections() {
 }
 
 async function getGalleryCategoryMap(categoryIds: string[]) {
-  if (!isSupabaseConfigured() || categoryIds.length === 0) {
+  if (!isSupabaseBrowserConfigured() || categoryIds.length === 0) {
     return new Map<string, GalleryCategoryRow>();
   }
 
-  const admin = createAdminClient();
-  const { data, error } = await admin
+  const supabase = createPublicDataClient();
+  const { data, error } = await supabase
     .from("gallery_categories")
     .select("*")
     .in("id", categoryIds)
@@ -744,7 +745,11 @@ function getMediaPublicUrl(asset: Pick<MediaAssetRow, "bucket" | "public_url" | 
     return null;
   }
 
-  return createAdminClient().storage.from(asset.bucket).getPublicUrl(asset.storage_path).data.publicUrl;
+  if (!isSupabaseBrowserConfigured()) {
+    return null;
+  }
+
+  return createPublicDataClient().storage.from(asset.bucket).getPublicUrl(asset.storage_path).data.publicUrl;
 }
 
 function isApprovedMarketingAsset(
@@ -1117,12 +1122,12 @@ export async function getGalleryItemsForPlacement(
   );
   const placement = getMediaPlacementByKey(placementKey);
 
-  if (!placement || !isSupabaseConfigured()) {
+  if (!placement || !isSupabaseBrowserConfigured()) {
     return fallbackItems;
   }
 
-  const admin = createAdminClient();
-  const { data: placementData, error: placementError } = await admin
+  const supabase = createPublicDataClient();
+  const { data: placementData, error: placementError } = await supabase
     .from("media_assignments")
     .select("display_order, media_asset_id")
     .eq("assignment_type", "page")
@@ -1157,7 +1162,7 @@ export async function getGalleryItemsForPlacement(
   > = [];
 
   if (explicitAssetIds.length > 0) {
-    const { data: assetData, error: assetError } = await admin
+    const { data: assetData, error: assetError } = await supabase
       .from("media_assets")
       .select(
         "alt_text, bucket, caption, created_at, id, metadata, original_filename, public_url, storage_path",
@@ -1179,7 +1184,7 @@ export async function getGalleryItemsForPlacement(
       .filter((asset): asset is (typeof assets)[number] => Boolean(asset))
       .filter((asset) => isApprovedMarketingAsset(asset)) as typeof assets;
   } else {
-    const { data: assetData, error: assetError } = await admin
+    const { data: assetData, error: assetError } = await supabase
       .from("media_assets")
       .select(
         "alt_text, bucket, caption, created_at, id, metadata, original_filename, public_url, storage_path",
@@ -1201,7 +1206,7 @@ export async function getGalleryItemsForPlacement(
   }
 
   const assetIds = assets.map((asset) => asset.id);
-  const { data: categoryAssignmentsData, error: categoryAssignmentsError } = await admin
+  const { data: categoryAssignmentsData, error: categoryAssignmentsError } = await supabase
     .from("media_assignments")
     .select("display_order, media_asset_id, target_id")
     .eq("assignment_type", "gallery-category")

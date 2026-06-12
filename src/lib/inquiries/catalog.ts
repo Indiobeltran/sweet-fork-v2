@@ -12,8 +12,12 @@ import {
   type InquiryPricingBaseline,
 } from "@/lib/pricing";
 import type { InquiryCatalogItem, StartOrderPageData } from "@/lib/inquiries/types";
-import { getInquiryFeatureFlagEnvOverrides, isSupabaseConfigured } from "@/lib/env";
-import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  getInquiryFeatureFlagEnvOverrides,
+  isSupabaseBrowserConfigured,
+  isSupabaseConfigured,
+} from "@/lib/env";
+import { createPublicDataClient } from "@/lib/supabase/public";
 import { productTypes, type ProductType } from "@/types/domain";
 import type { Json, Tables } from "@/types/supabase.generated";
 
@@ -221,7 +225,9 @@ export function getCatalogMap(catalog: InquiryCatalogItem[]) {
 }
 
 export async function getStartOrderPageData(): Promise<StartOrderPageData> {
-  if (!isSupabaseConfigured()) {
+  const submissionAvailable = isSupabaseConfigured();
+
+  if (!isSupabaseBrowserConfigured()) {
     return {
       catalog: buildFallbackCatalog(defaultPricingBaseline),
       catalogSource: "fallback",
@@ -234,25 +240,25 @@ export async function getStartOrderPageData(): Promise<StartOrderPageData> {
     };
   }
 
-  const admin = createAdminClient();
+  const supabase = createPublicDataClient();
 
   try {
     const [productsResult, productPricesResult, inquiryFlagsResult] =
       await Promise.all([
-        admin
+        supabase
           .from("products")
           .select(
             "display_order, id, is_active, name, product_type, requires_consultation, short_description, slug",
           )
           .eq("is_active", true)
           .order("display_order"),
-        admin
+        supabase
           .from("product_prices")
           .select(
             "effective_from, effective_to, is_active, label, maximum_amount, minimum_amount, price_kind, product_id",
           )
           .eq("is_active", true),
-        admin
+        supabase
           .from("site_settings")
           .select("value_json")
           .eq("setting_key", "inquiry.flags")
@@ -280,7 +286,10 @@ export async function getStartOrderPageData(): Promise<StartOrderPageData> {
     return {
       catalog,
       catalogSource: activeProducts.length > 0 ? "live" : "fallback",
-      submissionAvailable: true,
+      submissionAvailable,
+      submissionUnavailableMessage: submissionAvailable
+        ? undefined
+        : "Online submission is temporarily unavailable, but you can still prepare your inquiry details and send them by email.",
       featureFlags: parseFeatureFlags(inquiryFlagsResult.data?.value_json ?? null),
       pricingBaseline,
       deliveryRange,

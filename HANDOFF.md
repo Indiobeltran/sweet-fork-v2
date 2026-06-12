@@ -11,6 +11,7 @@ Update this file before stopping after any substantive repo task.
   - Updated `src/lib/env.ts` so admin key selection verifies that the chosen key is privileged before using it.
   - The resolver now accepts current `sb_secret_...` keys and legacy JWT keys with `role: service_role`, rejects `sb_publishable_...` keys for admin writes, and falls back from an unprivileged `SUPABASE_SECRET_KEY` to a valid `SUPABASE_SERVICE_ROLE_KEY`.
   - Updated `src/components/inquiry/start-order-wizard.tsx` so unexpected platform/runtime submission errors are replaced with the safe customer message: `We could not submit the inquiry right now. Please try again in a few minutes.`
+  - Added a read-only public Supabase client for public catalog/gallery reads so `/gallery` and `/start-order` data can continue using public RLS-backed reads while inquiry submission remains gated on a privileged server key.
 - **Validation performed so far**:
   - Reproduced Netlify API failure before the fix with direct `POST https://sweet-fork-v2.netlify.app/api/inquiries`: HTTP 500 and safe JSON error body.
   - Reproduced both Netlify no-upload and one-upload wizard submissions failing before persistence; Supabase queries found no Netlify-created inquiry rows from those failed attempts.
@@ -21,6 +22,8 @@ Update this file before stopping after any substantive repo task.
   - Local production UI submission with one PNG upload returned HTTP 201 with `SF-86475824`; the confirmation screen rendered and reported `UPLOADS SAVED 1`.
   - Supabase confirmed both local UI submissions as `new` inquiries. The upload case has one `image-upload` `inquiry_assets` row linked to `media_assets` in the `inspiration` bucket at `inquiries/86475824-40c7-46b2-935a-1f8ca7520270/...-inspiration.png`.
   - Supabase confirmed both local UI submissions have pending internal `notification_logs` rows.
+  - After the public-read split, local production UI submission without upload returned HTTP 201 with `SF-1B6D5492`.
+  - After the public-read split, local production UI submission with one PNG upload returned HTTP 201 with `SF-1558C583`.
   - `npm run lint`: passed.
   - `npm run typecheck`: passed.
   - `npm run build`: passed.
@@ -36,6 +39,9 @@ Update this file before stopping after any substantive repo task.
 - **Files changed recently**:
   - `src/lib/env.ts`
   - `src/components/inquiry/start-order-wizard.tsx`
+  - `src/lib/inquiries/catalog.ts`
+  - `src/lib/site/marketing.ts`
+  - `src/lib/supabase/public.ts`
   - `HANDOFF.md`
 - **Files intentionally preserved**:
   - `.agents/`
@@ -45,8 +51,10 @@ Update this file before stopping after any substantive repo task.
   - Supabase storage/data was not deleted or modified outside controlled test inquiry submissions.
   - Gallery import scripts, schema migrations, pricing/business logic, DNS, and main-branch merge state were not touched.
 - **Next exact task**:
+  - Push the public-read split follow-up fix and wait for Netlify redeploy.
+  - Verify `/gallery` returns the Supabase-backed gallery again and `/start-order` loads live catalog data.
   - In Netlify, configure a privileged Supabase server key for the project/deploy context as either `SUPABASE_SECRET_KEY=sb_secret_...` or legacy `SUPABASE_SERVICE_ROLE_KEY=<service_role JWT>`. Do not expose it with a `NEXT_PUBLIC_` prefix.
-  - Redeploy Netlify after the env fix.
+  - Redeploy Netlify after the env fix if the key is added after the code redeploy.
   - Re-run controlled no-upload and one-upload inquiry submissions against the deployed URL.
   - Confirm deployed inquiries appear in Supabase/admin with `inquiry_items`, inquiry assets for upload, and pending notification log rows.
   - Re-smoke `https://sweet-fork-v2.netlify.app/gallery`, `/start-order`, and `/admin/login`.
