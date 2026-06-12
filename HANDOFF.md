@@ -6,7 +6,7 @@ Update this file before stopping after any substantive repo task.
 
 - **Objective**: Fix the Netlify `/start-order` inquiry submission error before merge/domain cutover.
 - **Current branch**: `codex/netlify-migration`.
-- **Root cause**: The server-side Supabase admin key resolver blindly preferred `SUPABASE_SECRET_KEY` when present. Netlify could therefore run inquiry writes with a present but unprivileged public/publishable key while a valid privileged `SUPABASE_SERVICE_ROLE_KEY` was also available. Reads such as `/gallery` still worked because they use public access, but inquiry inserts, item inserts, upload asset inserts, and notification log inserts require the privileged server key under RLS.
+- **Root cause**: The server-side Supabase admin key resolver blindly preferred `SUPABASE_SECRET_KEY` when present. Netlify could therefore run inquiry writes with a present but unprivileged public/publishable key instead of failing closed or falling back to a privileged `SUPABASE_SERVICE_ROLE_KEY`. After the fix redeployed, Netlify still does not expose a privileged server key under the supported names, so `/start-order` now disables submission instead of attempting broken writes.
 - **Fix implemented**:
   - Updated `src/lib/env.ts` so admin key selection verifies that the chosen key is privileged before using it.
   - The resolver now accepts current `sb_secret_...` keys and legacy JWT keys with `role: service_role`, rejects `sb_publishable_...` keys for admin writes, and falls back from an unprivileged `SUPABASE_SECRET_KEY` to a valid `SUPABASE_SERVICE_ROLE_KEY`.
@@ -25,6 +25,14 @@ Update this file before stopping after any substantive repo task.
   - `npm run typecheck`: passed.
   - `npm run build`: passed.
   - `git diff --check`: passed before this handoff update.
+  - Pushed code fix commit `b20df1b` to `origin/codex/netlify-migration`.
+- **Post-redeploy Netlify validation**:
+  - Netlify connector found project `sweet-fork-v2` with current deploy `6a2c0fcd10e0990008224517` in `ready` state.
+  - Primary URL `https://sweet-fork-v2.netlify.app` and branch URL `https://codex-netlify-migration--sweet-fork-v2.netlify.app` both returned HTTP 503 for controlled no-upload `POST /api/inquiries` with body `Inquiry submission is temporarily unavailable. Please try again shortly.`
+  - `/start-order` on both deploys renders `submissionAvailable: false`, `catalogSource: "fallback"`, and the visible banner `Online submission is paused.`
+  - `/gallery` on both deploys also renders fallback content instead of the expected Supabase-backed gallery data.
+  - Smoke status checks returned HTTP 200 for `/gallery`, `/start-order`, and `/admin/login` on both primary and branch deploy URLs.
+  - Netlify CLI did not return env metadata for this project, so the exact remote state cannot be safely distinguished between missing privileged key and present-but-unprivileged key. The failing selector path is `isSupabaseConfigured()` -> `getAdminSupabaseKey()` -> no privileged candidate from `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY`.
 - **Files changed recently**:
   - `src/lib/env.ts`
   - `src/components/inquiry/start-order-wizard.tsx`
@@ -37,13 +45,14 @@ Update this file before stopping after any substantive repo task.
   - Supabase storage/data was not deleted or modified outside controlled test inquiry submissions.
   - Gallery import scripts, schema migrations, pricing/business logic, DNS, and main-branch merge state were not touched.
 - **Next exact task**:
-  - Commit and push the scoped fix to `origin/codex/netlify-migration`.
-  - After Netlify redeploys, submit controlled no-upload and one-upload inquiries against `https://sweet-fork-v2.netlify.app/start-order`.
-  - Confirm the deployed inquiries appear in Supabase/admin with `inquiry_items`, inquiry assets for upload, and pending notification log rows.
-  - Smoke-check `https://sweet-fork-v2.netlify.app/gallery`, `/start-order`, and `/admin/login`.
+  - In Netlify, configure a privileged Supabase server key for the project/deploy context as either `SUPABASE_SECRET_KEY=sb_secret_...` or legacy `SUPABASE_SERVICE_ROLE_KEY=<service_role JWT>`. Do not expose it with a `NEXT_PUBLIC_` prefix.
+  - Redeploy Netlify after the env fix.
+  - Re-run controlled no-upload and one-upload inquiry submissions against the deployed URL.
+  - Confirm deployed inquiries appear in Supabase/admin with `inquiry_items`, inquiry assets for upload, and pending notification log rows.
+  - Re-smoke `https://sweet-fork-v2.netlify.app/gallery`, `/start-order`, and `/admin/login`.
 - **Known issues / cutover status**:
-  - Domain cutover remains blocked until the pushed fix is redeployed on Netlify and the deployed no-upload and one-upload inquiry submissions pass.
-  - If Netlify does not have any privileged admin key configured, the code will now avoid using an unprivileged key and show a safe temporary-unavailable submission state; Netlify env would still need to be corrected before cutover.
+  - Domain cutover remains blocked. The code fix redeployed and local/simulated submissions pass, but the actual Netlify project still lacks usable Supabase server configuration for deployed inquiry writes and Supabase-backed gallery/start-order data.
+  - Netlify customers no longer see the raw `The string did not match the expected pattern` message; the deployed API now returns a safe temporary-unavailable message and the page disables online submission.
 
 ## Mobile Inquiry Wizard Item Focus Fix — 2026-06-12
 
