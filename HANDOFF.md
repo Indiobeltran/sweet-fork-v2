@@ -16,15 +16,18 @@ Update this file before stopping after any substantive repo task.
   - Reproduced both Netlify no-upload and one-upload wizard submissions failing before persistence; Supabase queries found no Netlify-created inquiry rows from those failed attempts.
   - Confirmed normal local production server submissions succeeded before the fix, isolating the failure to deployed key/env selection.
   - Simulated the Netlify key-order locally by setting `SUPABASE_SECRET_KEY` to the public key and `SUPABASE_SERVICE_ROLE_KEY` to the valid privileged key.
-  - Simulated no-upload submission returned HTTP 201 with `SF-A733DE16`; Supabase confirmed one inquiry row, two `inquiry_items` rows, zero inquiry assets, and one pending internal `notification_logs` row for `inquiry.submitted.web`.
-  - Simulated one-upload submission returned HTTP 201 with `SF-8D7E59E9`; Supabase confirmed one inquiry row, two `inquiry_items` rows, one `image-upload` inquiry asset, and one pending internal `notification_logs` row for `inquiry.submitted.web`.
+  - Simulated no-upload submission returned HTTP 201, proving fallback from an unprivileged `SUPABASE_SECRET_KEY` to privileged `SUPABASE_SERVICE_ROLE_KEY`.
+  - Local production UI submission without upload returned HTTP 201 with `SF-4B060B62`; the confirmation screen rendered and reported `UPLOADS SAVED 0`.
+  - Local production UI submission with one PNG upload returned HTTP 201 with `SF-86475824`; the confirmation screen rendered and reported `UPLOADS SAVED 1`.
+  - Supabase confirmed both local UI submissions as `new` inquiries. The upload case has one `image-upload` `inquiry_assets` row linked to `media_assets` in the `inspiration` bucket at `inquiries/86475824-40c7-46b2-935a-1f8ca7520270/...-inspiration.png`.
+  - Supabase confirmed both local UI submissions have pending internal `notification_logs` rows.
   - `npm run lint`: passed.
   - `npm run typecheck`: passed.
   - `npm run build`: passed.
+  - `git diff --check`: passed before this handoff update.
 - **Files changed recently**:
   - `src/lib/env.ts`
   - `src/components/inquiry/start-order-wizard.tsx`
-  - `DECISIONS.md`
   - `HANDOFF.md`
 - **Files intentionally preserved**:
   - `.agents/`
@@ -34,7 +37,6 @@ Update this file before stopping after any substantive repo task.
   - Supabase storage/data was not deleted or modified outside controlled test inquiry submissions.
   - Gallery import scripts, schema migrations, pricing/business logic, DNS, and main-branch merge state were not touched.
 - **Next exact task**:
-  - Run `git diff --check`.
   - Commit and push the scoped fix to `origin/codex/netlify-migration`.
   - After Netlify redeploys, submit controlled no-upload and one-upload inquiries against `https://sweet-fork-v2.netlify.app/start-order`.
   - Confirm the deployed inquiries appear in Supabase/admin with `inquiry_items`, inquiry assets for upload, and pending notification log rows.
