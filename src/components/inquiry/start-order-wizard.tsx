@@ -770,7 +770,7 @@ export function StartOrderWizard({
       if (focusOnError) {
         shouldFocusErrorRef.current = true;
       }
-      if (stepIndex === 2) {
+      if (focusOnError && stepIndex === 2) {
         const firstInvalidItemKey = Object.keys(nextErrors).find((key) =>
           key.startsWith("orderItems."),
         );

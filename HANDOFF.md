@@ -2,6 +2,53 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Mobile Inquiry Wizard Item Focus Fix — 2026-06-12
+
+- **Objective**: Fix the `/start-order` mobile multi-product item-details bug before Netlify/domain cutover.
+- **Current branch**: `codex/netlify-migration`.
+- **Root cause**: Step 2 blur-time validation called `validateStep(..., { focusOnError: false })`, but `validateStep` still switched `activeItemType` to the first invalid dessert item whenever item-detail validation found errors. After a user completed the current item's count/serving field, the next selected dessert was often the first invalid item, so blur, Tab, or tapping the next field caused the active panel to jump.
+- **Fix implemented**:
+  - Updated `src/components/inquiry/start-order-wizard.tsx` so Step 2 first-invalid item switching only runs when `focusOnError` is true.
+  - Normal field edits and blur validation still clear/show field errors, but they no longer change the active dessert item.
+  - Continue/submission validation still moves to the first invalid item when the user explicitly asks to advance.
+- **Validation performed**:
+  - `npm run lint`: passed.
+  - `npm run typecheck`: passed.
+  - `npm run build`: passed.
+  - `git diff --check`: passed before and after this handoff update.
+  - `git diff --cached --check`: passed after staging the scoped files.
+  - Local production server: `npm start -- --hostname 127.0.0.1 --port 3000`.
+  - In-app Browser was attempted for rendered QA, but the `iab` browser became unavailable after a transient native pipe failure. Fallback QA used cached Playwright with local Google Chrome, with no project dependency changes.
+  - Mobile regression script at `390x844` selected Custom Cakes, Cupcakes, and Sugar Cookies, then verified:
+    - Custom Cakes stayed active after filling servings and pressing Tab to Tier count.
+    - Custom Cakes stayed active after tapping Item color palette.
+    - Pressing Continue with incomplete selected items still moved to Cupcakes as the first invalid item and showed `Cupcake count is required.`
+    - Cupcakes stayed active after filling count and pressing Tab to Item color palette.
+    - Cupcakes stayed active after tapping Topper or wording.
+    - Explicitly tapping Sugar Cookies changed the active item.
+    - Sugar Cookies stayed active after filling count and pressing Tab to Item color palette.
+    - Sugar Cookies stayed active after tapping Topper or wording.
+    - Continue advanced to Style & Inspiration after all selected item counts were complete.
+    - Browser console warnings/errors: 0.
+  - QA screenshots saved outside the repo:
+    - `/tmp/sweet-fork-v2-inquiry-focus-mobile-step2.png`
+    - `/tmp/sweet-fork-v2-inquiry-focus-mobile-step3.png`
+- **Files changed recently**:
+  - `src/components/inquiry/start-order-wizard.tsx`
+  - `HANDOFF.md`
+- **Files intentionally preserved**:
+  - `.agents/`
+  - `scratch/process-import-batch-04.mjs`
+  - `scratch/qa/`
+  - `skills-lock.json`
+  - Supabase storage/data, gallery import scripts, pricing/business logic, and admin functionality were not touched.
+- **Next exact task**:
+  - After this branch is pushed and Netlify finishes redeploying, smoke-check `https://sweet-fork-v2.netlify.app/gallery`, `/admin/login`, and `/start-order`.
+  - Re-run the same multi-product `/start-order` item-focus QA against the Netlify deployment before domain cutover.
+- **Known issues / cutover status**:
+  - Do not proceed with domain cutover until the pushed fix has redeployed on Netlify and `/start-order` receives deployed QA for the same multi-product item-focus flow.
+  - No controlled test inquiry was submitted.
+
 ## Prepare Netlify Deployment Migration — 2026-06-03
 
 - **Objective**: Add minimal Netlify config to allow deployment parity with Vercel while preserving Supabase/admin inquiry architecture.
