@@ -23,7 +23,7 @@ export default async function PricingPage() {
         eyebrow="Pricing"
         title="A clear starting-point investment guide for custom cakes and desserts."
         description="Every order from The Sweet Fork is quoted individually, but these starting prices help set expectations before you submit an inquiry."
-        accent="Public pricing stays intentionally high level so the final quote can reflect your real guest count, finish, and service needs."
+        accent="These starting prices help you plan, while the final quote reflects your guest count, design details, and pickup or delivery needs."
         cta={defaultCta}
       />
 
@@ -35,7 +35,7 @@ export default async function PricingPage() {
               Custom work starts with a baseline, then becomes more specific from there.
             </h2>
             <p className="text-base leading-8 text-charcoal/68">
-              Final quotes are shaped by quantity, servings, finish complexity, delivery, and overall event scope. The guide below keeps the public side simple while still setting helpful expectations.
+              Final quotes are shaped by quantity, servings, finish complexity, delivery, and overall event scope. The guide below gives you a helpful starting point before a custom quote is prepared.
             </p>
           </div>
 

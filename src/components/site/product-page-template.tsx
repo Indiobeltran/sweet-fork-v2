@@ -103,7 +103,7 @@ export function ProductPageTemplate({ content }: ProductPageTemplateProps) {
           <SectionHeading
             eyebrow={content.shortTitle}
             title="What to expect"
-            description="A clear starting point before you submit your inquiry, so the quote can be tailored without unnecessary back-and-forth."
+            description="Helpful details to know before requesting a custom quote."
           />
           <div className="grid gap-4">
             {content.detailBullets.map((bullet) => (
@@ -166,7 +166,7 @@ export function ProductPageTemplate({ content }: ProductPageTemplateProps) {
       <InquiryCta
         slug={content.slug}
         title={`Ready to inquire about ${content.shortTitle.toLowerCase()}?`}
-        description="The inquiry form keeps the process streamlined while still leaving room for the details that make your order feel fully considered."
+        description="Share your date, dessert needs, and design direction, and The Sweet Fork will guide the next steps."
       />
 
       <StickyProductCta

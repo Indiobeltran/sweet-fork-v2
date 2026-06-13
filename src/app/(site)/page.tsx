@@ -188,7 +188,7 @@ export default async function HomePage() {
           <SectionHeading
             eyebrow="Signature offerings"
             title="Choose the dessert path that fits your celebration."
-            description="A visual guide to the core services, with each collection leading to details, pricing context, and the inquiry path."
+            description="Explore the cakes, cookies, cupcakes, macarons, and wedding desserts available for local celebrations."
           />
           <Link
             href="/start-order"
@@ -271,8 +271,8 @@ export default async function HomePage() {
         <div className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-end">
           <SectionHeading
             eyebrow="Gallery preview"
-            title="A few details, not the whole portfolio."
-            description="A curated glimpse of recent cakes and dessert details, with the full collection reserved for deeper browsing."
+            title="Recent work from The Sweet Fork."
+            description="A small preview of recent work, from polished cakes to custom cookies and dessert-table details."
           />
           <div className="grid gap-3 sm:grid-cols-3">
             {visibleGalleryTeaserItems.map((item, index) => (
@@ -309,6 +309,19 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section className="section-shell py-12 md:py-16">
+        <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:items-start">
+          <SectionHeading
+            eyebrow="Kind words"
+            title="The details clients remember."
+            description="Thoughtful bakes, clear communication, and details that guests remember long after the last bite."
+          />
+          <div className="flex w-full items-center">
+            <TestimonialCarousel testimonials={data.testimonials} />
+          </div>
+        </div>
+      </section>
+
       <section className="border-y border-charcoal/7 bg-cream/58 py-12 md:py-16">
         <div className="section-shell grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
           <SectionHeading
@@ -329,19 +342,6 @@ export default async function HomePage() {
                 <p className="text-sm font-semibold leading-6 text-charcoal">{item}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="section-shell py-12 md:py-16">
-        <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:items-start">
-          <SectionHeading
-            eyebrow="Client notes"
-            title="The finish clients remember."
-            description="A few client notes add trust before the inquiry step without slowing the page down."
-          />
-          <div className="flex w-full items-center">
-            <TestimonialCarousel testimonials={data.testimonials} />
           </div>
         </div>
       </section>

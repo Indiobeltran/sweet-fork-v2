@@ -17,7 +17,7 @@ export default function PrivacyPage() {
       <PublicPageHero
         eyebrow="Privacy"
         title="How inquiry details and order information are used."
-        description="This page covers the information customers submit through The Sweet Fork inquiry flow and how that information supports quoting, fulfillment, and order follow-up."
+        description="This page covers the information customers share when requesting a custom order from The Sweet Fork and how that information supports quoting, fulfillment, and order follow-up."
       />
       <section className="section-shell space-y-8 py-16 md:py-20">
         {privacySections.map((section) => (

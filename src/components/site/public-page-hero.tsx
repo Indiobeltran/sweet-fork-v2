@@ -43,7 +43,7 @@ export function PublicPageHero({
           </p>
           <div className="mt-8 h-px w-full bg-gradient-to-r from-gold/35 via-charcoal/10 to-transparent" />
           <p className="mt-6 text-sm leading-7 text-charcoal/70">
-            Inquiry-only ordering keeps every quote tailored to the event instead of forcing a one-size-fits-all checkout flow.
+            Every order is quoted around the date, guest count, design direction, and pickup or delivery needs.
           </p>
         </div>
       </div>

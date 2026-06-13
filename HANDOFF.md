@@ -1,3 +1,35 @@
+## Production Alignment & Copy Scrub (Pass 2) — 2026-06-12
+
+- **Objective**: Execute a full customer-facing site scrub and correct production alignment issues (prior copy scrub was never merged to main).
+- **Starting branch/status**: Branched `antigravity/copy-scrub-pass-2` from `main`.
+- **Deploy alignment**: Commit `5e3ae37` (the previous copy scrub) was verified to only exist on the local `antigravity/copy-scrub` branch. It was never merged to `main` or pushed to `origin`, which is why the live Netlify site still showed the internal/dev-facing copy.
+- **Files changed**:
+  - `src/app/(site)/page.tsx`
+  - `src/app/(site)/pricing/page.tsx`
+  - `src/components/site/product-page-template.tsx`
+  - `src/components/site/public-page-hero.tsx`
+  - `src/app/(site)/privacy/page.tsx`
+  - `src/lib/content/site-content.ts`
+- **Public pages reviewed**: `/`, `/pricing`, `/how-to-order`, `/gallery`, `/faq`, `/about`, `/custom-cakes`, `/wedding-cakes`, `/cupcakes`, `/sugar-cookies`, `/macarons`, `/diy-kits`, `/start-order`, `/terms`, `/privacy`.
+- **Copy issues fixed**:
+  - Replaced internal/dev phrasing ("add trust before inquiry step", "without slowing the page", "curated glimpse", "checkout flow", "public pricing", "public side", "streamlined while leaving room", "inquiry flow", etc.) with polished Sweet Fork customer copy across all customer-visible routes.
+- **Testimonial placement decision**: Reordered the homepage layout. Moved the full Testimonials ("Kind words") section above the Wedding Highlight section, so social proof doesn't bury product categories but is more visible before the final CTA.
+- **Gallery metadata fixes**: Checked gallery data. Found that actual asset metadata (in Supabase `media_assets`) had the alt text "Sixty" while the caption had "Seventy". Updated the `media_assets` caption for the record to "Floral Sixtieth Celebration Cake" using `execute_sql` to correct the mismatch.
+- **DIY Kits image decision**: Checked `site-content.ts` which used a generic `diy-kit.jpg` placeholder. Queried `media_assets` and found an actual DIY Kit image ("St. Patrick's Day DIY Cookie Kit"). Switched `site-content.ts` heroImage for DIY Kits to use this high-quality real image instead of the generic placeholder.
+- **Verification commands and results**:
+  - `npm run lint` — Passed
+  - `npm run typecheck` — Passed
+  - `npm run build` — Passed
+  - Grep searches for internal dev copy patterns (e.g. "trust before", "without slowing", "public pricing") returned 0 matches in `src/`.
+- **Netlify deployment status or remaining owner verification steps**:
+  - Since this was committed to a new branch (`antigravity/copy-scrub-pass-2`), it needs to be merged to `main` and pushed to `origin/main` to trigger the Netlify deployment.
+  - Owner verification steps:
+    1. `git checkout main && git merge antigravity/copy-scrub-pass-2`
+    2. `git push origin main`
+    3. Check Netlify deployment logs to ensure successful build.
+    4. Reopen live URL in an incognito/private window.
+    5. Confirm fixed phrases are gone.
+
 ## Mobile Sticky Header Solid Background Fix (Second Pass) — 2026-06-12
 
 - **Objective**: Make the sticky/mobile public site header a truly solid warm ivory/cream bar, removing all translucent/blurred overlay effects.
