@@ -2,6 +2,30 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Netlify Forms Notification Bridge Custom Timestamp Polish — 2026-06-12
+
+- **Objective**: Add a human-friendly Mountain Time submission timestamp to the Sweet Fork v2 Netlify Forms notification bridge payload.
+- **Current branch**: `main`.
+- **Pre-change working tree**: Clean except for untracked files.
+- **Latest commit verified**: `34d6272` (Pre-change docs verification).
+- **Reason for change**: Netlify's internal form submission timestamps are in UTC or a non-local system timezone. Custom fields allow Melissa's notification email to clearly display the local submission time.
+- **Fields added**:
+  - `submittedAtMountain`: Displayed value in Mountain Time using IANA `America/Denver` (e.g., `Jun 12, 2026, 8:14 PM MDT` / `MST`).
+  - `submittedAtUtc`: ISO UTC timestamp for audit/debugging purposes (e.g., `2026-06-13T02:14:00.000Z`).
+- **Files created/modified**:
+  - [public/__forms.html](file:///Users/indiobeltran/Projects/sweet-fork-v2/public/__forms.html): Added hidden timestamp inputs for Netlify Forms build detection.
+  - [src/lib/inquiries/netlify-bridge.ts](file:///Users/indiobeltran/Projects/sweet-fork-v2/src/lib/inquiries/netlify-bridge.ts): Generated and appended `submittedAtMountain` and `submittedAtUtc` to the URL-encoded payload.
+  - [src/lib/inquiries/submit.test.ts](file:///Users/indiobeltran/Projects/sweet-fork-v2/src/lib/inquiries/submit.test.ts): Added test cases verifying the correct timezone abbreviation and values.
+- **Verification performed**:
+  - `npm test`: Passed (11/11 tests pass successfully, including explicit summer/winter timezone check).
+  - `npm run lint`: Passed.
+  - `npm run typecheck`: Passed.
+  - `npm run build`: Compiled successfully in production check.
+- **Verification status**:
+  - Custom timestamp generation is fully verified locally via unit tests. Another live QA inquiry is recommended after deployment to visually verify that `submittedAtMountain` and `submittedAtUtc` appear correctly in Melissa's email notification.
+- **DNS cutover recommendation**:
+  - **Recommended**. The notification bridge remains fully functional and now includes local Mountain Time timestamps for Melissa.
+
 ## Netlify Forms Notification Bridge Audit & Implementation — 2026-06-12
 
 - **Objective**: Audit and fix Sweet Fork v2 inquiry email notifications on Netlify before production domain cutover.

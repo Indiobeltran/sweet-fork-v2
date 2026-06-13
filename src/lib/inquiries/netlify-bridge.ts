@@ -23,21 +23,24 @@ function describeItem(item: InquiryProductItem) {
   }
 }
 
-export function serializeNetlifyFormsPayload(data: {
-  inquiryId: string;
-  referenceCode: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string | null;
-  eventDate: string;
-  eventType: string;
-  fulfillmentMethod: string;
-  budgetRange: BudgetRangeValue;
-  budgetFlexibility: BudgetFlexibility;
-  additionalNotes: string | null | undefined;
-  orderItems: InquiryProductItem[];
-  origin: string;
-}) {
+export function serializeNetlifyFormsPayload(
+  data: {
+    inquiryId: string;
+    referenceCode: string;
+    customerName: string;
+    customerEmail: string;
+    customerPhone: string | null;
+    eventDate: string;
+    eventType: string;
+    fulfillmentMethod: string;
+    budgetRange: BudgetRangeValue;
+    budgetFlexibility: BudgetFlexibility;
+    additionalNotes: string | null | undefined;
+    orderItems: InquiryProductItem[];
+    origin: string;
+  },
+  now = new Date(),
+) {
   const params = new URLSearchParams();
   params.append("form-name", "inquiry-notification");
   params.append("inquiryId", data.inquiryId);
@@ -57,6 +60,23 @@ export function serializeNetlifyFormsPayload(data: {
     .join("; ");
   params.append("items", itemSummary);
   params.append("adminUrl", `${data.origin}/admin/inquiries/${data.inquiryId}`);
+
+  // Add submission timestamps
+  const submittedAtUtc = now.toISOString();
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Denver",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: true,
+    timeZoneName: "short",
+  });
+  const submittedAtMountain = formatter.format(now);
+
+  params.append("submittedAtMountain", submittedAtMountain);
+  params.append("submittedAtUtc", submittedAtUtc);
 
   return params.toString();
 }
