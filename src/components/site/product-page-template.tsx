@@ -1,4 +1,6 @@
 import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 import { InquiryCta } from "@/components/site/inquiry-cta";
 import { SectionHeading } from "@/components/site/section-heading";
@@ -7,16 +9,22 @@ import { StickyProductCta } from "@/components/site/sticky-product-cta";
 import { getPublicEnv } from "@/lib/env";
 import { siteConfig } from "@/lib/content/site-content";
 import { getInquiryCtaBySlug } from "@/lib/site/cta";
-import type { ProductPageContent } from "@/types/domain";
+import type { GalleryItem, ProductPageContent } from "@/types/domain";
 
 type ProductPageTemplateProps = {
   content: ProductPageContent;
+  showcaseItems?: GalleryItem[];
 };
 
-export function ProductPageTemplate({ content }: ProductPageTemplateProps) {
+export function ProductPageTemplate({
+  content,
+  showcaseItems = [],
+}: ProductPageTemplateProps) {
   const cta = getInquiryCtaBySlug(content.slug);
   const { siteUrl } = getPublicEnv();
   const pageUrl = new URL(`/${content.slug}`, siteUrl).toString();
+  const galleryHref = "/gallery";
+  const hasShowcaseItems = showcaseItems.length > 0;
   const serviceJsonLd = {
     "@context": "https://schema.org",
     "@type": "Service",
@@ -69,8 +77,8 @@ export function ProductPageTemplate({ content }: ProductPageTemplateProps) {
           </div>
 
           <div className="grid gap-4 section-reveal">
-            <div className="relative overflow-hidden rounded-[2.4rem] border border-charcoal/12 bg-charcoal shadow-soft">
-              <div className="relative min-h-[18rem] sm:min-h-[27rem] lg:min-h-[31rem]">
+            <div className="relative overflow-hidden rounded-[2rem] border border-charcoal/12 bg-charcoal shadow-soft sm:rounded-[2.4rem]">
+              <div className="relative aspect-[4/5] min-h-[22rem] sm:min-h-[30rem] lg:min-h-[34rem]">
                 <Image
                   src={content.heroImage.src}
                   alt={content.heroImage.alt}
@@ -79,8 +87,12 @@ export function ProductPageTemplate({ content }: ProductPageTemplateProps) {
                   quality={82}
                   sizes="(max-width: 1024px) calc(100vw - 2.5rem), 42vw"
                   className="object-cover"
+                  style={{
+                    objectPosition: content.heroImage.objectPosition ?? "center center",
+                  }}
                 />
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(48,39,33,0.02),rgba(48,39,33,0.24)_50%,rgba(48,39,33,0.72))]" />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(48,39,33,0.14),rgba(48,39,33,0.34)_46%,rgba(48,39,33,0.84))]" />
+                <div className="absolute inset-x-0 bottom-0 h-2/3 bg-[radial-gradient(ellipse_at_bottom_left,rgba(48,39,33,0.72),rgba(48,39,33,0.18)_58%,transparent_78%)]" />
                 <div className="absolute inset-x-0 bottom-0 p-6 text-ivory sm:p-8">
                   <p className="eyebrow-label text-gold/80">What makes it premium</p>
                   <p className="mt-4 max-w-[28rem] font-serif text-3xl leading-tight tracking-[-0.04em] sm:text-[2.35rem]">
@@ -115,6 +127,79 @@ export function ProductPageTemplate({ content }: ProductPageTemplateProps) {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="border-y border-charcoal/8 bg-paper py-16 md:py-20">
+        <div className="section-shell">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_auto] lg:items-end">
+            <SectionHeading
+              eyebrow="More examples"
+              title={`See more ${content.shortTitle.toLowerCase()} work.`}
+              description="A closer look at recent Sweet Fork orders in this category."
+            />
+            <Link
+              href={galleryHref}
+              className="inline-flex min-h-12 w-fit items-center justify-center gap-2 rounded-full border border-charcoal/12 bg-white px-5 text-sm font-semibold uppercase tracking-[0.14em] text-charcoal shadow-soft transition hover:-translate-y-0.5 hover:border-gold/40 hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50"
+            >
+              View the full gallery
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </div>
+
+          {hasShowcaseItems ? (
+            <div
+              className="-mx-5 mt-8 flex snap-x gap-4 overflow-x-auto px-5 pb-3 sm:-mx-8 sm:px-8 lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0 lg:pb-0 xl:grid-cols-4"
+              aria-label={`${content.shortTitle} example photos`}
+              role="list"
+            >
+              {showcaseItems.map((item, index) => (
+                <article
+                  key={item.id}
+                  className="group w-[72vw] max-w-[18rem] shrink-0 snap-start overflow-hidden rounded-[1.55rem] border border-charcoal/8 bg-white shadow-soft transition hover:-translate-y-1 hover:border-gold/24 sm:w-[18rem] lg:w-auto lg:max-w-none"
+                  role="listitem"
+                >
+                  <div className="relative aspect-[4/5] overflow-hidden bg-ivory">
+                    <Image
+                      src={item.imageUrl ?? ""}
+                      alt={item.alt}
+                      fill
+                      quality={82}
+                      sizes="(max-width: 640px) 72vw, (max-width: 1024px) 18rem, 25vw"
+                      className="object-cover transition duration-500 group-hover:scale-[1.03]"
+                      style={{
+                        objectPosition: item.objectPosition ?? "center center",
+                      }}
+                      priority={index < 2}
+                    />
+                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(48,39,33,0.02),rgba(48,39,33,0.12)_58%,rgba(48,39,33,0.58))]" />
+                    <span className="absolute bottom-3 left-3 rounded-full border border-white/16 bg-charcoal/72 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-ivory">
+                      {item.category}
+                    </span>
+                  </div>
+                  <div className="space-y-2 p-4">
+                    <h3 className="line-clamp-1 font-serif text-xl leading-tight tracking-[-0.025em] text-charcoal">
+                      {item.title}
+                    </h3>
+                    <p className="line-clamp-2 text-sm leading-6 text-charcoal/66">{item.alt}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-8 rounded-[1.75rem] border border-charcoal/10 bg-white px-6 py-6 shadow-soft sm:px-7">
+              <p className="max-w-2xl text-base leading-8 text-charcoal/70">
+                Browse the full Sweet Fork gallery for more recent cakes, cookies,
+                cupcakes, macarons, and seasonal work.
+              </p>
+              <Link
+                href={galleryHref}
+                className="mt-4 inline-flex text-sm font-semibold uppercase tracking-[0.16em] text-charcoal transition hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50"
+              >
+                Browse the full gallery
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 

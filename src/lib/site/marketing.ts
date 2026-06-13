@@ -6,6 +6,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createPublicDataClient } from "@/lib/supabase/public";
 import { defaultPricingBaseline } from "@/lib/pricing";
 import { resolveGalleryPlaceholderImageUrl } from "@/lib/site/placeholder-images";
+import {
+  getNormalizedProductCategoryName,
+  getProductGalleryCategoryNames,
+  getSafeObjectPosition,
+} from "@/lib/site/product-media";
 import { formatCurrency } from "@/lib/utils";
 import { isSupabaseBrowserConfigured, isSupabaseConfigured } from "@/lib/env";
 import {
@@ -318,6 +323,54 @@ export const mediaPlacementDefinitions: MediaPlacementDefinition[] = [
     label: "Product Page Hero - DIY Kits",
     pageKey: "product",
     sectionKey: "hero",
+    slotKey: "diy-kits",
+  },
+  {
+    description: "Supporting example photos shown on the Custom Cakes product page.",
+    key: "product.gallery.custom-cakes",
+    label: "Product Page Examples - Custom Cakes",
+    pageKey: "product",
+    sectionKey: "gallery",
+    slotKey: "custom-cakes",
+  },
+  {
+    description: "Supporting example photos shown on the Wedding Cakes product page.",
+    key: "product.gallery.wedding-cakes",
+    label: "Product Page Examples - Wedding Cakes",
+    pageKey: "product",
+    sectionKey: "gallery",
+    slotKey: "wedding-cakes",
+  },
+  {
+    description: "Supporting example photos shown on the Cupcakes product page.",
+    key: "product.gallery.cupcakes",
+    label: "Product Page Examples - Cupcakes",
+    pageKey: "product",
+    sectionKey: "gallery",
+    slotKey: "cupcakes",
+  },
+  {
+    description: "Supporting example photos shown on the Sugar Cookies product page.",
+    key: "product.gallery.sugar-cookies",
+    label: "Product Page Examples - Sugar Cookies",
+    pageKey: "product",
+    sectionKey: "gallery",
+    slotKey: "sugar-cookies",
+  },
+  {
+    description: "Supporting example photos shown on the Macarons product page.",
+    key: "product.gallery.macarons",
+    label: "Product Page Examples - Macarons",
+    pageKey: "product",
+    sectionKey: "gallery",
+    slotKey: "macarons",
+  },
+  {
+    description: "Supporting example photos shown on the DIY Kits product page.",
+    key: "product.gallery.diy-kits",
+    label: "Product Page Examples - DIY Kits",
+    pageKey: "product",
+    sectionKey: "gallery",
     slotKey: "diy-kits",
   },
   {
@@ -1000,7 +1053,7 @@ async function getOfferingImagesBySlug(slugs: string[]) {
 
   const { data: assetData, error: assetError } = await admin
     .from("media_assets")
-    .select("alt_text, bucket, caption, id, original_filename, public_url, storage_path")
+    .select("alt_text, bucket, caption, focal_point, id, metadata, original_filename, public_url, storage_path")
     .in("id", assetIds)
     .eq("bucket", marketingMediaBucket)
     .eq("asset_kind", "image");
@@ -1017,7 +1070,9 @@ async function getOfferingImagesBySlug(slugs: string[]) {
         | "alt_text"
         | "bucket"
         | "caption"
+        | "focal_point"
         | "id"
+        | "metadata"
         | "original_filename"
         | "public_url"
         | "storage_path"
@@ -1117,7 +1172,9 @@ export async function getProductHeroImagesBySlug(slugs: string[]) {
         | "alt_text"
         | "bucket"
         | "caption"
+        | "focal_point"
         | "id"
+        | "metadata"
         | "original_filename"
         | "public_url"
         | "storage_path"
@@ -1146,6 +1203,7 @@ export async function getProductHeroImagesBySlug(slugs: string[]) {
       category: fallbackImage?.category ?? "Product page hero",
       id: asset.id,
       imageUrl: getMediaPublicUrl(asset),
+      objectPosition: getSafeObjectPosition(asset.focal_point, asset.metadata),
       title,
     });
   });
@@ -1167,9 +1225,74 @@ async function getProductPageContentWithApprovedHero(
     ...content,
     heroImage: {
       alt: approvedHero.alt,
+      id: approvedHero.id,
+      objectPosition: approvedHero.objectPosition,
       src: approvedHero.imageUrl,
     },
   };
+}
+
+async function hasExplicitPageMediaPlacement(placementKey: string) {
+  const placement = getMediaPlacementByKey(placementKey);
+
+  if (!placement || !isSupabaseBrowserConfigured()) {
+    return false;
+  }
+
+  const supabase = createPublicDataClient();
+  const { data, error } = await supabase
+    .from("media_assignments")
+    .select("id")
+    .eq("assignment_type", "page")
+    .eq("page_key", placement.pageKey)
+    .eq("section_key", placement.sectionKey)
+    .eq("slot_key", placement.slotKey)
+    .limit(1);
+
+  if (error) {
+    logPublicDataFallback("Unable to inspect product media placements.", error);
+    return false;
+  }
+
+  return (data ?? []).length > 0;
+}
+
+function getProductCategoryAliases(slug: string) {
+  const normalizedSlug = getNormalizedProductCategoryName(slug);
+  const singularSlug = normalizedSlug.replace(/s$/, "");
+
+  return new Set([
+    ...getProductGalleryCategoryNames(slug).map(getNormalizedProductCategoryName),
+    normalizedSlug,
+    singularSlug,
+  ]);
+}
+
+async function getProductShowcaseItemsBySlug(
+  slug: string,
+  heroImage?: { id?: string; src?: string },
+  options: { limit?: number } = {},
+) {
+  const limit = options.limit ?? 10;
+  const productGalleryPlacementKey = `product.gallery.${slug}`;
+  const hasExplicitProductGallery = await hasExplicitPageMediaPlacement(productGalleryPlacementKey);
+  const sourceItems = hasExplicitProductGallery
+    ? await getGalleryItemsForPlacement(productGalleryPlacementKey, { limit: limit + 1 })
+    : await getGalleryItemsForPlacement("gallery.grid");
+  const categoryAliases = getProductCategoryAliases(slug);
+  const heroImageUrl = heroImage?.src?.toLowerCase() ?? null;
+  const heroImageId = heroImage?.id ?? null;
+  const categoryFilteredItems = hasExplicitProductGallery
+    ? sourceItems
+    : sourceItems.filter((item) =>
+        categoryAliases.has(getNormalizedProductCategoryName(item.category)),
+      );
+
+  return categoryFilteredItems
+    .filter((item) => item.imageUrl)
+    .filter((item) => item.id !== heroImageId)
+    .filter((item) => item.imageUrl?.toLowerCase() !== heroImageUrl)
+    .slice(0, limit);
 }
 
 const getPublicProductRows = cache(async function getPublicProductRows(): Promise<ProductRow[] | null> {
@@ -1288,8 +1411,14 @@ export async function getPublicProductPageData(slug: string) {
   const activeProducts = await getPublicProductRows();
 
   if (activeProducts === null) {
+    const content = await getProductPageContentWithApprovedHero(slug, fallback);
+
     return {
-      content: await getProductPageContentWithApprovedHero(slug, fallback),
+      content,
+      showcaseItems: await getProductShowcaseItemsBySlug(slug, {
+        id: content.heroImage.id,
+        src: content.heroImage.src,
+      }),
       metadataDescription: fallback.intro,
       metadataTitle: fallback.shortTitle,
     };
@@ -1301,10 +1430,16 @@ export async function getPublicProductPageData(slug: string) {
     return null;
   }
 
-  return {
-    content: await getProductPageContentWithApprovedHero(slug, {
+  const content = await getProductPageContentWithApprovedHero(slug, {
       ...fallback,
       shortTitle: product.name,
+    });
+
+  return {
+    content,
+    showcaseItems: await getProductShowcaseItemsBySlug(slug, {
+      id: content.heroImage.id,
+      src: content.heroImage.src,
     }),
     metadataDescription: product.short_description ?? product.long_description ?? fallback.intro,
     metadataTitle: product.name,

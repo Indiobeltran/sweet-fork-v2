@@ -10,7 +10,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --no-warnings --experimental-strip-types --test src/lib/pricing.test.ts src/components/admin/more-menu-sheet-classes.test.ts src/components/admin/admin-shell-chrome.test.ts src/components/admin/media-library-manager.test.ts src/lib/inquiries/submit.test.ts",
+    "test": "node --no-warnings --experimental-strip-types --test src/lib/pricing.test.ts src/lib/site/product-media.test.ts src/lib/admin/media-placement-utils.test.ts src/components/admin/more-menu-sheet-classes.test.ts src/components/admin/admin-shell-chrome.test.ts src/components/admin/media-library-manager.test.ts src/lib/inquiries/submit.test.ts",
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\" next.config.ts tailwind.config.ts --cache --cache-location .eslintcache --max-warnings=0",
     "typecheck": "next typegen && tsc --noEmit --project tsconfig.typecheck.json",
     "db:push": "supabase db push",

@@ -6,6 +6,11 @@ import {
   mediaPlacementDefinitions,
   type ManagedContentSection,
 } from "@/lib/site/marketing";
+import {
+  getMissingRequiredPlacementWarnings,
+  sortMediaAssetsByPlacementUse,
+  type MediaPlacementWarning,
+} from "@/lib/admin/media-placement-utils";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient as createSessionClient } from "@/lib/supabase/server";
 import { defaultPricingBaseline } from "@/lib/pricing";
@@ -46,6 +51,7 @@ export type MediaLibraryAsset = {
 export type MediaLibraryData = {
   categories: GalleryCategoryRow[];
   clientAssets: MediaLibraryAsset[];
+  placementWarnings: MediaPlacementWarning[];
   websiteAssets: MediaLibraryAsset[];
 };
 
@@ -245,6 +251,7 @@ export async function getMediaLibraryData(): Promise<MediaLibraryData> {
     return {
       categories: (categoryData ?? []) as GalleryCategoryRow[],
       clientAssets: [],
+      placementWarnings: getMissingRequiredPlacementWarnings([], mediaPlacementDefinitions),
       websiteAssets: [],
     };
   }
@@ -343,10 +350,14 @@ export async function getMediaLibraryData(): Promise<MediaLibraryData> {
       } satisfies MediaLibraryAsset;
     });
 
+  const clientAssets = mappedAssets.filter((asset) => asset.libraryKind === "client");
+  const websiteAssets = mappedAssets.filter((asset) => asset.libraryKind === "website");
+
   return {
     categories: (categoryData ?? []) as GalleryCategoryRow[],
-    clientAssets: mappedAssets.filter((asset) => asset.libraryKind === "client"),
-    websiteAssets: mappedAssets.filter((asset) => asset.libraryKind === "website"),
+    clientAssets,
+    placementWarnings: getMissingRequiredPlacementWarnings(mappedAssets, mediaPlacementDefinitions),
+    websiteAssets: sortMediaAssetsByPlacementUse(websiteAssets),
   };
 }
 

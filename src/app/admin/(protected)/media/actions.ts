@@ -13,10 +13,15 @@ import {
   revalidatePaths,
 } from "@/lib/admin/action-helpers";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { marketingMediaBucket, mediaPlacementDefinitions } from "@/lib/site/marketing";
+import {
+  marketingMediaBucket,
+  mediaPlacementDefinitions,
+  publicSitePaths,
+} from "@/lib/site/marketing";
 import type { Json, TablesInsert, TablesUpdate } from "@/types/supabase.generated";
 
 const mediaRedirectPath = "/admin/media";
+const mediaManagedPublicPaths = Array.from(new Set(["/", "/gallery", ...publicSitePaths]));
 
 function getMediaRedirectTarget(value: FormDataEntryValue | null) {
   return getSafeRedirectTarget(value, mediaRedirectPath, mediaRedirectPath);
@@ -209,7 +214,7 @@ export async function uploadMediaAsset(formData: FormData) {
   }
 
   revalidatePaths([mediaRedirectPath]);
-  revalidateMarketingSite(["/", "/gallery"]);
+  revalidateMarketingSite(mediaManagedPublicPaths);
   redirectWithNotice(redirectTarget, "media-uploaded");
 }
 
@@ -265,7 +270,7 @@ export async function updateMediaAsset(formData: FormData) {
   }
 
   revalidatePaths([mediaRedirectPath]);
-  revalidateMarketingSite(["/", "/gallery"]);
+  revalidateMarketingSite(mediaManagedPublicPaths);
   redirectWithNotice(redirectTarget, "media-updated");
 }
 
@@ -349,7 +354,7 @@ export async function deleteMediaAsset(formData: FormData) {
   ]);
 
   if (asset.bucket === marketingMediaBucket) {
-    revalidateMarketingSite(["/", "/gallery"]);
+    revalidateMarketingSite(mediaManagedPublicPaths);
   }
 
   redirectWithNotice(redirectTarget, "media-deleted");

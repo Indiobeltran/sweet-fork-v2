@@ -1,3 +1,122 @@
+## Product Page Media UX + Admin Placement Clarity — 2026-06-13
+
+- **Current branch**: `codex/product-page-media-ux`.
+- **Commit**: Pending at the time of this handoff edit; update with the final commit hash after commit.
+- **Current objective**: Fix product-page hero image crop/readability, add category-specific product-page examples with full-gallery CTAs, clarify admin “featured/used on site” semantics, sort active placements first, and warn when major homepage/product placements are missing.
+- **Starting branch**: `main`.
+- **Starting working tree**: Tracked files were clean. Pre-existing untracked files were present and preserved: `.agents/`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `skills-lock.json`.
+- **Phase 0 SITREP commands run**:
+  - `git branch --show-current` — started on `main`.
+  - `git status --short` — tracked files clean; unrelated untracked files listed above.
+  - `git log --oneline -n 10` — latest commit before branching was `30a2986 fix: improve admin media editing on mobile`.
+  - Read `AGENTS.md`, `ROADMAP.md`, `GATES.md`, `HANDOFF.md`, `DECISIONS.md`, `BACKLOG.md`, and `README.md`.
+- **Product page image architecture discovered**:
+  - Public product routes are individual App Router pages under `src/app/(site)/{custom-cakes,wedding-cakes,cupcakes,sugar-cookies,macarons,diy-kits}/page.tsx`.
+  - All product pages render through `src/components/site/product-page-template.tsx`.
+  - Public product data comes from `getPublicProductPageData()` in `src/lib/site/marketing.ts`.
+  - Product hero overrides use `media_assignments` rows with `assignment_type='page'`, `page_key='product'`, `section_key='hero'`, and `slot_key=<product-slug>`.
+  - Product hero fallback content lives in `src/lib/content/site-content.ts`; gallery/category fallback content remains available when Supabase is unavailable.
+- **Admin media architecture discovered**:
+  - `/admin/media` loads `getMediaLibraryData()` from `src/lib/admin/site-management.ts`.
+  - Admin editing UI is `src/components/admin/media-library-manager.tsx`.
+  - Upload/update/delete server actions are in `src/app/admin/(protected)/media/actions.ts`.
+  - Website media uses `media_assets` in the `marketing` bucket plus `media_assignments` for gallery categories and page placements.
+- **Current meaning/usage of featured discovered**:
+  - Legacy featured state is `media_assets.metadata.isFeatured`.
+  - Before this task, admin surfaced it as “Featured” / “Feature this photo,” and `getGalleryItemsForPlacement()` used it as a fallback sorter/filter for homepage/gallery-style picks when explicit homepage placements are absent.
+  - Actual active website placement usage is represented separately by `media_assignments` rows.
+- **Existing placement keys discovered before changes**:
+  - `home.gallery`
+  - `home.offering.custom-cakes`
+  - `home.offering.wedding-cakes`
+  - `home.offering.cupcakes`
+  - `home.offering.sugar-cookies`
+  - `home.offering.macarons`
+  - `home.offering.diy-kits`
+  - `product.hero.custom-cakes`
+  - `product.hero.wedding-cakes`
+  - `product.hero.cupcakes`
+  - `product.hero.sugar-cookies`
+  - `product.hero.macarons`
+  - `product.hero.diy-kits`
+  - `gallery.grid`
+- **Read-only Supabase media data inspection**:
+  - `imageAssets`: 78.
+  - Legacy `metadata.isFeatured=true`: 33 assets.
+  - Page assignments: 71.
+  - Gallery category assignments: 71.
+  - Existing page placement rows were `gallery.grid` (70 rows) and `product.hero.diy-kits` (1 row).
+  - Missing required assignments observed locally: homepage hero/gallery teaser, all homepage offering card images, and all product heroes except DIY Kits.
+  - Category assignment counts: Custom Cakes 29, Wedding Cakes 2, Cupcakes 13, Sugar Cookies 22, Macarons 5, DIY Kits 0, Celebration 0.
+- **Implementation completed**:
+  - Added tested product media helpers in `src/lib/site/product-media.ts` for product-category mapping and safe `object-position` values.
+  - Added tested admin placement helpers in `src/lib/admin/media-placement-utils.ts` for prominent placement detection, badge labels, missing-placement warnings, and sorting.
+  - Extended `ProductPageContent.heroImage` and `GalleryItem` types with optional `id` and/or `objectPosition`.
+  - Added `product.gallery.<slug>` placement definitions for optional explicitly ordered product-page examples, using existing `media_assignments` only.
+  - Product page hero images now use a portrait-oriented frame, stable `next/image` sizing, safe object-position support, and a stronger premium bottom/readability overlay.
+  - Product pages now load category-specific showcase images from existing Supabase/gallery media. Explicit `product.gallery.<slug>` assignments win when present; otherwise the page filters the full gallery placement by matching category. Hero images are excluded from the showcase.
+  - Every product page now passes showcase items to `ProductPageTemplate` and displays a visible `/gallery` CTA near the showcase area.
+  - DIY Kits currently has no assigned DIY Kits category images, so it renders a tasteful full-gallery fallback CTA instead of an empty carousel.
+  - Admin media now derives “Used on site” / prominent placement badges from page assignments, not from legacy `metadata.isFeatured`.
+  - Admin media keeps the legacy featured checkbox but relabels it as “Fallback homepage/gallery highlight” to reduce owner confusion.
+  - Admin media sorts active prominent placements first, then product-page example placements, then legacy fallback highlights, then gallery-only/newer assets.
+  - Admin media shows a non-blocking missing-placement warning panel and a healthy state when all major placements are assigned.
+  - Media upload/update/delete actions now revalidate all public site paths that can depend on media assignments, not only `/` and `/gallery`.
+- **Data cleanup**: No data cleanup was performed. No production media records were mass-updated. No Supabase schema changes were made.
+- **Manual/local browser QA performed**:
+  - Started local dev server at `http://localhost:3000`.
+  - Desktop product route checks for `/custom-cakes`, `/cupcakes`, `/sugar-cookies`, `/macarons`, `/wedding-cakes`, and `/diy-kits`: each page had a visible `/gallery` link and retained `/start-order` inquiry CTAs.
+  - Desktop category showcase counts observed from current data: Custom Cakes 10, Cupcakes 10, Sugar Cookies 10, Macarons 3, Wedding Cakes 1, DIY Kits 0 with fallback gallery CTA.
+  - Mobile `390x844` checks: Custom Cakes had no horizontal page overflow, portrait hero frame rendered at about `348x435`, gallery CTA was visible, and showcase row was horizontally scrollable.
+  - Mobile DIY Kits check: no horizontal overflow, no broken empty carousel, fallback full-gallery text/link rendered.
+  - Mobile Wedding Cakes check: one-card showcase rendered cleanly with gallery CTA and no horizontal overflow.
+  - `/admin/media` desktop check while authenticated: warning panel rendered, first media card was the active `Product hero: DIY Kits` placement, and “Used on site” badge appeared.
+  - `/admin/media` mobile `390x844` check: warning panel visible, first card remained the active product hero placement, and no page-level horizontal overflow.
+- **Verification commands/results**:
+  - `node --no-warnings --experimental-strip-types --test src/lib/site/product-media.test.ts` — Passed.
+  - `node --no-warnings --experimental-strip-types --test src/lib/admin/media-placement-utils.test.ts` — Passed.
+  - `npm test` — Passed (22 tests). Existing Netlify Forms fail-soft tests intentionally log simulated network/404 errors while passing.
+  - `npm run lint` — Passed.
+  - `npm run typecheck` — Passed.
+  - `npm run build` — Passed.
+  - `git diff --check` — Passed.
+- **Files changed recently**:
+  - `DECISIONS.md`
+  - `HANDOFF.md`
+  - `package.json`
+  - `src/app/(site)/cupcakes/page.tsx`
+  - `src/app/(site)/custom-cakes/page.tsx`
+  - `src/app/(site)/diy-kits/page.tsx`
+  - `src/app/(site)/macarons/page.tsx`
+  - `src/app/(site)/sugar-cookies/page.tsx`
+  - `src/app/(site)/wedding-cakes/page.tsx`
+  - `src/app/admin/(protected)/media/actions.ts`
+  - `src/app/admin/(protected)/media/page.tsx`
+  - `src/components/admin/media-library-manager.tsx`
+  - `src/components/site/product-page-template.tsx`
+  - `src/lib/admin/media-placement-utils.ts`
+  - `src/lib/admin/media-placement-utils.test.ts`
+  - `src/lib/admin/site-management.ts`
+  - `src/lib/site/marketing.ts`
+  - `src/lib/site/product-media.ts`
+  - `src/lib/site/product-media.test.ts`
+  - `src/types/domain.ts`
+- **Known limitations / follow-up**:
+  - Current production data has no DIY Kits gallery-category assignments, so `/diy-kits` shows the fallback Gallery CTA until the owner assigns DIY media.
+  - Current production data has only one prominent required assignment (`product.hero.diy-kits`), so the new admin warning panel will list missing homepage/product placements until the owner assigns them.
+  - No product-page example placements are assigned yet; product showcases currently come from matching Gallery categories and display order.
+  - Netlify dashboard/deployed-site QA still needs to be performed after this branch is deployed.
+- **Required Netlify/manual QA steps after deploy**:
+  - Check `/custom-cakes`, `/cupcakes`, `/sugar-cookies`, `/macarons`, `/wedding-cakes`, and `/diy-kits` on mobile and desktop.
+  - Confirm product hero crop/readability, showcase row/fallback behavior, `/gallery` CTA, and `/start-order` CTA on every product page.
+  - Check `/admin/media` as an authenticated admin for warning panel, active-placement sorting, placement badges, and mobile layout.
+  - Assign a missing product hero or homepage card image through admin and confirm the corresponding warning disappears after revalidation/deploy refresh.
+- **Commands still needed**:
+  - After commit, update this handoff entry with the commit hash.
+  - Netlify deploy/manual QA after branch deployment.
+- **Open decisions**:
+  - Whether the owner wants to assign explicit `product.gallery.<slug>` carousel placements for tighter manual ordering, or continue relying on Gallery category display order.
+
 ## Admin Media Mobile Editing Fix — 2026-06-13
 
 - **Current branch**: `codex/admin-media-mobile-actions`.

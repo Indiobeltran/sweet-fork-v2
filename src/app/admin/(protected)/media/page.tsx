@@ -212,6 +212,7 @@ export default async function AdminMediaPage({ searchParams }: AdminMediaPagePro
       >
         <MediaLibraryManager
           categories={data.categories}
+          placementWarnings={data.placementWarnings}
           websiteAssets={data.websiteAssets}
           placements={mediaPlacementDefinitions}
         />
@@ -251,7 +252,11 @@ export default async function AdminMediaPage({ searchParams }: AdminMediaPagePro
             </div>
           </div>
 
-          <ToggleField defaultChecked={false} label="Feature this photo" name="featured" />
+          <ToggleField
+            defaultChecked={false}
+            label="Fallback homepage/gallery highlight"
+            name="featured"
+          />
 
           <div className="grid gap-4 xl:grid-cols-2">
             <AssignmentEditor

@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useState } from "react";
 import Image from "next/image";
-import { Search, Star, X, Edit2, Info } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Edit2, Info, Search, Sparkles, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ConfirmSubmitButton } from "@/components/admin/confirm-submit-button";
 import { formatDate } from "@/lib/utils";
+import {
+  getMediaPlacementBadgeLabel,
+  isProductShowcasePlacement,
+  isProminentMediaPlacement,
+  sortMediaAssetsByPlacementUse,
+  type MediaPlacementWarning,
+} from "@/lib/admin/media-placement-utils";
 import type { MediaLibraryAsset } from "@/lib/admin/site-management";
 import { updateMediaAsset, deleteMediaAsset } from "@/app/admin/(protected)/media/actions";
 
@@ -34,12 +41,14 @@ type MediaPlacementDefinition = {
 
 type MediaLibraryManagerProps = {
   categories: GalleryCategoryRow[];
+  placementWarnings: MediaPlacementWarning[];
   websiteAssets: MediaLibraryAsset[];
   placements: MediaPlacementDefinition[];
 };
 
 export function MediaLibraryManager({
   categories,
+  placementWarnings,
   websiteAssets,
   placements,
 }: Readonly<MediaLibraryManagerProps>) {
@@ -60,23 +69,28 @@ export function MediaLibraryManager({
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const dialogId = useId();
+  const sortedWebsiteAssets = useMemo(
+    () => sortMediaAssetsByPlacementUse(websiteAssets),
+    [websiteAssets],
+  );
+  const hasPlacementWarnings = placementWarnings.length > 0;
 
   // Calculate dynamic asset category counts
   const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { All: websiteAssets.length };
+    const counts: Record<string, number> = { All: sortedWebsiteAssets.length };
     
     categories.forEach((cat) => {
-      counts[cat.id] = websiteAssets.filter((asset) =>
+      counts[cat.id] = sortedWebsiteAssets.filter((asset) =>
         asset.categoryAssignments.some((a) => a.categoryId === cat.id)
       ).length;
     });
     
     return counts;
-  }, [categories, websiteAssets]);
+  }, [categories, sortedWebsiteAssets]);
 
   // Handle client-side search and category filtering
   const filteredAssets = useMemo(() => {
-    return websiteAssets.filter((asset) => {
+    return sortedWebsiteAssets.filter((asset) => {
       // Category filter
       if (activeCategory !== "All") {
         const matchesCategory = asset.categoryAssignments.some(
@@ -97,7 +111,7 @@ export function MediaLibraryManager({
 
       return true;
     });
-  }, [websiteAssets, activeCategory, searchQuery]);
+  }, [sortedWebsiteAssets, activeCategory, searchQuery]);
 
   // Synchronize form editing states when selected asset changes
   useEffect(() => {
@@ -249,6 +263,55 @@ export function MediaLibraryManager({
 
   return (
     <div className="space-y-6">
+      <div
+        className={`rounded-[1.6rem] border px-4 py-4 sm:px-5 ${
+          hasPlacementWarnings
+            ? "border-gold/28 bg-gold/10"
+            : "border-emerald-200 bg-emerald-50"
+        }`}
+      >
+        <div className="flex gap-3">
+          <span
+            className={`mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+              hasPlacementWarnings
+                ? "bg-gold/18 text-charcoal"
+                : "bg-emerald-100 text-emerald-800"
+            }`}
+            aria-hidden="true"
+          >
+            {hasPlacementWarnings ? (
+              <AlertTriangle className="h-4 w-4" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4" />
+            )}
+          </span>
+          <div className="min-w-0 space-y-2">
+            <p className="text-sm font-semibold text-charcoal">
+              {hasPlacementWarnings
+                ? "Major website image placements need attention."
+                : "All major website image placements are assigned."}
+            </p>
+            {hasPlacementWarnings ? (
+              <ul className="space-y-1.5">
+                {placementWarnings.map((warning) => (
+                  <li
+                    key={warning.placementKey}
+                    className="text-sm leading-6 text-charcoal/70"
+                  >
+                    {warning.message}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm leading-6 text-charcoal/70">
+                Product heroes and homepage product-card images have selected
+                website photos.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Search and Dynamic Category Filter Chips */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="relative flex-1 max-w-md">
@@ -314,6 +377,22 @@ export function MediaLibraryManager({
             const activeCats = categories.filter((cat) =>
               asset.categoryAssignments.some((a) => a.categoryId === cat.id)
             );
+            const prominentPlacement = asset.pageAssignments.find((assignment) =>
+              isProminentMediaPlacement(assignment.placementKey),
+            );
+            const productShowcasePlacement = asset.pageAssignments.find((assignment) =>
+              isProductShowcasePlacement(assignment.placementKey),
+            );
+            const galleryPlacement = asset.pageAssignments.find(
+              (assignment) => assignment.placementKey === "gallery.grid",
+            );
+            const primaryPlacementLabel = prominentPlacement
+              ? getMediaPlacementBadgeLabel(prominentPlacement.placementKey, placements)
+              : productShowcasePlacement
+                ? getMediaPlacementBadgeLabel(productShowcasePlacement.placementKey, placements)
+                : galleryPlacement
+                  ? "Full gallery"
+                  : null;
 
             return (
               <article
@@ -340,11 +419,20 @@ export function MediaLibraryManager({
 
                   {/* Badges on Thumbnail Overlay */}
                   <div className="absolute top-2 left-2 right-2 flex flex-wrap gap-1 items-start justify-between pointer-events-none">
-                    {/* Featured Star Badge */}
-                    {asset.featured ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-gold px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-charcoal shadow-sm">
-                        <Star className="h-2.5 w-2.5 fill-charcoal" />
-                        Featured
+                    {primaryPlacementLabel ? (
+                      <span
+                        className={`inline-flex max-w-[9rem] items-center gap-1 truncate rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] shadow-sm ${
+                          prominentPlacement
+                            ? "bg-gold text-charcoal"
+                            : "bg-white/88 text-charcoal"
+                        }`}
+                      >
+                        <Sparkles className="h-2.5 w-2.5 shrink-0" />
+                        <span className="truncate">{primaryPlacementLabel}</span>
+                      </span>
+                    ) : asset.featured ? (
+                      <span className="inline-flex max-w-[8rem] items-center gap-1 truncate rounded-full bg-white/88 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-charcoal shadow-sm">
+                        Fallback highlight
                       </span>
                     ) : <span />}
 
@@ -368,6 +456,15 @@ export function MediaLibraryManager({
 
                   {/* Primary Category Tags */}
                   <div className="flex flex-wrap gap-1 pt-1">
+                    {prominentPlacement ? (
+                      <span className="rounded-full bg-gold/18 border border-gold/28 px-1.5 py-0.5 text-[8.5px] text-charcoal font-semibold truncate max-w-[112px]">
+                        Used on site
+                      </span>
+                    ) : productShowcasePlacement ? (
+                      <span className="rounded-full bg-charcoal/5 border border-charcoal/8 px-1.5 py-0.5 text-[8.5px] text-charcoal/66 font-semibold truncate max-w-[112px]">
+                        Product examples
+                      </span>
+                    ) : null}
                     {activeCats.length > 0 ? (
                       activeCats.slice(0, 2).map((cat) => (
                         <span
@@ -492,7 +589,12 @@ export function MediaLibraryManager({
                       onChange={(e) => setFeatured(e.target.checked)}
                       className="h-4 w-4 rounded border-charcoal/20 text-charcoal focus:ring-gold/20"
                     />
-                    <span>Feature this photo for curated homepage and gallery picks</span>
+                    <span>
+                      <span className="block font-medium text-charcoal">Fallback homepage/gallery highlight</span>
+                      <span className="mt-1 block text-xs leading-5 text-charcoal/58">
+                        Major site placements are controlled in Website Sections below.
+                      </span>
+                    </span>
                   </label>
                 </div>
 
@@ -505,7 +607,7 @@ export function MediaLibraryManager({
                   {/* Categories checkboxes */}
                   <div className="space-y-3">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-charcoal/45">
-                      Where should this photo show? (Categories)
+                      Gallery categories
                     </p>
                     <div className="grid gap-2 sm:grid-cols-2">
                       {categories.map((cat) => {
@@ -542,7 +644,7 @@ export function MediaLibraryManager({
                   {/* Placements checkboxes */}
                   <div className="space-y-3 border-t border-charcoal/5 pt-4">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-charcoal/45">
-                      Website Sections (Page Placements)
+                      Website sections and placements
                     </p>
                     <div className="grid gap-2 sm:grid-cols-2">
                       {placements.map((placement) => {

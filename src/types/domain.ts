@@ -126,6 +126,8 @@ export type ProductPageContent = {
   heroStatement: string;
   heroImage: {
     alt: string;
+    id?: string;
+    objectPosition?: string;
     src: string;
   };
   startingPriceLabel: string;
@@ -145,4 +147,5 @@ export type GalleryItem = {
   category: string;
   alt: string;
   imageUrl?: string | null;
+  objectPosition?: string;
 };

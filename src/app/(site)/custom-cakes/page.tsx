@@ -25,5 +25,5 @@ export default async function CustomCakesPage() {
     notFound();
   }
 
-  return <ProductPageTemplate content={page.content} />;
+  return <ProductPageTemplate content={page.content} showcaseItems={page.showcaseItems} />;
 }

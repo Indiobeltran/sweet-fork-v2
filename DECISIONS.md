@@ -2,6 +2,33 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
+## 2026-06-13 - Derive Featured Placement Semantics From Media Assignments
+
+### Status
+
+Accepted
+
+### Context
+
+Product pages needed better image presentation and category-specific examples while preserving the existing Supabase `media_assets` and `media_assignments` architecture. Admin media also had many assets with legacy `metadata.isFeatured = true`, which made “Featured” ambiguous for a non-technical owner.
+
+### Options Considered
+
+- Add new Supabase schema fields or tables for product page examples and featured placement state.
+- Reuse the existing loose `metadata.isFeatured` flag for product-page carousels and admin sorting.
+- Add code-level placement conventions on top of existing `media_assignments` rows and derive prominent placement state from assignment keys.
+
+### Decision
+
+Do not make schema changes or mutate production media data. Add `product.gallery.<slug>` page-placement conventions for optional product-page examples. Treat `home.gallery`, `home.offering.<slug>`, and `product.hero.<slug>` as required/prominent website placements. Admin “used on site” and missing-placement warnings are derived from these assignment keys. The legacy `metadata.isFeatured` flag remains editable only as a fallback homepage/gallery highlight.
+
+### Consequences
+
+- Product-page examples can be explicitly ordered later through the existing admin media assignment UI.
+- Gallery-only/category photos no longer read as “featured placement” just because they are good photos.
+- Missing homepage/product hero/card assignments can be warned about without blocking admin usage.
+- Existing fallback behavior remains intact when assignments are absent or Supabase is unavailable.
+
 ## 2026-06-12 - Dedicated Codex Admin QA Account
 
 ### Status
