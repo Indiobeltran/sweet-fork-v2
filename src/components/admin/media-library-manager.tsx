@@ -539,7 +539,7 @@ export function MediaLibraryManager({
             role="dialog"
             aria-modal="true"
             aria-label={`Edit Photo: ${selectedAsset.filename}`}
-            className="flex h-full max-h-[calc(100dvh_-_env(safe-area-inset-bottom)_-_1.5rem)] w-full max-w-xl flex-col overflow-hidden rounded-[1.55rem] border border-charcoal/10 bg-ivory/96 shadow-[0_24px_72px_rgba(53,37,29,0.18)] backdrop-blur-xl transition-transform duration-300 md:max-h-none md:rounded-none md:border-y-0 md:border-r-0"
+            className="flex h-full max-h-[calc(100dvh_-_env(safe-area-inset-bottom)_-_1.5rem)] w-full max-w-xl flex-col overflow-hidden rounded-[1.55rem] border border-charcoal/10 bg-ivory shadow-[0_24px_72px_rgba(53,37,29,0.18)] backdrop-blur-xl transition-transform duration-300 md:max-h-none md:rounded-none md:border-y-0 md:border-r-0"
           >
             {/* Drawer Header */}
             <div className="shrink-0 border-b border-charcoal/8 px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between">
@@ -907,7 +907,7 @@ export function MediaLibraryManager({
             </div>
 
             {/* Fixed Drawer Footer (Crucial for Mobile - stays visible above bottom nav) */}
-            <div className="shrink-0 border-t border-charcoal/8 bg-white/94 px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] shadow-[0_-8px_32px_rgba(53,37,29,0.06)] sm:px-5 sm:py-4 sm:pb-4">
+            <div className="shrink-0 border-t border-charcoal/8 bg-white px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] shadow-[0_-8px_32px_rgba(53,37,29,0.06)] sm:px-5 sm:py-4 sm:pb-4">
               <div className="mb-2 min-h-5 text-xs text-charcoal/58" aria-live="polite">
                 {actionMessage ?? (hasChanges ? "Unsaved changes" : "No changes")}
               </div>

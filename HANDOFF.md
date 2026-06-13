@@ -1,3 +1,30 @@
+## Admin Solid Overlays Visual Hotfix — 2026-06-13
+
+- **Implementation branch**: `codex/solid-admin-overlays`
+- **Current objective**: Make admin popups, drawers, sheets, modals, and sticky overlay footers solid and readable to prevent distracting background bleed-through.
+- **Starting status**: Started from `main` with tracked files clean. Pre-existing untracked files were preserved (`.agents/`, `scratch/`, `skills-lock.json`).
+- **Files changed**:
+  - `src/components/admin/admin-account-menu.tsx`
+  - `src/components/admin/admin-app-bar.tsx`
+  - `src/components/admin/admin-section-card.tsx`
+  - `src/components/admin/filter-sheet.tsx`
+  - `src/components/admin/media-library-manager.tsx`
+  - `src/components/admin/mobile-bottom-nav.tsx`
+  - `src/components/admin/more-menu-sheet.tsx`
+- **Implementation details**:
+  - This was an admin overlay visual fix made in response to deployed mobile QA feedback where background content and photos bled through the admin media edit drawer.
+  - The fix was applied broadly across multiple specific and shared admin overlay components rather than only the media manager, ensuring all admin overlays are visually solid.
+  - Replaced translucent background color classes (`bg-white/95`, `bg-white/94`, `bg-white/88`, `bg-ivory/90`, `bg-ivory/96`) with solid alternatives (`bg-white` and `bg-ivory`) inside the admin drawer container, sticky footer, sheets, menus, and section cards.
+  - Dimmed page backdrop behind overlays (e.g. `fixed inset-0 bg-charcoal/20`) was preserved.
+  - Preserved all functional behavior (safe area paddings, scroll lock, form states, saving logic, and media drawer density styling).
+- **Data & Architecture Note**: No Supabase schema changes, media architecture changes, or customer-facing gallery behavior changes were introduced.
+- **Verification performed**:
+  - `npm run lint` — Passed.
+  - `npm run typecheck` — Passed.
+  - `npm test` — Passed.
+  - `npm run build` — Passed (production build compiled successfully).
+  - `git diff --check` — Passed.
+
 ## Admin Media Edit Drawer Density & Usability Pass — 2026-06-13
 
 - **Implementation branch**: `codex/streamline-admin-media-drawer`

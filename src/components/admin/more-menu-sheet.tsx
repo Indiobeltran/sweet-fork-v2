@@ -119,7 +119,7 @@ export function MoreMenuSheet({
         <div
           role="dialog"
           aria-label="More admin sections"
-          className="absolute right-0 top-[calc(100%+0.7rem)] z-[70] hidden w-[22rem] rounded-[1.7rem] border border-charcoal/10 bg-ivory/96 p-4 shadow-[0_24px_64px_rgba(53,37,29,0.14),0_8px_20px_rgba(53,37,29,0.08)] backdrop-blur-xl md:block"
+          className="absolute right-0 top-[calc(100%+0.7rem)] z-[70] hidden w-[22rem] rounded-[1.7rem] border border-charcoal/10 bg-ivory p-4 shadow-[0_24px_64px_rgba(53,37,29,0.14),0_8px_20px_rgba(53,37,29,0.08)] backdrop-blur-xl md:block"
         >
           <div className="flex items-center justify-between gap-3 border-b border-charcoal/8 pb-3">
             <div>
@@ -157,7 +157,7 @@ export function MoreMenuSheet({
             role="dialog"
             aria-modal="true"
             aria-label="More admin sections"
-            className="max-h-[min(88vh,46rem)] overflow-y-auto rounded-t-[1.8rem] border border-b-0 border-charcoal/10 bg-ivory/96 px-4 pb-[calc(env(safe-area-inset-bottom)+1.05rem)] pt-4 shadow-[0_-24px_64px_rgba(53,37,29,0.18)] backdrop-blur-xl"
+            className="max-h-[min(88vh,46rem)] overflow-y-auto rounded-t-[1.8rem] border border-b-0 border-charcoal/10 bg-ivory px-4 pb-[calc(env(safe-area-inset-bottom)+1.05rem)] pt-4 shadow-[0_-24px_64px_rgba(53,37,29,0.18)] backdrop-blur-xl"
           >
             <div className="mx-auto h-1.5 w-14 rounded-full bg-charcoal/14" />
 

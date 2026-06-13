@@ -141,7 +141,7 @@ export function MobileBottomNav({
     >
       <nav
         aria-label="Primary admin navigation"
-        className="w-full border-t border-charcoal/10 bg-ivory/96 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl"
+        className="w-full border-t border-charcoal/10 bg-ivory pb-[env(safe-area-inset-bottom)] backdrop-blur-xl"
       >
         <div className="mx-auto grid max-w-md grid-cols-5 gap-1 px-2 pt-2">
           {items.map((item) => {

@@ -80,7 +80,7 @@ export function FilterSheet({
               role="dialog"
               aria-modal="true"
               aria-label={title}
-              className="flex max-h-[min(88vh,50rem)] w-full max-w-2xl flex-col overflow-hidden rounded-t-[1.8rem] border border-charcoal/10 bg-ivory/96 shadow-[0_24px_72px_rgba(53,37,29,0.18)] backdrop-blur-xl md:rounded-[1.8rem]"
+              className="flex max-h-[min(88vh,50rem)] w-full max-w-2xl flex-col overflow-hidden rounded-t-[1.8rem] border border-charcoal/10 bg-ivory shadow-[0_24px_72px_rgba(53,37,29,0.18)] backdrop-blur-xl md:rounded-[1.8rem]"
             >
               <div className="border-b border-charcoal/8 px-4 pb-3 pt-3 sm:px-5">
                 <div className="mx-auto h-1.5 w-14 rounded-full bg-charcoal/14 md:hidden" />

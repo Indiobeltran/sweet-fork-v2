@@ -28,7 +28,7 @@ export function AdminAppBar({
 
   return (
     <header className="sticky top-1.5 sm:top-2 z-50">
-      <div className="overflow-visible rounded-[1.25rem] sm:rounded-[1.7rem] border border-charcoal/10 bg-ivory/90 shadow-[0_16px_44px_rgba(53,37,29,0.08),0_2px_10px_rgba(53,37,29,0.04)] backdrop-blur-xl">
+      <div className="overflow-visible rounded-[1.25rem] sm:rounded-[1.7rem] border border-charcoal/10 bg-ivory shadow-[0_16px_44px_rgba(53,37,29,0.08),0_2px_10px_rgba(53,37,29,0.04)] backdrop-blur-xl">
         <div className="flex items-center gap-2 sm:gap-3 px-2.5 py-1.5 sm:px-4 sm:py-2.5">
           <Link
             href={brandHref}
