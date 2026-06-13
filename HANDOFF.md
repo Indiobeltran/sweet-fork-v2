@@ -2,6 +2,84 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Pre-Launch UX/UI, Navigation, and Placeholder Audit — 2026-06-12
+
+- **Objective**: Complete the requested pre-production UX/UI, navigation, admin usability, and placeholder-content audit before production domain cutover. DNS/domain records were not changed.
+- **Current branch**: `main`.
+- **Pre-audit working tree**:
+  - `git branch --show-current`: `main`.
+  - `git status --short`: tracked tree clean; protected untracked files present and preserved (`.agents/`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `skills-lock.json`).
+  - Latest commits at audit start: `e306ae9 docs: complete Netlify launch readiness audit`, `b3677a6 fix: resolve Netlify launch readiness issues`, `7992067 docs: record final Netlify validation`.
+- **Current live/local URL tested**:
+  - Local production server: `http://localhost:3000`.
+  - Previously validated live Netlify URL remains `https://sweet-fork-v2.netlify.app`; no DNS/custom-domain changes were made in this task.
+- **Routes and surfaces audited**:
+  - Public/customer: `/`, `/gallery`, `/start-order`, `/pricing`, `/about`, `/terms`, `/privacy`, `/custom-cakes`, `/wedding-cakes`, `/cupcakes`, `/sugar-cookies`, `/macarons`, `/diy-kits`, `/how-to-order`, `/faq`, `/robots.txt`, `/sitemap.xml`.
+  - Admin: `/admin/login`, `/admin`, `/admin/inquiries`, known inquiry details for `SF-401FE62F` and `SF-D2B52E0E`, `/admin/orders`, `/admin/media`, `/admin/products`, `/admin/pricing`, `/admin/content`, `/admin/faqs`, `/admin/testimonials`, `/admin/customers`, `/admin/notifications`, `/admin/users`, `/admin/settings`, `/admin/calendar`.
+  - Navigation/layout: public header/mobile menu/footer/CTAs by route smoke, gallery filters/lightbox, start-order date/progress state, admin top nav, mobile bottom nav, desktop and mobile admin More menu.
+- **Placeholder/pre-production search terms used**:
+  - `placeholder`, `pre-production`, `preproduction`, `coming soon`, `lorem`, `ipsum`, `TODO`, `FIXME`, `sample`, `demo`, `test`, `dummy`, `fake`, `AI generated`, `generated image`, `fallback`, `staging`, `Vercel`, `Netlify placeholder`, `old site`, `Lana`.
+  - Search found expected docs/dev/test/internal fallback references and admin input placeholders. Rendered public pages showed 0 `/placeholders/marketing` references, no `Lana`, and no obvious pre-production wording.
+- **Fixes made**:
+  - Fixed admin More-menu desktop clickability root cause #1: the mobile-only More sheet rendered a fixed backdrop on desktop when shared `isMoreOpen` state was true. The backdrop sat above the sticky desktop header stacking context and could absorb clicks. Added `src/components/admin/more-menu-sheet-classes.ts` so mobile-only backdrops include `md:hidden` and desktop-only backdrops include `hidden md:block`.
+  - Fixed admin More-menu root cause #2: More-menu links closed the sheet synchronously via `onClick`, which could unmount the Link before client navigation completed. Switched to Next Link `onNavigate` so navigation starts before the menu closes.
+  - Added regression coverage in `src/components/admin/more-menu-sheet-classes.test.ts`; `npm test` now runs the existing pricing tests plus the More-menu class/navigation-source regression.
+  - Fixed mobile admin horizontal overflow at 375px by constraining the shared status chip row, clipping the inquiries header card overflow, and adding admin shell `overflow-x-hidden` containment while preserving internal chip-row horizontal scrolling.
+- **Public UX findings**:
+  - Local production browser checks passed for all audited public routes.
+  - Home, gallery, start-order, pricing, about, legal, product, FAQ, robots, and sitemap routes rendered without broken images or horizontal overflow in sampled desktop checks.
+  - Gallery rendered 71 cards; filter labels included All 71, Custom Cakes 29, Sugar Cookies 22, Macarons 5, Cupcakes 13, Wedding Cakes 2. Sugar Cookies filtered to 22 cards; lightbox opened with a loaded Supabase image and closed.
+  - `/start-order` was not paused, showed progress/date UI, and had a required native date input. Local machine date during verification was `2026-06-12 MDT`, so the observed date minimum was `2026-06-12`.
+- **Admin UX findings**:
+  - Dedicated local QA admin credentials from ignored `.env.local` were used without printing secrets.
+  - Admin login succeeded and rendered the inquiries workspace.
+  - Desktop More menu now opens with Media topmost/clickable, no mobile backdrop visible on desktop, and clicking Media navigates to `/admin/media`.
+  - Mobile More menu at 375px navigates to `/admin/pricing`.
+  - `/admin/media` shows Website Photos and Upload Photo.
+  - Known inquiries `SF-401FE62F` and `SF-D2B52E0E` still show sane `$80 to $192` estimates and no `$5,072` range.
+- **Viewport checks**:
+  - Public home/gallery/start-order checked at approximately 375px, 430px, 768px, and 1280px; no public horizontal overflow found.
+  - Admin More menu checked at 375px and 1280px after fixes; `/admin/inquiries` final 375px scroll width was 375.
+- **Accessibility/interaction notes**:
+  - More-menu links remain semantic links with accessible names such as `Media` and `Pricing`.
+  - More-menu backdrop buttons retain close labels.
+  - Existing focus-visible styling was preserved.
+- **Performance/image notes**:
+  - No broken images found in local browser smoke.
+  - Rendered public pages checked had 0 `/placeholders/marketing` references.
+  - No broad image optimization changes were made because the audit did not expose a clear launch-blocking image regression.
+- **Files changed recently**:
+  - `package.json`
+  - `src/app/admin/(protected)/inquiries/page.tsx`
+  - `src/components/admin/admin-shell-chrome.tsx`
+  - `src/components/admin/more-menu-sheet.tsx`
+  - `src/components/admin/more-menu-sheet-classes.ts`
+  - `src/components/admin/more-menu-sheet-classes.test.ts`
+  - `src/components/admin/status-chip-row.tsx`
+  - `HANDOFF.md`
+- **Files intentionally preserved**:
+  - `.agents/`
+  - `scratch/process-import-batch-04.mjs`
+  - `scratch/qa/`
+  - `skills-lock.json`
+  - `.env.local` and local QA credentials were not printed, staged, or modified.
+  - Supabase data/storage/schema, DNS/domain settings, pricing logic, and inquiry submission flow were not changed.
+- **Verification commands/results**:
+  - `npm test`: passed, 6 tests.
+  - `npm run lint`: passed.
+  - `npm run typecheck`: passed.
+  - `npm run build`: passed.
+  - Local production browser smoke: passed for changed admin More-menu and overflow behavior; broader public/admin route smoke performed as summarized above.
+  - `git diff --check`: still needed after this handoff update.
+  - `git status --short`: still needed after this handoff update.
+- **Remaining blockers**:
+  - DNS/domain cutover was not performed and remains a separate operational step. Prior blocker remains: `www.thesweetfork.com` points to the older/static Netlify site until domain/DNS is changed outside this task.
+  - Transactional email delivery remains a non-blocking follow-up unless the owner requires email notifications before cutover.
+- **Cutover recommendation from UX/UI/content perspective**:
+  - Based on the local production UX/UI/content/admin audit, no new UX/UI/content blocker remains in the audited app surfaces. DNS cutover can be considered from this perspective after separate DNS/domain assignment, SSL, analytics/email/business sign-off decisions are handled.
+- **Commit/push status**:
+  - Changes are unstaged at the time this handoff section is written. The task request explicitly asks to commit and push after successful verification; run final `git diff --check`, `git status --short`, stage only intentional files, commit, and push.
+
 ## Netlify Launch-Readiness Audit — 2026-06-13
 
 - **Objective**: Final Sweet Fork v2 Netlify launch-readiness audit before DNS/domain cutover. Do not move DNS or change domain records.

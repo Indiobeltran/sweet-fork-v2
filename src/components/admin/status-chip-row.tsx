@@ -47,11 +47,11 @@ export function StatusChipRow({
     <nav
       aria-label={ariaLabel}
       className={cn(
-        "overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none]",
+        "max-w-full overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none]",
         className,
       )}
     >
-      <div ref={containerRef} className="inline-flex min-w-full gap-2 py-1">
+      <div ref={containerRef} className="flex w-max min-w-full gap-2 py-1">
         {items.map((item) => (
           <Link
             key={`${item.href}-${item.label}`}

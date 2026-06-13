@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { X } from "lucide-react";
 
+import { getMoreMenuBackdropClassName } from "@/components/admin/more-menu-sheet-classes";
 import { cn } from "@/lib/utils";
 
 export type MoreMenuSheetItem = {
@@ -56,7 +57,7 @@ function MoreMenuSheetLinks({
                     ? "border-charcoal/16 bg-charcoal text-ivory shadow-soft"
                     : "border-charcoal/10 bg-white/78 text-charcoal hover:border-charcoal/20 hover:bg-white",
                 )}
-                onClick={onNavigate}
+                onNavigate={onNavigate}
               >
                 <span>{item.label}</span>
                 <span
@@ -97,7 +98,7 @@ export function MoreMenuSheet({
         <button
           type="button"
           aria-label="Close more admin navigation"
-          className="fixed inset-0 z-[60] bg-charcoal/14 backdrop-blur-[1px]"
+          className={getMoreMenuBackdropClassName({ desktopOnly, mobileOnly })}
           onClick={() => onOpenChange(false)}
         />
       ) : null}

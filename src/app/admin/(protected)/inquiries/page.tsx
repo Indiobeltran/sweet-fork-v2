@@ -382,7 +382,7 @@ export default async function AdminInquiriesPage({
       />
 
       <AdminPageHeader
-        className="!rounded-[1.65rem] !p-4 sm:!p-5"
+        className="overflow-hidden !rounded-[1.65rem] !p-4 sm:!p-5"
         hideTitleOnMobile
         title="Inquiries"
         meta={

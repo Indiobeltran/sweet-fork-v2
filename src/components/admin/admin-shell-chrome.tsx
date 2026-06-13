@@ -78,7 +78,7 @@ export function AdminShellChrome({
   }, [isMoreOpen]);
 
   return (
-    <div className="min-h-screen pb-[calc(env(safe-area-inset-bottom)+5.75rem)] pt-1.5 sm:pt-3 md:pb-8">
+    <div className="min-h-screen overflow-x-hidden pb-[calc(env(safe-area-inset-bottom)+5.75rem)] pt-1.5 sm:pt-3 md:pb-8">
       <div className="section-shell relative">
         <AdminAppBar
           accountMenu={accountMenu}
