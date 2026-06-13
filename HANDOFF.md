@@ -2,7 +2,7 @@
 
 - **Implementation branch**: `codex/dynamic-media-display-order`
 - **Starting commit from main**: `38b8e4436f11cd32f2dc2703a6ab4a7e506bed3f`
-- **Commit hash for this pass**: `1fa55ce2b450c266dfb378c7c10b74104273820a`
+- **Commit hash for this pass**: `5bcd3fdf7bd95b53d9e548826b7923dd704097a9`
 - **Final status of verification**: All gates passed (`npm run lint`, `npm run typecheck`, `npm run build`, `npm test`, `git diff --check`).
 - **Current objective**: Replace the fixed 10–200 display order slider with a dynamic owner-friendly position control based on the actual number of relevant items in the category/placement.
 - **Files modified**:
