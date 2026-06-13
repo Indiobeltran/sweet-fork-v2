@@ -1,3 +1,38 @@
+## Phase 3 Admin Needs-Attention Dashboard — 2026-06-13
+
+- **Current branch**: `codex/admin-needs-attention-dashboard`
+- **Objective**: Improve the `/admin` dashboard so the owner can quickly see what needs attention upon login without redesigning the architecture.
+- **Starting status**: Started from `main` with tracked files clean. Pre-existing untracked files were safely preserved.
+- **Scope confirmed**: Yes, this task is strictly isolated to Phase 3: Admin Needs-Attention Dashboard.
+- **Summary of dashboard changes**:
+  - Refactored the generic "Quick Stats" grid into a highly actionable, compact "Needs Attention" strip at the very top of the dashboard.
+  - Derived actionable signals safely from existing `ordersData`, `inquiriesData`, and `mediaData`.
+  - Replaced technical statuses with owner-friendly labels ("Details needed", "Quote follow-up", "Due within 7 days", "Payment attention", "Media needs review").
+  - Each chip acts as a fast-navigation link to the relevant admin list context.
+  - Ensured no double-counting for payment statuses by having one safe "Payment attention" signal.
+  - Provided a clear empty state ("All clear—nothing urgent right now") when the queue is clean.
+- **Deferred signals**:
+  - "Orders missing pickup/delivery confirmation" was deferred. `OrderListEntry` currently tracks only `fulfillmentMethod` (the type of fulfillment) and lacks precise confirmation statuses. This was safely deferred rather than forcing a database schema change.
+- **Architecture & Guardrails Confirmed**:
+  - No Supabase schema changes were made.
+  - No inquiry/order/media database architecture changes were made.
+  - No public/customer-facing pages or inquiry flows were touched.
+  - No gallery import work was touched.
+  - Pre-existing untracked files were preserved.
+- **Files changed**:
+  - `src/app/admin/(protected)/page.tsx`
+  - `HANDOFF.md`
+- **Verification performed**:
+  - `npm run lint` — Passed.
+  - `npm run typecheck` — Passed.
+  - `npm test` — Passed.
+  - `npm run build` — Passed (Next.js compiled successfully).
+  - `git diff --check` — Passed.
+  - `git status --short` — Clean (untracked files preserved).
+- **Next recommended step**: Merge to `main` and execute the Phase 4 CTA/Fulfillment Copy sprint.
+- **Remaining risks / follow-up**:
+  - Consider adding specific pickup/delivery confirmation tracking in future database schema migrations (deferred in this task).
+
 ## Phase 2 Admin Queues Live QA — 2026-06-13
 
 - **Branch checked**: `main` (aligned with `origin/main`)

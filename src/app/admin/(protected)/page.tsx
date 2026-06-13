@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { ArrowRight, CalendarDays, FileText, ImageIcon, Layers } from "lucide-react";
+import { AlertCircle, ArrowRight, CalendarDays, CheckCircle2, Clock, FileText, ImageIcon, Layers, MessageCircle } from "lucide-react";
 
 import { getInquiryListData } from "@/lib/admin/inquiries";
 import { getOrderListData } from "@/lib/admin/orders";
+import { getMediaLibraryData } from "@/lib/admin/site-management";
 import { formatDate, toTitleCase } from "@/lib/utils";
 
 export const metadata = {
@@ -10,7 +11,7 @@ export const metadata = {
 };
 
 export default async function AdminDashboardPage() {
-  const [inquiriesData, ordersData] = await Promise.all([
+  const [inquiriesData, ordersData, mediaData] = await Promise.all([
     getInquiryListData({
       budgetRange: "all",
       eventDateFrom: "",
@@ -30,14 +31,16 @@ export default async function AdminDashboardPage() {
       search: "",
       status: "all",
     }),
+    getMediaLibraryData(),
   ]);
 
-  const newInquiries = inquiriesData.entries.filter((entry) => entry.status === "new");
-  const reviewingInquiries = inquiriesData.entries.filter(
-    (entry) => entry.status === "reviewing" || entry.status === "quoted"
-  );
+  const newInquiriesCount = inquiriesData.statusCounts.new;
+  const reviewingInquiriesCount = inquiriesData.statusCounts.reviewing;
+  const quotedInquiriesCount = inquiriesData.statusCounts.quoted;
 
   const today = new Date().toISOString().slice(0, 10);
+  const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
   const upcomingOrders = ordersData.entries
     .filter(
       (entry) =>
@@ -48,6 +51,23 @@ export default async function AdminDashboardPage() {
     )
     .sort((a, b) => a.eventDate.localeCompare(b.eventDate));
 
+  const dueSoonOrdersCount = upcomingOrders.filter((entry) => entry.eventDate <= nextWeek).length;
+  const paymentAttentionCount = upcomingOrders.filter((entry) => entry.paymentState !== "paid").length;
+
+  const mediaWarningsCount = mediaData.placementWarnings.length;
+
+  const hasNeedsAttention =
+    newInquiriesCount > 0 ||
+    reviewingInquiriesCount > 0 ||
+    quotedInquiriesCount > 0 ||
+    dueSoonOrdersCount > 0 ||
+    paymentAttentionCount > 0 ||
+    mediaWarningsCount > 0;
+
+  const newInquiries = inquiriesData.entries.filter((entry) => entry.status === "new");
+  const reviewingInquiries = inquiriesData.entries.filter(
+    (entry) => entry.status === "reviewing" || entry.status === "quoted"
+  );
   const needsAttentionInquiries = [...newInquiries, ...reviewingInquiries].slice(0, 4);
   const immediateOrders = upcomingOrders.slice(0, 4);
 
@@ -60,25 +80,57 @@ export default async function AdminDashboardPage() {
         </p>
       </header>
 
-      <section aria-labelledby="quick-stats-heading" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <h2 id="quick-stats-heading" className="sr-only">Quick Stats</h2>
-        <div className="rounded-[1.35rem] border border-charcoal/8 bg-ivory/80 p-4 sm:p-5">
-          <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.18em] text-charcoal/50">New Inquiries</p>
-          <p className="mt-2 text-2xl sm:text-3xl font-serif text-charcoal">{inquiriesData.statusCounts.new}</p>
-        </div>
-        <div className="rounded-[1.35rem] border border-charcoal/8 bg-ivory/80 p-4 sm:p-5">
-          <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.18em] text-charcoal/50">Needs Follow-up</p>
-          <p className="mt-2 text-2xl sm:text-3xl font-serif text-charcoal">{inquiriesData.statusCounts.reviewing + inquiriesData.statusCounts.quoted}</p>
-        </div>
-        <div className="rounded-[1.35rem] border border-charcoal/8 bg-ivory/80 p-4 sm:p-5">
-          <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.18em] text-charcoal/50">Upcoming Orders</p>
-          <p className="mt-2 text-2xl sm:text-3xl font-serif text-charcoal">{upcomingOrders.length}</p>
-        </div>
-        <div className="rounded-[1.35rem] border border-charcoal/8 bg-ivory/80 p-4 sm:p-5">
-          <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.18em] text-charcoal/50">Recently Archived</p>
-          <p className="mt-2 text-2xl sm:text-3xl font-serif text-charcoal">{inquiriesData.statusCounts.archived}</p>
-        </div>
-      </section>
+      {hasNeedsAttention ? (
+        <section aria-labelledby="needs-attention-heading" className="space-y-3 sm:space-y-4">
+          <h2 id="needs-attention-heading" className="sr-only">Needs Attention</h2>
+          <div className="flex flex-wrap gap-2 sm:gap-3">
+            {newInquiriesCount > 0 && (
+              <Link href="/admin/inquiries" className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-4 py-2 text-sm font-medium text-charcoal transition-colors hover:bg-gold/20">
+                <MessageCircle className="h-4 w-4 text-gold" />
+                {newInquiriesCount} New {newInquiriesCount === 1 ? "inquiry" : "inquiries"}
+              </Link>
+            )}
+            {reviewingInquiriesCount > 0 && (
+              <Link href="/admin/inquiries" className="inline-flex items-center gap-2 rounded-full border border-charcoal/20 bg-white/80 px-4 py-2 text-sm font-medium text-charcoal transition-colors hover:border-charcoal/40">
+                <FileText className="h-4 w-4 text-charcoal/60" />
+                {reviewingInquiriesCount} Details needed
+              </Link>
+            )}
+            {quotedInquiriesCount > 0 && (
+              <Link href="/admin/inquiries" className="inline-flex items-center gap-2 rounded-full border border-charcoal/20 bg-white/80 px-4 py-2 text-sm font-medium text-charcoal transition-colors hover:border-charcoal/40">
+                <Clock className="h-4 w-4 text-charcoal/60" />
+                {quotedInquiriesCount} Quote follow-up
+              </Link>
+            )}
+            {dueSoonOrdersCount > 0 && (
+              <Link href="/admin/orders" className="inline-flex items-center gap-2 rounded-full border border-rose-500/30 bg-rose-500/10 px-4 py-2 text-sm font-medium text-charcoal transition-colors hover:bg-rose-500/20">
+                <CalendarDays className="h-4 w-4 text-rose-600" />
+                {dueSoonOrdersCount} Due within 7 days
+              </Link>
+            )}
+            {paymentAttentionCount > 0 && (
+              <Link href="/admin/orders" className="inline-flex items-center gap-2 rounded-full border border-charcoal/20 bg-white/80 px-4 py-2 text-sm font-medium text-charcoal transition-colors hover:border-charcoal/40">
+                <AlertCircle className="h-4 w-4 text-charcoal/60" />
+                {paymentAttentionCount} Payment attention
+              </Link>
+            )}
+            {mediaWarningsCount > 0 && (
+              <Link href="/admin/media" className="inline-flex items-center gap-2 rounded-full border border-charcoal/20 bg-white/80 px-4 py-2 text-sm font-medium text-charcoal transition-colors hover:border-charcoal/40">
+                <ImageIcon className="h-4 w-4 text-charcoal/60" />
+                {mediaWarningsCount} Media needs review
+              </Link>
+            )}
+          </div>
+        </section>
+      ) : (
+        <section aria-labelledby="needs-attention-heading">
+          <h2 id="needs-attention-heading" className="sr-only">Needs Attention</h2>
+          <div className="inline-flex items-center gap-2 rounded-full border border-green-600/20 bg-green-50 px-4 py-2 text-sm font-medium text-green-800">
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            All clear—nothing urgent right now.
+          </div>
+        </section>
+      )}
 
       <div className="grid gap-6 lg:gap-8 lg:grid-cols-2">
         <section aria-labelledby="attention-inquiries-heading" className="space-y-4">
