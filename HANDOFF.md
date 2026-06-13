@@ -59,6 +59,16 @@ Update this file before stopping after any substantive repo task.
   - Authenticated admin login with the dedicated Codex QA manager account succeeded locally and redirected to `/admin/inquiries`.
   - `/admin/inquiries` local authenticated list showed the operational `$80 to $192` range and no `$5,072` range, with no console warnings/errors.
   - Known inquiry detail pages for `SF-D2B52E0E` and `SF-401FE62F` rendered the reference codes, customer budget `$150 to $300`, and operational estimate `$80 to $192`; no `$5,072` range or console warnings/errors appeared.
+- **Post-push Netlify validation performed**:
+  - Pushed fix commit `70b1120` to `origin/main`; Netlify production redeployed and began serving the new gallery output after polling.
+  - `https://sweet-fork-v2.netlify.app/`: HTTP 200, raw HTML has Supabase marketing media references, browser rendered optimized Supabase-backed media with no placeholder marketing images and no console warnings/errors.
+  - `https://sweet-fork-v2.netlify.app/gallery`: HTTP 200, 71 cards rendered, filters restored as All (71), Custom Cakes (29), Sugar Cookies (22), Macarons (5), Cupcakes (13), Wedding Cakes (2).
+  - Deployed gallery interaction: Sugar Cookies filter reduced the grid to 22 cards; lightbox opened with a loaded Supabase-backed image and closed successfully; no console warnings/errors.
+  - Deployed gallery output has 0 `gallery-batch-04-repaired` references.
+  - `https://sweet-fork-v2.netlify.app/start-order`: HTTP 200, wizard progress rendered, submission was not paused, no console warnings/errors.
+  - `https://sweet-fork-v2.netlify.app/admin/login`: HTTP 200, login form rendered, dedicated Codex QA manager account logged in successfully and redirected to `/admin/inquiries`, no console warnings/errors.
+  - Deployed `/admin/inquiries` list showed the operational `$80 to $192` range and no `$5,072` range.
+  - Deployed inquiry detail pages for `SF-D2B52E0E` and `SF-401FE62F` rendered the reference codes, customer budget `$150 to $300`, and operational estimate `$80 to $192`; no `$5,072` range or console warnings/errors appeared.
 - **Files changed recently**:
   - `DECISIONS.md`
   - `HANDOFF.md`
@@ -75,11 +85,10 @@ Update this file before stopping after any substantive repo task.
   - `.env.local` contains local-only Codex admin QA credentials and remains ignored/untracked.
   - Supabase schema, storage objects, gallery import scripts, and existing production inquiry rows were not modified.
 - **Commands still needed in this turn**:
-  - Commit with `fix: restore gallery filters and tighten admin estimates`.
-  - Push to `origin/main`.
-  - After Netlify redeploys `main`, validate the deployed Netlify URL for homepage media, gallery filters/lightbox, `/start-order`, `/admin/login`, and known inquiry estimate display using the dedicated Codex QA manager account.
+  - Commit and push this final handoff update documenting deployed Netlify validation.
 - **Known issues / cutover status**:
-  - DNS/domain cutover remains paused until the pushed Netlify deploy is validated or the remaining authenticated-admin check is explicitly accepted.
+  - DNS/domain cutover was not performed.
+  - The scoped Netlify production-readiness blockers in this task are resolved on the deployed Netlify URL. Domain cutover is safe from these checked issues, assuming separate DNS, analytics, transactional email delivery, and business sign-off items are accepted.
   - Transactional email delivery remains outside this scoped task.
 
 ## Netlify Inquiry Submission Error Fix — 2026-06-12
