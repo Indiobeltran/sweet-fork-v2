@@ -576,275 +576,284 @@ export function MediaLibraryManager({
                 <input type="hidden" name="mediaAssetId" value={selectedAsset.id} />
                 <input type="hidden" name="redirectTo" value="/admin/media" />
 
-                {/* Section 1: Basic Details */}
-                <div className="space-y-4 rounded-2xl border border-charcoal/10 bg-white p-5">
-                  <h3 className="text-xs font-semibold uppercase tracking-[0.15em] text-charcoal/50 border-b border-charcoal/5 pb-2">
-                    1. Basic Details
-                  </h3>
-
-                  {/* Read-only Current Context Section */}
-                  <div className="mb-4 rounded-xl border border-gold/20 bg-gold/5 p-3 text-sm text-charcoal/80 space-y-2">
-                    <p className="font-semibold text-charcoal flex items-center gap-1.5"><Info className="h-4 w-4 text-gold"/> Where this photo currently appears</p>
-                    {selectedAsset.pageAssignments.length > 0 || selectedAsset.categoryAssignments.length > 0 || selectedAsset.featured ? (
-                      <ul className="list-disc pl-5 space-y-1 mt-1 text-charcoal/70">
-                        {selectedAsset.pageAssignments.map((assignment) => (
-                          <li key={assignment.placementKey}>
-                            {getMediaPlacementBadgeLabel(assignment.placementKey, placements)}
-                          </li>
-                        ))}
-                        {selectedAsset.categoryAssignments.map((catAssignment) => {
-                          const catName = categories.find(c => c.id === catAssignment.categoryId)?.name ?? "Unknown Category";
-                          return <li key={catAssignment.categoryId}>Public Gallery ({catName})</li>;
-                        })}
-                        {selectedAsset.featured && <li>Highlighted generally (Featured)</li>}
-                      </ul>
-                    ) : (
-                      <p className="pl-1 italic">This photo is currently unassigned and hidden.</p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="drawer-caption">Photo Title</Label>
-                    <Input
-                      id="drawer-caption"
-                      name="caption"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder="e.g. Elegant White Wedding Cake"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="drawer-alt">Google / Accessibility Description</Label>
-                    <Textarea
-                      id="drawer-alt"
-                      name="altText"
-                      value={altText}
-                      onChange={(e) => setAltText(e.target.value)}
-                      placeholder="Describe the image so Google and visually impaired clients can read it."
-                      className="min-h-16"
-                    />
-                  </div>
-
-                  <label className="flex items-center gap-3 rounded-xl border border-charcoal/8 bg-ivory/40 px-4 py-3 text-sm text-charcoal/74 cursor-pointer hover:bg-ivory/60 transition">
-                    <input
-                      type="checkbox"
-                      name="featured"
-                      checked={featured}
-                      onChange={(e) => setFeatured(e.target.checked)}
-                      className="h-4 w-4 rounded border-charcoal/20 text-charcoal focus:ring-gold/20"
-                    />
-                    <span>
-                      <span className="block font-medium text-charcoal">Fallback homepage/gallery highlight</span>
-                      <span className="mt-1 block text-xs leading-5 text-charcoal/58">
-                        Major site placements are controlled in Website Sections below.
-                      </span>
-                    </span>
-                  </label>
-                </div>
-
-                {/* Section 2: Where This Photo Shows */}
-                <div className="space-y-5 rounded-2xl border border-charcoal/10 bg-white p-5">
-                  <h3 className="text-xs font-semibold uppercase tracking-[0.15em] text-charcoal/50 border-b border-charcoal/5 pb-2">
-                    2. Where This Photo Shows
-                  </h3>
-
-                  {/* Categories checkboxes */}
-                  <div className="space-y-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-charcoal/45">
-                      Gallery categories
-                    </p>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {categories.filter(c => c.slug !== 'celebration').map((cat) => {
-                        const isChecked = categoriesSelected.has(cat.id);
-                        return (
-                          <label
-                            key={cat.id}
-                            className={`flex items-start gap-2.5 rounded-xl border p-2.5 text-xs text-charcoal/74 cursor-pointer hover:bg-ivory/20 transition ${
-                              isChecked ? "border-charcoal/20 bg-ivory/10" : "border-charcoal/8 bg-white"
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              name="galleryCategoryIds"
-                              value={cat.id}
-                              checked={isChecked}
-                              onChange={() => handleCategoryToggle(cat.id)}
-                              className="mt-0.5 h-3.5 w-3.5 rounded border-charcoal/20 text-charcoal focus:ring-gold/20"
-                            />
-                            <div>
-                              <span className="block font-semibold text-charcoal">{cat.name}</span>
-                              {cat.description && (
-                                <span className="block text-[10px] text-charcoal/52 line-clamp-1">
-                                  {cat.description}
-                                </span>
-                              )}
-                            </div>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Placements checkboxes */}
-                  <div className="space-y-3 border-t border-charcoal/5 pt-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-charcoal/45">
-                      Website sections and placements
-                    </p>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {placements.map((placement) => {
-                        const isChecked = placementsSelected.has(placement.key);
-                        return (
-                          <label
-                            key={placement.key}
-                            className={`flex items-start gap-2.5 rounded-xl border p-2.5 text-xs text-charcoal/74 cursor-pointer hover:bg-ivory/20 transition ${
-                              isChecked ? "border-charcoal/20 bg-ivory/10" : "border-charcoal/8 bg-white"
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              name="pagePlacementKeys"
-                              value={placement.key}
-                              checked={isChecked}
-                              onChange={() => handlePlacementToggle(placement.key)}
-                              className="mt-0.5 h-3.5 w-3.5 rounded border-charcoal/20 text-charcoal focus:ring-gold/20"
-                            />
-                            <div>
-                              <span className="block font-semibold text-charcoal">{placement.label}</span>
-                              <span className="block text-[10px] text-charcoal/52">
-                                {placement.description}
-                              </span>
-                            </div>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Section 3: Display Order */}
-                <div className="space-y-4 rounded-2xl border border-charcoal/10 bg-white p-5">
-                  <div className="flex items-center justify-between border-b border-charcoal/5 pb-2">
-                    <h3 className="text-xs font-semibold uppercase tracking-[0.15em] text-charcoal/50">
-                      3. Display Order
-                    </h3>
-                    <span className="inline-flex items-center gap-1 text-[10px] text-charcoal/58 bg-ivory px-2 py-0.5 rounded-md font-medium">
-                      <Info className="h-3 w-3" /> Lower numbers show first
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-charcoal/60 leading-normal">
-                    Determine sorting priority. Assign order priorities below for the specific views this photo is enabled on.
-                  </p>
-
-                  <div className="space-y-3">
-                    {/* Active Categories ordering */}
-                    {categories.filter((cat) => categoriesSelected.has(cat.id)).map((cat) => {
-                      const storedVal = categoryOrders[cat.id] ?? cat.display_order;
-                      const assignedAssetsCount = websiteAssets.filter((asset) =>
-                        asset.categoryAssignments.some((ca) => ca.categoryId === cat.id)
-                      ).length;
-                      const hasThisAsset = selectedAsset.categoryAssignments.some((ca) => ca.categoryId === cat.id);
-                      const totalCount = hasThisAsset ? assignedAssetsCount : assignedAssetsCount + 1;
-                      const uiPosition = convertStoredOrderToUiPosition(storedVal, totalCount);
-
-                      return (
-                        <div
-                          key={`order-cat-${cat.id}`}
-                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-charcoal/8 bg-ivory/30 px-3 py-2.5 text-xs"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <span className="font-semibold text-charcoal block truncate">Position in {cat.name}</span>
-                            <span className="text-[10px] text-charcoal/50 block">Shows as item {uiPosition} of {totalCount} in the gallery</span>
-                          </div>
-                          {totalCount <= 1 ? (
-                            <span className="text-xs text-charcoal/50 italic py-1">
-                              Only one image in this set — no ordering needed.
-                            </span>
-                          ) : (
-                            <div className="flex items-center gap-3">
-                              <input
-                                id={`categoryOrder-${cat.id}`}
-                                type="range"
-                                min="1"
-                                max={totalCount}
-                                step="1"
-                                value={uiPosition}
-                                onChange={(e) => handleCategoryOrderChange(cat.id, convertUiPositionToStoredOrder(parseInt(e.target.value) || 1))}
-                                className="accent-charcoal flex-1 sm:w-32"
-                              />
-                              <input
-                                type="hidden"
-                                name={`categoryOrder.${cat.id}`}
-                                value={storedVal}
-                              />
-                              <span className="w-16 text-right tabular-nums text-charcoal/70 font-medium">
-                                {uiPosition} of {totalCount}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-
-                    {/* Active Sections ordering */}
-                    {placements.filter((placement) => placementsSelected.has(placement.key) && !isSingleSlotMediaPlacement(placement.key)).map((placement) => {
-                      const storedVal = placementOrders[placement.key] ?? 10;
-                      const assignedAssetsCount = websiteAssets.filter((asset) =>
-                        asset.pageAssignments.some((pa) => pa.placementKey === placement.key)
-                      ).length;
-                      const hasThisAsset = selectedAsset.pageAssignments.some((pa) => pa.placementKey === placement.key);
-                      const totalCount = hasThisAsset ? assignedAssetsCount : assignedAssetsCount + 1;
-                      const uiPosition = convertStoredOrderToUiPosition(storedVal, totalCount);
-
-                      return (
-                        <div
-                          key={`order-placement-${placement.key}`}
-                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-charcoal/8 bg-ivory/30 px-3 py-2.5 text-xs"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <span className="font-semibold text-charcoal block truncate">Position in {placement.label}</span>
-                            <span className="text-[10px] text-charcoal/50 block">Shows as item {uiPosition} of {totalCount} in this section</span>
-                          </div>
-                          {totalCount <= 1 ? (
-                            <span className="text-xs text-charcoal/50 italic py-1">
-                              Only one image in this set — no ordering needed.
-                            </span>
-                          ) : (
-                            <div className="flex items-center gap-3">
-                              <input
-                                id={`placementOrder-${placement.key}`}
-                                type="range"
-                                min="1"
-                                max={totalCount}
-                                step="1"
-                                value={uiPosition}
-                                onChange={(e) => handlePlacementOrderChange(placement.key, convertUiPositionToStoredOrder(parseInt(e.target.value) || 1))}
-                                className="accent-charcoal flex-1 sm:w-32"
-                              />
-                              <input
-                                type="hidden"
-                                name={`placementOrder.${placement.key}`}
-                                value={storedVal}
-                              />
-                              <span className="w-16 text-right tabular-nums text-charcoal/70 font-medium">
-                                {uiPosition} of {totalCount}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-
-                    {/* Fallback when no orderable categories or placements are selected */}
-                    {categories.filter((cat) => categoriesSelected.has(cat.id)).length === 0 &&
-                      placements.filter((placement) => placementsSelected.has(placement.key) && !isSingleSlotMediaPlacement(placement.key)).length === 0 && (
-                        <p className="text-xs text-center text-charcoal/50 bg-ivory/50 border border-charcoal/10 py-3 rounded-xl select-none">
-                          Enable at least one multi-image Category or Section above to configure its display order.
-                        </p>
+                {/* Section 1: Details */}
+                <details className="group rounded-2xl border border-charcoal/10 bg-white/70 p-4 shadow-sm" open>
+                  <summary className="flex cursor-pointer list-none items-center justify-between text-xs font-semibold uppercase tracking-[0.15em] text-charcoal/50 [&::-webkit-details-marker]:hidden select-none">
+                    <span>1. Details</span>
+                    <span className="text-[10px] text-gold font-bold group-open:hidden">Show</span>
+                    <span className="text-[10px] text-charcoal/40 font-bold hidden group-open:inline">Hide</span>
+                  </summary>
+                  <div className="mt-4 space-y-5 pt-3 border-t border-charcoal/5">
+                    {/* Read-only Current Context Section */}
+                    <div className="rounded-xl border border-gold/20 bg-gold/5 p-3 text-sm text-charcoal/80 space-y-2">
+                      <p className="font-semibold text-charcoal flex items-center gap-1.5"><Info className="h-4 w-4 text-gold"/> Where this photo currently appears</p>
+                      {selectedAsset.pageAssignments.length > 0 || selectedAsset.categoryAssignments.length > 0 || selectedAsset.featured ? (
+                        <ul className="list-disc pl-5 space-y-1 mt-1 text-charcoal/70">
+                          {selectedAsset.pageAssignments.map((assignment) => (
+                            <li key={assignment.placementKey}>
+                              {getMediaPlacementBadgeLabel(assignment.placementKey, placements)}
+                            </li>
+                          ))}
+                          {selectedAsset.categoryAssignments.map((catAssignment) => {
+                            const catName = categories.find(c => c.id === catAssignment.categoryId)?.name ?? "Unknown Category";
+                            return <li key={catAssignment.categoryId}>Public Gallery ({catName})</li>;
+                          })}
+                          {selectedAsset.featured && <li>Highlighted generally (Featured)</li>}
+                        </ul>
+                      ) : (
+                        <p className="pl-1 italic">This photo is currently unassigned and hidden.</p>
                       )}
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="drawer-caption">Photo Title</Label>
+                      <Input
+                        id="drawer-caption"
+                        name="caption"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="e.g. Elegant White Wedding Cake"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="drawer-alt">Google / Accessibility Description</Label>
+                      <Textarea
+                        id="drawer-alt"
+                        name="altText"
+                        value={altText}
+                        onChange={(e) => setAltText(e.target.value)}
+                        placeholder="Describe the image so Google and visually impaired clients can read it."
+                        className="min-h-16"
+                      />
+                    </div>
+
+                    <div className="space-y-3 pt-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-charcoal/45">
+                        Actual Product Category
+                      </p>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {categories.filter(c => c.slug !== 'celebration').map((cat) => {
+                          const isChecked = categoriesSelected.has(cat.id);
+                          return (
+                            <label
+                              key={cat.id}
+                              className={`flex items-start gap-2.5 rounded-xl border p-2.5 text-xs text-charcoal/74 cursor-pointer hover:bg-ivory/20 transition ${
+                                isChecked ? "border-charcoal/20 bg-ivory/10" : "border-charcoal/8 bg-white"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                name="galleryCategoryIds"
+                                value={cat.id}
+                                checked={isChecked}
+                                onChange={() => handleCategoryToggle(cat.id)}
+                                className="mt-0.5 h-3.5 w-3.5 rounded border-charcoal/20 text-charcoal focus:ring-gold/20"
+                              />
+                              <div>
+                                <span className="block font-semibold text-charcoal">{cat.name}</span>
+                                {cat.description && (
+                                  <span className="block text-[10px] text-charcoal/52 line-clamp-1">
+                                    {cat.description}
+                                  </span>
+                                )}
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </details>
+
+                {/* Section 2: Where This Photo Appears */}
+                <details className="group rounded-2xl border border-charcoal/10 bg-white/70 p-4 shadow-sm">
+                  <summary className="flex cursor-pointer list-none items-center justify-between text-xs font-semibold uppercase tracking-[0.15em] text-charcoal/50 [&::-webkit-details-marker]:hidden select-none">
+                    <span>2. Where This Photo Appears</span>
+                    <span className="text-[10px] text-gold font-bold group-open:hidden">Show</span>
+                    <span className="text-[10px] text-charcoal/40 font-bold hidden group-open:inline">Hide</span>
+                  </summary>
+                  <div className="mt-4 space-y-5 pt-3 border-t border-charcoal/5">
+                    <div className="space-y-3">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-charcoal/45">
+                        Website sections and placements
+                      </p>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {placements.map((placement) => {
+                          const isChecked = placementsSelected.has(placement.key);
+                          return (
+                            <label
+                              key={placement.key}
+                              className={`flex items-start gap-2.5 rounded-xl border p-2.5 text-xs text-charcoal/74 cursor-pointer hover:bg-ivory/20 transition ${
+                                isChecked ? "border-charcoal/20 bg-ivory/10" : "border-charcoal/8 bg-white"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                name="pagePlacementKeys"
+                                value={placement.key}
+                                checked={isChecked}
+                                onChange={() => handlePlacementToggle(placement.key)}
+                                className="mt-0.5 h-3.5 w-3.5 rounded border-charcoal/20 text-charcoal focus:ring-gold/20"
+                              />
+                              <div>
+                                <span className="block font-semibold text-charcoal">{placement.label}</span>
+                                <span className="block text-[10px] text-charcoal/52">
+                                  {placement.description}
+                                </span>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-charcoal/5">
+                      <label className="flex items-center gap-3 rounded-xl border border-charcoal/8 bg-ivory/40 px-4 py-3 text-sm text-charcoal/74 cursor-pointer hover:bg-ivory/60 transition">
+                        <input
+                          type="checkbox"
+                          name="featured"
+                          checked={featured}
+                          onChange={(e) => setFeatured(e.target.checked)}
+                          className="h-4 w-4 rounded border-charcoal/20 text-charcoal focus:ring-gold/20"
+                        />
+                        <span>
+                          <span className="block font-medium text-charcoal">Fallback homepage/gallery highlight</span>
+                          <span className="mt-1 block text-xs leading-5 text-charcoal/58">
+                            Used if specific sections above are not assigned.
+                          </span>
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                </details>
+
+                {/* Section 3: Photo Order */}
+                <details className="group rounded-2xl border border-charcoal/10 bg-white/70 p-4 shadow-sm">
+                  <summary className="flex cursor-pointer list-none items-center justify-between text-xs font-semibold uppercase tracking-[0.15em] text-charcoal/50 [&::-webkit-details-marker]:hidden select-none">
+                    <span>3. Photo Order</span>
+                    <span className="text-[10px] text-gold font-bold group-open:hidden">Show</span>
+                    <span className="text-[10px] text-charcoal/40 font-bold hidden group-open:inline">Hide</span>
+                  </summary>
+                  <div className="mt-4 space-y-4 pt-3 border-t border-charcoal/5">
+                    <div className="flex items-center justify-between pb-2">
+                      <p className="text-xs text-charcoal/60 leading-normal max-w-[80%]">
+                        Determine sorting priority for the sections this photo is enabled on.
+                      </p>
+                      <span className="inline-flex items-center gap-1 text-[10px] text-charcoal/58 bg-ivory px-2 py-0.5 rounded-md font-medium shrink-0">
+                        <Info className="h-3 w-3" /> Lower = First
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {/* Active Categories ordering */}
+                      {categories.filter((cat) => categoriesSelected.has(cat.id)).map((cat) => {
+                        const storedVal = categoryOrders[cat.id] ?? cat.display_order;
+                        const assignedAssetsCount = websiteAssets.filter((asset) =>
+                          asset.categoryAssignments.some((ca) => ca.categoryId === cat.id)
+                        ).length;
+                        const hasThisAsset = selectedAsset.categoryAssignments.some((ca) => ca.categoryId === cat.id);
+                        const totalCount = hasThisAsset ? assignedAssetsCount : assignedAssetsCount + 1;
+                        const uiPosition = convertStoredOrderToUiPosition(storedVal, totalCount);
+
+                        return (
+                          <div
+                            key={`order-cat-${cat.id}`}
+                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-charcoal/8 bg-ivory/30 px-3 py-2.5 text-xs"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <span className="font-semibold text-charcoal block truncate">Position in {cat.name}</span>
+                              <span className="text-[10px] text-charcoal/50 block">Shows as item {uiPosition} of {totalCount} in the gallery</span>
+                            </div>
+                            {totalCount <= 1 ? (
+                              <span className="text-xs text-charcoal/50 italic py-1">
+                                Only one image in this set — no ordering needed.
+                              </span>
+                            ) : (
+                              <div className="flex items-center gap-3">
+                                <input
+                                  id={`categoryOrder-${cat.id}`}
+                                  type="range"
+                                  min="1"
+                                  max={totalCount}
+                                  step="1"
+                                  value={uiPosition}
+                                  onChange={(e) => handleCategoryOrderChange(cat.id, convertUiPositionToStoredOrder(parseInt(e.target.value) || 1))}
+                                  className="accent-charcoal flex-1 sm:w-32"
+                                />
+                                <input
+                                  type="hidden"
+                                  name={`categoryOrder.${cat.id}`}
+                                  value={storedVal}
+                                />
+                                <span className="w-16 text-right tabular-nums text-charcoal/70 font-medium">
+                                  {uiPosition} of {totalCount}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {/* Active Sections ordering */}
+                      {placements.filter((placement) => placementsSelected.has(placement.key) && !isSingleSlotMediaPlacement(placement.key)).map((placement) => {
+                        const storedVal = placementOrders[placement.key] ?? 10;
+                        const assignedAssetsCount = websiteAssets.filter((asset) =>
+                          asset.pageAssignments.some((pa) => pa.placementKey === placement.key)
+                        ).length;
+                        const hasThisAsset = selectedAsset.pageAssignments.some((pa) => pa.placementKey === placement.key);
+                        const totalCount = hasThisAsset ? assignedAssetsCount : assignedAssetsCount + 1;
+                        const uiPosition = convertStoredOrderToUiPosition(storedVal, totalCount);
+
+                        return (
+                          <div
+                            key={`order-placement-${placement.key}`}
+                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-charcoal/8 bg-ivory/30 px-3 py-2.5 text-xs"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <span className="font-semibold text-charcoal block truncate">Position in {placement.label}</span>
+                              <span className="text-[10px] text-charcoal/50 block">Shows as item {uiPosition} of {totalCount} in this section</span>
+                            </div>
+                            {totalCount <= 1 ? (
+                              <span className="text-xs text-charcoal/50 italic py-1">
+                                Only one image in this set — no ordering needed.
+                              </span>
+                            ) : (
+                              <div className="flex items-center gap-3">
+                                <input
+                                  id={`placementOrder-${placement.key}`}
+                                  type="range"
+                                  min="1"
+                                  max={totalCount}
+                                  step="1"
+                                  value={uiPosition}
+                                  onChange={(e) => handlePlacementOrderChange(placement.key, convertUiPositionToStoredOrder(parseInt(e.target.value) || 1))}
+                                  className="accent-charcoal flex-1 sm:w-32"
+                                />
+                                <input
+                                  type="hidden"
+                                  name={`placementOrder.${placement.key}`}
+                                  value={storedVal}
+                                />
+                                <span className="w-16 text-right tabular-nums text-charcoal/70 font-medium">
+                                  {uiPosition} of {totalCount}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {/* Fallback when no orderable categories or placements are selected */}
+                      {categories.filter((cat) => categoriesSelected.has(cat.id)).length === 0 &&
+                        placements.filter((placement) => placementsSelected.has(placement.key) && !isSingleSlotMediaPlacement(placement.key)).length === 0 && (
+                          <p className="text-xs text-center text-charcoal/50 bg-ivory/50 border border-charcoal/10 py-3 rounded-xl select-none">
+                            Enable at least one multi-image Category or Section above to configure its display order.
+                          </p>
+                        )}
+                    </div>
+                  </div>
+                </details>
 
                 {/* Section 4: Advanced */}
                 <details className="group rounded-2xl border border-charcoal/10 bg-white/70 p-4 shadow-sm">

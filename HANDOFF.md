@@ -1,3 +1,28 @@
+## Admin Media Edit Drawer Density & Usability Pass — 2026-06-13
+
+- **Implementation branch**: `codex/streamline-admin-media-drawer`
+- **Current objective**: Make the admin media edit experience faster, less scrolly, and more owner-friendly.
+- **Starting status**: Started from `main` with tracked files clean. Pre-existing untracked files were preserved (`.agents/`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `skills-lock.json`).
+- **Files changed**:
+  - `src/components/admin/media-library-manager.tsx`
+- **Implementation completed**:
+  - Refactored the UI from long vertical sections into compact `<details>` accordions to heavily reduce scrolling.
+  - Section 1 ("Details") now groups Title, Alt text, and Actual Product Category controls. Set to open by default.
+  - Section 2 ("Where This Photo Appears") now groups Website sections and the Fallback homepage highlight toggle.
+  - Section 3 ("Photo Order") retains the dynamic ordering controls but stays closed until needed.
+  - Section 4 ("Advanced / Technical Details" & Danger Zone) retained its safe, closed-by-default behavior.
+  - DIY Kits remains fully supported and treated logically with other product categories.
+  - Celebration category is actively hidden from category toggles to prevent owner confusion, ensuring only active product offerings are assignable.
+  - Preserved all Supabase logic, state shape, mobile viewport behavior, and dirty/clean "Save Changes" sticky footer handling.
+- **Data & Architecture Note**: No Supabase schema changes or media architecture changes were made. No customer-facing gallery behavior was intentionally changed.
+- **Verification performed**:
+  - `npm run lint` — Passed.
+  - `npm run typecheck` — Passed.
+  - `npm test` — Passed.
+  - `npm run build` — Passed.
+  - `git diff --check` — Passed.
+- **Known limitations / follow-up**: None.
+
 ## Separate Homepage Hero and Gallery Teaser Placements — 2026-06-13
 
 - **Implementation branch**: `codex/separate-homepage-hero-gallery-teaser`
