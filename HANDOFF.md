@@ -1,8 +1,10 @@
 ## Admin Media UX Fixes (Pass 2) — 2026-06-13
 
-- **Current branch**: `main`
+- **Implementation branch**: `codex/admin-media-qa-fixes`
+- **Starting commit from main**: `e96e51d6e4a37d2cf552823c074684465e561006`
+- **Commit hash for this pass**: `a690d01` (before final cleanup pass)
+- **Final status of verification**: All gates passed (`npm run lint`, `npm run typecheck`, `npm run build`, `npm test`, `git diff --check`).
 - **Current objective**: Fix admin media category/order UX issues, implement stale placement reminders, add conflict warnings, consolidate "Celebration" category into "Custom Cakes", and add DIY Kits category support.
-- **Starting branch**: `main`.
 - **Files modified**:
   - `src/app/admin/(protected)/media/actions.ts`
   - `src/components/admin/media-library-manager.tsx`
@@ -11,6 +13,8 @@
   - `src/lib/admin/media-placement-utils.ts`
   - `src/lib/admin/site-management.ts`
   - `src/lib/site/product-media.ts`
+- **Known Limitations**:
+  - **Display Order Slider**: The display order slider in the admin media editor uses a fixed range of 10 to 200 (step 10) rather than being dynamically calculated based on the active count of items in each category. This is an intentional design choice to provide predictable spacing and quick placement adjustments, allowing the owner to leave gaps for later additions.
 - **Implementation completed**:
   - **Save Behavior**: Ensured all dynamically tracked states trigger `hasChanges` to keep the Save button active and sticky on mobile.
   - **Stale Placements**: Added logic in `getPlacementWarnings` to warn if a prominent image hasn't changed in 90 days. Built an "Acknowledge" button which updates `metadata.stale_acknowledged_at` to snooze the warning.
@@ -22,9 +26,9 @@
 - **Verification performed**:
   - `npm run typecheck` — Passed.
   - `npm run lint` — Passed.
-  - `npm test` — Passed for the placement utils node tests.
+  - `npm test` — Passed.
 - **Next steps**:
-  - Need owner confirmation of the UI updates.
+  - Merge the branch into `main` and push to production.
 
 ## Product Page Media UX + Admin Placement Clarity — 2026-06-13
 

@@ -136,7 +136,7 @@ export function getPlacementWarnings(
     for (const assignment of asset.pageAssignments) {
       const list = assignedPlacements.get(assignment.placementKey) ?? [];
       
-      const assignedAtStr = (assignment.metadata?.assigned_at as string | undefined) ?? assignment.createdAt;
+      const assignedAtStr = (assignment.metadata?.assigned_at as string | undefined) ?? assignment.createdAt ?? assignment.updatedAt;
       const assignedAtDate = assignedAtStr ? new Date(assignedAtStr) : new Date();
       const ageMs = now - assignedAtDate.getTime();
       const isStale = ageMs > NINETY_DAYS_MS;

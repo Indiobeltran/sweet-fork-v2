@@ -131,4 +131,76 @@ describe("admin media placement semantics", () => {
       "gallery-only",
     ]);
   });
+
+  it("determines assignment age prioritizing assigned_at, then createdAt, then updatedAt", () => {
+    const staleDateStr = new Date(Date.now() - 95 * 24 * 60 * 60 * 1000).toISOString();
+    const freshDateStr = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+
+    // Case 1: metadata.assigned_at is fresh, but createdAt and updatedAt are stale -> should NOT be stale
+    const warnings1 = getPlacementWarnings(
+      [{
+        id: "asset-1",
+        pageAssignments: [{
+          assignmentId: "a1",
+          displayOrder: 10,
+          placementKey: "product.hero.custom-cakes",
+          createdAt: staleDateStr,
+          updatedAt: staleDateStr,
+          metadata: { assigned_at: freshDateStr }
+        }]
+      }],
+      placementDefinitions
+    );
+    assert.equal(warnings1.filter(w => w.type === "stale").length, 0);
+
+    // Case 2: metadata.assigned_at is missing, createdAt is fresh, updatedAt is stale -> should NOT be stale
+    const warnings2 = getPlacementWarnings(
+      [{
+        id: "asset-1",
+        pageAssignments: [{
+          assignmentId: "a1",
+          displayOrder: 10,
+          placementKey: "product.hero.custom-cakes",
+          createdAt: freshDateStr,
+          updatedAt: staleDateStr,
+        }]
+      }],
+      placementDefinitions
+    );
+    assert.equal(warnings2.filter(w => w.type === "stale").length, 0);
+
+    // Case 3: metadata.assigned_at and createdAt are missing, updatedAt is fresh -> should NOT be stale
+    const warnings3 = getPlacementWarnings(
+      [{
+        id: "asset-1",
+        pageAssignments: [{
+          assignmentId: "a1",
+          displayOrder: 10,
+          placementKey: "product.hero.custom-cakes",
+          updatedAt: freshDateStr,
+        }]
+      }],
+      placementDefinitions
+    );
+    assert.equal(warnings3.filter(w => w.type === "stale").length, 0);
+
+    // Case 4: metadata.assigned_at is stale, but stale_acknowledged_at is within 90 days -> should NOT be stale
+    const warnings4 = getPlacementWarnings(
+      [{
+        id: "asset-1",
+        pageAssignments: [{
+          assignmentId: "a1",
+          displayOrder: 10,
+          placementKey: "product.hero.custom-cakes",
+          createdAt: staleDateStr,
+          metadata: {
+            assigned_at: staleDateStr,
+            stale_acknowledged_at: freshDateStr
+          }
+        }]
+      }],
+      placementDefinitions
+    );
+    assert.equal(warnings4.filter(w => w.type === "stale").length, 0);
+  });
 });
