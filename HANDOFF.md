@@ -1,3 +1,43 @@
+## Phase 7 Product Page Practical Copy — 2026-06-13
+
+- **Branch**: `codex/product-page-practical-copy`
+- **Pre-change status**: Started from `main` aligned with `origin/main` at `e609459` (`fix: improve admin order detail workflow`). Tracked files clean. Pre-existing untracked files preserved: `.agents/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `skills-lock.json`.
+- **Scope confirmed**: Phase 7 — Product Page Practical Copy only. A targeted public copy/content pass to strengthen practical buying information on product/service pages. No layout redesign, no inquiry-form behavior changes, no pricing architecture changes, no admin changes, no Supabase schema/database changes, no gallery import / DNS / deployment changes.
+- **Content architecture confirmed**: All customer-facing product/service descriptive copy lives in `productPageContent` in `src/lib/content/site-content.ts` (per-slug `intro`, `heroStatement`, `availabilityNote`, `detailBullets[]`, `pricingContext`, `faq[]`). `getPublicProductPageData()` in `src/lib/site/marketing.ts` uses this as the source of truth; Supabase only overrides `shortTitle`/`metadataTitle`/`metadataDescription`/`heroImage` when products are configured, so the practical copy is owned by the content file. `ProductPageTemplate` (`src/components/site/product-page-template.tsx`) renders all `detailBullets` and `faq` items, so adding entries needed no template/layout change. Product CTAs (`src/lib/site/cta.ts`) are already product-specific and route to the `/start-order` inquiry flow (Phase 4 work) — copy was aligned to that, not changed.
+- **Product pages/content areas reviewed**: Custom Cakes, Wedding Cakes, Cupcakes, Sugar Cookies, Macarons, DIY Kits (the six active categories). Verified no `Celebration` product category exists — all `celebration`/`Celebration` references are lowercase descriptors ("celebration cakes") or pricing labels, not a category.
+- **Practical copy improvements by category**:
+  - **Custom Cakes**: Added a "what to share in your inquiry" detail bullet (guest count, event date, color/theme, flavor preferences, inspiration photos) and two FAQs — a "How does ordering work?" answer that reinforces the custom-quote → deposit flow and explicitly avoids instant-checkout language, plus a pickup/local-delivery/no-shipping FAQ.
+  - **Wedding Cakes**: Added a wedding-planning detail bullet (date, venue/delivery location, guest count, style inspiration) and extended the tasting FAQ to set tasting/consultation expectations (flavors, servings, design direction) while preserving the careful, non-guaranteed credit wording.
+  - **Cupcakes**: Added a warm pickup/local-delivery FAQ with no-shipping note; left the rest light and simple.
+  - **Sugar Cookies**: Added a "what to share" detail bullet (date, quantity by the dozen, theme/palette, packaging/favor needs) and a pickup/local-delivery FAQ clarifying that favors and gift sets are local pickup/delivery only (no shipping).
+  - **Macarons**: Added a gifting/dessert-table/favor assortment detail bullet; softened the flavor FAQ so availability does not read as fixed ("core flavors … with seasonal and custom flavors when availability allows … confirmed for your date"); added a pickup/local-delivery/no-shipping FAQ.
+  - **DIY Kits**: Strengthened year-round, farmers-market, and vendor-event positioning in the intro, hero statement, availability note, a new detail bullet (markets/pop-ups, larger batches, local pickup for a booth or party), and a new "seasonal or year-round?" FAQ. Removed any seasonal-only/deprecated implication.
+- **Wedding tasting copy changes**: Extended only — tasting boxes remain "available at a cost" and credit remains "may sometimes be credited," with an added sentence describing the planning conversation. No guarantee of a credit was introduced.
+- **DIY Kits positioning changes**: Now explicitly framed as active year-round and bolstered for farmers markets / vendor events, parties, classrooms, family activities, and local pickup — per the business direction to grow this line.
+- **Local fulfillment consistency**: Pickup-in-Centerville + local delivery across Davis / Salt Lake / nearby Weber County + "does not currently ship" added where natural (cakes, cupcakes, cookies, macarons). Not keyword-stuffed; delivery framed as quoted by distance/date/order details.
+- **Files changed**:
+  - `src/lib/content/site-content.ts` (product page practical copy only)
+  - `HANDOFF.md`
+- **Tests**: None added or changed. Existing tests do not assert on product page body copy (the product-media test asserts slug→gallery-category mapping, which is unaffected). No new test infrastructure was warranted for static copy.
+- **Verification performed**:
+  - `npm run lint` — Passed.
+  - `npm run typecheck` — Passed.
+  - `npm test` — Passed (34/34).
+  - `npm run build` — Passed; all six product routes prerender statically.
+  - `git diff --check` — Clean.
+  - `git status --short` — Only `src/lib/content/site-content.ts` (+ `HANDOFF.md`) modified.
+- **Guardrails confirmed**:
+  - No Supabase schema / database / migration changes.
+  - No inquiry / order / media / pricing database-architecture changes.
+  - No customer-facing inquiry-form field or behavior changes.
+  - No admin pages changed.
+  - No public-page redesign or component-structure change (content-only edits to an existing data file).
+  - No gallery import / DNS / deployment-settings changes.
+  - No `Celebration` product category introduced.
+  - Pre-existing untracked files preserved.
+- **Remaining risks / follow-up**: Visual/copy QA on the Netlify deploy — confirm the added FAQ rows and detail bullets render cleanly on mobile, the new pickup/delivery language is not repetitive across consecutive sections, and the DIY year-round/vendor framing reads as intended. Consider, in a later content pass, mirroring the same per-product fulfillment clarity into Supabase `products` long descriptions if/when those are populated.
+- **Next recommended phase**: Phase 8 — Inquiry Wizard Refactor.
+
 ## Phase 6 Order Detail Workflow — 2026-06-13
 
 - **Branch**: `codex/order-detail-workflow`
