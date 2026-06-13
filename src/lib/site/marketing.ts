@@ -1005,6 +1005,25 @@ async function getOfferingImagesBySlug(slugs: string[]) {
   return resolvedImagesBySlug;
 }
 
+async function getProductPageContentWithApprovedHero(
+  slug: string,
+  content: ProductPageContent,
+): Promise<ProductPageContent> {
+  const approvedHero = (await getGalleryFallbackOfferingImagesBySlug([slug])).get(slug);
+
+  if (!approvedHero?.imageUrl) {
+    return content;
+  }
+
+  return {
+    ...content,
+    heroImage: {
+      alt: approvedHero.alt,
+      src: approvedHero.imageUrl,
+    },
+  };
+}
+
 const getPublicProductRows = cache(async function getPublicProductRows(): Promise<ProductRow[] | null> {
   if (!isSupabaseConfigured()) {
     return null;
@@ -1122,7 +1141,7 @@ export async function getPublicProductPageData(slug: string) {
 
   if (activeProducts === null) {
     return {
-      content: fallback,
+      content: await getProductPageContentWithApprovedHero(slug, fallback),
       metadataDescription: fallback.intro,
       metadataTitle: fallback.shortTitle,
     };
@@ -1135,10 +1154,10 @@ export async function getPublicProductPageData(slug: string) {
   }
 
   return {
-    content: {
+    content: await getProductPageContentWithApprovedHero(slug, {
       ...fallback,
       shortTitle: product.name,
-    },
+    }),
     metadataDescription: product.short_description ?? product.long_description ?? fallback.intro,
     metadataTitle: product.name,
   };

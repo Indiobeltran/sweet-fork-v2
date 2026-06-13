@@ -2,6 +2,96 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Netlify Launch-Readiness Audit — 2026-06-13
+
+- **Objective**: Final Sweet Fork v2 Netlify launch-readiness audit before DNS/domain cutover. Do not move DNS or change domain records.
+- **Current branch**: `main`.
+- **Pre-audit working tree**:
+  - `git branch --show-current`: `main`.
+  - `git status --short`: tracked tree clean; protected untracked files present and preserved (`.agents/`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `skills-lock.json`).
+  - Latest commits at audit start: `7992067 docs: record final Netlify validation`, `70b1120 fix: restore gallery filters and tighten admin estimates`.
+- **Netlify/deployment config findings**:
+  - `netlify.toml` uses `npm run build` and publishes `.next`, which matches the current Next.js app deployment behavior on the live Netlify URL.
+  - `package.json` sets Node `24.x`; local build on the same repo succeeded.
+  - `next.config.ts` uses Next image optimization with remote patterns for `https://*.supabase.co`, AVIF/WebP formats, and security headers.
+  - No runtime code path requires Vercel-only APIs. Inquiry rate limiting reads Netlify `x-nf-client-connection-ip` first and keeps `x-vercel-forwarded-for` as a compatibility fallback.
+  - Live Netlify responses include expected CSP, frame protection, referrer policy, permissions policy, and content type headers. The live `.netlify.app` URL adds `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`; source config remains conservative, so re-check HSTS on the custom domain after domain assignment.
+- **Environment variable readiness checklist**:
+  - Required for Supabase-backed Netlify production: `NEXT_PUBLIC_SUPABASE_URL` plus either `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` or legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+  - Required for server-side inquiry/admin/media writes: privileged `SUPABASE_SECRET_KEY` or legacy `SUPABASE_SERVICE_ROLE_KEY`. Code verifies the key is privileged and fails closed if only a public key is present.
+  - Required/general site URL: `NEXT_PUBLIC_SITE_URL`; production code canonicalizes temporary `.vercel.app` and `.netlify.app` values back to `https://www.thesweetfork.com`.
+  - Optional inquiry flags: `INQUIRY_UPLOAD_ENABLED`, `INQUIRY_LINK_FALLBACK_ENABLED`, `SUPABASE_STORAGE_BUCKET`.
+  - Analytics/tracking env vars are not wired in current code.
+  - Square API env vars are not wired in current code; Square invoice fields are manual admin fields.
+  - `.env.local` remains ignored/untracked and contains local-only Codex QA admin credentials; do not print, commit, or push them.
+  - `.env.example` documents the Supabase/site/inquiry variables used by code.
+- **Customer-facing smoke findings before code fix**:
+  - Live Netlify URL `https://sweet-fork-v2.netlify.app` returned HTTP 200 for `/`, `/custom-cakes`, `/wedding-cakes`, `/cupcakes`, `/sugar-cookies`, `/macarons`, `/diy-kits`, `/pricing`, `/how-to-order`, `/gallery`, `/faq`, `/about`, `/start-order`, `/terms`, and `/privacy`.
+  - `/contact` is not an implemented route and correctly returned 404.
+  - `/gallery` showed category assignment counts Custom Cakes 29, Sugar Cookies 22, Macarons 5, Cupcakes 13, Wedding Cakes 2, with 0 `gallery-batch-04-repaired` references.
+  - `/start-order` was not paused.
+  - Homepage had 0 `/placeholders/marketing` references.
+  - Product/category pages still referenced static `/placeholders/marketing` hero images; treated as a launch-readiness issue because approved Supabase gallery media exists.
+- **Code fix made during audit**:
+  - Updated `src/lib/site/marketing.ts` so product/category page hero images prefer approved category-matched Supabase gallery media and fall back to static placeholders only if no approved media is available.
+  - Local build output confirmed all six product pages now have 0 `/placeholders/marketing` references and Supabase marketing media references.
+  - No Supabase schema changes, storage mutations, import scripts, or inquiry/order data mutations were performed.
+- **Analytics/SEO findings**:
+  - `robots.txt` is present, allows public crawling, and disallows `/admin` and `/api`.
+  - `sitemap.xml` is present with 15 URLs and includes `/gallery` and `/start-order`.
+  - Public routes have titles, descriptions, and canonical URLs for `https://www.thesweetfork.com`.
+  - Google Analytics, Microsoft Clarity, GTM, and conversion tracking are not implemented in code; this is a non-blocking business/marketing follow-up unless owner requires analytics before cutover.
+- **Inquiry/order workflow findings**:
+  - Inquiry submission persists to Supabase/admin when server-side Supabase env is configured; this was previously validated with deployed no-upload and one-upload inquiries.
+  - Current audit did not create another test inquiry to avoid unnecessary production QA data.
+  - Admin-facing estimates for known Netlify test inquiries were previously verified as sane (`$80 to $192`, not `$5,072`).
+  - Customer-facing inquiry flow does not expose internal quote logic as a final customer price.
+  - Transactional email delivery is not implemented; notification logs are internal/admin-only, and admin dashboard monitoring remains the operational source of truth.
+  - Square/payment workflow is manual admin recordkeeping only; no Square API integration is wired.
+- **Current DNS/custom-domain findings**:
+  - `dig` showed `thesweetfork.com` apex A record resolving to `75.2.60.5`.
+  - `dig` showed `www.thesweetfork.com` CNAME resolving to `regal-marzipan-c99724.netlify.app`, not `sweet-fork-v2.netlify.app`.
+  - `https://thesweetfork.com` currently returns a Netlify 301 to `https://www.thesweetfork.com/`.
+  - `https://www.thesweetfork.com` currently returns HTTP 200 from Netlify but serves a small static/older site, not this Next.js app.
+  - DNS/domain cutover is blocked until the custom domains are assigned to the correct Netlify site (`sweet-fork-v2`) and verified.
+- **DNS/domain cutover checklist**:
+  - Current validated Netlify app URL: `https://sweet-fork-v2.netlify.app`.
+  - Intended production domain from code: `https://www.thesweetfork.com`; apex/root should redirect to `www` or be configured consistently in Netlify.
+  - In Netlify for the `sweet-fork-v2` site, add/verify `www.thesweetfork.com` and `thesweetfork.com` under Domain management.
+  - Ensure `www` is the primary domain if the business wants canonical `https://www.thesweetfork.com`.
+  - For external DNS, Netlify docs recommend `www` as a CNAME to the site subdomain (`sweet-fork-v2.netlify.app`) and apex/root as ALIAS/ANAME/flattened CNAME to `apex-loadbalancer.netlify.com`, or fallback A record to `75.2.60.5` if the provider lacks ALIAS/ANAME/flattening.
+  - If Netlify reports High-Performance Edge/custom DNS details in the Pending DNS verification modal, use Netlify's customized values instead of the standard records.
+  - Keep existing MX/email records unchanged unless the business explicitly wants email changes.
+  - After propagation, verify SSL certificate issuance in Netlify and confirm both `https://thesweetfork.com` and `https://www.thesweetfork.com` load/redirect as intended.
+- **Post-cutover smoke checklist**:
+  - Verify `/`, `/gallery`, `/start-order`, `/pricing`, `/about`, product pages, `/terms`, `/privacy`, `/robots.txt`, and `/sitemap.xml`.
+  - Verify homepage and product page images are Supabase-backed, not placeholders.
+  - Verify gallery filters and lightbox.
+  - Verify `/start-order` is not paused; if submitting a test, use obvious QA identity and document the inquiry ID.
+  - Verify `/admin/login`, `/admin`, `/admin/inquiries`, `/admin/orders`, `/admin/media`, and known inquiry detail pages with local QA admin credentials.
+  - Verify no console/runtime errors and no unexpected CSP/image blocks.
+- **Rollback checklist**:
+  - If custom-domain traffic fails, revert DNS/custom-domain assignment to the previous known Netlify target (`regal-marzipan-c99724.netlify.app`) or previous DNS records captured by the domain owner.
+  - Keep `https://sweet-fork-v2.netlify.app` as the verified direct fallback URL while DNS propagates.
+  - Do not delete Supabase data/storage during rollback.
+  - Re-run the public/admin smoke checklist after rollback.
+- **Launch blockers**:
+  - Custom domain currently points/serves a different Netlify site (`regal-marzipan-c99724.netlify.app`), so DNS/domain cutover is not complete and should not be treated as done.
+- **Non-blocking follow-ups**:
+  - Implement transactional email delivery or Netlify Forms integration if owner requires email notifications instead of manual admin monitoring.
+  - Add analytics/conversion tracking only if the business wants launch metrics.
+  - Consider updating stale docs that still describe the project as Vercel-ready after the Netlify cutover is complete.
+- **Verification commands/results so far**:
+  - `npm test`: passed.
+  - `npm run lint`: passed.
+  - `npm run typecheck`: passed.
+  - `npm run build`: passed.
+  - `git diff --check`: passed.
+  - Build output check: product pages have 0 placeholder marketing refs; gallery counts remain 29/22/5/13/2.
+- **Commands still needed in this turn**:
+  - Stage/commit/push the product-page media fix and this handoff update after final diff checks.
+  - Wait for Netlify redeploy, then validate product pages, public flows, admin flows, and final status on `https://sweet-fork-v2.netlify.app`.
+
 ## Netlify Final Production-Readiness Fixes — 2026-06-12
 
 - **Objective**: Fix final Netlify production-readiness blockers before DNS/domain cutover: missing gallery category filters, homepage fallback imagery, and overly broad admin inquiry estimates.
