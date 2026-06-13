@@ -1,3 +1,39 @@
+## DIY Kits Hero Media Placement Verification — 2026-06-13
+
+- **Current branch**: `main`.
+- **Current objective**: Fix/verify the live `/diy-kits` hero image content override so the page uses an actual DIY kit image.
+- **Starting status**: Tracked files clean; unrelated untracked files preserved (`.agents/`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `skills-lock.json`).
+- **Code change needed**: No. Code fallback in `src/lib/content/site-content.ts` already points to the St. Patrick's Day DIY cookie kit image.
+- **Render path confirmed**: Product pages load `getProductPageData()` from `src/lib/site/marketing.ts`; `getProductPageContentWithApprovedHero()` calls `getProductHeroImagesBySlug()`, which reads `media_assignments` where `assignment_type='page'`, `page_key='product'`, `section_key='hero'`, and `slot_key='diy-kits'`. The first row by `display_order` overrides the code fallback.
+- **Supabase project**: `renjsmdsrzjnppqpaoaa` (`Sweet-Fork-V2`).
+- **Previous live image observed before verification**:
+  - Asset ID: `55ec286b-1bb8-420e-9491-b235b76a6b43`
+  - Caption: `Western Highland Cow Baby Shower Cookies`
+  - Storage path: `marketing/gallery-batch-03/sweet-fork-western-highland-cow-baby-shower-sugar-cookies-centerville-utah.jpg`
+  - Public URL: `https://renjsmdsrzjnppqpaoaa.supabase.co/storage/v1/object/public/marketing/marketing/gallery-batch-03/sweet-fork-western-highland-cow-baby-shower-sugar-cookies-centerville-utah.jpg`
+  - Current assignment status: Not assigned to `product.hero.diy-kits`; only assigned to `gallery.grid` and a gallery category.
+- **Current correct `product.hero.diy-kits` assignment**:
+  - Assignment ID: `d3c9eeba-5ec0-4be9-a933-d742f4307c19`
+  - Assignment keys: `assignment_type='page'`, `page_key='product'`, `section_key='hero'`, `slot_key='diy-kits'`
+  - Display order: `10`
+  - Asset ID: `6c0d5860-32b4-42c1-9a2a-d1395ccf586e`
+  - Caption: `St. Patrick's Day DIY Cookie Kit`
+  - Alt text: `St. Patrick's Day DIY cookie decorating kit with shamrock cookies, frosting bags, sprinkles, and decorating instructions.`
+  - Storage path: `marketing/gallery-batch-01/sweet-fork-st-patricks-day-diy-cookie-kit-centerville-utah.jpg`
+  - Public URL: `https://renjsmdsrzjnppqpaoaa.supabase.co/storage/v1/object/public/marketing/marketing/gallery-batch-01/sweet-fork-st-patricks-day-diy-cookie-kit-centerville-utah.jpg`
+  - Visibility metadata: `published`
+- **Database update performed**: None. Supabase already had exactly one intended `product.hero.diy-kits` assignment and it already pointed to the correct St. Patrick's Day DIY cookie kit asset at inspection time. No schema changes, no gallery/media duplicates, and no unrelated media assignments changed.
+- **Verification commands/results**:
+  - `git branch --show-current` — `main`.
+  - `git status --short` — tracked files clean before handoff edit; unrelated untracked files preserved.
+  - `git log --oneline -n 5 --decorate` — `c1fff61` at `main`/`origin/main` before this handoff update.
+  - Supabase SQL inspected `media_assignments` + `media_assets` for `product.hero.diy-kits` — exactly one row, pointing to `6c0d5860-32b4-42c1-9a2a-d1395ccf586e`.
+  - Supabase SQL searched DIY/kit image assets — found `St. Patrick's Day DIY Cookie Kit` and `Merry & Bright Christmas Cookie Kit`; St. Patrick's Day asset is the selected page hero.
+  - Supabase SQL inspected the western sugar-cookie asset — it has zero `product.hero.diy-kits` assignments.
+  - Live checks for `/custom-cakes`, `/wedding-cakes`, `/cupcakes`, `/sugar-cookies`, `/macarons`, and `/diy-kits` returned HTTP 200.
+  - Live `/diy-kits` contains `sweet-fork-st-patricks-day-diy-cookie-kit-centerville-utah.jpg`, omits `sweet-fork-western-highland-cow-baby-shower-sugar-cookies-centerville-utah.jpg`, and keeps the approved copy unchanged.
+- **Remaining owner/admin verification steps**: Netlify deploy metadata still requires a linked/authorized Netlify project account if dashboard-level deploy confirmation is needed. Live page behavior is verified from the public Netlify URL.
+
 ## Copy Scrub Pass 2 Merge/Deployment Verification — 2026-06-13
 
 - **Current branch**: `main`.
