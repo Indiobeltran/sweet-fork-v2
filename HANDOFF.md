@@ -2,6 +2,16 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Raw Google Reviews Intake Template — 2026-06-12
+
+- **Objective**: Create raw intake templates for pasting 5-star Google Business Profile reviews.
+- **Current branch**: `main`.
+- **Intake templates status**: Raw Google review intake templates have been created.
+  - Text intake file path: `scratch/testimonials-import/google-reviews/raw/google-reviews.txt`
+  - CSV template path: `scratch/testimonials-import/google-reviews/raw/google-reviews-template.csv`
+- **Import status**: Full Google review import remains blocked until real reviews are pasted/provided in either of these templates.
+- **Database status**: No database import was run, and no database or runtime changes were made.
+
 ## Testimonials Import — 2026-06-12
 
 - **Objective**: Populate The Sweet Fork v2 admin Testimonials database using all available 5-star reviews from The Sweet Fork Google Business Profile, then feature the best ones.

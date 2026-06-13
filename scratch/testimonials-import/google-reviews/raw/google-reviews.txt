@@ -1,0 +1,40 @@
+# The Sweet Fork Google Business Profile Reviews — Raw Intake
+Purpose:
+Paste real 5-star Google Business Profile reviews below. This file will be parsed manually or semi-automatically into:
+scratch/testimonials-import/google-reviews/testimonials-google-reviews.json
+Rules:
+- Only paste real Google Business Profile reviews.
+- Only include 5-star reviews for import.
+- Do not paraphrase review text unless intentionally creating a shorter public excerpt later.
+- Preserve reviewer name as shown publicly.
+- Preserve review date or relative date if available.
+- If a field is unknown, leave it blank.
+- One review per block.
+- Add more review blocks as needed.
+Review block format:
+---
+Reviewer name:
+Reviewer display name:
+Rating:
+Review date:
+Relative review date:
+Review text:
+Product/context notes:
+Recommended featured?:
+Feature priority:
+Admin notes:
+---
+Paste reviews below this line.
+================================================================================
+---
+Reviewer name:
+Reviewer display name:
+Rating: 5
+Review date:
+Relative review date:
+Review text:
+Product/context notes:
+Recommended featured?:
+Feature priority:
+Admin notes:
+---
