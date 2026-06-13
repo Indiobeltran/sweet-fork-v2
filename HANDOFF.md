@@ -1,3 +1,53 @@
+## Launch Hotfix: Netlify Inquiry Submission + Wizard Copy — 2026-06-13
+
+- **Branch**: `codex/fix-inquiry-submit-copy`
+- **Starting point**: `main` / `origin/main` aligned at `863f83b936894811f64592fdc747163510a07824` (`docs: record launch readiness verification`).
+- **Manual QA blocker found**: Deployed Netlify `/start-order` showed the customer-safe submission error: `We could not submit the inquiry right now. Please try again in a few minutes.`
+- **Failure isolated**: A non-persisting browser-like POST to `https://sweet-fork-v2.netlify.app/api/inquiries` with `Origin: https://sweet-fork-v2.netlify.app` returned HTTP 403 before any Supabase write. The same endpoint returned normal JSON validation without an Origin header, proving the deployed API route existed and the failure was not a missing function.
+- **Root cause**: The API origin guard only allowed `new URL(request.url).origin`, the resolved public site URL, and localhost in development. On Netlify, the Next server handler can see a different request URL origin such as `main--sweet-fork-v2.netlify.app` while the browser sends `Origin: https://sweet-fork-v2.netlify.app`. `NEXT_PUBLIC_SITE_URL` is also normalized away from `.netlify.app` in production, so the public Netlify alias was not accepted.
+- **Fix made**:
+  - Added `src/lib/inquiries/request-origin.ts` as a pure origin guard for inquiry POSTs.
+  - The guard preserves the existing request-origin, production-domain, apex-domain, and local-dev allowances, and also allows Netlify's deployment URL envs (`URL`, `DEPLOY_URL`, `DEPLOY_PRIME_URL`) plus the current Netlify site name aliases when present.
+  - Updated `src/app/api/inquiries/route.ts` to use the helper.
+  - Preserved the inquiry `FormData` shape, upload handling, Netlify Forms bridge, success/reference-code behavior, Supabase write architecture, and admin ingestion assumptions.
+- **Customer-facing copy changed**:
+  - Replaced the wizard badge/helper and hero copy with customer-facing order/quote language.
+  - Removed the explicit customer-facing mobile/process phrasing from the wizard intro.
+  - Replaced `quote-ready` and `product mix` helper phrasing in step descriptions/event helper with more natural dessert planning language.
+- **Tests added/updated**:
+  - Added two origin-guard assertions to `src/lib/inquiries/submit.test.ts`: one allows the Netlify alias/deploy-origin combination, and one rejects an unrelated origin.
+  - No package script changes were needed.
+- **Verification performed on hotfix branch**:
+  - `npm run build` before the fix — Passed, confirming the branch built from the starting state.
+  - Non-persisting deployed API probe before the fix — HTTP 403 with browser-like Origin, no live inquiry submitted.
+  - `npm test` red state — failed on missing `request-origin.ts` helper before implementation.
+  - `npm test` after implementation — Passed (55/55); Netlify Forms bridge tests still intentionally log fail-soft network/404 warnings.
+  - `npm run lint` — Passed.
+  - `npm run typecheck` — Initially failed on an overly strict helper env type, then passed after the type fix.
+  - `npm test` — Passed (55/55).
+  - `npm run build` — Passed.
+  - `git diff --check` — Passed.
+  - Local browser smoke on `http://localhost:3000/start-order` — updated intro/helper copy visible; old `One guided inquiry...`, mobile mention, and `quote-ready` phrasing absent; no submission attempted.
+- **Deployment/manual QA checklist after merge + Netlify deploy**:
+  1. Open `/start-order`.
+  2. Confirm top copy feels customer-facing.
+  3. Select one product.
+  4. Select multiple products.
+  5. Validate required fields.
+  6. Upload/remove one safe image if desired.
+  7. Verify the review step.
+  8. Confirm no customer-facing estimate/range appears.
+  9. Submit one live test inquiry only if approved.
+  10. Confirm success reference code.
+  11. Confirm the inquiry appears in `/admin/inquiries`.
+- **Guardrails confirmed**:
+  - No Supabase schema changes, migrations, database-architecture changes, DNS changes, Netlify config changes, gallery import changes, broad admin changes, package-file changes, or test runner changes.
+  - No secrets were added or printed.
+  - Pre-existing untracked files preserved: `.agents/`, `.claude/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `skills-lock.json`.
+- **Remaining risks / follow-ups**:
+  - The fix has not yet been validated by a successful live deployed inquiry because no live submission was performed automatically.
+  - Netlify environment variables should still be verified in the dashboard if deployed submission fails after this origin fix.
+
 ## Launch-Readiness Verification Checkpoint - 2026-06-13
 
 - **Branch**: `main`

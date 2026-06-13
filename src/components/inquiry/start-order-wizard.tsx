@@ -872,11 +872,11 @@ export function StartOrderWizard({
                 )}
               >
                 <div className="flex flex-wrap items-center gap-3">
-                  <Badge>Inquiry</Badge>
+                  <Badge>Custom dessert inquiry</Badge>
                   <p className="text-sm text-charcoal/60">
                     {hasStarted
-                      ? "Stay with the active step. You can move backward without losing progress."
-                      : "One guided inquiry for the full order."}
+                      ? "You can go back anytime to update your answers before submitting."
+                      : "Tell us what you are planning."}
                   </p>
                 </div>
                 {hasStarted ? <div className="lg:w-[18rem] lg:flex-none">{currentStepPanel}</div> : null}
@@ -892,8 +892,7 @@ export function StartOrderWizard({
                 </div>
               ) : catalogSource === "fallback" ? (
                 <div className="rounded-[1.4rem] border border-charcoal/10 bg-cream/70 px-4 py-3 text-sm leading-6 text-charcoal/68">
-                  Product options are using The Sweet Fork&apos;s standard menu while live catalog details
-                  refresh.
+                  Dessert options are available while The Sweet Fork refreshes a few menu details.
                 </div>
               ) : null}
 
@@ -901,12 +900,12 @@ export function StartOrderWizard({
                 <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
                   <div className="min-w-0 space-y-3">
                     <h2 className="font-serif text-4xl tracking-[-0.04em] text-charcoal sm:text-5xl">
-                      Share the celebration details The Sweet Fork needs for a tailored quote.
+                      Tell us about your order so we can prepare a custom quote.
                     </h2>
                     <p className="max-w-2xl text-base leading-8 text-charcoal/70">
-                      Add the event details, dessert selections, inspiration, and contact
-                      preferences in one place. Each step keeps the details focused so the inquiry
-                      never feels overwhelming on mobile.
+                      Choose your desserts, share your event date, add inspiration photos, and tell
+                      us the best way to reach you. We&apos;ll review the details and follow up with
+                      next steps.
                     </p>
                   </div>
                   {currentStepPanel}
@@ -988,7 +987,7 @@ export function StartOrderWizard({
                       Event details
                     </p>
                     <p className="text-sm leading-7 text-charcoal/68">
-                      Start with the celebration itself so the product mix and quote begin with the
+                      Start with the event details so the dessert plan and quote begin with the
                       right context.
                     </p>
                   </div>
@@ -2312,7 +2311,7 @@ export function StartOrderWizard({
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-charcoal/60">
-                  Your progress stays in place while you move backward or forward.
+                  You can go back anytime to update your answers before submitting.
                 </p>
                 {submitError ? (
                   <p role="alert" className="mt-2 text-sm text-rose-700">

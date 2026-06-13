@@ -3,6 +3,8 @@ import test from "node:test";
 
 // @ts-expect-error Node's strip-types test runner needs the .ts extension.
 import { serializeNetlifyFormsPayload, submitNetlifyFormsBridge } from "./netlify-bridge.ts";
+// @ts-expect-error Node's strip-types test runner needs the .ts extension.
+import { isAllowedInquiryRequestOrigin } from "./request-origin.ts";
 import type { InquiryProductItem } from "@/types/domain";
 
 test("serializeNetlifyFormsPayload correctly formats URL-encoded parameters", () => {
@@ -179,4 +181,36 @@ test("submitNetlifyFormsBridge handles HTTP error response (fail-soft) without t
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test("isAllowedInquiryRequestOrigin allows Netlify site aliases during production deploys", () => {
+  assert.equal(
+    isAllowedInquiryRequestOrigin({
+      originHeader: "https://sweet-fork-v2.netlify.app",
+      requestUrl: "https://main--sweet-fork-v2.netlify.app/api/inquiries",
+      env: {
+        NODE_ENV: "production",
+        NEXT_PUBLIC_SITE_URL: "https://sweet-fork-v2.netlify.app",
+        URL: "https://sweet-fork-v2.netlify.app",
+        DEPLOY_PRIME_URL: "https://main--sweet-fork-v2.netlify.app",
+      },
+    }),
+    true,
+  );
+});
+
+test("isAllowedInquiryRequestOrigin rejects unrelated origins", () => {
+  assert.equal(
+    isAllowedInquiryRequestOrigin({
+      originHeader: "https://example.com",
+      requestUrl: "https://main--sweet-fork-v2.netlify.app/api/inquiries",
+      env: {
+        NODE_ENV: "production",
+        NEXT_PUBLIC_SITE_URL: "https://www.thesweetfork.com",
+        URL: "https://sweet-fork-v2.netlify.app",
+        DEPLOY_PRIME_URL: "https://main--sweet-fork-v2.netlify.app",
+      },
+    }),
+    false,
+  );
 });

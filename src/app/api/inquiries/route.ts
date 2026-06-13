@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { InquirySubmissionError, submitInquiry } from "@/lib/inquiries/submit";
-import { getPublicEnv } from "@/lib/env";
+import { isAllowedInquiryRequestOrigin } from "@/lib/inquiries/request-origin";
 import {
   MAX_INSPIRATION_FILE_SIZE_BYTES,
   MAX_INSPIRATION_UPLOADS,
@@ -108,31 +108,7 @@ function parsePayload(payload: string) {
 function validateRequestOrigin(request: Request) {
   const originHeader = request.headers.get("origin");
 
-  if (!originHeader) {
-    return;
-  }
-
-  let origin: URL;
-
-  try {
-    origin = new URL(originHeader);
-  } catch {
-    throw new InquirySubmissionError(
-      "We couldn't verify this inquiry. Please refresh the page and try again.",
-      403,
-    );
-  }
-
-  const requestOrigin = new URL(request.url).origin;
-  const siteOrigin = new URL(getPublicEnv().siteUrl).origin;
-  const allowedOrigins = new Set([requestOrigin, siteOrigin]);
-
-  if (process.env.NODE_ENV !== "production") {
-    allowedOrigins.add("http://localhost:3000");
-    allowedOrigins.add("http://127.0.0.1:3000");
-  }
-
-  if (!allowedOrigins.has(origin.origin)) {
+  if (!isAllowedInquiryRequestOrigin({ originHeader, requestUrl: request.url })) {
     throw new InquirySubmissionError(
       "We couldn't verify this inquiry. Please refresh the page and try again.",
       403,
