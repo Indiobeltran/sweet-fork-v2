@@ -2,6 +2,47 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Netlify Forms Notification Bridge Audit & Implementation — 2026-06-12
+
+- **Objective**: Audit and fix Sweet Fork v2 inquiry email notifications on Netlify before production domain cutover.
+- **Current branch**: `main`.
+- **Pre-audit working tree**:
+  - `git branch --show-current`: `main`.
+  - `git status --short`: clean tracked tree; protected files present and preserved.
+- **Existing inquiry architecture**:
+  - Inquiry submissions are initiated via `/start-order` multi-step wizard, POSTed to `/api/inquiries`, processed and persisted to Supabase database/storage, and visible in `/admin/inquiries` dashboard.
+- **Chosen notification strategy**:
+  - **Option B — Netlify Forms Bridge**. This option keeps Supabase/admin as the official source of truth, but routes a lightweight, URL-encoded payload to Netlify Forms at `/__forms.html` upon successful Supabase insert to trigger Netlify dashboard email notifications.
+- **Why it was chosen**:
+  - No transactional email provider (such as Resend or Postmark) is currently configured in the codebase or environment.
+  - Netlify Forms notifications can be configured in the Netlify Dashboard to send emails to Melissa without adding new external runtime dependencies.
+- **Files created**:
+  - [public/__forms.html](file:///Users/indiobeltran/Projects/sweet-fork-v2/public/__forms.html): Hidden static HTML template file for build-time Netlify Form detection.
+  - [src/lib/inquiries/netlify-bridge.ts](file:///Users/indiobeltran/Projects/sweet-fork-v2/src/lib/inquiries/netlify-bridge.ts): Self-contained module hosting payload serialization and fetch submission.
+  - [src/lib/inquiries/submit.test.ts](file:///Users/indiobeltran/Projects/sweet-fork-v2/src/lib/inquiries/submit.test.ts): Unit tests covering payload serialization, target URL, and fail-soft behavior.
+- **Files changed**:
+  - [src/lib/inquiries/submit.ts](file:///Users/indiobeltran/Projects/sweet-fork-v2/src/lib/inquiries/submit.ts): Updated `submitInquiry` signature and body to trigger the Netlify Forms bridge.
+  - [src/app/api/inquiries/route.ts](file:///Users/indiobeltran/Projects/sweet-fork-v2/src/app/api/inquiries/route.ts): Extracted request origin and passed it to `submitInquiry`.
+  - [package.json](file:///Users/indiobeltran/Projects/sweet-fork-v2/package.json): Added `src/lib/inquiries/submit.test.ts` to the test command.
+- **Env vars required**:
+  - No new environment variables are required.
+- **Netlify dashboard steps required (Melissa/us still need to complete)**:
+  1. Confirm Netlify detected the `inquiry-notification` form in the Netlify Dashboard (under Forms section) after deployment of `main` completes.
+  2. Add email notification recipient in Netlify Dashboard (Settings -> Forms -> Form notifications -> Email notifications), pointing to Melissa's email address and selecting `inquiry-notification` as the target form.
+  3. Submit one QA test inquiry from the live `/start-order` wizard and verify it appears in both Supabase/admin and Netlify Forms submissions.
+  4. Confirm Melissa receives the email notification successfully.
+- **Verification performed**:
+  - Running automated unit tests (`npm test`) covering URL-encoded Netlify Forms payload serialization, correct form-name, correct target path (`/__forms.html`), and fail-soft network/HTTP error handling. All 10 tests passed successfully.
+  - Running ESLint linter (`npm run lint`), which passed successfully.
+  - Running TypeScript type checks (`npm run typecheck`), which passed successfully.
+  - Running production build (`npm run build`), which compiled successfully.
+- **Verification status**:
+  - Local unit test coverage and compiler gates are fully verified. End-to-end email delivery cannot be fully verified locally as it requires deployment to Netlify and dashboard notifications setup.
+- **Failure mode behavior**:
+  - If the Netlify Forms bridge network request fails or returns an error status, it logs a safe warning to the server console but does NOT block the inquiry from being persisted in Supabase or returning a 201 success response to the customer.
+- **DNS cutover recommendation**:
+  - Safe to cut over from a notification standpoint once the Netlify dashboard steps listed above are configured and a live smoke test is confirmed.
+
 ## Pre-Launch UX/UI, Navigation, and Placeholder Audit — 2026-06-12
 
 - **Objective**: Complete the requested pre-production UX/UI, navigation, admin usability, and placeholder-content audit before production domain cutover. DNS/domain records were not changed.

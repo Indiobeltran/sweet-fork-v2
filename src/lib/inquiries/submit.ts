@@ -1,5 +1,7 @@
 import "server-only";
 
+import { serializeNetlifyFormsPayload, submitNetlifyFormsBridge } from "./netlify-bridge";
+
 import {
   getBudgetFlexibilityLabel,
   getBudgetRangeLabel,
@@ -15,7 +17,7 @@ import {
   type InquiryFormValues,
 } from "@/lib/validations/inquiry";
 import { siteConfig } from "@/lib/content/site-content";
-import { isSupabaseConfigured } from "@/lib/env";
+import { isSupabaseConfigured, getPublicEnv } from "@/lib/env";
 import { formatCurrency } from "@/lib/utils";
 import type { InquiryEstimate, InquiryProductItem } from "@/types/domain";
 import type { TablesInsert } from "@/types/supabase.generated";
@@ -187,6 +189,7 @@ function getStoragePath(inquiryId: string, file: File) {
 export async function submitInquiry(
   rawValues: unknown,
   files: File[],
+  origin?: string,
 ): Promise<InquirySubmissionResult> {
   const values = normalizeInquiryFormValues(rawValues);
   const parsed = inquirySchema.safeParse(values);
@@ -479,6 +482,30 @@ export async function submitInquiry(
 
     if (notificationLogError) {
       throw notificationLogError;
+    }
+
+    // Netlify Forms Notification Bridge
+    try {
+      const targetOrigin = origin || getPublicEnv().siteUrl;
+      const payloadString = serializeNetlifyFormsPayload({
+        inquiryId,
+        referenceCode,
+        customerName: parsed.data.customerName,
+        customerEmail: parsed.data.customerEmail,
+        customerPhone: parsed.data.customerPhone,
+        eventDate: parsed.data.eventDate,
+        eventType: parsed.data.eventType,
+        fulfillmentMethod: parsed.data.fulfillmentMethod,
+        budgetRange: parsed.data.budgetRange,
+        budgetFlexibility: parsed.data.budgetFlexibility,
+        additionalNotes: parsed.data.additionalNotes,
+        orderItems: parsed.data.orderItems,
+        origin: targetOrigin,
+      });
+
+      await submitNetlifyFormsBridge(payloadString, targetOrigin);
+    } catch (bridgeError) {
+      console.warn("Netlify Forms notification bridge failed:", bridgeError);
     }
 
     return {

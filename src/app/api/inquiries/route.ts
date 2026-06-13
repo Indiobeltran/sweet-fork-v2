@@ -328,7 +328,8 @@ export async function POST(request: Request) {
     let result: Awaited<ReturnType<typeof submitInquiry>>;
 
     try {
-      result = await submitInquiry(parsedPayload, files);
+      const requestUrl = new URL(request.url);
+      result = await submitInquiry(parsedPayload, files, requestUrl.origin);
     } catch (error) {
       clearPendingSubmission(identifier, fingerprint);
       throw error;
