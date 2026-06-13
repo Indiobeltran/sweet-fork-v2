@@ -36,6 +36,14 @@ Update this file before stopping after any substantive repo task.
   - Updated `src/lib/site/marketing.ts` so product/category page hero images prefer approved category-matched Supabase gallery media and fall back to static placeholders only if no approved media is available.
   - Local build output confirmed all six product pages now have 0 `/placeholders/marketing` references and Supabase marketing media references.
   - No Supabase schema changes, storage mutations, import scripts, or inquiry/order data mutations were performed.
+- **Post-push Netlify validation**:
+  - Fix commit `b3677a6` was pushed to `origin/main`; Netlify production redeployed and the live site began serving the updated product-page media output.
+  - Live HTTP/browser checks passed for `/`, `/custom-cakes`, `/wedding-cakes`, `/cupcakes`, `/sugar-cookies`, `/macarons`, `/diy-kits`, `/pricing`, `/how-to-order`, `/gallery`, `/faq`, `/about`, `/start-order`, `/terms`, and `/privacy`.
+  - Homepage and all six product/category pages now have 0 `/placeholders/marketing` references on live Netlify and use Supabase-backed media when available.
+  - `/gallery` still renders 71 items with filters All 71, Custom Cakes 29, Sugar Cookies 22, Macarons 5, Cupcakes 13, Wedding Cakes 2, and 0 `gallery-batch-04-repaired` references.
+  - Gallery Sugar Cookies filtering reduced the grid to 22 items; the lightbox opened with a loaded Supabase image and closed successfully.
+  - `/start-order` loaded and was not paused. The browser automation layer could fill the native date input's DOM value but did not trigger the controlled form state reliably; no new production inquiry was submitted during this audit to avoid unnecessary QA data. Earlier deployed no-upload and one-upload inquiry submissions remain the persistence baseline.
+  - Mobile homepage smoke at 390px showed no horizontal overflow, the navigation menu opened, and core links were present.
 - **Analytics/SEO findings**:
   - `robots.txt` is present, allows public crawling, and disallows `/admin` and `/api`.
   - `sitemap.xml` is present with 15 URLs and includes `/gallery` and `/start-order`.
@@ -44,7 +52,8 @@ Update this file before stopping after any substantive repo task.
 - **Inquiry/order workflow findings**:
   - Inquiry submission persists to Supabase/admin when server-side Supabase env is configured; this was previously validated with deployed no-upload and one-upload inquiries.
   - Current audit did not create another test inquiry to avoid unnecessary production QA data.
-  - Admin-facing estimates for known Netlify test inquiries were previously verified as sane (`$80 to $192`, not `$5,072`).
+  - Live admin smoke with the ignored local QA admin credentials confirmed `/admin/login` reused the active session, `/admin`, `/admin/inquiries`, `/admin/orders`, `/admin/media`, and both known inquiry detail pages loaded.
+  - Known Netlify test inquiries `SF-D2B52E0E` and `SF-401FE62F` show the sane operational estimate range (`$80 to $192`) and do not show the old `$5,072` range.
   - Customer-facing inquiry flow does not expose internal quote logic as a final customer price.
   - Transactional email delivery is not implemented; notification logs are internal/admin-only, and admin dashboard monitoring remains the operational source of truth.
   - Square/payment workflow is manual admin recordkeeping only; no Square API integration is wired.
@@ -59,7 +68,7 @@ Update this file before stopping after any substantive repo task.
   - Intended production domain from code: `https://www.thesweetfork.com`; apex/root should redirect to `www` or be configured consistently in Netlify.
   - In Netlify for the `sweet-fork-v2` site, add/verify `www.thesweetfork.com` and `thesweetfork.com` under Domain management.
   - Ensure `www` is the primary domain if the business wants canonical `https://www.thesweetfork.com`.
-  - For external DNS, Netlify docs recommend `www` as a CNAME to the site subdomain (`sweet-fork-v2.netlify.app`) and apex/root as ALIAS/ANAME/flattened CNAME to `apex-loadbalancer.netlify.com`, or fallback A record to `75.2.60.5` if the provider lacks ALIAS/ANAME/flattening.
+  - For external DNS, Netlify docs recommend `www` as a CNAME to the site subdomain (`sweet-fork-v2.netlify.app`) and apex/root as ALIAS/ANAME/flattened CNAME to `apex-loadbalancer.netlify.com`, or fallback A record to `75.2.60.5` if the provider lacks ALIAS/ANAME/flattening. Source: https://docs.netlify.com/manage/domains/configure-domains/configure-external-dns/
   - If Netlify reports High-Performance Edge/custom DNS details in the Pending DNS verification modal, use Netlify's customized values instead of the standard records.
   - Keep existing MX/email records unchanged unless the business explicitly wants email changes.
   - After propagation, verify SSL certificate issuance in Netlify and confirm both `https://thesweetfork.com` and `https://www.thesweetfork.com` load/redirect as intended.
@@ -88,9 +97,11 @@ Update this file before stopping after any substantive repo task.
   - `npm run build`: passed.
   - `git diff --check`: passed.
   - Build output check: product pages have 0 placeholder marketing refs; gallery counts remain 29/22/5/13/2.
-- **Commands still needed in this turn**:
-  - Stage/commit/push the product-page media fix and this handoff update after final diff checks.
-  - Wait for Netlify redeploy, then validate product pages, public flows, admin flows, and final status on `https://sweet-fork-v2.netlify.app`.
+- **Commit/push status**:
+  - Code/config/docs changes for the product-page media fix were committed and pushed as `b3677a6 fix: resolve Netlify launch readiness issues`.
+  - This handoff section was updated after live browser/admin validation; commit and push it after final `git diff --check` passes.
+- **Final local checks for this audit**:
+  - Run final `git diff --check` and `git status --short` before committing this handoff update.
 
 ## Netlify Final Production-Readiness Fixes — 2026-06-12
 
