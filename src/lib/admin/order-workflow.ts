@@ -1,6 +1,18 @@
 import { formatCurrency, toTitleCase } from "@/lib/utils";
 import type { Enums, Json, Tables } from "@/types/supabase.generated";
 
+export {
+  getOrderNextAction,
+  getOrderNextActionClasses,
+  getOrderStatusLabel,
+  getPaymentStatusLabel,
+} from "@/lib/admin/order-status";
+export type {
+  OrderNextAction,
+  OrderNextActionInput,
+  OrderNextActionTone,
+} from "@/lib/admin/order-status";
+
 type InquiryRow = Tables<"inquiries">;
 type OrderRow = Tables<"orders">;
 type PaymentRow = Tables<"payments">;

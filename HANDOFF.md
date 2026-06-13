@@ -1,3 +1,47 @@
+## Phase 6 Order Detail Workflow — 2026-06-13
+
+- **Branch**: `codex/order-detail-workflow`
+- **Pre-change status**: Started from `main` aligned with `origin/main` at `dc11a50`. Tracked files clean. Pre-existing untracked files preserved: `.agents/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `skills-lock.json`.
+- **Scope confirmed**: Phase 6 — Order Detail Workflow only. No Supabase schema changes, no order/payment/inquiry architecture changes, no migrations, no public/customer-facing pages, no inquiry-form changes, no Square integration, no invoice automation, no gallery/DNS/deployment changes.
+- **Current order detail issues found** (`/admin/orders/[id]`):
+  - Two stacked, redundant header blocks: a top header (back link + ORD/ref badges + status/payment chips + customer name H1 + event line + a "Final total" card) immediately followed by an "Order triage" section repeating the ref badge, status/payment chips, customer name (H2), attention text, call/email buttons, a 4-stat grid, and jump links. Customer name appeared 3×, status/payment chips 2×, total 3× — heavy vertical bloat.
+  - Raw enum casing in chips via `toTitleCase` (e.g. "In-Production", "Deposit-Paid").
+  - The long "Edit order settings" form (~250 lines) buried its single "Save order details" button at the very bottom with no always-reachable save.
+  - No single punchy "next action" — only prose attention text.
+- **Order detail UX changes**:
+  - **Consolidated the two header blocks into one command console** (`src/app/admin/(protected)/orders/[id]/page.tsx`): single section with ref + ORD badges, friendly status/payment chips, customer name (H1), event/date/fulfillment subline, a prominent **Next action** panel (label + supporting attention text), call/email quick links, a compact 4-stat strip (Event date, Fulfillment, Order total, Balance due), and jump links (Payments / Notes / Edit order settings). Removed the duplicated "Final total" card and duplicated customer-name/status/payment rendering.
+  - **Owner-friendly labels**: replaced `toTitleCase(status)`/`toTitleCase(paymentStatus)` chips with `getOrderStatusLabel` / `getPaymentStatusLabel` ("In production", "Deposit paid", "Paid in full", etc.). Raw payment-record status and preferred-contact still use `toTitleCase` (unchanged).
+  - **Sticky save footer** on the "Edit order settings" form: a `position: sticky bottom-0` action bar (Reset changes + Save order details) spanning the card padding, with `env(safe-area-inset-bottom)` padding and backdrop blur. Submit still posts to the existing `updateOrderDetails` server action; `type="reset"` clears unsaved edits without JS.
+  - **Collapsed lower-priority "Timestamps"** into a native `<details>/<summary>` disclosure to cut scroll.
+- **Next-action / payment / fulfillment signals implemented** (new pure helper `getOrderNextAction` in `src/lib/admin/order-status.ts`, derived only from existing data — `status`, `paymentStatus`, `paymentSummary.depositPaid`, `balanceDueAmount`, `fulfillmentWindow`):
+  - draft → "Review order details"; quoted → "Send or confirm invoice"; unpaid/no deposit → "Collect deposit"; deposit in + balance remaining → "Order in progress"; paid + no window → "Confirm pickup/delivery details"; paid + window set → "Ready for fulfillment"; fulfilled + balance → "Collect final payment"; fulfilled → "Fulfilled"; cancelled/completed handled conservatively. Each returns a tone (attention/neutral/positive) mapped to chip classes.
+- **Deferred due to missing data**: None additional this phase. Deposit-vs-final precision is available from the existing payment snapshot, so no broad-label fallback was needed. (Prior Phase 3 deferral of explicit pickup/delivery *confirmation* tracking still stands — the page asks to "Confirm pickup/delivery details" based on the presence of a fulfillment window, not a dedicated confirmation flag.)
+- **Architecture note**: helpers were placed in a new dependency-free `order-status.ts` (type-only imports) and re-exported from `order-workflow.ts` so the existing `node:test` runner (no `@/` alias resolution) can unit-test them.
+- **Files changed**:
+  - `src/app/admin/(protected)/orders/[id]/page.tsx`
+  - `src/lib/admin/order-workflow.ts` (re-exports the new helpers)
+  - `src/lib/admin/order-status.ts` (new — pure label/next-action helpers)
+  - `src/lib/admin/order-status.test.ts` (new — unit tests)
+  - `package.json` (added the new test file to the `test` script)
+  - `HANDOFF.md`
+- **Verification performed**:
+  - `npm run lint` — Passed.
+  - `npm run typecheck` — Passed.
+  - `npm test` — Passed (34/34).
+  - `npm run build` — Passed (compiled successfully).
+  - `git diff --check` — Clean.
+- **Guardrails confirmed**:
+  - No Supabase schema changes / migrations.
+  - No order/payment/inquiry database architecture changes.
+  - No pricing formula or stored-amount changes.
+  - No Square integration or invoice automation built.
+  - No public/customer-facing pages or inquiry-form changes.
+  - No admin broad redesign; the order queue/list page was not modified.
+  - No gallery import / DNS / deployment changes.
+  - Pre-existing untracked files preserved.
+- **Remaining risks / follow-up**: Visual/mobile QA on Netlify deploy — confirm the single console header renders without overflow, the Next-action chip color/tone reads clearly, the sticky save footer stays reachable on long forms and respects the mobile safe area / admin bottom nav, and the Timestamps disclosure toggles via keyboard.
+- **Next recommended phase**: Phase 7 — Product Page Practical Copy.
+
 ## Phase 5 Admin Estimate Rationale — 2026-06-13
 
 - **Branch**: `codex/admin-estimate-rationale`

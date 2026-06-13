@@ -12,9 +12,13 @@ import { getOrderDetail, type OrderDetail } from "@/lib/admin/orders";
 import {
   formatOptionalDateTime,
   getDateInputValue,
+  getOrderNextAction,
+  getOrderNextActionClasses,
   getOrderStatusClasses,
+  getOrderStatusLabel,
   getPaymentRecordStatusClasses,
   getPaymentStatusClasses,
+  getPaymentStatusLabel,
   formatOrderMoneySummary,
 } from "@/lib/admin/order-workflow";
 import { formatDate, toTitleCase } from "@/lib/utils";
@@ -194,7 +198,7 @@ function PaymentSummaryPanel({ detail }: Readonly<{ detail: OrderDetail }>) {
         <span
           className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${getPaymentStatusClasses(detail.paymentStatus)}`}
         >
-          {toTitleCase(detail.paymentStatus)}
+          {getPaymentStatusLabel(detail.paymentStatus)}
         </span>
       </div>
 
@@ -382,60 +386,22 @@ export default async function AdminOrderDetailPage({
   const phoneHref = getPhoneHref(detail.customer?.phone);
   const emailHref = getMailtoHref(detail.customer?.email, orderReference);
   const attentionText = getOrderAttentionText(detail);
+  const nextAction = getOrderNextAction({
+    balanceDueAmount: detail.balanceDueAmount,
+    depositPaid: detail.paymentSummary.depositPaid,
+    fulfillmentWindow: detail.fulfillmentWindow,
+    paymentStatus: detail.paymentStatus,
+    status: detail.status,
+  });
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-3">
-          <Link
-            href="/admin/orders"
-            className="inline-flex items-center gap-2 text-sm font-medium text-charcoal/70 transition hover:text-charcoal"
-          >
-            ← Back to orders
-          </Link>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge className="border-charcoal/10 bg-charcoal/5 text-charcoal/75">
-              ORD-{detail.id.slice(0, 8).toUpperCase()}
-            </Badge>
-            {detail.inquiry ? (
-              <Badge className="border-charcoal/10 bg-charcoal/5 text-charcoal/75">
-                {detail.inquiry.referenceCode}
-              </Badge>
-            ) : null}
-            <span
-              className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${getOrderStatusClasses(detail.status)}`}
-            >
-              {toTitleCase(detail.status)}
-            </span>
-            <span
-              className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${getPaymentStatusClasses(detail.paymentStatus)}`}
-            >
-              {toTitleCase(detail.paymentStatus)}
-            </span>
-          </div>
-          <div>
-            <h1 className="font-serif text-[2.3rem] tracking-[-0.04em] text-charcoal sm:text-[2.8rem]">
-              {detail.customer?.fullName ?? "Order detail"}
-            </h1>
-            <p className="mt-2 text-sm leading-7 text-charcoal/66">
-              {detail.eventType} on {formatDate(detail.eventDate)} via{" "}
-              {detail.fulfillmentMethod === "delivery" ? "delivery" : "pickup"}
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-[1.55rem] border border-charcoal/10 bg-white/88 px-4 py-3 shadow-soft">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-            Final total
-          </p>
-          <p className="mt-2 text-lg font-semibold text-charcoal">
-            {formatOrderMoneySummary(detail.totalAmount)}
-          </p>
-          <p className="mt-2 text-sm text-charcoal/60">
-            Balance due: {formatOrderMoneySummary(detail.balanceDueAmount)}
-          </p>
-        </div>
-      </div>
+      <Link
+        href="/admin/orders"
+        className="inline-flex items-center gap-2 text-sm font-medium text-charcoal/70 transition hover:text-charcoal"
+      >
+        ← Back to orders
+      </Link>
 
       <NoticeBanner notice={notice} />
 
@@ -446,38 +412,50 @@ export default async function AdminOrderDetailPage({
               <Badge className="border-charcoal/10 bg-charcoal/5 text-charcoal/75">
                 {orderReference}
               </Badge>
+              <Badge className="border-charcoal/10 bg-charcoal/5 text-charcoal/75">
+                ORD-{detail.id.slice(0, 8).toUpperCase()}
+              </Badge>
               <span
                 className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${getOrderStatusClasses(detail.status)}`}
               >
-                {toTitleCase(detail.status)}
+                {getOrderStatusLabel(detail.status)}
               </span>
               <span
                 className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${getPaymentStatusClasses(detail.paymentStatus)}`}
               >
-                {toTitleCase(detail.paymentStatus)}
+                {getPaymentStatusLabel(detail.paymentStatus)}
               </span>
             </div>
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                Order triage
-              </p>
-              <h2 className="mt-2 font-serif text-[2rem] leading-none tracking-[-0.04em] text-charcoal sm:text-[2.35rem]">
+              <h1 className="font-serif text-[2.1rem] leading-none tracking-[-0.04em] text-charcoal sm:text-[2.5rem]">
                 {detail.customer?.fullName ?? "Unknown customer"}
-              </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-charcoal/68">
-                {attentionText}
+              </h1>
+              <p className="mt-2 text-sm leading-7 text-charcoal/66">
+                {detail.eventType} on {formatDate(detail.eventDate)} via{" "}
+                {detail.fulfillmentMethod === "delivery" ? "delivery" : "pickup"}
               </p>
             </div>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-2 lg:w-[18rem] lg:flex-none lg:grid-cols-1">
-            {phoneHref ? (
-              <QuickLink href={phoneHref} variant="primary">
-                Call customer
-              </QuickLink>
-            ) : null}
-            {emailHref ? <QuickLink href={emailHref}>Email customer</QuickLink> : null}
+          <div className="lg:w-[20rem] lg:flex-none">
+            <div
+              className={`rounded-[1.5rem] border px-4 py-3 ${getOrderNextActionClasses(nextAction.tone)}`}
+            >
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-charcoal/55">
+                Next action
+              </p>
+              <p className="mt-1 text-base font-semibold text-charcoal">{nextAction.label}</p>
+              <p className="mt-2 text-sm leading-6 text-charcoal/70">{attentionText}</p>
+            </div>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+              {phoneHref ? (
+                <QuickLink href={phoneHref} variant="primary">
+                  Call customer
+                </QuickLink>
+              ) : null}
+              {emailHref ? <QuickLink href={emailHref}>Email customer</QuickLink> : null}
+            </div>
           </div>
         </div>
 
@@ -491,7 +469,7 @@ export default async function AdminOrderDetailPage({
               </span>
             }
           />
-          <TriageStat label="Total" value={formatOrderMoneySummary(detail.totalAmount)} />
+          <TriageStat label="Order total" value={formatOrderMoneySummary(detail.totalAmount)} />
           <TriageStat
             label="Balance due"
             value={formatOrderMoneySummary(detail.balanceDueAmount)}
@@ -501,7 +479,7 @@ export default async function AdminOrderDetailPage({
         <div className="mt-5 grid gap-2 sm:grid-cols-3">
           <QuickLink href="#payments">Payments</QuickLink>
           <QuickLink href="#notes">Notes</QuickLink>
-          <QuickLink href="#edit-order-settings">Edit Order Settings</QuickLink>
+          <QuickLink href="#edit-order-settings">Edit order settings</QuickLink>
         </div>
       </section>
 
@@ -1197,25 +1175,33 @@ export default async function AdminOrderDetailPage({
                 </div>
               </div>
 
-              <Button type="submit">
-                Save order details
-              </Button>
+              <div className="sticky bottom-0 -mx-4 mt-2 flex flex-wrap items-center justify-end gap-3 border-t border-charcoal/10 bg-white/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur sm:-mx-5 sm:px-5">
+                <Button type="reset" variant="secondary">
+                  Reset changes
+                </Button>
+                <Button type="submit">Save order details</Button>
+              </div>
           </form>
         </SectionCard>
 
-        <div className="space-y-4">
-          <SectionCard title="Timestamps">
-            <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
-              {detail.timestamps.map((item) => (
-                <DetailRow
-                  key={item.label}
-                  label={item.label}
-                  value={formatOptionalDateTime(item.value)}
-                />
-              ))}
-            </div>
-          </SectionCard>
-        </div>
+        <details className="group rounded-[1.75rem] border border-charcoal/10 bg-white/88 p-4 shadow-soft sm:p-5">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-serif text-[1.6rem] tracking-[-0.04em] text-charcoal sm:text-[1.75rem]">
+            Timestamps
+            <span className="text-sm font-medium text-charcoal/55 group-open:hidden">Show</span>
+            <span className="hidden text-sm font-medium text-charcoal/55 group-open:inline">
+              Hide
+            </span>
+          </summary>
+          <div className="mt-4 rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
+            {detail.timestamps.map((item) => (
+              <DetailRow
+                key={item.label}
+                label={item.label}
+                value={formatOptionalDateTime(item.value)}
+              />
+            ))}
+          </div>
+        </details>
       </div>
     </div>
   );
