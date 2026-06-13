@@ -134,7 +134,12 @@ Update this file before stopping after any substantive repo task.
   - `npm run lint` — Passed.
   - `npx tsc --noEmit` (Typecheck) — Passed.
   - `npm run build` — Passed with 22/22 static pages generated successfully.
-  - Visual check of admin schema definitions confirming `mediaPlacementDefinitions` handles the new slots cleanly.
+  - **Post-Merge QA Validation Pass**: Ran programmatic validation suite (`scratch/qa/image-placement-qa.mjs`) targeting the local development server at `http://localhost:3000`.
+    - Verified that unassigned pages correctly fallback to random category-matched gallery items.
+    - Verified that assigning `product.hero.custom-cakes` to a valid database image asset renders that specific image on `/custom-cakes`.
+    - Verified that updating the placement dynamically updates the public page.
+    - Verified that the `/og?path=/custom-cakes` route resolves the assigned image correctly and returns a successful `image/png` response without crashing.
+    - Verified cleanup of test assignments.
 - **Blockers / follow-up items**: None. All meaningful public slots are now driven by the `media_assignments` table with clean static fallbacks.
 
 
