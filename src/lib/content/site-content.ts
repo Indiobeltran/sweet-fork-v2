@@ -433,22 +433,19 @@ export const faqItems = [
 
 export const testimonials = [
   {
-    quote:
-      "The cake was absolutely stunning and tasted even better than it looked. Every detail was perfect.",
-    name: "Sarah M.",
-    context: "Bountiful",
+    quote: "This cake was genuinely one of the best cakes I’ve ever ordered. First off, it was fluffy... The buttercream icing was the perfect balance... Now, let’s talk about the design: absolutely stunning.",
+    name: "Tanya",
+    context: "Google Review",
   },
   {
-    quote:
-      "Worth every penny. The level of artistry and attention to detail is unmatched.",
-    name: "Jennifer L.",
-    context: "Farmington",
+    quote: "Sweet Fork has the best cake ever. The cake was so delicious and the decor was amazing. I will use Sweet Fork from now on.",
+    name: "Crystal",
+    context: "Google Review",
   },
   {
-    quote:
-      "Our wedding cake was a showstopper. Guests are still talking about it months later.",
-    name: "Amanda & Ryan",
-    context: "Salt Lake City",
+    quote: "Melissa absolutely knocked our socks off! She had the fastest turnaround and created such delicious cookies and mini cupcakes that were almost too beautiful to eat.",
+    name: "Sarah",
+    context: "Google Review",
   },
 ];
 

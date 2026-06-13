@@ -4,6 +4,7 @@ import Link from "next/link";
 import { InquiryCta } from "@/components/site/inquiry-cta";
 import { SectionHeading } from "@/components/site/section-heading";
 import { SitePrimaryCta } from "@/components/site/site-primary-cta";
+import { TestimonialCarousel } from "@/components/site/testimonial-carousel";
 import { getPublicEnv } from "@/lib/env";
 import { siteConfig } from "@/lib/content/site-content";
 import { buildMetadata } from "@/lib/seo";
@@ -339,16 +340,8 @@ export default async function HomePage() {
             title="The finish clients remember."
             description="A few client notes add trust before the inquiry step without slowing the page down."
           />
-          <div className="grid gap-4 md:grid-cols-3">
-            {data.testimonials.map((item) => (
-              <blockquote key={item.name} className="luxury-panel rounded-[1.35rem] px-5 py-5">
-                <p className="text-sm leading-7 text-charcoal/72">&ldquo;{item.quote}&rdquo;</p>
-                <footer className="mt-5 text-sm text-charcoal/64">
-                  <p className="font-medium text-charcoal">{item.name}</p>
-                  <p>{item.context}</p>
-                </footer>
-              </blockquote>
-            ))}
+          <div className="flex w-full items-center">
+            <TestimonialCarousel testimonials={data.testimonials} />
           </div>
         </div>
       </section>

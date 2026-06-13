@@ -1395,7 +1395,7 @@ export async function getPublicTestimonials() {
     .select("attribution_name, attribution_role, display_order, is_featured, is_published, quote, source_label")
     .eq("is_published", true)
     .order("is_featured", { ascending: false })
-    .order("display_order", { ascending: true });
+    .order("display_order", { ascending: false });
 
   if (error || !data || data.length === 0) {
     if (error) {
@@ -1409,7 +1409,7 @@ export async function getPublicTestimonials() {
     }));
   }
 
-  return data.slice(0, 3).map((item) => ({
+  return data.map((item) => ({
     context: item.attribution_role ?? item.source_label ?? "Sweet Fork client",
     name: item.attribution_name,
     quote: item.quote,

@@ -1,3 +1,29 @@
+## Testimonial Refinement & Carousel Implementation — 2026-06-12
+
+- **Objective**: Refine 17 Google reviews into concise quotes, delete 3 AI placeholders, implement a Testimonial Carousel for the homepage, and fix query ordering.
+- **Current branch**: `main`.
+- **Files changed**:
+  - `src/app/(site)/page.tsx`
+  - `src/components/site/testimonial-carousel.tsx` (new)
+  - `src/lib/content/site-content.ts`
+  - `src/lib/site/marketing.ts`
+- **Total testimonial row count after cleanup**: 17
+- **Active/published testimonial count**: 17
+- **Number of placeholders removed or deactivated**: 3 (deleted entirely from DB per convention to keep table clean)
+- **Number of real reviews copy-edited**: 17 (quotes shortened to ~25-60 words)
+- **Where original full review text is preserved**: `scratch/testimonials-import/google-reviews/raw/google-reviews.txt` and the `testimonials-google-reviews.json` manifest.
+- **Ordering behavior before/after**:
+  - Before: Ascending by `display_order` (lowest priority first).
+  - After: Descending by `display_order` (highest priority first).
+- **Static fallback behavior after cleanup**: Removed the 3 AI placeholders from `site-content.ts` and replaced them with 3 of the real Google review excerpts to act as robust fallbacks if the database connection fails.
+- **Carousel behavior implemented**: A clean, premium React-based carousel with auto-cycling, touch swipe support, ARIA-accessible previous/next/dot controls, pause on hover/focus, and `prefers-reduced-motion` compliance. Intersection Observer ensures autoplay only begins when the section enters the viewport.
+- **Mobile/desktop behavior**: Renders a single prominent testimonial card at a time on both mobile and desktop. This preserves the luxury, quiet aesthetic and avoids layout clutter.
+- **Verification performed**:
+  - Database updated and verified.
+  - Testimonial rendering matches database records.
+  - `npm run lint`, `npm run typecheck`, `npm run build` completed successfully.
+- **Limitations**: No external carousel dependencies were used. Swipe detection uses basic touch handlers.
+
 # Sweet Fork v2 Handoff
 
 Update this file before stopping after any substantive repo task.
