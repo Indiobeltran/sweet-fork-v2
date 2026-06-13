@@ -27,7 +27,7 @@ describe("more menu sheet classes", () => {
       "utf8",
     );
 
-    assert.match(source, /onNavigate=\{onNavigate\}/);
+    assert.match(source, /onNavigate=\{\(\) => onNavigate\(item\.href\)\}/);
     assert.doesNotMatch(source, /onClick=\{onNavigate\}/);
   });
 });

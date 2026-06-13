@@ -20,6 +20,8 @@ type MobileBottomNavProps = {
   moreLabel?: string;
   moreOpen?: boolean;
   onMoreClick: () => void;
+  onNavigate?: (href: string) => void;
+  pendingHref?: string | null;
 };
 
 const NATIVE_PICKER_SELECTOR =
@@ -36,6 +38,8 @@ export function MobileBottomNav({
   moreLabel = "More",
   moreOpen = false,
   onMoreClick,
+  onNavigate,
+  pendingHref = null,
 }: Readonly<MobileBottomNavProps>) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -140,30 +144,37 @@ export function MobileBottomNav({
         className="w-full border-t border-charcoal/10 bg-ivory/96 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl"
       >
         <div className="mx-auto grid max-w-md grid-cols-5 gap-1 px-2 pt-2">
-          {items.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={item.isActive ? "page" : undefined}
-              className={cn(
-                "inline-flex min-h-[4.35rem] flex-col items-center justify-center rounded-[1rem] px-2 py-2 text-center transition",
-                focusClasses,
-                item.isActive
-                  ? "bg-charcoal text-ivory"
-                  : "text-charcoal/62 hover:bg-white/72 hover:text-charcoal",
-              )}
-            >
-              <span
-                aria-hidden="true"
-                className="flex h-[1.05rem] w-[1.05rem] items-center justify-center"
+          {items.map((item) => {
+            const isPending = pendingHref === item.href;
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-busy={isPending ? "true" : undefined}
+                aria-current={item.isActive ? "page" : undefined}
+                className={cn(
+                  "inline-flex min-h-[4.35rem] flex-col items-center justify-center rounded-[1rem] px-2 py-2 text-center transition",
+                  focusClasses,
+                  isPending && "ring-2 ring-gold/35",
+                  item.isActive
+                    ? "bg-charcoal text-ivory"
+                    : "text-charcoal/62 hover:bg-white/72 hover:text-charcoal",
+                )}
+                onNavigate={() => onNavigate?.(item.href)}
               >
-                {item.icon}
-              </span>
-              <span className="mt-1 text-[11px] font-semibold tracking-[0.04em]">
-                {item.label}
-              </span>
-            </Link>
-          ))}
+                <span
+                  aria-hidden="true"
+                  className="flex h-[1.05rem] w-[1.05rem] items-center justify-center"
+                >
+                  {item.icon}
+                </span>
+                <span className="mt-1 text-[11px] font-semibold tracking-[0.04em]">
+                  {isPending ? "Opening" : item.label}
+                </span>
+              </Link>
+            );
+          })}
 
           <button
             type="button"

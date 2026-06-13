@@ -56,6 +56,8 @@ export function MediaLibraryManager({
   const [categoryOrders, setCategoryOrders] = useState<Record<string, number>>({});
   const [placementOrders, setPlacementOrders] = useState<Record<string, number>>({});
   const [hasChanges, setHasChanges] = useState(false);
+  const [isSavingOrDeleting, setIsSavingOrDeleting] = useState(false);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const dialogId = useId();
 
@@ -121,8 +123,23 @@ export function MediaLibraryManager({
       setPlacementOrders(pageOrders);
 
       setHasChanges(false);
+      setIsSavingOrDeleting(false);
+      setActionMessage(null);
     }
   }, [selectedAsset, categories, placements]);
+
+  useEffect(() => {
+    if (!selectedAsset) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [selectedAsset]);
 
   // Detect unsaved changes by comparing current state to original asset details
   useEffect(() => {
@@ -175,6 +192,10 @@ export function MediaLibraryManager({
   ]);
 
   const handleCloseDrawer = () => {
+    if (isSavingOrDeleting) {
+      return;
+    }
+
     if (hasChanges) {
       const confirmClose = window.confirm(
         "You have unsaved changes. Are you sure you want to close and discard them?"
@@ -214,6 +235,16 @@ export function MediaLibraryManager({
 
   const handlePlacementOrderChange = (placementKey: string, val: number) => {
     setPlacementOrders((prev) => ({ ...prev, [placementKey]: val }));
+  };
+
+  const handleSaveSubmit = () => {
+    setIsSavingOrDeleting(true);
+    setActionMessage("Saving changes...");
+  };
+
+  const handleDeleteSubmit = () => {
+    setIsSavingOrDeleting(true);
+    setActionMessage("Deleting photo...");
   };
 
   return (
@@ -370,46 +401,57 @@ export function MediaLibraryManager({
 
       {/* Selected Photo Slide Drawer Overlay */}
       {selectedAsset && (
-        <>
+        <div className="fixed inset-0 z-[70] bg-charcoal/20 backdrop-blur-[2px]">
           {/* Backdrop layer */}
           <button
             type="button"
             aria-label="Close selected photo editor"
-            className="fixed inset-0 z-50 bg-charcoal/20 backdrop-blur-[2px] transition-opacity"
+            className="absolute inset-0"
             onClick={handleCloseDrawer}
+            disabled={isSavingOrDeleting}
           />
 
+          <div className="relative z-10 flex h-[100dvh] w-full justify-end p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] md:p-0">
           {/* Sliding Side Drawer panel */}
           <div
             id={dialogId}
             role="dialog"
             aria-modal="true"
             aria-label={`Edit Photo: ${selectedAsset.filename}`}
-            className="fixed inset-y-0 right-0 z-50 flex w-full max-w-xl bg-ivory/96 border-l border-charcoal/10 shadow-[0_24px_72px_rgba(53,37,29,0.18)] backdrop-blur-xl flex-col transition-transform duration-300"
+            className="flex h-full max-h-[calc(100dvh_-_env(safe-area-inset-bottom)_-_1.5rem)] w-full max-w-xl flex-col overflow-hidden rounded-[1.55rem] border border-charcoal/10 bg-ivory/96 shadow-[0_24px_72px_rgba(53,37,29,0.18)] backdrop-blur-xl transition-transform duration-300 md:max-h-none md:rounded-none md:border-y-0 md:border-r-0"
           >
             {/* Drawer Header */}
-            <div className="border-b border-charcoal/8 px-5 py-4 flex items-center justify-between">
-              <div>
+            <div className="shrink-0 border-b border-charcoal/8 px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between">
+              <div className="min-w-0">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-charcoal/45">
                   Website Photos Manager
                 </p>
-                <h2 className="mt-1 font-serif text-2xl tracking-tight text-charcoal">
+                <h2 className="mt-1 truncate font-serif text-[1.65rem] tracking-tight text-charcoal sm:text-2xl">
                   Edit Photo Settings
                 </h2>
               </div>
               <button
                 type="button"
                 aria-label="Close drawer"
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-charcoal/10 bg-white/82 text-charcoal transition hover:border-charcoal/20 hover:bg-white focus-visible:outline focus-visible:outline-gold/50"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-charcoal/10 bg-white/82 text-charcoal transition hover:border-charcoal/20 hover:bg-white focus-visible:outline focus-visible:outline-gold/50 disabled:cursor-not-allowed disabled:opacity-45"
                 onClick={handleCloseDrawer}
+                disabled={isSavingOrDeleting}
               >
                 <X aria-hidden="true" className="h-4 w-4" />
               </button>
             </div>
 
             {/* Scrollable Form Content */}
-            <div className="flex-1 overflow-y-auto px-5 py-6">
-              <form action={updateMediaAsset} id="update-asset-form" className="space-y-6">
+            <div
+              className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-5 sm:py-6"
+              style={{ WebkitOverflowScrolling: "touch" }}
+            >
+              <form
+                action={updateMediaAsset}
+                id="update-asset-form"
+                className="space-y-6 pb-32"
+                onSubmit={handleSaveSubmit}
+              >
                 <input type="hidden" name="mediaAssetId" value={selectedAsset.id} />
                 <input type="hidden" name="redirectTo" value="/admin/media" />
 
@@ -631,6 +673,17 @@ export function MediaLibraryManager({
                           Removing this photo deletes it from the Supabase bucket and strips all category and section assignments permanently.
                         </p>
                       </div>
+                      <ConfirmSubmitButton
+                        type="submit"
+                        form="delete-asset-form"
+                        variant="secondary"
+                        size="sm"
+                        className="min-h-11 rounded-full border-rose/30 bg-white px-4 text-rose-700 hover:border-rose/45 hover:bg-rose/10 disabled:cursor-not-allowed disabled:opacity-45"
+                        confirmMessage="Delete this photo permanently from the database and storage? This cannot be undone."
+                        disabled={isSavingOrDeleting}
+                      >
+                        Delete Photo
+                      </ConfirmSubmitButton>
                     </div>
                   </div>
                 </details>
@@ -638,30 +691,17 @@ export function MediaLibraryManager({
             </div>
 
             {/* Fixed Drawer Footer (Crucial for Mobile - stays visible above bottom nav) */}
-            <div className="border-t border-charcoal/8 bg-white/94 px-5 py-4 flex items-center justify-between gap-3 shadow-[0_-8px_32px_rgba(53,37,29,0.06)] shrink-0">
-              {/* Separate Delete Form aligned inside the footer safely */}
-              <div>
-                <form action={deleteMediaAsset}>
-                  <input type="hidden" name="mediaAssetId" value={selectedAsset.id} />
-                  <input type="hidden" name="redirectTo" value="/admin/media" />
-                  <ConfirmSubmitButton
-                    type="submit"
-                    variant="secondary"
-                    size="sm"
-                    className="border-rose/30 bg-white text-rose-700 hover:border-rose/45 hover:bg-rose/10 h-11 px-4 rounded-full"
-                    confirmMessage="Delete this photo permanently from the database and storage? This cannot be undone."
-                  >
-                    Remove Photo
-                  </ConfirmSubmitButton>
-                </form>
+            <div className="shrink-0 border-t border-charcoal/8 bg-white/94 px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] shadow-[0_-8px_32px_rgba(53,37,29,0.06)] sm:px-5 sm:py-4 sm:pb-4">
+              <div className="mb-2 min-h-5 text-xs text-charcoal/58" aria-live="polite">
+                {actionMessage ?? (hasChanges ? "Unsaved changes" : "No changes")}
               </div>
-
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-end gap-2">
                 <Button
                   type="button"
                   variant="secondary"
                   onClick={handleCloseDrawer}
-                  className="h-11 px-5 rounded-full border-charcoal/12 hover:bg-charcoal/5"
+                  className="h-11 px-5 rounded-full border-charcoal/12 hover:bg-charcoal/5 disabled:cursor-not-allowed disabled:opacity-45"
+                  disabled={isSavingOrDeleting}
                 >
                   Cancel
                 </Button>
@@ -669,14 +709,25 @@ export function MediaLibraryManager({
                 <Button
                   type="submit"
                   form="update-asset-form"
-                  className="h-11 px-6 rounded-full bg-charcoal hover:bg-charcoal/90 text-white font-medium"
+                  className="h-11 px-6 rounded-full bg-charcoal hover:bg-charcoal/90 text-white font-medium disabled:cursor-not-allowed disabled:opacity-45"
+                  disabled={!hasChanges || isSavingOrDeleting}
                 >
-                  Save Photo
+                  {isSavingOrDeleting ? "Saving..." : "Save Changes"}
                 </Button>
               </div>
             </div>
+            <form
+              action={deleteMediaAsset}
+              id="delete-asset-form"
+              className="hidden"
+              onSubmit={handleDeleteSubmit}
+            >
+              <input type="hidden" name="mediaAssetId" value={selectedAsset.id} />
+              <input type="hidden" name="redirectTo" value="/admin/media" />
+            </form>
           </div>
-        </>
+          </div>
+        </div>
       )}
     </div>
   );

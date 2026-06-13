@@ -1,23 +1,25 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { usePathname } from "next/navigation";
+
+import { ADMIN_HOME_HREF } from "@/lib/admin/navigation";
 
 type AdminAppBarProps = {
   accountMenu: ReactNode;
   brandHref?: string;
   eyebrow?: string;
+  onNavigate?: (href: string) => void;
   quickAction?: ReactNode;
   secondaryContent?: ReactNode;
   title: string;
 };
 
-import { usePathname } from "next/navigation";
-import { ADMIN_HOME_HREF } from "@/lib/admin/navigation";
-
 export function AdminAppBar({
   accountMenu,
   brandHref = ADMIN_HOME_HREF,
   eyebrow = "Sweet Fork Admin",
+  onNavigate,
   quickAction,
   secondaryContent,
   title,
@@ -34,7 +36,9 @@ export function AdminAppBar({
             onClick={(e) => {
               if (pathname === brandHref) {
                 e.preventDefault();
+                return;
               }
+              onNavigate?.(brandHref);
             }}
             className="inline-flex shrink-0 items-center rounded-lg sm:rounded-[1.35rem] border border-charcoal/8 bg-white/76 px-2 py-1.5 sm:px-3 sm:py-2 transition hover:border-charcoal/14 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50"
           >

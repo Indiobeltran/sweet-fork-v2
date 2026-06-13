@@ -1,3 +1,50 @@
+## Admin Media Mobile Editing Fix — 2026-06-13
+
+- **Current branch**: `codex/admin-media-mobile-actions`.
+- **Current objective**: Fix `/admin/media` mobile edit-modal usability, make save/delete actions visible and usable, and add admin navigation loading feedback.
+- **Starting status**: Started from `main` with tracked files clean. Unrelated untracked files were present and preserved: `.agents/`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `skills-lock.json`.
+- **Files inspected**: `AGENTS.md`, `ROADMAP.md`, `GATES.md`, `HANDOFF.md`, `DECISIONS.md`, `BACKLOG.md`, `README.md`, `src/app/admin/(protected)/media/page.tsx`, `src/app/admin/(protected)/media/actions.ts`, `src/components/admin/media-library-manager.tsx`, `src/app/admin/(protected)/layout.tsx`, `src/components/admin/admin-shell-chrome.tsx`, `src/components/admin/admin-app-bar.tsx`, `src/components/admin/mobile-bottom-nav.tsx`, `src/components/admin/more-menu-sheet.tsx`, `src/components/admin/confirm-submit-button.tsx`, `src/lib/admin/site-management.ts`, `src/lib/admin/navigation.ts`, `package.json`.
+- **Implementation approach**: No schema changes. Reused the existing `updateMediaAsset` and `deleteMediaAsset` server actions and the current `media_assets` / `media_assignments` architecture. Changes are scoped to admin UI behavior and focused source tests.
+- **Fixes completed**:
+  - Mobile edit modal now opens above the bottom admin nav (`z-[70]`), locks body scroll, uses a `100dvh` panel, and gives the drawer content its own `overflow-y-auto overscroll-contain` touch scroller with explicit bottom padding for the expanded Advanced/Danger Zone content.
+  - Media edits now have a clear sticky footer with `Save Changes`, `Cancel`, `Unsaved changes` / `No changes` / pending state messaging, disabled save when clean, and disabled close/delete while save/delete is pending.
+  - Danger Zone now includes the visible `Delete Photo` submit action in the Advanced section and uses the existing confirmation + `deleteMediaAsset` server action. The action removes linked inquiry asset rows, deletes the media asset row, then removes the asset storage object for the recorded bucket/path.
+  - Admin page navigation now shows immediate feedback: top loading bar, pending ring/text on desktop links, More-sheet links, and mobile bottom-nav links. Pending state clears on route/search change and has an 8-second fallback.
+- **Tests added/updated**:
+  - `src/components/admin/media-library-manager.test.ts` covers mobile modal z-index/viewport/scroll source, save disabled/no-change state, and visible Danger Zone delete placement.
+  - `src/components/admin/admin-shell-chrome.test.ts` covers pending route feedback source.
+  - `src/components/admin/more-menu-sheet-classes.test.ts` was updated to assert link-specific `onNavigate` behavior.
+  - `package.json` `npm test` now includes the new focused admin tests.
+- **Manual/dev QA performed**:
+  - Started local dev server and opened `http://localhost:3000/admin/media` at `390x844`.
+  - Confirmed modal opens while authenticated, body scroll is locked, drawer has an independent touch scroller, close button remains visible, `Save Changes` is visible/disabled when clean, and `Delete Photo` is visible in Danger Zone after opening Advanced and scrolling.
+  - Verified save round-trip on safe QA asset `d89b1424-df38-4e1b-9f88-1bfd922bc13d`: changed the title, saved successfully through `/admin/media?notice=media-updated`, closed/reopened, confirmed persisted value and clean `No changes` state.
+  - Restored the QA asset caption back to `sweet-fork-qa-test-unique-image-filename.jpg` using the existing local Supabase secret env. Confirmed the QA asset had zero media assignments before restore, so no customer-facing placement was left changed.
+- **Manual QA limitation**:
+  - A destructive delete click was attempted on the safe QA asset, but the native `window.confirm` dialog blocked the in-app browser automation channel before confirmation could be accepted. No delete POST completed, and the QA asset remains present. Delete behavior is covered by the visible UI wiring/source tests plus the existing server action inspection, but a human browser/admin pass should confirm the native delete confirmation end-to-end.
+- **Verification commands/results**:
+  - `node --no-warnings --experimental-strip-types --test src/components/admin/media-library-manager.test.ts` — Passed.
+  - `node --no-warnings --experimental-strip-types --test src/components/admin/more-menu-sheet-classes.test.ts` — Passed.
+  - `npm run lint` — Passed.
+  - `npm test` — Passed (16 tests). Existing Netlify Forms fail-soft tests intentionally log simulated network/404 errors while passing.
+  - `npm run typecheck` — Passed.
+  - `npm run build` — Passed.
+  - `git diff --check` — Passed.
+- **Files changed recently**:
+  - `package.json`
+  - `src/components/admin/admin-app-bar.tsx`
+  - `src/components/admin/admin-shell-chrome.tsx`
+  - `src/components/admin/admin-shell-chrome.test.ts`
+  - `src/components/admin/media-library-manager.tsx`
+  - `src/components/admin/media-library-manager.test.ts`
+  - `src/components/admin/mobile-bottom-nav.tsx`
+  - `src/components/admin/more-menu-sheet.tsx`
+  - `src/components/admin/more-menu-sheet-classes.test.ts`
+  - `HANDOFF.md`
+- **Known issues / follow-up**:
+  - Human/admin browser verification is still recommended for the native delete confirmation because the in-app browser automation was blocked by the confirmation dialog.
+  - Commit was requested for this task; push was not requested.
+
 ## DIY Kits Hero Media Placement Verification — 2026-06-13
 
 - **Current branch**: `main`.

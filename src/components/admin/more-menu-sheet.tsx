@@ -20,8 +20,10 @@ type MoreMenuSheetProps = {
   desktopOnly?: boolean;
   groups: MoreMenuSheetGroup[];
   mobileOnly?: boolean;
+  onNavigate?: (href: string) => void;
   onOpenChange: (open: boolean) => void;
   open: boolean;
+  pendingHref?: string | null;
   showBackdrop?: boolean;
   title?: string;
 };
@@ -29,9 +31,11 @@ type MoreMenuSheetProps = {
 function MoreMenuSheetLinks({
   groups,
   onNavigate,
+  pendingHref = null,
 }: Readonly<{
   groups: MoreMenuSheetGroup[];
-  onNavigate: () => void;
+  onNavigate: (href: string) => void;
+  pendingHref?: string | null;
 }>) {
   const linkFocusClasses =
     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50";
@@ -45,32 +49,38 @@ function MoreMenuSheetLinks({
           </p>
 
           <div className="mt-2 grid gap-2">
-            {group.items.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={item.isActive ? "page" : undefined}
-                className={cn(
-                  "inline-flex min-h-12 items-center justify-between rounded-[1.3rem] border px-4 py-3 text-sm font-medium transition",
-                  linkFocusClasses,
-                  item.isActive
-                    ? "border-charcoal/16 bg-charcoal text-ivory shadow-soft"
-                    : "border-charcoal/10 bg-white/78 text-charcoal hover:border-charcoal/20 hover:bg-white",
-                )}
-                onNavigate={onNavigate}
-              >
-                <span>{item.label}</span>
-                <span
-                  aria-hidden="true"
+            {group.items.map((item) => {
+              const isPending = pendingHref === item.href;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-busy={isPending ? "true" : undefined}
+                  aria-current={item.isActive ? "page" : undefined}
                   className={cn(
-                    "text-[11px] uppercase tracking-[0.16em]",
-                    item.isActive ? "text-ivory/72" : "text-charcoal/42",
+                    "inline-flex min-h-12 items-center justify-between rounded-[1.3rem] border px-4 py-3 text-sm font-medium transition",
+                    linkFocusClasses,
+                    isPending && "ring-2 ring-gold/35",
+                    item.isActive
+                      ? "border-charcoal/16 bg-charcoal text-ivory shadow-soft"
+                      : "border-charcoal/10 bg-white/78 text-charcoal hover:border-charcoal/20 hover:bg-white",
                   )}
+                  onNavigate={() => onNavigate(item.href)}
                 >
-                  Open
-                </span>
-              </Link>
-            ))}
+                  <span>{item.label}</span>
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "text-[11px] uppercase tracking-[0.16em]",
+                      item.isActive ? "text-ivory/72" : "text-charcoal/42",
+                    )}
+                  >
+                    {isPending ? "Opening" : "Open"}
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         </section>
       ))}
@@ -83,8 +93,10 @@ export function MoreMenuSheet({
   desktopOnly = false,
   groups,
   mobileOnly = false,
+  onNavigate,
   onOpenChange,
   open,
+  pendingHref = null,
   showBackdrop = true,
   title = "More",
 }: Readonly<MoreMenuSheetProps>) {
@@ -128,7 +140,14 @@ export function MoreMenuSheet({
             </button>
           </div>
 
-          <MoreMenuSheetLinks groups={groups} onNavigate={() => onOpenChange(false)} />
+          <MoreMenuSheetLinks
+            groups={groups}
+            onNavigate={(href) => {
+              onNavigate?.(href);
+              onOpenChange(false);
+            }}
+            pendingHref={pendingHref}
+          />
         </div>
       ) : null}
 
@@ -164,7 +183,14 @@ export function MoreMenuSheet({
 
             <p className="mt-1.5 text-sm leading-6 text-charcoal/62">{description}</p>
 
-            <MoreMenuSheetLinks groups={groups} onNavigate={() => onOpenChange(false)} />
+            <MoreMenuSheetLinks
+              groups={groups}
+              onNavigate={(href) => {
+                onNavigate?.(href);
+                onOpenChange(false);
+              }}
+              pendingHref={pendingHref}
+            />
           </div>
         </div>
       ) : null}

@@ -10,7 +10,7 @@ import {
   LayoutDashboard,
   ShoppingBag,
 } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 import { AdminAppBar } from "@/components/admin/admin-app-bar";
 import { MobileBottomNav } from "@/components/admin/mobile-bottom-nav";
@@ -46,8 +46,10 @@ export function AdminShellChrome({
   quickAction,
 }: Readonly<AdminShellChromeProps>) {
   const pathname = usePathname() ?? ADMIN_HOME_HREF;
+  const searchParams = useSearchParams();
   const pageMeta = getAdminPageMeta(pathname);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
 
   const moreGroups: MoreMenuSheetGroup[] = baseMoreGroups.map((group) => ({
     label: group.group,
@@ -60,7 +62,45 @@ export function AdminShellChrome({
 
   useEffect(() => {
     setIsMoreOpen(false);
-  }, [pathname]);
+    setPendingHref(null);
+  }, [pathname, searchParams]);
+
+  useEffect(() => {
+    if (!pendingHref) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => setPendingHref(null), 8000);
+    return () => window.clearTimeout(timeoutId);
+  }, [pendingHref]);
+
+  const handleNavigationIntent = (href: string) => {
+    if (href !== pathname) {
+      setPendingHref(href);
+    }
+  };
+
+  const handleMoreNavigationIntent = (href: string) => {
+    handleNavigationIntent(href);
+    setIsMoreOpen(false);
+  };
+
+  const isRoutePending = pendingHref !== null;
+
+  useEffect(() => {
+    if (!isRoutePending) {
+      return;
+    }
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setPendingHref(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [isRoutePending]);
 
   useEffect(() => {
     if (!isMoreOpen) {
@@ -79,9 +119,19 @@ export function AdminShellChrome({
 
   return (
     <div className="min-h-screen overflow-x-hidden pb-[calc(env(safe-area-inset-bottom)+5.75rem)] pt-1.5 sm:pt-3 md:pb-8">
+      {isRoutePending ? (
+        <div
+          aria-live="polite"
+          aria-label="Loading admin page"
+          className="fixed inset-x-0 top-0 z-[80] h-1 overflow-hidden bg-gold/20"
+        >
+          <div className="h-full w-1/2 animate-pulse rounded-r-full bg-gold shadow-[0_0_18px_rgba(201,154,87,0.45)]" />
+        </div>
+      ) : null}
       <div className="section-shell relative">
         <AdminAppBar
           accountMenu={accountMenu}
+          onNavigate={handleNavigationIntent}
           quickAction={quickAction}
           title={pageMeta.title}
           secondaryContent={
@@ -92,14 +142,17 @@ export function AdminShellChrome({
                     key={item.href}
                     href={item.href}
                     aria-current={pageMeta.activePrimaryKey === item.key ? "page" : undefined}
+                    aria-busy={pendingHref === item.href ? "true" : undefined}
                     className={cn(
                       "inline-flex h-10 items-center justify-center rounded-full px-4 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50",
+                      pendingHref === item.href && "ring-2 ring-gold/35",
                       pageMeta.activePrimaryKey === item.key
                         ? "bg-charcoal text-ivory shadow-soft"
                         : "text-charcoal/64 hover:bg-white hover:text-charcoal",
                     )}
+                    onNavigate={() => handleNavigationIntent(item.href)}
                   >
-                    {item.label}
+                    {pendingHref === item.href ? "Opening" : item.label}
                   </Link>
                 ))}
 
@@ -128,6 +181,8 @@ export function AdminShellChrome({
                     groups={moreGroups}
                     open={isMoreOpen}
                     onOpenChange={setIsMoreOpen}
+                    onNavigate={handleMoreNavigationIntent}
+                    pendingHref={pendingHref}
                     showBackdrop={false}
                   />
                 </div>
@@ -144,6 +199,8 @@ export function AdminShellChrome({
         mobileOnly
         open={isMoreOpen}
         onOpenChange={setIsMoreOpen}
+        onNavigate={handleMoreNavigationIntent}
+        pendingHref={pendingHref}
       />
 
       <MobileBottomNav
@@ -161,6 +218,8 @@ export function AdminShellChrome({
         moreIcon={<FolderKanban className="h-[1.05rem] w-[1.05rem]" />}
         moreOpen={isMoreOpen}
         onMoreClick={() => setIsMoreOpen((currentValue) => !currentValue)}
+        onNavigate={handleNavigationIntent}
+        pendingHref={pendingHref}
       />
     </div>
   );
