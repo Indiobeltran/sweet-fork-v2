@@ -1,4 +1,29 @@
+## Mobile Sticky Header Solid Background Fix (Second Pass) — 2026-06-12
+
+- **Objective**: Make the sticky/mobile public site header a truly solid warm ivory/cream bar, removing all translucent/blurred overlay effects.
+- **Why the first fix was insufficient**: The first pass used `bg-ivory/96`, which still left 4% transparency. On dark/image-heavy sections, the dark page background bled through the header, causing the dark Sweet Fork wordmark logo to become nearly invisible.
+- **Current branch**: `antigravity/mobile-header-solid-background`
+- **Files changed**:
+  - `src/components/site/site-header.tsx`
+- **Styling approach used**:
+  - Replaced `bg-ivory/96` with `bg-ivory` (100% opaque using the existing design token) on the main `<header>` container.
+  - Replaced `bg-ivory/98` with `bg-ivory` on the expanded mobile navigation dropdown.
+  - Removed `backdrop-blur-md` entirely, as the background is now fully opaque.
+  - Maintained the subtle scroll-state shadow and faint `border-[#786446]/14` bottom border to keep the header looking premium as a solid navigation bar.
+- **Browser/mobile QA routes tested**:
+  - `/` (Homepage, scrolled over dark/image sections)
+  - `/custom-cakes` (Product page)
+  - `/gallery` (Image-heavy gallery page)
+  - `/start-order` (Inquiry route)
+- **Verification results**:
+  - The Sweet Fork wordmark remains clearly visible over all backgrounds.
+  - The header background remains solid ivory/cream at all times.
+  - Inquire button is readable and correctly routes to `/start-order`.
+  - Hamburger menu opens/closes correctly and is clearly visible.
+  - `npm run lint`, `npm run typecheck`, and `npm run build` all passed.
+
 ## Mobile Sticky Header Contrast and Readability Fix — 2026-06-12
+
 
 - **Objective**: Fix the mobile/sticky header readability/contrast issues on the live Netlify/mobile layout.
 - **Current branch**: `antigravity/mobile-header-contrast`

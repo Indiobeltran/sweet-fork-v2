@@ -97,7 +97,7 @@ export function SiteHeader({
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 border-b border-[#786446]/14 bg-ivory/96 backdrop-blur-md transition-shadow duration-200",
+        "sticky top-0 z-50 border-b border-[#786446]/14 bg-ivory transition-shadow duration-200",
         scrolled
           ? "shadow-[0_8px_24px_rgba(40,32,20,0.08)]"
           : "shadow-[0_1px_0_rgba(255,255,255,0.72)]",
@@ -178,7 +178,7 @@ export function SiteHeader({
         aria-hidden={!open}
         inert={!open ? true : undefined}
         className={cn(
-          "grid max-h-[calc(100svh-4.7rem)] overflow-hidden border-t border-charcoal/8 bg-ivory/98 shadow-[0_18px_50px_rgba(44,36,27,0.08)] transition-[grid-template-rows] duration-300 lg:hidden",
+          "grid max-h-[calc(100svh-4.7rem)] overflow-hidden border-t border-charcoal/8 bg-ivory shadow-[0_18px_50px_rgba(44,36,27,0.08)] transition-[grid-template-rows] duration-300 lg:hidden",
           open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
         )}
       >
