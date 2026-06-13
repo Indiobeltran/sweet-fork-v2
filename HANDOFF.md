@@ -98,6 +98,46 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Sitewide Image Placements & Audit — 2026-06-12
+
+- **Objective**: Implement explicit admin-manageable image placements for product pages and audit the rest of the site for hardcoded/placeholder images to ensure all primary visual content is manageable.
+- **Current branch**: `codex/admin-image-placements`
+- **Files modified**:
+  - `src/lib/site/marketing.ts`
+  - `src/app/og/route.tsx`
+- **Site Image Audit**:
+  - A sitewide audit was conducted to find `<Image>`, `/placeholders/`, and static fallback usage.
+  - **Home page hero images**: Already converted to `home.gallery` placement.
+  - **Home page offering/service images**: Already converted to `home.offering.[slug]` placements.
+  - **Featured gallery/photo sections**: Already converted to `gallery.grid` placement.
+  - **About/CTA images**: Evaluated. The `PublicPageHero` and `InquiryCta` components do not currently feature or support an image slot by design. Intentionally left as-is to preserve layout architecture without overengineering.
+  - **Wedding/tasting/consultation images**: Wedding Cakes is a core product page (`/wedding-cakes`), and its hero image is now manageable via `product.hero.wedding-cakes`. There are no dedicated tasting/consultation pages with images.
+  - **Testimonial/photo callouts**: `TestimonialCarousel` is text-based. The homepage "Gallery preview" explicitly pulls from `home.gallery` array.
+  - **OG Images**: Evaluated `src/app/og/route.tsx`. It used hardcoded strings pointing to `/placeholders/marketing/...` for product pages and gallery. It has been converted to dynamically load explicit assigned images, falling back to static strings.
+- **Image Source Conversion Table**:
+
+| Page / Section | Current Image Source (Before) | New Placement Key | Admin Manageable Now? | Fallback Behavior | Notes / Intentionally Unchanged |
+|---|---|---|---|---|---|
+| `/custom-cakes` Hero | Placeholder / random category gallery | `product.hero.custom-cakes` | Yes | Gallery item matching category > Static placeholder | - |
+| `/wedding-cakes` Hero | Placeholder / random category gallery | `product.hero.wedding-cakes` | Yes | Gallery item matching category > Static placeholder | - |
+| `/cupcakes` Hero | Placeholder / random category gallery | `product.hero.cupcakes` | Yes | Gallery item matching category > Static placeholder | - |
+| `/sugar-cookies` Hero | Placeholder / random category gallery | `product.hero.sugar-cookies` | Yes | Gallery item matching category > Static placeholder | - |
+| `/macarons` Hero | Placeholder / random category gallery | `product.hero.macarons` | Yes | Gallery item matching category > Static placeholder | - |
+| `/diy-kits` Hero | Placeholder / random category gallery | `product.hero.diy-kits` | Yes | Gallery item matching category > Static placeholder | - |
+| `/about` Hero / CTA | N/A | N/A | N/A | N/A | Design uses text-only `PublicPageHero`. Intentionally unchanged. |
+| Homepage Hero | Supabase `home.gallery` | `home.gallery` | Yes (existing) | Static fallback | Already working as intended. |
+| Homepage Offerings | Supabase `home.offering.[slug]` | `home.offering.[slug]` | Yes (existing) | Gallery item > Static fallback | Already working as intended. |
+| Gallery Grid | Supabase `gallery.grid` | `gallery.grid` | Yes (existing) | Static fallback | Already working as intended. |
+| OG (Social Sharing) | Static `/placeholders/marketing/` | Uses explicit page hero assignments | Yes | Static fallback | `src/app/og/route.tsx` updated to fetch DB placements for product pages, `/gallery`, and `/`. |
+
+- **Verification performed**:
+  - `npm run lint` — Passed.
+  - `npx tsc --noEmit` (Typecheck) — Passed.
+  - `npm run build` — Passed with 22/22 static pages generated successfully.
+  - Visual check of admin schema definitions confirming `mediaPlacementDefinitions` handles the new slots cleanly.
+- **Blockers / follow-up items**: None. All meaningful public slots are now driven by the `media_assignments` table with clean static fallbacks.
+
+
 ## Google Reviews Import — 2026-06-12
 
 - **Objective**: Parse the real Google Business Profile reviews and import them into the Supabase-backed testimonials system.

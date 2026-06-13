@@ -1,6 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
 import { ImageResponse } from "next/og";
 
+import { getProductHeroImagesBySlug, getGalleryItemsForPlacement } from "@/lib/site/marketing";
+
 const pageLabels: Record<string, string> = {
   "/": "Centerville, Utah",
   "/about": "About",
@@ -39,12 +41,43 @@ function getImagePath(path: string) {
   return pageImages[path] ?? "/brand/logo-social.jpg";
 }
 
-export function GET(request: Request) {
+
+
+export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const path = searchParams.get("path")?.trim() || "/";
   const title = searchParams.get("title")?.trim() || "The Sweet Fork";
   const label = getLabel(path);
-  const imageUrl = new URL(getImagePath(path), request.url).toString();
+  let resolvedImagePath = getImagePath(path);
+
+  try {
+    if (path.startsWith("/") && path.length > 1) {
+      const slug = path.slice(1);
+      
+      if (["custom-cakes", "cupcakes", "diy-kits", "macarons", "sugar-cookies", "wedding-cakes"].includes(slug)) {
+        const productHero = (await getProductHeroImagesBySlug([slug])).get(slug);
+        if (productHero?.imageUrl) {
+          resolvedImagePath = productHero.imageUrl;
+        }
+      } else if (slug === "gallery" || slug === "pricing") {
+        const galleryItems = await getGalleryItemsForPlacement("gallery.grid", { limit: 1 });
+        if (galleryItems.length > 0 && galleryItems[0].imageUrl) {
+          resolvedImagePath = galleryItems[0].imageUrl;
+        }
+      }
+    } else if (path === "/") {
+      const galleryItems = await getGalleryItemsForPlacement("home.gallery", { limit: 1 });
+      if (galleryItems.length > 0 && galleryItems[0].imageUrl) {
+        resolvedImagePath = galleryItems[0].imageUrl;
+      }
+    }
+  } catch (error) {
+    console.error("Unable to load explicitly assigned OG image. Using fallback.", error);
+  }
+
+  const imageUrl = resolvedImagePath.startsWith("http")
+    ? resolvedImagePath
+    : new URL(resolvedImagePath, request.url).toString();
 
   return new ImageResponse(
     (

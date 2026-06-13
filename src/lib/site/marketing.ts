@@ -273,6 +273,54 @@ export const mediaPlacementDefinitions: MediaPlacementDefinition[] = [
     slotKey: "diy-kits",
   },
   {
+    description: "Hero image shown at the top of the Custom Cakes product page.",
+    key: "product.hero.custom-cakes",
+    label: "Product Page Hero - Custom Cakes",
+    pageKey: "product",
+    sectionKey: "hero",
+    slotKey: "custom-cakes",
+  },
+  {
+    description: "Hero image shown at the top of the Wedding Cakes product page.",
+    key: "product.hero.wedding-cakes",
+    label: "Product Page Hero - Wedding Cakes",
+    pageKey: "product",
+    sectionKey: "hero",
+    slotKey: "wedding-cakes",
+  },
+  {
+    description: "Hero image shown at the top of the Cupcakes product page.",
+    key: "product.hero.cupcakes",
+    label: "Product Page Hero - Cupcakes",
+    pageKey: "product",
+    sectionKey: "hero",
+    slotKey: "cupcakes",
+  },
+  {
+    description: "Hero image shown at the top of the Sugar Cookies product page.",
+    key: "product.hero.sugar-cookies",
+    label: "Product Page Hero - Sugar Cookies",
+    pageKey: "product",
+    sectionKey: "hero",
+    slotKey: "sugar-cookies",
+  },
+  {
+    description: "Hero image shown at the top of the Macarons product page.",
+    key: "product.hero.macarons",
+    label: "Product Page Hero - Macarons",
+    pageKey: "product",
+    sectionKey: "hero",
+    slotKey: "macarons",
+  },
+  {
+    description: "Hero image shown at the top of the DIY Kits product page.",
+    key: "product.hero.diy-kits",
+    label: "Product Page Hero - DIY Kits",
+    pageKey: "product",
+    sectionKey: "hero",
+    slotKey: "diy-kits",
+  },
+  {
     description: "Primary portfolio photos shown on the dedicated Gallery page.",
     key: "gallery.grid",
     label: "Gallery page grid",
@@ -1005,11 +1053,111 @@ async function getOfferingImagesBySlug(slugs: string[]) {
   return resolvedImagesBySlug;
 }
 
+export async function getProductHeroImagesBySlug(slugs: string[]) {
+  const fallbackImagesBySlug = await getGalleryFallbackOfferingImagesBySlug(slugs);
+
+  if (!isSupabaseConfigured() || slugs.length === 0) {
+    return fallbackImagesBySlug;
+  }
+
+  const admin = createAdminClient();
+  const { data: placementData, error: placementError } = await admin
+    .from("media_assignments")
+    .select("display_order, media_asset_id, slot_key")
+    .eq("assignment_type", "page")
+    .eq("page_key", "product")
+    .eq("section_key", "hero")
+    .in("slot_key", slugs)
+    .order("slot_key", { ascending: true })
+    .order("display_order", { ascending: true });
+
+  if (placementError) {
+    logPublicDataFallback("Unable to load product hero media placements.", placementError);
+    return fallbackImagesBySlug;
+  }
+
+  const firstPlacementBySlug = ((placementData ?? []) as Array<
+    Pick<MediaAssignmentRow, "display_order" | "media_asset_id" | "slot_key">
+  >).reduce<Map<string, Pick<MediaAssignmentRow, "display_order" | "media_asset_id" | "slot_key">>>(
+    (accumulator, placement) => {
+      if (placement.slot_key && !accumulator.has(placement.slot_key)) {
+        accumulator.set(placement.slot_key, placement);
+      }
+
+      return accumulator;
+    },
+    new Map(),
+  );
+  const assetIds = Array.from(
+    new Set(
+      Array.from(firstPlacementBySlug.values()).map((placement) => placement.media_asset_id),
+    ),
+  );
+
+  if (assetIds.length === 0) {
+    return fallbackImagesBySlug;
+  }
+
+  const { data: assetData, error: assetError } = await admin
+    .from("media_assets")
+    .select("alt_text, bucket, caption, id, original_filename, public_url, storage_path")
+    .in("id", assetIds)
+    .eq("bucket", marketingMediaBucket)
+    .eq("asset_kind", "image");
+
+  if (assetError) {
+    logPublicDataFallback("Unable to load product hero media assets.", assetError);
+    return fallbackImagesBySlug;
+  }
+
+  const assetMap = new Map(
+    ((assetData ?? []) as Array<
+      Pick<
+        MediaAssetRow,
+        | "alt_text"
+        | "bucket"
+        | "caption"
+        | "id"
+        | "original_filename"
+        | "public_url"
+        | "storage_path"
+      >
+    >)
+      .filter((asset) => isApprovedMarketingAsset(asset))
+      .map((asset) => [asset.id, asset]),
+  );
+  const resolvedImagesBySlug = new Map(fallbackImagesBySlug);
+
+  firstPlacementBySlug.forEach((placement, slug) => {
+    const asset = assetMap.get(placement.media_asset_id);
+    const fallbackImage = fallbackImagesBySlug.get(slug) ?? null;
+
+    if (!asset) {
+      return;
+    }
+
+    const title = asset.caption?.trim() || fallbackImage?.title || prettifyFileName(asset.original_filename);
+    resolvedImagesBySlug.set(slug, {
+      alt: getGalleryAltText({
+        altText: asset.alt_text,
+        category: fallbackImage?.category,
+        title,
+      }),
+      category: fallbackImage?.category ?? "Product page hero",
+      id: asset.id,
+      imageUrl: getMediaPublicUrl(asset),
+      title,
+    });
+  });
+
+  return resolvedImagesBySlug;
+}
+
 async function getProductPageContentWithApprovedHero(
   slug: string,
   content: ProductPageContent,
 ): Promise<ProductPageContent> {
-  const approvedHero = (await getGalleryFallbackOfferingImagesBySlug([slug])).get(slug);
+  const approvedHero = (await getProductHeroImagesBySlug([slug])).get(slug);
 
   if (!approvedHero?.imageUrl) {
     return content;
