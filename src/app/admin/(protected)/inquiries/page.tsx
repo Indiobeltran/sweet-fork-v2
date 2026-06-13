@@ -1,12 +1,14 @@
 import Link from "next/link";
 
-import { ActiveFilterPills, type ActiveFilterPill } from "@/components/admin/active-filter-pills";
+import {
+  ActiveFilterPills,
+  type ActiveFilterPill,
+} from "@/components/admin/active-filter-pills";
 import { AdminNoticeBanner } from "@/components/admin/admin-notice-banner";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { CompactEmptyState } from "@/components/admin/compact-empty-state";
 import { FilterSheet } from "@/components/admin/filter-sheet";
 import { StatusChipRow } from "@/components/admin/status-chip-row";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,6 +40,7 @@ const DEFAULT_FILTERS: InquiryListFilters = {
   fulfillmentMethod: "all",
   priority: "all",
   productType: "all",
+  search: "",
   status: "active",
   urgency: "all",
 };
@@ -79,7 +82,7 @@ const urgencyLabels: Record<string, string> = {
 };
 
 function getSearchValue(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] ?? "" : value ?? "";
+  return Array.isArray(value) ? (value[0] ?? "") : (value ?? "");
 }
 
 function getStatusClasses(status: Enums<"inquiry_status">) {
@@ -101,7 +104,9 @@ function getStatusClasses(status: Enums<"inquiry_status">) {
   }
 }
 
-function getSignalClasses(value: InquirySignalPriority | InquirySignalUrgency | null) {
+function getSignalClasses(
+  value: InquirySignalPriority | InquirySignalUrgency | null,
+) {
   switch (value) {
     case "high":
     case "rush":
@@ -163,6 +168,10 @@ function buildInquiriesHref(
   };
   const searchParams = new URLSearchParams();
 
+  if (nextFilters.search) {
+    searchParams.set("search", nextFilters.search);
+  }
+
   if (nextFilters.status !== DEFAULT_FILTERS.status) {
     searchParams.set("status", nextFilters.status);
   }
@@ -202,9 +211,19 @@ function buildInquiriesHref(
 function getActiveFilterPills(filters: InquiryListFilters): ActiveFilterPill[] {
   const pills: ActiveFilterPill[] = [];
 
+  if (filters.search) {
+    pills.push({
+      clearHref: buildInquiriesHref(filters, { search: "" }),
+      label: "Search",
+      value: filters.search,
+    });
+  }
+
   if (filters.status !== DEFAULT_FILTERS.status) {
     pills.push({
-      clearHref: buildInquiriesHref(filters, { status: DEFAULT_FILTERS.status }),
+      clearHref: buildInquiriesHref(filters, {
+        status: DEFAULT_FILTERS.status,
+      }),
       label: "Status",
       value: statusLabels[filters.status],
     });
@@ -212,9 +231,13 @@ function getActiveFilterPills(filters: InquiryListFilters): ActiveFilterPill[] {
 
   if (filters.productType !== DEFAULT_FILTERS.productType) {
     pills.push({
-      clearHref: buildInquiriesHref(filters, { productType: DEFAULT_FILTERS.productType }),
+      clearHref: buildInquiriesHref(filters, {
+        productType: DEFAULT_FILTERS.productType,
+      }),
       label: "Product",
-      value: productTypeLabels[filters.productType] ?? toTitleCase(filters.productType),
+      value:
+        productTypeLabels[filters.productType] ??
+        toTitleCase(filters.productType),
     });
   }
 
@@ -224,7 +247,9 @@ function getActiveFilterPills(filters: InquiryListFilters): ActiveFilterPill[] {
         fulfillmentMethod: DEFAULT_FILTERS.fulfillmentMethod,
       }),
       label: "Fulfillment",
-      value: fulfillmentLabels[filters.fulfillmentMethod] ?? toTitleCase(filters.fulfillmentMethod),
+      value:
+        fulfillmentLabels[filters.fulfillmentMethod] ??
+        toTitleCase(filters.fulfillmentMethod),
     });
   }
 
@@ -246,17 +271,22 @@ function getActiveFilterPills(filters: InquiryListFilters): ActiveFilterPill[] {
 
   if (filters.budgetRange !== DEFAULT_FILTERS.budgetRange) {
     pills.push({
-      clearHref: buildInquiriesHref(filters, { budgetRange: DEFAULT_FILTERS.budgetRange }),
+      clearHref: buildInquiriesHref(filters, {
+        budgetRange: DEFAULT_FILTERS.budgetRange,
+      }),
       label: "Budget",
       value:
-        budgetRangeOptions.find((option) => option.value === filters.budgetRange)?.label ??
-        filters.budgetRange,
+        budgetRangeOptions.find(
+          (option) => option.value === filters.budgetRange,
+        )?.label ?? filters.budgetRange,
     });
   }
 
   if (filters.priority !== DEFAULT_FILTERS.priority) {
     pills.push({
-      clearHref: buildInquiriesHref(filters, { priority: DEFAULT_FILTERS.priority }),
+      clearHref: buildInquiriesHref(filters, {
+        priority: DEFAULT_FILTERS.priority,
+      }),
       label: "Priority",
       value: priorityLabels[filters.priority] ?? toTitleCase(filters.priority),
     });
@@ -264,7 +294,9 @@ function getActiveFilterPills(filters: InquiryListFilters): ActiveFilterPill[] {
 
   if (filters.urgency !== DEFAULT_FILTERS.urgency) {
     pills.push({
-      clearHref: buildInquiriesHref(filters, { urgency: DEFAULT_FILTERS.urgency }),
+      clearHref: buildInquiriesHref(filters, {
+        urgency: DEFAULT_FILTERS.urgency,
+      }),
       label: "Timing",
       value: urgencyLabels[filters.urgency] ?? toTitleCase(filters.urgency),
     });
@@ -275,82 +307,100 @@ function getActiveFilterPills(filters: InquiryListFilters): ActiveFilterPill[] {
 
 function InquiryCard({ entry }: Readonly<{ entry: InquiryListEntry }>) {
   return (
-    <article className="rounded-[1.75rem] border border-charcoal/10 bg-white/88 p-4 shadow-soft transition hover:border-charcoal/20">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="space-y-3">
+    <article className="rounded-2xl border border-charcoal/10 bg-white/88 p-4 shadow-sm transition hover:border-charcoal/20">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        {/* Left Col: Core Identity & Event */}
+        <div className="flex flex-col gap-1.5 lg:w-[35%]">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge className="border-charcoal/10 bg-charcoal/5 text-charcoal/75">
-              {entry.referenceCode}
-            </Badge>
             <span
-              className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${getStatusClasses(entry.status)}`}
+              className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${getStatusClasses(entry.status)}`}
             >
               {toTitleCase(entry.status)}
             </span>
+            <span className="text-xs font-mono text-charcoal/50">
+              {entry.referenceCode}
+            </span>
           </div>
-
-          <div>
-            <h2 className="font-serif text-[1.9rem] tracking-[-0.03em] text-charcoal">
-              {entry.customerName}
-            </h2>
-            <p className="mt-1 text-sm leading-7 text-charcoal/66">
-              {entry.eventType} on {formatDate(entry.eventDate)} via{" "}
-              {entry.fulfillmentMethod === "delivery" ? "delivery" : "pickup"}
-            </p>
+          <h2 className="font-serif text-xl font-medium tracking-tight text-charcoal mt-1">
+            {entry.customerName}
+          </h2>
+          <p className="text-[13px] text-charcoal/70">
+            {entry.eventType} on {formatDate(entry.eventDate)} via{" "}
+            {entry.fulfillmentMethod === "delivery" ? "delivery" : "pickup"}
+          </p>
+          <div className="flex flex-wrap items-center gap-2 mt-0.5">
+            {entry.customerEmail && (
+              <a
+                href={`mailto:${entry.customerEmail}`}
+                className="text-xs text-charcoal/60 hover:text-charcoal underline underline-offset-2"
+              >
+                Email
+              </a>
+            )}
+            {entry.customerEmail && entry.customerPhone && (
+              <span className="text-charcoal/30">•</span>
+            )}
+            {entry.customerPhone && (
+              <a
+                href={`tel:${entry.customerPhone.replace(/\D/g, "")}`}
+                className="text-xs text-charcoal/60 hover:text-charcoal underline underline-offset-2"
+              >
+                Phone
+              </a>
+            )}
           </div>
+        </div>
 
-          <div className="flex flex-wrap gap-2">
+        {/* Middle Col: Products & Summary */}
+        <div className="flex flex-col gap-2.5 lg:flex-1 lg:border-l lg:border-charcoal/8 lg:pl-5">
+          <div className="flex flex-wrap gap-1.5">
             {entry.items.map((item) => (
               <span
                 key={item.id}
-                className="rounded-full border border-charcoal/8 bg-ivory/80 px-3 py-1 text-xs text-charcoal/72"
+                className="rounded-full border border-charcoal/8 bg-ivory/80 px-2.5 py-0.5 text-xs font-medium text-charcoal/72"
               >
                 {item.productLabel}: {item.requestedQuantityLabel}
               </span>
             ))}
           </div>
-        </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[18rem]">
-          <div className="rounded-[1.35rem] border border-charcoal/8 bg-ivory/70 p-3.5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-              Budget
-            </p>
-            <p className="mt-2 text-sm font-medium text-charcoal">
+          <div className="grid gap-x-4 gap-y-1 sm:grid-cols-2 text-xs text-charcoal/66">
+            <div>
+              <span className="font-medium text-charcoal/45">Budget:</span>{" "}
               {entry.budgetRangeLabel ?? "Not shared"}
-            </p>
-            <p className="mt-2 text-sm text-charcoal/60">
-              Estimate: {entry.estimatedLabel ?? "Still to be set"}
-            </p>
-          </div>
-
-          <div className="rounded-[1.35rem] border border-charcoal/8 bg-ivory/70 p-3.5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-              Signals
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <span
-                className={`rounded-full border px-3 py-1 text-xs font-medium ${getSignalClasses(entry.priorityValue)}`}
-              >
-                Priority: {entry.priorityLabel}
-              </span>
-              <span
-                className={`rounded-full border px-3 py-1 text-xs font-medium ${getSignalClasses(entry.urgencyValue)}`}
-              >
-                Timing: {entry.urgencyLabel}
-              </span>
+            </div>
+            <div>
+              <span className="font-medium text-charcoal/45">Est:</span>{" "}
+              {entry.estimatedLabel ?? "Still to be set"}
+            </div>
+            <div>
+              <span className="font-medium text-charcoal/45">Submitted:</span>{" "}
+              {formatDate(entry.submittedAt)}
             </div>
           </div>
-        </div>
-      </div>
 
-      <div className="mt-4 flex flex-col gap-3 border-t border-charcoal/8 pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-sm leading-7 text-charcoal/62">
-          Submitted {formatDate(entry.submittedAt)}. Contact: {entry.customerEmail} •{" "}
-          {entry.customerPhone}
+          {/* Signals */}
+          <div className="flex flex-wrap gap-2 mt-0.5">
+            <span
+              className={`rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${getSignalClasses(entry.priorityValue)}`}
+            >
+              Pri: {entry.priorityLabel}
+            </span>
+            <span
+              className={`rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${getSignalClasses(entry.urgencyValue)}`}
+            >
+              Time: {entry.urgencyLabel}
+            </span>
+          </div>
         </div>
 
-        <LinkButton href={`/admin/inquiries/${entry.id}`} label="Open inquiry" />
+        {/* Right Col: Actions */}
+        <div className="mt-1 lg:mt-0 lg:ml-4 lg:shrink-0 flex items-center justify-end border-t border-charcoal/8 pt-4 lg:border-t-0 lg:pt-0">
+          <LinkButton
+            href={`/admin/inquiries/${entry.id}`}
+            label="View details"
+          />
+        </div>
       </div>
     </article>
   );
@@ -387,7 +437,9 @@ export default async function AdminInquiriesPage({
         title="Inquiries"
         meta={
           <span>
-            <span className="font-semibold text-charcoal">{data.summary[0]?.value ?? data.entries.length}</span>{" "}
+            <span className="font-semibold text-charcoal">
+              {data.summary[0]?.value ?? data.entries.length}
+            </span>{" "}
             visible
           </span>
         }
@@ -397,6 +449,14 @@ export default async function AdminInquiriesPage({
             description="Narrow the queue without pushing the working list down the page."
           >
             <form method="get" className="grid gap-4 lg:grid-cols-2">
+              <FilterCard label="Search">
+                <Input
+                  name="search"
+                  defaultValue={filters.search}
+                  placeholder="Customer, email, or reference code"
+                />
+              </FilterCard>
+
               <FilterCard label="Status">
                 <Select name="status" defaultValue={filters.status}>
                   <option value="active">Active desk</option>
@@ -423,7 +483,10 @@ export default async function AdminInquiriesPage({
               </FilterCard>
 
               <FilterCard label="Fulfillment">
-                <Select name="fulfillmentMethod" defaultValue={filters.fulfillmentMethod}>
+                <Select
+                  name="fulfillmentMethod"
+                  defaultValue={filters.fulfillmentMethod}
+                >
                   <option value="all">Pickup and delivery</option>
                   <option value="pickup">Pickup only</option>
                   <option value="delivery">Delivery only</option>
@@ -442,11 +505,19 @@ export default async function AdminInquiriesPage({
               </FilterCard>
 
               <FilterCard label="Event date from">
-                <Input name="eventDateFrom" type="date" defaultValue={filters.eventDateFrom} />
+                <Input
+                  name="eventDateFrom"
+                  type="date"
+                  defaultValue={filters.eventDateFrom}
+                />
               </FilterCard>
 
               <FilterCard label="Event date to">
-                <Input name="eventDateTo" type="date" defaultValue={filters.eventDateTo} />
+                <Input
+                  name="eventDateTo"
+                  type="date"
+                  defaultValue={filters.eventDateTo}
+                />
               </FilterCard>
 
               <FilterCard label="Priority signal">
@@ -471,7 +542,11 @@ export default async function AdminInquiriesPage({
                   {data.totalCount} total inquiries in the system
                 </p>
                 <div className="flex flex-col gap-3 sm:flex-row">
-                  <LinkButton href="/admin/inquiries" label="Clear" variant="secondary" />
+                  <LinkButton
+                    href="/admin/inquiries"
+                    label="Clear"
+                    variant="secondary"
+                  />
                   <Button type="submit">Apply filters</Button>
                 </div>
               </div>
@@ -520,12 +595,20 @@ export default async function AdminInquiriesPage({
 
       <section className="space-y-3">
         {data.entries.length > 0 ? (
-          data.entries.map((entry) => <InquiryCard key={entry.id} entry={entry} />)
+          data.entries.map((entry) => (
+            <InquiryCard key={entry.id} entry={entry} />
+          ))
         ) : (
           <CompactEmptyState
             title="No inquiries match this view"
             description="Try widening the date, product, or budget filters to bring more inquiries back into the queue."
-            action={<LinkButton href="/admin/inquiries" label="Reset filters" variant="secondary" />}
+            action={
+              <LinkButton
+                href="/admin/inquiries"
+                label="Reset filters"
+                variant="secondary"
+              />
+            }
           />
         )}
       </section>

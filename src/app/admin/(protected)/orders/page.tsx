@@ -1,11 +1,13 @@
 import Link from "next/link";
 
-import { ActiveFilterPills, type ActiveFilterPill } from "@/components/admin/active-filter-pills";
+import {
+  ActiveFilterPills,
+  type ActiveFilterPill,
+} from "@/components/admin/active-filter-pills";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { CompactEmptyState } from "@/components/admin/compact-empty-state";
 import { FilterSheet } from "@/components/admin/filter-sheet";
 import { StatusChipRow } from "@/components/admin/status-chip-row";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -59,10 +61,12 @@ const queueLabels: Record<OrderQueue, string> = {
 };
 
 function getSearchValue(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] ?? "" : value ?? "";
+  return Array.isArray(value) ? (value[0] ?? "") : (value ?? "");
 }
 
-function getOrderQueue(rawSearchParams: Record<string, string | string[] | undefined>): OrderQueue {
+function getOrderQueue(
+  rawSearchParams: Record<string, string | string[] | undefined>,
+): OrderQueue {
   const rawQueue = getSearchValue(rawSearchParams.queue);
 
   if (
@@ -141,7 +145,9 @@ function buildOrdersHref(
     searchParams.set("paymentState", nextFilters.paymentState);
   }
 
-  if (nextFilters.fulfillmentMethod !== DEFAULT_ORDER_FILTERS.fulfillmentMethod) {
+  if (
+    nextFilters.fulfillmentMethod !== DEFAULT_ORDER_FILTERS.fulfillmentMethod
+  ) {
     searchParams.set("fulfillmentMethod", nextFilters.fulfillmentMethod);
   }
 
@@ -210,7 +216,9 @@ function getActiveFilterPills(
 
   if (filters.status !== DEFAULT_ORDER_FILTERS.status) {
     pills.push({
-      clearHref: buildOrdersHref(filters, queue, { status: DEFAULT_ORDER_FILTERS.status }),
+      clearHref: buildOrdersHref(filters, queue, {
+        status: DEFAULT_ORDER_FILTERS.status,
+      }),
       label: "Status",
       value: toTitleCase(filters.status),
     });
@@ -222,7 +230,9 @@ function getActiveFilterPills(
         paymentState: DEFAULT_ORDER_FILTERS.paymentState,
       }),
       label: "Payment",
-      value: paymentLabels[filters.paymentState] ?? toTitleCase(filters.paymentState),
+      value:
+        paymentLabels[filters.paymentState] ??
+        toTitleCase(filters.paymentState),
     });
   }
 
@@ -232,7 +242,9 @@ function getActiveFilterPills(
         fulfillmentMethod: DEFAULT_ORDER_FILTERS.fulfillmentMethod,
       }),
       label: "Fulfillment",
-      value: fulfillmentLabels[filters.fulfillmentMethod] ?? toTitleCase(filters.fulfillmentMethod),
+      value:
+        fulfillmentLabels[filters.fulfillmentMethod] ??
+        toTitleCase(filters.fulfillmentMethod),
     });
   }
 
@@ -257,101 +269,101 @@ function getActiveFilterPills(
 
 function OrderCard({ entry }: Readonly<{ entry: OrderListEntry }>) {
   return (
-    <article className="rounded-[1.75rem] border border-charcoal/10 bg-white/88 p-4 shadow-soft transition hover:border-charcoal/20">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="space-y-3">
+    <article className="rounded-2xl border border-charcoal/10 bg-white/88 p-4 shadow-sm transition hover:border-charcoal/20">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        {/* Left Col: Core Identity & Event */}
+        <div className="flex flex-col gap-1.5 lg:w-[40%]">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge className="border-charcoal/10 bg-charcoal/5 text-charcoal/75">
-              {entry.referenceCode}
-            </Badge>
             <span
-              className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${
-                entry.fulfillmentMethod === "delivery"
-                  ? "border-pink-200 bg-pink-50 text-pink-900"
-                  : "border-sky-200 bg-sky-50 text-sky-900"
-              }`}
-            >
-              {entry.fulfillmentMethod === "delivery" ? "Delivery" : "Pickup"}
-            </span>
-            <span
-              className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${getOrderStatusClasses(entry.status)}`}
+              className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${getOrderStatusClasses(entry.status)}`}
             >
               {toTitleCase(entry.status)}
             </span>
             <span
-              className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${getPaymentStatusClasses(entry.paymentState)}`}
+              className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${getPaymentStatusClasses(entry.paymentState)}`}
             >
               {entry.paymentStateLabel}
             </span>
-          </div>
-
-          <div>
-            <h2 className="font-serif text-[1.9rem] tracking-[-0.03em] text-charcoal">
-              {entry.customerLabel}
-            </h2>
-            <p className="mt-1 text-sm leading-7 text-charcoal/66">
-              {entry.eventType} on {formatDate(entry.eventDate)} via{" "}
-              {entry.fulfillmentMethod === "delivery" ? "delivery" : "pickup"}
-            </p>
-
-            {/* Quick Contact Links */}
-            {(entry.customerPhone || entry.customerEmail) ? (
-              <div className="flex flex-wrap items-center gap-2 mt-2">
-                {entry.customerPhone ? (
-                  <a
-                    href={`tel:${entry.customerPhone.replace(/\D/g, "")}`}
-                    className="inline-flex h-9 items-center justify-center rounded-full border border-charcoal/10 bg-white px-4 text-xs font-medium text-charcoal/80 transition hover:border-charcoal/30 hover:bg-charcoal/5"
-                  >
-                    Call
-                  </a>
-                ) : null}
-                {entry.customerEmail ? (
-                  <a
-                    href={`mailto:${entry.customerEmail}`}
-                    className="inline-flex h-9 items-center justify-center rounded-full border border-charcoal/10 bg-white px-4 text-xs font-medium text-charcoal/80 transition hover:border-charcoal/30 hover:bg-charcoal/5"
-                  >
-                    Email
-                  </a>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <span className="rounded-full border border-charcoal/8 bg-ivory/80 px-3 py-1 text-xs text-charcoal/72">
-              {entry.itemCount} item{entry.itemCount === 1 ? "" : "s"}
+            <span className="text-xs font-mono text-charcoal/50">
+              {entry.referenceCode}
             </span>
-            <span className="rounded-full border border-charcoal/8 bg-ivory/80 px-3 py-1 text-xs font-semibold text-charcoal/72">
-              Total {entry.totalLabel}
-            </span>
-            {entry.balanceDue > 0 ? (
-              <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-800">
-                Balance Due: {entry.balanceDueLabel}
-              </span>
-            ) : (
-              <span className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800">
-                No balance due
-              </span>
+          </div>
+          <h2 className="font-serif text-xl font-medium tracking-tight text-charcoal mt-1">
+            {entry.customerLabel}
+          </h2>
+          <p className="text-[13px] text-charcoal/70">
+            {entry.eventType} on {formatDate(entry.eventDate)} via{" "}
+            {entry.fulfillmentMethod === "delivery" ? "delivery" : "pickup"}
+          </p>
+          <div className="flex flex-wrap items-center gap-2 mt-0.5">
+            {entry.customerEmail && (
+              <a
+                href={`mailto:${entry.customerEmail}`}
+                className="text-xs text-charcoal/60 hover:text-charcoal underline underline-offset-2"
+              >
+                Email
+              </a>
+            )}
+            {entry.customerEmail && entry.customerPhone && (
+              <span className="text-charcoal/30">•</span>
+            )}
+            {entry.customerPhone && (
+              <a
+                href={`tel:${entry.customerPhone.replace(/\D/g, "")}`}
+                className="text-xs text-charcoal/60 hover:text-charcoal underline underline-offset-2"
+              >
+                Phone
+              </a>
             )}
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-          <LinkButton href={`/admin/orders/${entry.id}`} label="Open order" />
-          {entry.customerId ? (
+        {/* Middle Col: Financials & Fulfillment */}
+        <div className="flex flex-col gap-2.5 lg:flex-1 lg:border-l lg:border-charcoal/8 lg:pl-5">
+          <div className="flex flex-wrap gap-1.5">
+            <span className="rounded-full border border-charcoal/8 bg-ivory/80 px-2.5 py-0.5 text-xs font-medium text-charcoal/72">
+              {entry.itemCount} item{entry.itemCount === 1 ? "" : "s"}
+            </span>
+            <span className="rounded-full border border-charcoal/8 bg-ivory/80 px-2.5 py-0.5 text-xs font-medium text-charcoal/72">
+              Total {entry.totalLabel}
+            </span>
+            {entry.balanceDue > 0 ? (
+              <span className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-xs font-medium text-rose-800">
+                Bal: {entry.balanceDueLabel}
+              </span>
+            ) : (
+              <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-800">
+                Paid
+              </span>
+            )}
+          </div>
+          <div className="grid gap-x-4 gap-y-1 sm:grid-cols-2 text-xs text-charcoal/66">
+            <div>
+              <span className="font-medium text-charcoal/45">Fulfillment:</span>{" "}
+              {entry.fulfillmentMethod === "delivery" ? "Delivery" : "Pickup"}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Col: Actions */}
+        <div className="mt-1 lg:mt-0 lg:ml-4 lg:shrink-0 flex items-center justify-end gap-3 border-t border-charcoal/8 pt-4 lg:border-t-0 lg:pt-0 lg:flex-col lg:gap-2">
+          {entry.customerId && (
             <LinkButton
               href={`/admin/customers/${entry.customerId}`}
-              label="Open customer"
+              label="Customer"
               variant="secondary"
             />
-          ) : null}
+          )}
+          <LinkButton href={`/admin/orders/${entry.id}`} label="View details" />
         </div>
       </div>
     </article>
   );
 }
 
-export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageProps) {
+export default async function AdminOrdersPage({
+  searchParams,
+}: AdminOrdersPageProps) {
   const resolvedSearchParams = await searchParams;
   const filters = parseOrderListFilters(resolvedSearchParams);
   const queue = getOrderQueue(resolvedSearchParams);
@@ -363,7 +375,8 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
     active: data.entries.filter(isActiveOrder).length,
     "awaiting-payment": data.entries.filter(isAwaitingPaymentOrder).length,
     completed: data.entries.filter(isCompletedOrder).length,
-    upcoming: data.entries.filter((entry) => isUpcomingOrder(entry, today)).length,
+    upcoming: data.entries.filter((entry) => isUpcomingOrder(entry, today))
+      .length,
   } satisfies Record<OrderQueue, number>;
 
   return (
@@ -374,7 +387,10 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
         title="Orders"
         meta={
           <span>
-            <span className="font-semibold text-charcoal">{queueEntries.length}</span> {queueLabels[queue].toLowerCase()}
+            <span className="font-semibold text-charcoal">
+              {queueEntries.length}
+            </span>{" "}
+            {queueLabels[queue].toLowerCase()}
           </span>
         }
         actions={
@@ -383,7 +399,9 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
             description="Search, payment, fulfillment, and date filters live here so the working list stays visible."
           >
             <form method="get" className="grid gap-4 lg:grid-cols-2">
-              {queue !== DEFAULT_QUEUE ? <input type="hidden" name="queue" value={queue} /> : null}
+              {queue !== DEFAULT_QUEUE ? (
+                <input type="hidden" name="queue" value={queue} />
+              ) : null}
 
               <FilterCard label="Search">
                 <Input
@@ -417,7 +435,10 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
               </FilterCard>
 
               <FilterCard label="Fulfillment">
-                <Select name="fulfillmentMethod" defaultValue={filters.fulfillmentMethod}>
+                <Select
+                  name="fulfillmentMethod"
+                  defaultValue={filters.fulfillmentMethod}
+                >
                   <option value="all">Pickup and delivery</option>
                   <option value="pickup">Pickup</option>
                   <option value="delivery">Delivery</option>
@@ -425,11 +446,19 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
               </FilterCard>
 
               <FilterCard label="Event date from">
-                <Input name="eventDateFrom" type="date" defaultValue={filters.eventDateFrom} />
+                <Input
+                  name="eventDateFrom"
+                  type="date"
+                  defaultValue={filters.eventDateFrom}
+                />
               </FilterCard>
 
               <FilterCard label="Event date to">
-                <Input name="eventDateTo" type="date" defaultValue={filters.eventDateTo} />
+                <Input
+                  name="eventDateTo"
+                  type="date"
+                  defaultValue={filters.eventDateTo}
+                />
               </FilterCard>
 
               <div className="flex flex-col gap-3 rounded-[1.35rem] border border-charcoal/8 bg-white/85 p-4 sm:flex-row sm:items-end sm:justify-between lg:col-span-2">
@@ -489,7 +518,9 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
 
       <section className="space-y-3">
         {queueEntries.length > 0 ? (
-          queueEntries.map((entry) => <OrderCard key={entry.id} entry={entry} />)
+          queueEntries.map((entry) => (
+            <OrderCard key={entry.id} entry={entry} />
+          ))
         ) : (
           <CompactEmptyState
             title="No orders match this view"

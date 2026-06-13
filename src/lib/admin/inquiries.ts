@@ -134,6 +134,7 @@ export type InquiryListFilters = {
   fulfillmentMethod: Enums<"fulfillment_method"> | "all";
   priority: NonNullable<InquirySignalPriority> | "all";
   productType: Enums<"product_type"> | "all";
+  search: string;
   status: Enums<"inquiry_status"> | "active" | "all";
   urgency: NonNullable<InquirySignalUrgency> | "all";
 };
@@ -309,6 +310,7 @@ const DEFAULT_FILTERS: InquiryListFilters = {
   fulfillmentMethod: "all",
   priority: "all",
   productType: "all",
+  search: "",
   status: "active",
   urgency: "all",
 };
@@ -759,6 +761,11 @@ export function parseInquiryListFilters(
     next.eventDateTo = eventDateTo;
   }
 
+  const search = normalizeFilterValue(rawSearchParams.search);
+  if (search) {
+    next.search = search;
+  }
+
   return next;
 }
 
@@ -811,6 +818,19 @@ function matchesFilters(row: InquiryListQueryRow, filters: InquiryListFilters) {
 
   if (filters.urgency !== "all" && signals.urgency !== filters.urgency) {
     return false;
+  }
+
+  if (filters.search) {
+    const term = filters.search.toLowerCase();
+    const refCode = getReferenceCode(row).toLowerCase();
+    if (
+      !row.customer_name.toLowerCase().includes(term) &&
+      !row.customer_email.toLowerCase().includes(term) &&
+      !row.customer_phone.toLowerCase().includes(term) &&
+      !refCode.includes(term)
+    ) {
+      return false;
+    }
   }
 
   return true;

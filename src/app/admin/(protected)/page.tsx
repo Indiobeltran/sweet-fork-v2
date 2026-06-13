@@ -18,6 +18,7 @@ export default async function AdminDashboardPage() {
       fulfillmentMethod: "all",
       priority: "all",
       productType: "all",
+      search: "",
       status: "active",
       urgency: "all",
     }),

@@ -1,3 +1,28 @@
+## Phase 2 Admin Queues Density Update — 2026-06-13
+
+- **Implementation branch**: `codex/compact-admin-queues`
+- **Current objective**: Make `/admin/inquiries` and `/admin/orders` faster for the owner to scan and manage day-to-day business activity without changing the underlying database schema or order/inquiry architecture.
+- **Starting status**: Started from `main` with tracked files clean. Pre-existing untracked files were preserved.
+- **Files changed**:
+  - `src/app/admin/(protected)/inquiries/page.tsx`
+  - `src/app/admin/(protected)/orders/page.tsx`
+  - `src/app/admin/(protected)/page.tsx`
+  - `src/lib/admin/inquiries.ts`
+- **Implementation details**:
+  - **Inquiry Search**: Added a `search` query parameter filter to the inquiry list, searching across customer name, email, phone, and reference code. Did not modify Supabase query, this runs in-memory on the loaded dataset. Added a search input field to the Inquiry FilterSheet.
+  - **Inquiry Queue Density**: Refactored `InquiryCard` to a much tighter layout. Reduced large boxed backgrounds into compact inline chips/text. Converted the layout to a pseudo-table row on desktop and a compact card on mobile.
+  - **Order Queue Density**: Refactored `OrderCard` similar to `InquiryCard`. Stacked financials and statuses into tighter inline clusters. Kept mobile-friendly horizontal action links.
+  - **Labels**: Shortened some labels and retained the owner-friendly tone without changing the underlying database enum values.
+- **Data & Architecture Note**: No Supabase schema changes or query changes were introduced.
+- **Verification performed**:
+  - `npm run lint` — Passed.
+  - `npm run typecheck` — Passed.
+  - `npm test` — Passed.
+  - `npm run build` — Passed (production build compiled successfully).
+  - `git diff --check` — Passed.
+- **Next exact task**: Merge to `main` and push to trigger Netlify deploy.
+- **Known limitations / follow-up**: Searching across deep inquiry item details/notes is not implemented as it would be too expensive in-memory.
+
 ## Admin Solid Overlays Visual Hotfix — 2026-06-13
 
 - **Implementation branch**: `codex/solid-admin-overlays`
