@@ -1,3 +1,31 @@
+## Dynamic Media Display Order — 2026-06-13
+
+- **Implementation branch**: `codex/dynamic-media-display-order`
+- **Starting commit from main**: `38b8e4436f11cd32f2dc2703a6ab4a7e506bed3f`
+- **Commit hash for this pass**: `1fa55ce2b450c266dfb378c7c10b74104273820a`
+- **Final status of verification**: All gates passed (`npm run lint`, `npm run typecheck`, `npm run build`, `npm test`, `git diff --check`).
+- **Current objective**: Replace the fixed 10–200 display order slider with a dynamic owner-friendly position control based on the actual number of relevant items in the category/placement.
+- **Files modified**:
+  - `src/components/admin/media-library-manager.tsx`
+  - `src/lib/admin/media-placement-utils.ts`
+  - `src/lib/admin/media-placement-utils.test.ts`
+- **Dynamic display-order behavior**:
+  - Exposes a 1..N slider/stepper where N is the actual count of visible/published assets in the category or example placement.
+  - The UI converts stored order values (typically multiples of 10) to 1..N positions on load, and back to multiples of 10 on save.
+  - Hides/disables the order slider if the count of assets in the set is 0 or 1, showing a clear message: *"Only one image in this set — no ordering needed."*
+  - Omits order controls entirely for single-image placements (e.g. product/homepage heroes and signature cards).
+  - Shows clear, non-technical, owner-friendly labels like *"Position in Custom Cakes: Shows as item {uiPosition} of {totalCount} in the gallery"*.
+- **Data Model Ordering**: Category assignments and examples are ordered per-category and per-placement (each assignment is a separate row in `media_assignments` with its own `display_order`), which is fully supported by the schema.
+- **Conversion Logic**:
+  - UI Position = `Math.min(totalCount, Math.max(1, Math.round(storedValue / 10)))`
+  - Stored Value = `uiPosition * 10`
+- **Known Limitations**: None. The scale is now fully dynamic and matches the count of assets.
+- **Verification performed**:
+  - `npm run lint` — Passed.
+  - `npm run typecheck` — Passed.
+  - `npm test` — Passed (all 24 tests passed, including new conversion and clamping assertions).
+  - `npm run build` — Successful Next.js optimized production build.
+
 ## Admin Media UX Fixes (Pass 2) — 2026-06-13
 
 - **Implementation branch**: `codex/admin-media-qa-fixes`

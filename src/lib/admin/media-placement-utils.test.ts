@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 // @ts-expect-error Node's strip-types test runner needs the .ts extension.
-import { getMediaPlacementBadgeLabel, getPlacementWarnings, isProminentMediaPlacement, isProductShowcasePlacement, sortMediaAssetsByPlacementUse, type MediaPlacementWarning } from "./media-placement-utils.ts";
+import { getMediaPlacementBadgeLabel, getPlacementWarnings, isProminentMediaPlacement, isProductShowcasePlacement, sortMediaAssetsByPlacementUse, convertStoredOrderToUiPosition, convertUiPositionToStoredOrder, type MediaPlacementWarning } from "./media-placement-utils.ts";
 
 const placementDefinitions = [
   {
@@ -202,5 +202,22 @@ describe("admin media placement semantics", () => {
       placementDefinitions
     );
     assert.equal(warnings4.filter(w => w.type === "stale").length, 0);
+  });
+
+  it("converts stored display order to UI position and vice versa with clamping", () => {
+    assert.equal(convertStoredOrderToUiPosition(10, 5), 1);
+    assert.equal(convertStoredOrderToUiPosition(20, 5), 2);
+    assert.equal(convertStoredOrderToUiPosition(30, 5), 3);
+
+    // Clamping behavior: if stored order converts to a position greater than total count, clamp to max
+    assert.equal(convertStoredOrderToUiPosition(100, 5), 5);
+    // Clamping behavior: if stored order converts to less than 1, clamp to 1
+    assert.equal(convertStoredOrderToUiPosition(0, 5), 1);
+    assert.equal(convertStoredOrderToUiPosition(-5, 5), 1);
+
+    // UI position -> stored order
+    assert.equal(convertUiPositionToStoredOrder(1), 10);
+    assert.equal(convertUiPositionToStoredOrder(4), 40);
+    assert.equal(convertUiPositionToStoredOrder(0), 10); // Clamps to 10
   });
 });

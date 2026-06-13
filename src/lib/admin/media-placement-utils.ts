@@ -255,3 +255,12 @@ export function sortMediaAssetsByPlacementUse<T extends MediaAssetPlacementShape
     return (right.createdAt ?? "").localeCompare(left.createdAt ?? "");
   });
 }
+
+export function convertStoredOrderToUiPosition(storedOrder: number, totalCount: number): number {
+  const uiPosition = Math.max(1, Math.round(storedOrder / 10));
+  return Math.min(totalCount, uiPosition);
+}
+
+export function convertUiPositionToStoredOrder(uiPosition: number): number {
+  return Math.max(1, uiPosition) * 10;
+}

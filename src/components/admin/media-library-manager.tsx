@@ -15,6 +15,8 @@ import {
   isProductShowcasePlacement,
   isProminentMediaPlacement,
   sortMediaAssetsByPlacementUse,
+  convertStoredOrderToUiPosition,
+  convertUiPositionToStoredOrder,
   type MediaPlacementWarning,
 } from "@/lib/admin/media-placement-utils";
 import type { MediaLibraryAsset } from "@/lib/admin/site-management";
@@ -737,65 +739,109 @@ export function MediaLibraryManager({
                   <div className="space-y-3">
                     {/* Active Categories ordering */}
                     {categories.filter((cat) => categoriesSelected.has(cat.id)).map((cat) => {
-                      const value = categoryOrders[cat.id] ?? cat.display_order;
+                      const storedVal = categoryOrders[cat.id] ?? cat.display_order;
+                      const assignedAssetsCount = websiteAssets.filter((asset) =>
+                        asset.categoryAssignments.some((ca) => ca.categoryId === cat.id)
+                      ).length;
+                      const hasThisAsset = selectedAsset.categoryAssignments.some((ca) => ca.categoryId === cat.id);
+                      const totalCount = hasThisAsset ? assignedAssetsCount : assignedAssetsCount + 1;
+                      const uiPosition = convertStoredOrderToUiPosition(storedVal, totalCount);
+
                       return (
-                      <div
-                        key={`order-cat-${cat.id}`}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-charcoal/8 bg-ivory/30 px-3 py-2.5 text-xs"
-                      >
-                        <span className="font-semibold text-charcoal truncate">{cat.name} Display Position</span>
-                        <div className="flex items-center gap-3">
-                          <input
-                            id={`categoryOrder-${cat.id}`}
-                            name={`categoryOrder.${cat.id}`}
-                            type="range"
-                            min="10"
-                            max="200"
-                            step="10"
-                            value={value}
-                            onChange={(e) => handleCategoryOrderChange(cat.id, parseInt(e.target.value) || 0)}
-                            className="accent-charcoal flex-1 sm:w-32"
-                          />
-                          <span className="w-16 text-right tabular-nums text-charcoal/70">
-                            Pos {value}
-                          </span>
+                        <div
+                          key={`order-cat-${cat.id}`}
+                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-charcoal/8 bg-ivory/30 px-3 py-2.5 text-xs"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <span className="font-semibold text-charcoal block truncate">Position in {cat.name}</span>
+                            <span className="text-[10px] text-charcoal/50 block">Shows as item {uiPosition} of {totalCount} in the gallery</span>
+                          </div>
+                          {totalCount <= 1 ? (
+                            <span className="text-xs text-charcoal/50 italic py-1">
+                              Only one image in this set — no ordering needed.
+                            </span>
+                          ) : (
+                            <div className="flex items-center gap-3">
+                              <input
+                                id={`categoryOrder-${cat.id}`}
+                                type="range"
+                                min="1"
+                                max={totalCount}
+                                step="1"
+                                value={uiPosition}
+                                onChange={(e) => handleCategoryOrderChange(cat.id, convertUiPositionToStoredOrder(parseInt(e.target.value) || 1))}
+                                className="accent-charcoal flex-1 sm:w-32"
+                              />
+                              <input
+                                type="hidden"
+                                name={`categoryOrder.${cat.id}`}
+                                value={storedVal}
+                              />
+                              <span className="w-16 text-right tabular-nums text-charcoal/70 font-medium">
+                                {uiPosition} of {totalCount}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    )})}
+                      );
+                    })}
 
                     {/* Active Sections ordering */}
-                    {placements.filter((placement) => placementsSelected.has(placement.key)).map((placement) => {
-                      const value = placementOrders[placement.key] ?? 10;
-                      return (
-                      <div
-                        key={`order-placement-${placement.key}`}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-charcoal/8 bg-ivory/30 px-3 py-2.5 text-xs"
-                      >
-                        <span className="font-semibold text-charcoal truncate">{placement.label} Position</span>
-                        <div className="flex items-center gap-3">
-                          <input
-                            id={`placementOrder-${placement.key}`}
-                            name={`placementOrder.${placement.key}`}
-                            type="range"
-                            min="10"
-                            max="200"
-                            step="10"
-                            value={value}
-                            onChange={(e) => handlePlacementOrderChange(placement.key, parseInt(e.target.value) || 0)}
-                            className="accent-charcoal flex-1 sm:w-32"
-                          />
-                          <span className="w-16 text-right tabular-nums text-charcoal/70">
-                            Pos {value}
-                          </span>
-                        </div>
-                      </div>
-                    )})}
+                    {placements.filter((placement) => placementsSelected.has(placement.key) && !isProminentMediaPlacement(placement.key)).map((placement) => {
+                      const storedVal = placementOrders[placement.key] ?? 10;
+                      const assignedAssetsCount = websiteAssets.filter((asset) =>
+                        asset.pageAssignments.some((pa) => pa.placementKey === placement.key)
+                      ).length;
+                      const hasThisAsset = selectedAsset.pageAssignments.some((pa) => pa.placementKey === placement.key);
+                      const totalCount = hasThisAsset ? assignedAssetsCount : assignedAssetsCount + 1;
+                      const uiPosition = convertStoredOrderToUiPosition(storedVal, totalCount);
 
-                    {categoriesSelected.size === 0 && placementsSelected.size === 0 && (
-                      <p className="text-xs text-center text-rose-700 bg-rose/5 border border-rose/10 py-3 rounded-xl">
-                        Enable at least one Category or Section above to configure its display order.
-                      </p>
-                    )}
+                      return (
+                        <div
+                          key={`order-placement-${placement.key}`}
+                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-charcoal/8 bg-ivory/30 px-3 py-2.5 text-xs"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <span className="font-semibold text-charcoal block truncate">Position in {placement.label}</span>
+                            <span className="text-[10px] text-charcoal/50 block">Shows as item {uiPosition} of {totalCount} in this section</span>
+                          </div>
+                          {totalCount <= 1 ? (
+                            <span className="text-xs text-charcoal/50 italic py-1">
+                              Only one image in this set — no ordering needed.
+                            </span>
+                          ) : (
+                            <div className="flex items-center gap-3">
+                              <input
+                                id={`placementOrder-${placement.key}`}
+                                type="range"
+                                min="1"
+                                max={totalCount}
+                                step="1"
+                                value={uiPosition}
+                                onChange={(e) => handlePlacementOrderChange(placement.key, convertUiPositionToStoredOrder(parseInt(e.target.value) || 1))}
+                                className="accent-charcoal flex-1 sm:w-32"
+                              />
+                              <input
+                                type="hidden"
+                                name={`placementOrder.${placement.key}`}
+                                value={storedVal}
+                              />
+                              <span className="w-16 text-right tabular-nums text-charcoal/70 font-medium">
+                                {uiPosition} of {totalCount}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {/* Fallback when no orderable categories or placements are selected */}
+                    {categories.filter((cat) => categoriesSelected.has(cat.id)).length === 0 &&
+                      placements.filter((placement) => placementsSelected.has(placement.key) && !isProminentMediaPlacement(placement.key)).length === 0 && (
+                        <p className="text-xs text-center text-charcoal/50 bg-ivory/50 border border-charcoal/10 py-3 rounded-xl select-none">
+                          Enable at least one multi-image Category or Section above to configure its display order.
+                        </p>
+                      )}
                   </div>
                 </div>
 
