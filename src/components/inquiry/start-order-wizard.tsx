@@ -1,10 +1,8 @@
 "use client";
 
 import {
-  type ComponentProps,
   type DragEvent,
   type MouseEvent,
-  type ReactNode,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -63,6 +61,28 @@ import {
   type InquiryFormValues,
 } from "@/lib/validations/inquiry";
 import type { InquiryProductItem, ProductType } from "@/types/domain";
+import {
+  findStepForErrors,
+  flattenIssues,
+  formatFileSize,
+  formatSelectedItemSummary,
+  getDescribedBy,
+  getErrorDescriptionId,
+  getFieldErrorClass,
+  getSafeSubmissionErrorMessage,
+  getStepErrorMessage,
+  isErrorForStep,
+  SUPPORTED_INSPIRATION_IMAGE_ACCEPT,
+  type ErrorMap,
+} from "@/components/inquiry/wizard-helpers";
+import {
+  FieldLabel,
+  InlineError,
+  SelectionButton,
+  StatRow,
+  StepAlert,
+  StepMarker,
+} from "@/components/inquiry/wizard-ui";
 
 type StartOrderWizardProps = {
   catalog: InquiryCatalogItem[];
@@ -76,319 +96,6 @@ type UploadDraft = {
   id: string;
   file: File;
 };
-
-type ErrorMap = Record<string, string>;
-
-const SUPPORTED_INSPIRATION_IMAGE_ACCEPT =
-  "image/avif,image/heic,image/heif,image/jpeg,image/png,image/webp";
-
-function flattenIssues(issues: Array<{ path: (string | number)[]; message: string }>) {
-  return issues.reduce<ErrorMap>((accumulator, issue) => {
-    const key = issue.path.join(".");
-
-    if (!accumulator[key]) {
-      accumulator[key] = issue.message;
-    }
-
-    return accumulator;
-  }, {});
-}
-
-function formatFileSize(size: number) {
-  if (size < 1024 * 1024) {
-    return `${Math.round(size / 102.4) / 10} KB`;
-  }
-
-  return `${Math.round(size / 1024 / 102.4) / 10} MB`;
-}
-
-function StepMarker({
-  active,
-  canSelect,
-  complete,
-  index,
-  markerRef,
-  onSelect,
-  description,
-  title,
-}: {
-  active: boolean;
-  canSelect: boolean;
-  complete: boolean;
-  index: number;
-  markerRef?: (element: HTMLDivElement | null) => void;
-  onSelect: () => void;
-  description: string;
-  title: string;
-}) {
-  return (
-    <div
-      ref={markerRef}
-      role="listitem"
-      className="min-w-0 lg:flex-1"
-    >
-      <button
-        type="button"
-        aria-current={active ? "step" : undefined}
-        aria-label={`Step ${index + 1}: ${title}. ${description}${complete ? " Complete." : active ? " Current step." : ""}`}
-        disabled={!canSelect}
-        className={cn(
-          "flex min-h-11 w-full min-w-0 items-center justify-center rounded-full text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50 disabled:cursor-default lg:justify-start lg:gap-2.5",
-          active
-            ? "bg-charcoal p-1 text-ivory shadow-soft lg:border lg:border-charcoal lg:px-3 lg:py-2"
-            : "px-0 py-0",
-          !active && canSelect && "hover:opacity-100",
-          !canSelect && !active && "opacity-85",
-        )}
-        onClick={onSelect}
-      >
-        <div
-          className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition lg:h-9 lg:w-9",
-            complete
-              ? "border-charcoal bg-charcoal text-ivory"
-              : active
-                ? "border-ivory/30 bg-ivory text-charcoal"
-                : "border-charcoal/10 bg-white text-charcoal/40",
-          )}
-        >
-          {complete ? <Check className="h-4 w-4" /> : index + 1}
-        </div>
-        <div className="hidden min-w-0 lg:block">
-          <p
-            className={cn(
-              "text-[10px] uppercase tracking-[0.18em]",
-              active ? "text-ivory/62" : "text-charcoal/40",
-            )}
-          >
-            Step {index + 1}
-          </p>
-          <p
-            className={cn(
-              "truncate text-sm font-medium",
-              active ? "text-ivory" : complete ? "text-charcoal/68" : "text-charcoal/52",
-            )}
-          >
-            {title}
-          </p>
-        </div>
-      </button>
-    </div>
-  );
-}
-
-function getErrorDescriptionId(key: string) {
-  return `${key.replace(/[^a-z0-9_-]+/gi, "-")}-error`;
-}
-
-function getDescribedBy(...ids: Array<string | false | null | undefined>) {
-  const value = ids.filter(Boolean).join(" ");
-  return value.length > 0 ? value : undefined;
-}
-
-function InlineError({ id, message }: { id?: string; message?: string }) {
-  if (!message) {
-    return null;
-  }
-
-  return (
-    <p id={id} role="alert" className="mt-2 text-sm text-rose-700">
-      {message}
-    </p>
-  );
-}
-
-function StepAlert({ message }: { message?: string }) {
-  if (!message) {
-    return null;
-  }
-
-  return (
-    <div
-      role="alert"
-      className="rounded-[1.4rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"
-    >
-      {message}
-    </div>
-  );
-}
-
-function FieldLabel({
-  children,
-  required = false,
-  ...props
-}: ComponentProps<typeof Label> & { required?: boolean }) {
-  return (
-    <Label {...props}>
-      <span>{children}</span>
-      {required ? (
-        <>
-          <span className="ml-1 text-rose-700" aria-hidden="true">
-            *
-          </span>
-          <span className="sr-only"> required</span>
-        </>
-      ) : null}
-    </Label>
-  );
-}
-
-function SelectionButton({
-  active,
-  children,
-  onClick,
-  className,
-  buttonRef,
-}: {
-  active: boolean;
-  children: ReactNode;
-  onClick: () => void;
-  className?: string;
-  buttonRef?: (element: HTMLButtonElement | null) => void;
-}) {
-  return (
-    <button
-      type="button"
-      ref={buttonRef}
-      aria-pressed={active}
-      className={cn(
-        "rounded-full border px-4 py-2 text-left text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50",
-        active
-          ? "border-charcoal bg-charcoal text-ivory"
-          : "border-charcoal/12 bg-white text-charcoal hover:border-charcoal/30",
-        className,
-      )}
-      onClick={onClick}
-    >
-      {children}
-    </button>
-  );
-}
-
-function StatRow({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b border-charcoal/8 py-3 last:border-none last:pb-0">
-      <p className="text-sm text-charcoal/55">{label}</p>
-      <div className="text-right text-sm font-medium text-charcoal">{value}</div>
-    </div>
-  );
-}
-
-function getFieldErrorClass(...messages: Array<string | undefined>) {
-  return messages.some(Boolean)
-    ? "border-rose-300 bg-rose-50/70 focus:border-rose-400 focus:ring-rose-100"
-    : undefined;
-}
-
-function getStepErrorMessage(stepIndex: number) {
-  switch (stepIndex) {
-    case 0:
-      return "Please review the event details below before continuing.";
-    case 1:
-      return "Select at least one dessert to continue.";
-    case 2:
-      return "Each selected dessert needs its required count or serving target before you continue.";
-    case 3:
-      return "Please review the inspiration details below before continuing.";
-    default:
-      return "Please review the highlighted fields before submitting.";
-  }
-}
-
-function getSafeSubmissionErrorMessage(error: unknown) {
-  const fallback = "We could not submit the inquiry right now. Please try again in a few minutes.";
-
-  if (!(error instanceof Error) || error.message.trim().length === 0) {
-    return fallback;
-  }
-
-  const message = error.message.trim();
-  const isExpectedSubmissionMessage =
-    message.startsWith("We ") ||
-    message.startsWith("Please ") ||
-    message.startsWith("This inquiry") ||
-    message.startsWith("The inquiry") ||
-    message.startsWith("Too many ") ||
-    message.startsWith("Online submission") ||
-    message.startsWith("Image ") ||
-    message.startsWith("Reference ") ||
-    message.includes("upload") ||
-    message.includes("inspiration");
-
-  return isExpectedSubmissionMessage ? message : fallback;
-}
-
-function isErrorForStep(key: string, stepIndex: number) {
-  if (stepIndex === 0) {
-    return (
-      key.startsWith("event") ||
-      key.startsWith("guestCount") ||
-      key.startsWith("fulfillmentMethod") ||
-      key.startsWith("deliveryZip") ||
-      key.startsWith("budget")
-    );
-  }
-
-  if (stepIndex === 1) {
-    return key === "orderItems";
-  }
-
-  if (stepIndex === 2) {
-    return key.startsWith("orderItems.");
-  }
-
-  if (stepIndex === 3) {
-    return (
-      key.startsWith("colorPalette") ||
-      key.startsWith("inspiration") ||
-      key === "inspirationUploads"
-    );
-  }
-
-  return (
-    key.startsWith("customer") ||
-    key.startsWith("instagram") ||
-    key.startsWith("preferredContact") ||
-    key.startsWith("howDidYouHear") ||
-    key.startsWith("additionalNotes")
-  );
-}
-
-function formatSelectedItemSummary(item: InquiryProductItem) {
-  switch (item.productType) {
-    case "custom-cake":
-      return `${item.servings ?? "?"} servings`;
-    case "wedding-cake":
-      return `${item.weddingServings ?? item.servings ?? "?"} servings`;
-    case "cupcakes":
-      return `${item.cupcakeCount ?? "?"} cupcakes`;
-    case "sugar-cookies":
-      return `${item.cookieCount ?? "?"} cookies`;
-    case "macarons":
-      return `${item.macaronCount ?? "?"} macarons`;
-    case "diy-kit":
-      return `${item.kitCount ?? "?"} kits`;
-    default:
-      return `${item.quantity} item${item.quantity === 1 ? "" : "s"}`;
-  }
-}
-
-function findStepForErrors(errors: ErrorMap) {
-  const keys = Object.keys(errors);
-  if (keys.some((key) => key.startsWith("event") || key.startsWith("guestCount") || key.startsWith("fulfillmentMethod") || key.startsWith("deliveryZip") || key.startsWith("budget"))) {
-    return 0;
-  }
-  if (keys.some((key) => key === "orderItems")) {
-    return 1;
-  }
-  if (keys.some((key) => key.startsWith("orderItems."))) {
-    return 2;
-  }
-  if (keys.some((key) => key.startsWith("colorPalette") || key.startsWith("inspiration") || key === "inspirationUploads")) {
-    return 3;
-  }
-  return 4;
-}
 
 export function StartOrderWizard({
   catalog,

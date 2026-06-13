@@ -1,3 +1,45 @@
+## Phase 8 Inquiry Wizard Refactor — 2026-06-13
+
+- **Branch**: `codex/inquiry-wizard-refactor`
+- **Pre-change status**: Started from `main` aligned with `origin/main` at `0843965` (`fix: strengthen product page practical copy`). Tracked files clean. Pre-existing untracked files preserved: `.agents/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `skills-lock.json`.
+- **Scope confirmed**: Phase 8 — Inquiry Wizard Refactor only. A maintainability-focused, behavior-preserving refactor of the customer-facing inquiry wizard. No customer submission-contract changes, no Supabase schema/migrations, no inquiry database-architecture changes, no Netlify Forms behavior changes, no upload-behavior changes, no admin ingestion changes, no public-page redesign, no admin pages, no gallery import / DNS / deployment changes.
+- **Inspection before editing**: Confirmed the submission contract is owned by separate, already-factored modules that were left untouched — `src/app/api/inquiries/route.ts` (honeypot/timing/rate-limit/duplicate checks, FormData parsing), `src/lib/inquiries/submit.ts` (`submitInquiry` Supabase writes + Netlify Forms bridge), `src/lib/inquiries/netlify-bridge.ts` (Netlify payload serialization, posts to `/__forms.html`), `src/lib/validations/inquiry.ts` (Zod schemas, `normalizeInquiryFormValues`, `validateInspirationUploads`, upload type/size limits), and `src/lib/inquiries/config.ts` / `catalog.ts` (step titles/descriptions, product/budget options, catalog). The wizard posts `FormData` (`payload` JSON, `startedAt`, `website` honeypot, `inspirationFiles`) to `/api/inquiries` — unchanged.
+- **Current wizard issues found**: `src/components/inquiry/start-order-wizard.tsx` was a single ~2,718-line client file. It mixed ~10 pure helper functions (step→error routing, error-map flattening, file-size formatting, selected-item summary, safe-error filtering, field error classes, ARIA id helpers) and 6 stateless presentational primitives (`StepMarker`, `InlineError`, `StepAlert`, `FieldLabel`, `SelectionButton`, `StatRow`) inline with the stateful component and ~1,300 lines of step JSX. None of the helpers/primitives were exported, tested, or reusable, and the file size made the central lead-capture flow risky to edit.
+- **Refactor seams chosen** (two safe seams, faithful cut-paste, no logic edits):
+  1. **`src/components/inquiry/wizard-helpers.ts`** (new, pure `.ts`, type-only domain import) — extracted `ErrorMap`, `SUPPORTED_INSPIRATION_IMAGE_ACCEPT`, `flattenIssues`, `formatFileSize`, `getErrorDescriptionId`, `getDescribedBy`, `getFieldErrorClass`, `getStepErrorMessage`, `getSafeSubmissionErrorMessage`, `isErrorForStep`, `formatSelectedItemSummary`, `findStepForErrors`. These hold the wizard's step-routing/summary logic with zero framework dependency, so they are now unit-testable.
+  2. **`src/components/inquiry/wizard-ui.tsx`** (new) — extracted the 6 stateless presentational primitives. Clean props only (booleans, strings, `ReactNode`, ref callbacks); no business logic, no hooks.
+  - The wizard now imports both modules and renders identically. Net: `start-order-wizard.tsx` went from 2,718 → 2,425 lines (337-line diff: 23 insertions / 316 deletions; the only additions are the two import blocks).
+- **Behavior preserved (unchanged)**: route `/start-order`; the 5-step structure and step titles/descriptions; multi-product selection and all six product categories; event-date `min`/future handling; fulfillment + delivery-ZIP conditional validation; budget range/flexibility; all field names; the `FormData` POST to `/api/inquiries` (`payload`/`startedAt`/`website`/`inspirationFiles`); honeypot field; upload accept types and 6-file / 8 MB limits (still sourced from `validateInspirationUploads`); email-fallback `mailto` path; success/confirmation screen and reference code; inline/step error handling and ARIA wiring; focus management; mobile layout; CTA routing into the wizard. No copy/UX changes were made (kept a pure technical refactor for minimal risk).
+- **Tests added**: `src/components/inquiry/wizard-helpers.test.ts` (new, `node:test`) — 19 assertions covering `formatSelectedItemSummary` (all product types + missing-count placeholder), `isErrorForStep` (step routing incl. `orderItems` vs `orderItems.*` separation), `findStepForErrors` (earliest-step selection), `getStepErrorMessage` (distinct per step), `getSafeSubmissionErrorMessage` (passes through expected customer messages, hides unexpected internal errors behind the safe fallback — guards against leaking internal/estimate details), `flattenIssues` (first-message-per-path), `getFieldErrorClass`. Registered the file in the `package.json` `test` script (follows the existing co-located `*.test.ts` + relative `.ts` import pattern used by `submit.test.ts` / `more-menu-sheet-classes.test.ts`).
+- **Manual Netlify QA plan (after deploy)**:
+  1. Open `/start-order`; confirm the intro/landing state and step rail render.
+  2. Step 1: select a single product, continue; then go back and select multiple products (e.g. custom cake + cupcakes + macarons) — confirm multi-select and per-item detail panels.
+  3. Progress through all 5 steps; confirm required-field validation, step error alerts, and the progress bar/markers.
+  4. Upload one valid inspiration image (JPEG/PNG/WebP) if safe in QA; confirm the upload list + size label render and that the remove (trash) button removes it.
+  5. Confirm the review step summarizes event/product/inspiration/contact and the "Edit" jump links work.
+  6. Verify no internal estimate/price range is shown anywhere to the customer.
+  7. Verify mobile layout (≤390px): step rail, product cards, sticky aside, and footer buttons.
+  8. Only if Melissa/user explicitly wants live data: submit a test inquiry, confirm the success state + reference code, then confirm the inquiry appears in `/admin/inquiries`. Do not auto-submit during development.
+- **Verification performed**:
+  - `npm run lint` — Passed (clean, `--max-warnings=0`).
+  - `npm run typecheck` — Passed.
+  - `npm test` — Passed (53/53, incl. the 19 new wizard-helper assertions).
+  - `npm run build` — Passed; `/start-order` compiles (ƒ dynamic, 33.3 kB).
+  - `git diff --check` — Clean.
+  - `git status --short` — Only `package.json` + `src/components/inquiry/start-order-wizard.tsx` modified; new files `wizard-helpers.ts`, `wizard-ui.tsx`, `wizard-helpers.test.ts`.
+- **Guardrails confirmed**:
+  - No Supabase schema / database / migration changes.
+  - No inquiry database-architecture changes.
+  - No inquiry submission payload-shape / contract changes (FormData fields, JSON payload, and field names all unchanged).
+  - No upload-behavior changes (accept types, 6-file / 8 MB limits, storage flow all unchanged).
+  - No Netlify Forms behavior changes (bridge, hidden honeypot, `/__forms.html` target untouched).
+  - No admin pages or admin ingestion assumptions changed.
+  - No public-page redesign; no product-page copy changes from Phase 7.
+  - No gallery import / DNS / deployment-settings changes.
+  - Pre-existing untracked files preserved (not staged).
+- **Remaining risks / follow-up**: Risk is low — the extraction is mechanical (no logic edited) and is gate-verified, but the wizard has no automated rendering test, so the manual Netlify QA above is the behavioral confirmation. Optional future follow-up (not done here to keep scope tight): the identical `describeItem` summary logic still exists in `submit.ts` and `netlify-bridge.ts`; it could later be consolidated onto `formatSelectedItemSummary` from `wizard-helpers.ts`, but that crosses the client/server submission boundary and was intentionally deferred. A second seam (splitting each step's JSX into per-step components) is also possible later if further size reduction is wanted.
+- **Next recommended phase**: Manual Netlify QA of the wizard on the deployed `main`, then proceed to the next roadmap phase / launch-readiness checkpoint once QA passes.
+
 ## Phase 7 Product Page Practical Copy — 2026-06-13
 
 - **Branch**: `codex/product-page-practical-copy`
