@@ -1,3 +1,45 @@
+## Phase 5 Admin Estimate Rationale — 2026-06-13
+
+- **Branch**: `codex/admin-estimate-rationale`
+- **Pre-change status**: Started from `main` aligned with `origin/main` at `1012094`. Tracked files clean. Pre-existing untracked files preserved: `.agents/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `skills-lock.json`.
+- **Scope confirmed**: Phase 5 — Admin Estimate Rationale only. No schema changes, no pricing formula changes, no customer-facing changes, no public pages touched, no gallery/DNS/deployment settings changed.
+- **Where estimate/range UI was found**:
+  - Inquiry queue list (`/admin/inquiries`): `entry.estimatedLabel` shown as inline "Est:" text in `InquiryCard`.
+  - Inquiry detail page (`/admin/inquiries/[id]`): `detail.estimatedLabel` shown in header area and in "Venue and planning" detail row; full "Estimate insight" section with total, summary, delivery contribution, and per-item line items with `drivers` array.
+  - Orders: show actual dollar amounts (line totals, payment amounts) — not broad ranges; no rationale needed.
+- **Rationale UI implemented**:
+  - **`src/lib/admin/inquiries.ts`**: Added `rationaleNote: string` to `InquiryEstimateInsight` type. Added `buildRationaleNote()` private function that detects items with limited design detail (≤1 driver from `getEstimateDrivers`) and produces owner-friendly explanation text. Wired into `buildEstimateInsight()`.
+  - **Inquiry detail page** (`src/app/admin/(protected)/inquiries/[id]/page.tsx`): Added a compact gold-tinted note block inside the existing "Estimate insight → Internal pricing view" box, showing `detail.estimateInsight.rationaleNote`. Hidden by default only in the sense that users navigate to detail pages on demand; visible inline once there.
+  - **Inquiry queue list** (`src/app/admin/(protected)/inquiries/page.tsx`): Added a native `<details>/<summary>` "Why this estimate?" disclosure inside the info grid in `InquiryCard`. Hidden by default (collapsed). Expanding it reveals owner-friendly text about the range being internal, factors that affect final price, customer budget on file, and fulfillment context. Uses `sm:col-span-2` to span the 2-column grid without increasing default row height.
+- **Data powering the rationale**:
+  - `getEstimateDrivers()` per item: detects tiers, special shape, decorative icing, custom topper, design notes/inspiration/palette
+  - `fulfillment_method`: notes delivery cost separately
+  - `budgetRangeLabel`: shown in list disclosure when available
+  - Item count with limited design detail: drives "broad range" language
+- **Deferred due to missing data**: None. All rationale is derived from existing fields without schema changes.
+- **Files changed**:
+  - `src/lib/admin/inquiries.ts`
+  - `src/app/admin/(protected)/inquiries/[id]/page.tsx`
+  - `src/app/admin/(protected)/inquiries/page.tsx`
+  - `HANDOFF.md`
+- **Verification performed**:
+  - `npm run lint` — Passed.
+  - `npm run typecheck` — Passed.
+  - `npm test` — Passed (25/25).
+  - `npm run build` — Passed (22/22 static pages).
+  - `git diff --check` — Passed.
+- **Guardrails confirmed**:
+  - No Supabase schema changes made.
+  - No pricing formulas changed.
+  - No customer-facing estimate/rationale UI added.
+  - No public pages changed.
+  - No admin broad redesign introduced.
+  - No gallery import/DNS/deployment settings touched.
+  - Pre-existing untracked files preserved.
+  - Internal estimate rationale remains admin-only.
+- **Remaining risks / follow-up**: Visual QA on Netlify deploy — confirm "Why this estimate?" disclosure renders in inquiry list, note block renders in estimate insight section on detail page, both are accessible via keyboard.
+- **Next recommended phase**: Phase 6 — Order Detail Workflow.
+
 ## Regression Hotfix: Homepage Gallery Preview Carousel — 2026-06-13
 
 - **Branch**: `codex/fix-home-gallery-preview-carousel`

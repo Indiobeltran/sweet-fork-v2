@@ -565,6 +565,9 @@ export default async function AdminInquiryDetailPage({
                     </span>
                   </p>
                 ) : null}
+                <p className="mt-4 rounded-[1.1rem] border border-gold/20 bg-gold/6 px-3.5 py-2.5 text-[13px] leading-6 text-charcoal/70">
+                  {detail.estimateInsight.rationaleNote}
+                </p>
               </div>
 
               <div className="space-y-3">

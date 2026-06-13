@@ -377,6 +377,26 @@ function InquiryCard({ entry }: Readonly<{ entry: InquiryListEntry }>) {
               <span className="font-medium text-charcoal/45">Submitted:</span>{" "}
               {formatDate(entry.submittedAt)}
             </div>
+            {entry.estimatedLabel ? (
+              <details className="sm:col-span-2">
+                <summary className="cursor-pointer select-none text-[11px] leading-5 text-charcoal/45 hover:text-charcoal/65">
+                  Why this estimate?
+                </summary>
+                <div className="mt-1.5 space-y-1 rounded-[0.9rem] border border-charcoal/8 bg-ivory/60 px-3 py-2 text-[11px] leading-[1.55] text-charcoal/62">
+                  <p>Internal starting range — not a customer quote.</p>
+                  <p>
+                    Final price depends on confirmed design details, servings, flavors,
+                    and{" "}
+                    {entry.fulfillmentMethod === "delivery"
+                      ? "delivery specifics."
+                      : "pickup logistics."}
+                  </p>
+                  {entry.budgetRangeLabel ? (
+                    <p>Customer budget on file: {entry.budgetRangeLabel}.</p>
+                  ) : null}
+                </div>
+              </details>
+            ) : null}
           </div>
 
           {/* Signals */}

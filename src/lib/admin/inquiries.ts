@@ -234,6 +234,7 @@ export type InquiryEstimateInsightLineItem = {
 export type InquiryEstimateInsight = {
   deliveryLabel: string | null;
   lineItems: InquiryEstimateInsightLineItem[];
+  rationaleNote: string;
   summary: string;
   totalLabel: string | null;
 };
@@ -643,6 +644,38 @@ function getEstimateDrivers(item: InquiryItemDetailRow) {
   return drivers;
 }
 
+function buildRationaleNote(
+  inquiry: Pick<InquiryDetailQueryRow, "fulfillment_method">,
+  items: InquiryItemDetailRow[],
+): string {
+  const limitedDetailCount = items.filter(
+    (item) => getEstimateDrivers(item).length <= 1,
+  ).length;
+  const parts: string[] = [
+    "Internal working estimate — not for customer communication.",
+  ];
+
+  if (limitedDetailCount > 0) {
+    parts.push(
+      limitedDetailCount === 1
+        ? "The range is broad because one item is still missing design specifics such as size, icing style, or decorations."
+        : `The range is broad because ${limitedDetailCount} items are still missing design specifics.`,
+    );
+    parts.push("Confirm final details before sending a quote.");
+  } else if (items.length > 0) {
+    parts.push("Design details are on file for all items.");
+    parts.push("Review servings, fulfillment, and flavor notes before quoting.");
+  } else {
+    parts.push("No items are on file yet — review details before quoting.");
+  }
+
+  if (inquiry.fulfillment_method === "delivery") {
+    parts.push("Delivery cost is shown separately above.");
+  }
+
+  return parts.join(" ");
+}
+
 function buildEstimateInsight(
   inquiry: Pick<InquiryDetailQueryRow, "estimated_max" | "estimated_min" | "fulfillment_method">,
   items: InquiryItemDetailRow[],
@@ -682,6 +715,7 @@ function buildEstimateInsight(
       productLabel: item.product_label || getProductDisplayLabel(item.product_type),
       requestedQuantityLabel: formatRequestedQuantity(item),
     })),
+    rationaleNote: buildRationaleNote(inquiry, items),
     summary:
       inquiry.fulfillment_method === "delivery"
         ? "This estimate reflects requested quantities, finish details, and the current internal delivery allowance."
