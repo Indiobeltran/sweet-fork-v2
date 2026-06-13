@@ -276,18 +276,23 @@ export default async function HomePage() {
             title="Recent work from The Sweet Fork."
             description="A small preview of recent work, from polished cakes to custom cookies and dessert-table details."
           />
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div
+            className="-mx-5 flex snap-x gap-4 overflow-x-auto px-5 pb-3 sm:-mx-8 sm:px-8 lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0 lg:pb-0 lg:gap-3"
+            aria-label="Recent work preview"
+            role="list"
+          >
             {visibleGalleryTeaserItems.map((item, index) => (
               <Link
                 key={item.id}
                 href="/gallery"
-                className="group overflow-hidden rounded-[1.45rem] border border-charcoal/7 bg-white/88 shadow-[0_16px_42px_rgba(44,36,27,0.06)] transition hover:-translate-y-1 hover:border-gold/32 hover:shadow-[0_22px_54px_rgba(44,36,27,0.09)]"
+                className="group w-[72vw] max-w-[18rem] shrink-0 snap-start overflow-hidden rounded-[1.45rem] border border-charcoal/7 bg-white/88 shadow-[0_16px_42px_rgba(44,36,27,0.06)] transition hover:-translate-y-1 hover:border-gold/32 hover:shadow-[0_22px_54px_rgba(44,36,27,0.09)] sm:w-[18rem] lg:w-auto lg:max-w-none"
+                role="listitem"
               >
                 <div className="relative aspect-[4/5] overflow-hidden bg-cream">
                   <CuratedImage
                     item={item}
                     priority={false}
-                    sizes="(max-width: 640px) calc(100vw - 2.5rem), (max-width: 1024px) calc(33vw - 1.75rem), 270px"
+                    sizes="(max-width: 640px) 72vw, (max-width: 1024px) 18rem, 270px"
                     className="transition duration-500 group-hover:scale-[1.03]"
                   />
                   <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(44,36,27,0.02),rgba(44,36,27,0.5))]" />

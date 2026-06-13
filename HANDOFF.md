@@ -1,3 +1,26 @@
+## Regression Hotfix: Homepage Gallery Preview Carousel — 2026-06-13
+
+- **Branch**: `codex/fix-home-gallery-preview-carousel`
+- **Context**: Antigravity left an in-progress draft fix mid-task on this branch. The draft was inspected, validated, and kept as-is (Option A). It was complete and correct.
+- **Regression description**: The homepage "Gallery Preview" section was rendering as a vertical list on mobile. Root cause: container class `grid gap-3 sm:grid-cols-3` — on mobile (< 640px), `grid` without a column count defaults to 1 column, stacking all 3 teaser cards vertically.
+- **Fix summary**: Replaced the container with a horizontal scroll-snap flex carousel on mobile/tablet (`flex snap-x overflow-x-auto` with full-bleed negative margins matching `section-shell` padding of `px-5 sm:px-8`). Cards are `w-[72vw] max-w-[18rem] shrink-0 snap-start` on mobile, `sm:w-[18rem]` on tablet. At `lg` (1024px+), reverts to `grid-cols-3 overflow-visible`. Image `sizes` updated to match card widths. Added `role="list"` / `role="listitem"` ARIA attributes.
+- **Files changed**:
+  - `src/app/(site)/page.tsx` — gallery preview carousel container and card classes only
+  - `HANDOFF.md`
+- **Phase 4 copy preserved**: Yes. No CTA, fulfillment, or process copy was touched.
+- **Admin pages**: Not changed.
+- **Supabase schema / media architecture / gallery import / DNS**: Not changed.
+- **Pre-existing untracked files preserved**: `.agents/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `skills-lock.json`.
+- **Regression test**: Not added. Carousel layout is visual/CSS — visual QA required after Netlify deploy.
+- **Verification performed**:
+  - `npm run lint` — Passed.
+  - `npm run typecheck` — Passed.
+  - `npm test` — Passed (25/25).
+  - `npm run build` — Passed (22/22 static pages).
+  - `git diff --check` — Passed.
+- **Remaining risks / follow-up**: Visual QA on Netlify deploy — confirm horizontal scroll on mobile, 3-col grid on desktop, no horizontal page overflow. At sm (640–1023px) tablet, cards scroll horizontally (acceptable; can revisit for 2-col grid if preferred).
+- **Next recommended phase**: Phase 5 — Estimate Rationale Popover/Drawer.
+
 ## Phase 4 Public CTA and Fulfillment Copy — 2026-06-13
 
 - **Current branch**: `codex/public-cta-fulfillment-copy`
