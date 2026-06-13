@@ -1,3 +1,34 @@
+## Phase 2 Admin Queues Live QA — 2026-06-13
+
+- **Branch checked**: `main` (aligned with `origin/main`)
+- **Latest commit hash verified**: `fd727e7d2ec9fc1205388eefa769c06687b7485d` (feat(admin): compact inquiry and order queues and add inquiry search)
+- **Netlify production deployment status**: Confirmed successfully deployed and active at `https://sweet-fork-v2.netlify.app`.
+- **QA Results**:
+  - **Admin login**: Verified working successfully. Unauthenticated requests to `/admin/inquiries` are correctly blocked and redirected to `/admin/login`.
+  - **Admin inquiries QA (`/admin/inquiries`)**: Passed.
+    - Inquiry queue loads without errors.
+    - Desktop layout renders as a dense, pseudo-table row design with elements like status, customer name, details, budget/estimate summaries, event date, fulfillment method, and contact links (email/phone).
+    - Mobile layout renders as a compact, readable card format with appropriate tap targets.
+    - In-memory search input is present inside the FilterSheet.
+    - Search filters successfully on customer name, email, phone number, and reference code.
+    - Clearing search correctly restores the full inquiries list.
+    - Status badges, signals, and budget/estimate info remain fully visible.
+    - Details navigation workflow is fully functional.
+  - **Admin orders QA (`/admin/orders`)**: Passed.
+    - Order queue loads without errors.
+    - Layout is compact, avoiding excessive vertical stacking.
+    - Desktop layout is structured as a dense row, and mobile remains compact.
+    - Financial fields (total, balance due, payment/deposit status) and fulfillment labels are clearly visible.
+    - Contact links (email/phone) and detail page navigation are fully functional.
+  - **Regression check**: Passed.
+    - Admin dashboard loads without issues.
+    - Mobile admin bottom nav and app bar layouts are stable and do not break.
+    - No customer-facing regressions detected on the public homepage.
+  - **Console errors**: 0 browser console/page errors observed.
+- **Issues found**: None.
+- **Follow-up recommendations**:
+  - Searching across deep inquiry item details (like item notes or description) remains a potential follow-up if database query search becomes necessary in the future.
+
 ## Phase 2 Admin Queues Density Update — 2026-06-13
 
 - **Implementation branch**: `codex/compact-admin-queues`
