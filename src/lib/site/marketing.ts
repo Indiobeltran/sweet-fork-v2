@@ -155,6 +155,7 @@ export type SiteShellData = {
 
 export type HomePageData = {
   galleryItems: GalleryItem[];
+  heroImage: GalleryItem | null;
   hero: ManagedContentSection["value"];
   offerings: Array<{
     eyebrow: string;
@@ -222,9 +223,17 @@ export const marketingMediaBucket = "marketing";
 
 export const mediaPlacementDefinitions: MediaPlacementDefinition[] = [
   {
-    description: "Curated photos used for the homepage hero and small gallery teaser.",
+    description: "Single hero image displayed at the top of the homepage.",
+    key: "home.hero",
+    label: "Homepage Hero",
+    pageKey: "home",
+    sectionKey: "hero",
+    slotKey: "hero",
+  },
+  {
+    description: "Featured preview images shown in the homepage gallery teaser section.",
     key: "home.gallery",
-    label: "Homepage hero and gallery teaser",
+    label: "Homepage Gallery Teaser",
     pageKey: "home",
     sectionKey: "gallery",
     slotKey: "gallery",
@@ -1481,7 +1490,7 @@ export async function getSiteShellData(): Promise<SiteShellData> {
 
 export async function getGalleryItemsForPlacement(
   placementKey: string,
-  options: { limit?: number } = {},
+  options: { limit?: number; requireExplicit?: boolean } = {},
 ): Promise<GalleryItem[]> {
   const fallbackItems = await resolveFallbackGalleryItems(
     options.limit ?? staticGalleryItems.length,
@@ -1510,6 +1519,11 @@ export async function getGalleryItemsForPlacement(
   const explicitPlacements = (placementData ?? []) as Array<
     Pick<MediaAssignmentRow, "display_order" | "media_asset_id">
   >;
+
+  if (options.requireExplicit && explicitPlacements.length === 0) {
+    return [];
+  }
+
   const explicitAssetIds = explicitPlacements.map((row) => row.media_asset_id);
 
   let assets: Array<
@@ -1727,9 +1741,10 @@ export async function getPublicFaqItems(): Promise<PublicFaqItem[]> {
 }
 
 export async function getHomePageData(): Promise<HomePageData> {
-  const [contentSections, gallery, testimonials, offerings] = await Promise.all([
+  const [contentSections, gallery, heroGalleryItems, testimonials, offerings] = await Promise.all([
     getManagedContentSections(),
     getGalleryItemsForPlacement("home.gallery", { limit: 6 }),
+    getGalleryItemsForPlacement("home.hero", { limit: 1, requireExplicit: true }),
     getPublicTestimonials(),
     getPublicOfferingCards(),
   ]);
@@ -1737,6 +1752,7 @@ export async function getHomePageData(): Promise<HomePageData> {
 
   return {
     galleryItems: gallery,
+    heroImage: heroGalleryItems[0] ?? null,
     hero:
       sectionsByKey.get("home.hero")?.value ??
       contentSectionDefinitions.find((definition) => definition.key === "home.hero")!.fallback,

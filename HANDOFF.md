@@ -1,3 +1,25 @@
+## Separate Homepage Hero and Gallery Teaser Placements — 2026-06-13
+
+- **Implementation branch**: `codex/separate-homepage-hero-gallery-teaser`
+- **Starting commit from main**: `4bf6c21b71c78af449f4f6b8185e93e54e19f81c`
+- **Commit hash for this pass**: `6c25f5f174264e61c0963275d7e4988ed22efdf7`
+- **Final status of verification**: All gates passed (`npm run lint`, `npm run typecheck`, `npm run build`, `npm test`, `git diff --check`).
+- **Current objective**: De-conflict Homepage Hero and Homepage Gallery Teaser assignments.
+- **Files modified**:
+  - `src/lib/site/marketing.ts`
+  - `src/app/(site)/page.tsx`
+  - `src/app/og/route.tsx`
+  - `src/components/admin/media-library-manager.tsx`
+  - `src/lib/admin/media-placement-utils.ts`
+  - `src/lib/admin/media-placement-utils.test.ts`
+- **De-conflict behavior**:
+  - Added a new placement key `home.hero` for "Homepage Hero" as a required single-slot placement (triggers missing warning if none assigned, and conflict warning if >1 assigned).
+  - Renamed/refined `home.gallery` to "Homepage Gallery Teaser", which is a multi-image placement (does not trigger single-image conflict or missing warnings, and displays display-order ranges in admin).
+  - Added `requireExplicit` option to `getGalleryItemsForPlacement` to prevent falling back to general category-assigned assets when querying `"home.hero"`.
+  - Configured public homepage to fallback to first Homepage Gallery Teaser image when no explicit Homepage Hero is assigned. In this fallback mode only, the fallback image is filtered out of the lower teaser section to prevent duplicate display.
+  - If the same image is explicitly assigned to both `home.hero` and `home.gallery`, it is allowed to appear in both sections.
+  - Verification: all tests passed including new test suite validating single-slot vs multi-slot semantics of the hero vs teaser.
+
 ## Dynamic Media Display Order — 2026-06-13
 
 - **Implementation branch**: `codex/dynamic-media-display-order`

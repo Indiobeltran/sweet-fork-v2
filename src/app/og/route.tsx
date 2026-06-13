@@ -66,7 +66,10 @@ export async function GET(request: Request) {
         }
       }
     } else if (path === "/") {
-      const galleryItems = await getGalleryItemsForPlacement("home.gallery", { limit: 1 });
+      let galleryItems = await getGalleryItemsForPlacement("home.hero", { limit: 1, requireExplicit: true });
+      if (galleryItems.length === 0) {
+        galleryItems = await getGalleryItemsForPlacement("home.gallery", { limit: 1 });
+      }
       if (galleryItems.length > 0 && galleryItems[0].imageUrl) {
         resolvedImagePath = galleryItems[0].imageUrl;
       }

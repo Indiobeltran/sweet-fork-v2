@@ -62,12 +62,14 @@ function CuratedImage({
 export default async function HomePage() {
   const data = await getHomePageData();
   const { siteUrl } = getPublicEnv();
+  const hasExplicitHero = !!data.heroImage;
   const heroGalleryItem =
+    data.heroImage ??
     data.galleryItems.find((item) => item.imageUrl) ??
     data.offerings.find((item) => item.image?.imageUrl)?.image ??
     null;
   const galleryTeaserItems = data.galleryItems
-    .filter((item) => item.imageUrl && item.id !== heroGalleryItem?.id)
+    .filter((item) => item.imageUrl && (hasExplicitHero || item.id !== heroGalleryItem?.id))
     .slice(0, 3);
   const visibleGalleryTeaserItems =
     galleryTeaserItems.length > 0

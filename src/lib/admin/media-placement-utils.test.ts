@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 // @ts-expect-error Node's strip-types test runner needs the .ts extension.
-import { getMediaPlacementBadgeLabel, getPlacementWarnings, isProminentMediaPlacement, isProductShowcasePlacement, sortMediaAssetsByPlacementUse, convertStoredOrderToUiPosition, convertUiPositionToStoredOrder, type MediaPlacementWarning } from "./media-placement-utils.ts";
+import { getMediaPlacementBadgeLabel, getPlacementWarnings, isProminentMediaPlacement, isSingleSlotMediaPlacement, isProductShowcasePlacement, sortMediaAssetsByPlacementUse, convertStoredOrderToUiPosition, convertUiPositionToStoredOrder, type MediaPlacementWarning } from "./media-placement-utils.ts";
 
 const placementDefinitions = [
   {
@@ -43,9 +43,16 @@ describe("admin media placement semantics", () => {
   it("treats prominent placements differently from gallery and product examples", () => {
     assert.equal(isProminentMediaPlacement("product.hero.custom-cakes"), true);
     assert.equal(isProminentMediaPlacement("home.offering.cupcakes"), true);
+    assert.equal(isProminentMediaPlacement("home.hero"), true);
+    assert.equal(isProminentMediaPlacement("home.gallery"), true);
     assert.equal(isProminentMediaPlacement("product.gallery.custom-cakes"), false);
     assert.equal(isProminentMediaPlacement("gallery.grid"), false);
     assert.equal(isProductShowcasePlacement("product.gallery.custom-cakes"), true);
+
+    // Single slot checks
+    assert.equal(isSingleSlotMediaPlacement("home.hero"), true);
+    assert.equal(isSingleSlotMediaPlacement("home.gallery"), false);
+    assert.equal(isSingleSlotMediaPlacement("product.hero.custom-cakes"), true);
   });
 
   it("creates owner-friendly placement badge labels", () => {
@@ -219,5 +226,68 @@ describe("admin media placement semantics", () => {
     assert.equal(convertUiPositionToStoredOrder(1), 10);
     assert.equal(convertUiPositionToStoredOrder(4), 40);
     assert.equal(convertUiPositionToStoredOrder(0), 10); // Clamps to 10
+  });
+
+  it("enforces single-slot conflict and missing warnings correctly for home.hero vs home.gallery", () => {
+    const definitions = [
+      {
+        description: "Homepage Hero",
+        key: "home.hero",
+        label: "Homepage Hero",
+        pageKey: "home",
+        sectionKey: "hero",
+        slotKey: "hero",
+      },
+      {
+        description: "Homepage Gallery Teaser",
+        key: "home.gallery",
+        label: "Homepage Gallery Teaser",
+        pageKey: "home",
+        sectionKey: "gallery",
+        slotKey: "gallery",
+      },
+    ];
+
+    // Case 1: home.hero is missing and home.gallery is also empty -> should ONLY warn about missing home.hero
+    const warningsMissing = getPlacementWarnings([], definitions);
+    const missingKeys = warningsMissing.map(w => w.placementKey);
+    assert.ok(missingKeys.includes("home.hero"));
+    assert.ok(!missingKeys.includes("home.gallery"));
+    assert.equal(warningsMissing.find(w => w.placementKey === "home.hero")?.type, "missing");
+
+    // Case 2: home.hero has multiple assigned assets -> should trigger a conflict warning
+    const warningsConflictHero = getPlacementWarnings(
+      [
+        {
+          id: "asset-1",
+          pageAssignments: [{ assignmentId: "a1", displayOrder: 10, placementKey: "home.hero" }],
+        },
+        {
+          id: "asset-2",
+          pageAssignments: [{ assignmentId: "a2", displayOrder: 20, placementKey: "home.hero" }],
+        },
+      ],
+      definitions
+    );
+    const conflictHero = warningsConflictHero.find(w => w.placementKey === "home.hero" && w.type === "conflict");
+    assert.ok(conflictHero);
+    assert.equal(conflictHero.severity, "high");
+
+    // Case 3: home.gallery has multiple assigned assets -> should NOT trigger any conflict warnings
+    const warningsGallery = getPlacementWarnings(
+      [
+        {
+          id: "asset-1",
+          pageAssignments: [{ assignmentId: "a1", displayOrder: 10, placementKey: "home.gallery" }],
+        },
+        {
+          id: "asset-2",
+          pageAssignments: [{ assignmentId: "a2", displayOrder: 20, placementKey: "home.gallery" }],
+        },
+      ],
+      definitions
+    );
+    const conflictGallery = warningsGallery.find(w => w.placementKey === "home.gallery" && w.type === "conflict");
+    assert.equal(conflictGallery, undefined);
   });
 });

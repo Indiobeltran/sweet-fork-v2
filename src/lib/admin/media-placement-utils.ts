@@ -79,7 +79,16 @@ function lowestAssignmentOrder(
 
 export function isProminentMediaPlacement(placementKey: string) {
   return (
+    placementKey === "home.hero" ||
     placementKey === "home.gallery" ||
+    placementKey.startsWith("home.offering.") ||
+    placementKey.startsWith("product.hero.")
+  );
+}
+
+export function isSingleSlotMediaPlacement(placementKey: string) {
+  return (
+    placementKey === "home.hero" ||
     placementKey.startsWith("home.offering.") ||
     placementKey.startsWith("product.hero.")
   );
@@ -90,7 +99,7 @@ export function isProductShowcasePlacement(placementKey: string) {
 }
 
 export function isRequiredMediaPlacement(placementKey: string) {
-  return isProminentMediaPlacement(placementKey);
+  return isSingleSlotMediaPlacement(placementKey);
 }
 
 export function getMediaPlacementBadgeLabel(
@@ -99,8 +108,12 @@ export function getMediaPlacementBadgeLabel(
 ) {
   const title = getSlotTitle(placementKey, placementDefinitions);
 
+  if (placementKey === "home.hero") {
+    return "Homepage Hero";
+  }
+
   if (placementKey === "home.gallery") {
-    return "Homepage hero";
+    return "Homepage Gallery Teaser";
   }
 
   if (placementKey.startsWith("home.offering.")) {
@@ -170,7 +183,7 @@ export function getPlacementWarnings(
     // Multi-image placements don't trigger conflicts or required missing errors natively right now,
     // but the original code only checked isProminent (which are single hero/featured slots mostly).
     // Actually, let's treat prominent ones as single-slot and required.
-    const isSingleSlot = isProminent; 
+    const isSingleSlot = isSingleSlotMediaPlacement(definition.key);
 
     if (isRequiredMediaPlacement(definition.key) && assignments.length === 0) {
       warnings.push({

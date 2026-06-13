@@ -14,6 +14,7 @@ import {
   getMediaPlacementBadgeLabel,
   isProductShowcasePlacement,
   isProminentMediaPlacement,
+  isSingleSlotMediaPlacement,
   sortMediaAssetsByPlacementUse,
   convertStoredOrderToUiPosition,
   convertUiPositionToStoredOrder,
@@ -787,7 +788,7 @@ export function MediaLibraryManager({
                     })}
 
                     {/* Active Sections ordering */}
-                    {placements.filter((placement) => placementsSelected.has(placement.key) && !isProminentMediaPlacement(placement.key)).map((placement) => {
+                    {placements.filter((placement) => placementsSelected.has(placement.key) && !isSingleSlotMediaPlacement(placement.key)).map((placement) => {
                       const storedVal = placementOrders[placement.key] ?? 10;
                       const assignedAssetsCount = websiteAssets.filter((asset) =>
                         asset.pageAssignments.some((pa) => pa.placementKey === placement.key)
@@ -837,7 +838,7 @@ export function MediaLibraryManager({
 
                     {/* Fallback when no orderable categories or placements are selected */}
                     {categories.filter((cat) => categoriesSelected.has(cat.id)).length === 0 &&
-                      placements.filter((placement) => placementsSelected.has(placement.key) && !isProminentMediaPlacement(placement.key)).length === 0 && (
+                      placements.filter((placement) => placementsSelected.has(placement.key) && !isSingleSlotMediaPlacement(placement.key)).length === 0 && (
                         <p className="text-xs text-center text-charcoal/50 bg-ivory/50 border border-charcoal/10 py-3 rounded-xl select-none">
                           Enable at least one multi-image Category or Section above to configure its display order.
                         </p>
