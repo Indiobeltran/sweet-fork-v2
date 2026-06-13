@@ -1,3 +1,63 @@
+## Copy Scrub Pass 2 Merge/Deployment Verification — 2026-06-13
+
+- **Current branch**: `main`.
+- **Current objective**: Merge completed copy scrub pass 2 (`antigravity/copy-scrub-pass-2`, commit `8439d37`) into `main`, push to GitHub, and verify Netlify/live public copy.
+- **Starting status**: Began on `antigravity/copy-scrub-pass-2` with tracked files clean and unrelated untracked files present (`.agents/`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `skills-lock.json`). Untracked files were preserved.
+- **Merge status**: `main`, `origin/main`, and `antigravity/copy-scrub-pass-2` already pointed at `8439d37f709aba7e0f0e65398594f20674663dd7`. `git checkout main`, `git pull origin main`, and `git merge antigravity/copy-scrub-pass-2` were clean no-ops (`Already up to date`).
+- **GitHub push status**: `git push origin main` returned `Everything up-to-date`. `origin/main` includes `8439d37`.
+- **Last completed work**: Local verification passed and live public copy spot checks passed for the approved text/caption items.
+- **In-progress work**: None.
+- **Next exact task**: Correct or owner-verify the Supabase `product.hero.diy-kits` media placement so `/diy-kits` renders the St. Patrick's Day DIY cookie kit image rather than the western baby-shower sugar-cookie box image.
+- **Commands run**:
+  - `git branch --show-current`
+  - `git status --short`
+  - `git log --oneline -n 10 --decorate`
+  - `git fetch origin`
+  - `git branch --contains 8439d37`
+  - `git log --oneline --decorate main -n 5`
+  - `git log --oneline --decorate antigravity/copy-scrub-pass-2 -n 5`
+  - `git diff --stat main..antigravity/copy-scrub-pass-2`
+  - `git checkout main`
+  - `git pull origin main`
+  - `git merge antigravity/copy-scrub-pass-2`
+  - `npm run lint`
+  - `npm run typecheck`
+  - `npm run build`
+  - `rg -i "trust before|without slowing|customer-facing|AI generated|pre-production|public pricing|public side|checkout flow|one-size-fits-all|lead capture|MVP|gallery architecture|inquiry flow|streamlined|reserved for deeper browsing|visual guide" src`
+  - `git push origin main`
+  - `git rev-parse HEAD`
+  - `git rev-parse origin/main`
+  - `git status -sb`
+  - `netlify status`
+  - `netlify deploy:list`
+  - `npx netlify status`
+  - `npx netlify deploy:list`
+  - `npx netlify sites:list --json`
+  - `npx netlify api getSite --data '{"site_id":"sweet-fork-v2"}'`
+  - live `fetch`/`curl` checks for `/`, `/pricing`, `/privacy`, `/gallery`, `/diy-kits`, and product routes.
+- **Verification results**:
+  - `npm run lint` — Passed.
+  - `npm run typecheck` — Passed.
+  - `npm run build` — Passed.
+  - Copy scan — Remaining matches were a code comment and admin-only strings, not public customer-facing copy.
+  - Live text checks — Passed for homepage testimonial eyebrow (`Kind words`), homepage testimonial heading (`The details clients remember.`), removal of `trust before the inquiry step`, pricing removal of `public side`/`public pricing`, product-route removal of `checkout flow`, privacy removal of `inquiry flow`, and gallery title `Floral Sixtieth Celebration Cake`.
+- **Netlify deployment status**:
+  - Global `netlify` CLI was unavailable.
+  - `npx netlify status` authenticated as `trueholddigital@gmail.com` but reported this repo folder is not linked to a Netlify project.
+  - `npx netlify sites:list --json` did not show a `sweet-fork-v2` site in the authenticated account.
+  - `npx netlify api getSite --data '{"site_id":"sweet-fork-v2"}'` returned `Not Found`.
+  - Because the project is not linked/visible through the available Netlify CLI account, Netlify deploy metadata for `main` could not be verified from CLI. Live site content at `https://sweet-fork-v2.netlify.app/` was reachable and showed the updated public copy.
+- **Known issues**:
+  - `/diy-kits` live and local production build output still render `https://renjsmdsrzjnppqpaoaa.supabase.co/storage/v1/object/public/marketing/marketing/gallery-batch-03/sweet-fork-western-highland-cow-baby-shower-sugar-cookies-centerville-utah.jpg` for the hero image. The code fallback in `src/lib/content/site-content.ts` is the intended St. Patrick's Day DIY cookie kit image, but the Supabase marketing placement appears to override it.
+  - The gallery caption fix was applied directly in Supabase (`media_assets` caption), not only in code, and live `/gallery` now shows `Floral Sixtieth Celebration Cake`.
+- **Open decisions**:
+  - Decide whether to update the Supabase `media_assignments` row for `product.hero.diy-kits` directly or have the owner update it through admin media placement tooling.
+- **Files changed recently**:
+  - `HANDOFF.md` only for this merge/deploy verification note.
+- **Commands still needed**:
+  - Owner or authenticated Netlify project check for the `sweet-fork-v2` production deploy metadata.
+  - Supabase/admin verification or update for `product.hero.diy-kits`.
+
 ## Production Alignment & Copy Scrub (Pass 2) — 2026-06-12
 
 - **Objective**: Execute a full customer-facing site scrub and correct production alignment issues (prior copy scrub was never merged to main).
