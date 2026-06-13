@@ -2,6 +2,26 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Testimonials Import — 2026-06-12
+
+- **Objective**: Populate The Sweet Fork v2 admin Testimonials database using all available 5-star reviews from The Sweet Fork Google Business Profile, then feature the best ones.
+- **Current branch**: `main`.
+- **Testimonials import SITREP**: The repository does not contain a full export of The Sweet Fork Google Business Profile reviews. The only review source data available in the repo were the three testimonials hardcoded in `src/lib/content/site-content.ts` (Sarah M., Jennifer L., Amanda & Ryan).
+- **Source of review data used**: `src/lib/content/site-content.ts` (partial testimonials).
+- **Number of 5-star reviews found/imported**: 3
+- **Number marked featured**: 3
+- **Featured selection criteria**: All 3 available were marked featured to maintain homepage presence. Priorities set sequentially (100, 90, 80).
+- **Manifest path**: `scratch/testimonials-import/google-reviews/testimonials-google-reviews.json` (Includes an empty template row for the full export when provided).
+- **Existing testimonials architecture**: Next.js Admin UI reading/writing to Supabase `testimonials` table, which public pages (`getPublicTestimonials`) use, falling back to static content if empty or missing Supabase connection.
+- **Import approach used**: Node.js script using `@supabase/supabase-js` executing locally to insert/upsert records.
+- **Whether records were created or updated**: 3 records created.
+- **Duplicate-prevention strategy**: The script checks existing records using an `or` match on exact `quote` text or `attribution_name`.
+- **Fields unsupported by the current schema/admin UI**: Detailed context fields (`product_context`, `event_context`, `location_context`) were coalesced into `attribution_role`. Explicit review dates and relative dates are unsupported and were omitted.
+- **How to verify in admin**: Log into the admin portal and navigate to `/admin/testimonials` to see the imported records.
+- **How to verify on the public testimonials page**: The homepage testimonials section should now load the data dynamically from Supabase.
+- **Blockers / follow-up items**: **BLOCKER:** The full Google Business Profile review set was unavailable in the repo. The manifest contains a template row. The full Google review export must be provided or pasted into the manifest before running the full import.
+
+
 ## Netlify Forms Notification Bridge Live Email Verification — 2026-06-12
 
 - **Objective**: Perform one final live QA check of the Sweet Fork Netlify Forms notification email after commit `985cb38` adding Mountain Time.
