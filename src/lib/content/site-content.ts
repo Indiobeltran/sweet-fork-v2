@@ -97,7 +97,7 @@ export const productPageContent: Record<string, ProductPageContent> = {
       {
         question: "Do you offer tastings?",
         answer:
-          "The Sweet Fork does not currently offer in-person tastings, but curated wedding tasting boxes may be available for an additional fee.",
+          "Curated wedding tasting boxes are available at a cost. Depending on final order size and details, the tasting cost may sometimes be credited toward the final product.",
       },
       {
         question: "How do I secure the wedding date?",
@@ -247,8 +247,8 @@ export const productPageContent: Record<string, ProductPageContent> = {
     availabilityNote: "Most kit orders need 1 to 2 weeks notice, especially around holidays and school-event weekends.",
     detailBullets: [
       "Each kit is assembled to feel complete and ready to use right away.",
-      "DIY kits work especially well for parties, classroom treats, and holiday gifting.",
-      "Seasonal themes and color stories can be discussed when timing allows.",
+      "DIY kits work especially well for parties, family activities, farmers markets, and holiday gifting.",
+      "Custom themes and color stories can be discussed when timing allows.",
     ],
     faq: [
       {
@@ -279,7 +279,7 @@ export const homeExperiencePillars = [
   {
     title: "Serving Northern Utah",
     description:
-      "Based in Centerville, with pickup available locally and delivery offered across Davis, Salt Lake, and nearby Weber County communities.",
+      "Based in Centerville, with pickup available locally and delivery offered across Davis, Salt Lake, and nearby Weber County communities. Baked goods are currently available for local pickup or local delivery only. We do not currently ship desserts.",
   },
 ];
 
@@ -297,7 +297,7 @@ export const processSteps = [
   {
     step: "03",
     title: "Reserve the date",
-    description: "Once the quote is approved, a deposit secures the date and the order moves into production planning.",
+    description: "Once the quote is approved, a 50% deposit secures the date and the order moves into production planning. Final payment is due before pickup or delivery.",
   },
 ];
 
@@ -397,7 +397,7 @@ export const faqItems = [
   {
     question: "Do you deliver?",
     answer:
-      "Yes. Delivery is available across Davis County, Salt Lake County, and nearby Weber County communities, with fees based on location.",
+      "Yes. Delivery is available across Davis County, Salt Lake County, and nearby Weber County communities, with fees based on location. Baked goods are currently available for local pickup or local delivery only. We do not currently ship desserts.",
   },
   {
     question: "Can you recreate a cake I saw online?",
@@ -427,7 +427,7 @@ export const faqItems = [
   {
     question: "Do you offer tastings?",
     answer:
-      "There are no in-person tastings right now, but curated wedding tasting boxes may be available for an additional fee.",
+      "Curated wedding tasting boxes are available at a cost. Depending on final order size and details, the tasting cost may sometimes be credited toward the final product.",
   },
 ];
 

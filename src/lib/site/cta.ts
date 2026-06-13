@@ -1,10 +1,10 @@
 const productInquiryCtaBySlug = {
-  "custom-cakes": "Start Your Custom Cake Inquiry",
-  "wedding-cakes": "Request Your Wedding Cake Quote",
-  cupcakes: "Start Your Cupcake Order",
-  "sugar-cookies": "Start Your Cookie Order",
-  macarons: "Start Your Macaron Order",
-  "diy-kits": "Start Your DIY Kit Order",
+  "custom-cakes": "Start Designing Your Cake",
+  "wedding-cakes": "Begin Your Wedding Cake Vision",
+  cupcakes: "Build Your Cupcake Box",
+  "sugar-cookies": "Plan Your Custom Cookie Set",
+  macarons: "Create Your Macaron Assortment",
+  "diy-kits": "Plan Your DIY Cookie Kit",
 } as const;
 
 export type ProductInquirySlug = keyof typeof productInquiryCtaBySlug;

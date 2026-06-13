@@ -37,8 +37,8 @@ export default function HowToOrderPage() {
               {item.step === "01"
                 ? "Event type, date, dessert needs, pickup or delivery, and inspiration if you have it"
                 : item.step === "02"
-                  ? "Quote, timing confirmation, and the next details The Sweet Fork needs to move forward"
-                  : "Deposit to secure the date, then final planning before pickup or delivery"}
+                  ? "Quote, invoice, timing confirmation, and the next details The Sweet Fork needs to move forward"
+                  : "A 50% deposit secures the date, and final payment is due before pickup or delivery"}
             </p>
           </article>
         ))}

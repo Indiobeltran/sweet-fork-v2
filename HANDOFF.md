@@ -1,3 +1,41 @@
+## Phase 4 Public CTA and Fulfillment Copy — 2026-06-13
+
+- **Current branch**: `codex/public-cta-fulfillment-copy`
+- **Objective**: Improve customer-facing CTA language and fulfillment/process clarity across the Sweet Fork public site while preserving the premium brand.
+- **Starting status**: Started from `main` with tracked files clean. Pre-existing untracked files were preserved.
+- **Scope confirmed**: Yes, this task is strictly isolated to Phase 4: Public CTA and Fulfillment Copy.
+- **Summary of CTA changes**:
+  - Updated `productInquiryCtaBySlug` in `src/lib/site/cta.ts` to use more exciting, product-specific CTAs (e.g., "Start Designing Your Cake", "Plan Your DIY Cookie Kit").
+- **Summary of fulfillment/no-shipping changes**:
+  - Clarified in `site-content.ts` (homeExperiencePillars, FAQ) that "Baked goods are currently available for local pickup or local delivery only. We do not currently ship desserts."
+- **Summary of payment/process changes**:
+  - Clarified on the `/how-to-order` page that an invoice follows a quote and a 50% deposit secures the date, with final payment due before pickup/delivery.
+  - Updated `processSteps` in `site-content.ts` to mention the 50% deposit explicitly and the final payment timing.
+- **Summary of wedding tasting and DIY Kits copy changes**:
+  - Clarified that wedding tasting boxes are "available at a cost" and may sometimes be credited toward the final product.
+  - Ensured DIY Kits copy explicitly mentions "family activities, farmers markets, and holiday gifting".
+- **Architecture & Guardrails Confirmed**:
+  - No Supabase schema changes were made.
+  - No inquiry/order/media database architecture changes were made.
+  - No admin pages were redesigned.
+  - No gallery import work was touched.
+  - DNS/deployment settings were not changed.
+  - Pre-existing untracked files were preserved.
+- **Files changed**:
+  - `src/lib/content/site-content.ts`
+  - `src/lib/site/cta.ts`
+  - `src/app/(site)/how-to-order/page.tsx`
+  - `HANDOFF.md`
+- **Verification performed**:
+  - `npm run lint` — Passed.
+  - `npm run typecheck` — Passed.
+  - `npm test` — Passed.
+  - `npm run build` — Passed (Next.js compiled successfully).
+  - `git diff --check` — Passed.
+  - `git status --short` — Clean (untracked files preserved).
+- **Next recommended step**: Merge to `main` and execute manual Netlify QA if deployed automatically, or move to the next phase if one exists.
+- **Remaining risks / follow-up**: None.
+
 ## Phase 3 Admin Needs-Attention Dashboard — 2026-06-13
 
 - **Current branch**: `codex/admin-needs-attention-dashboard`
