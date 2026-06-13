@@ -1,3 +1,48 @@
+## Launch-Readiness Verification Checkpoint - 2026-06-13
+
+- **Branch**: `main`
+- **Current HEAD**: `5603a62f86e3837d83f557015c2c4f9ff22fcd40` (`refactor: stabilize inquiry wizard`)
+- **Main/origin alignment**: `main` and `origin/main` aligned after `git fetch origin`.
+- **Current objective**: Post-Phases 1-8 launch-readiness verification pass before production-style manual QA / launch preparation. Read-only by default; no feature work started.
+- **Pre-existing untracked files preserved**: `.agents/`, `.claude/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `skills-lock.json`.
+- **Last completed work**:
+  - Phase 0 SITREP completed on `main`; local and remote main align at `5603a62`.
+  - Static verification gates passed: `npm run lint`, `npm run typecheck`, `npm test` (53/53), `npm run build`, `git diff --check`.
+  - Public static/code review covered `/`, all six product routes, `/gallery`, `/how-to-order`, and `/start-order`.
+  - Inquiry wizard static/code review covered `src/app/(site)/start-order/page.tsx`, `src/components/inquiry/start-order-wizard.tsx`, `src/components/inquiry/wizard-helpers.ts`, `src/components/inquiry/wizard-ui.tsx`, `src/app/api/inquiries/route.ts`, `src/lib/validations/inquiry.ts`, `src/lib/inquiries/submit.ts`, `src/lib/inquiries/netlify-bridge.ts`, and `public/__forms.html`.
+  - Admin static/code review covered `/admin`, `/admin/inquiries`, `/admin/inquiries/[id]`, `/admin/orders`, `/admin/orders/[id]`, `/admin/media`, protected layout/auth, navigation shell, solid sheets/drawers, compact queue surfaces, Needs Attention dashboard, estimate rationale, order detail command console/sticky save, and media drawer save/cancel/scroll behavior.
+  - Data/schema/deployment safety review covered migrations, Supabase client/server/admin usage, inquiry submit path, media/admin helpers, `netlify.toml`, `next.config.ts`, `.env.example`, package scripts, and tracked secret-pattern search.
+- **In-progress work**: None.
+- **Next exact task**: Run manual Netlify QA on the deployed `main`, focusing first on `/start-order` and admin inquiry visibility before starting any new code phase.
+- **Commands run**:
+  - `git branch --show-current`
+  - `git status --short`
+  - `git log --oneline -n 10`
+  - `git fetch origin`
+  - `git rev-parse main`
+  - `git rev-parse origin/main`
+  - `sed -n ...` reads for `AGENTS.md`, `ROADMAP.md`, `GATES.md`, `HANDOFF.md`, `DECISIONS.md`, `BACKLOG.md`, `README.md`
+  - `npm run lint`
+  - `npm run typecheck`
+  - `npm test`
+  - `npm run build`
+  - `git diff --check`
+  - targeted `find`, `rg`, `git grep`, `git ls-files`, `git diff`, and `sed` inspections for public routes, inquiry flow, admin routes, Supabase usage, Netlify/deployment config, scripts, and tracked secret patterns
+- **Commands still needed**:
+  - Manual browser QA on Netlify production/preview routes.
+  - Optional production-domain/DNS cutover checklist when the user is ready.
+- **Files changed recently by this verification pass**:
+  - `HANDOFF.md` only.
+- **Known issues / risks**:
+  - No launch blockers found in static/local verification.
+  - This pass did not perform manual browser/mobile QA and did not submit a live inquiry.
+  - Netlify Forms bridge unit tests intentionally log simulated network/404 fail-soft warnings while passing.
+  - Tracked docs/scratch references mention Supabase key names and operational notes, but no tracked secret values were found in the source/config scan.
+  - `src/lib/content/site-content.ts` contains an unused legacy `adminNavigation` entry pointing to `/admin/gallery`; the actual admin shell uses `src/lib/admin/navigation.ts` with `/admin/media`, so this is not a current blocker unless that legacy export is reintroduced.
+- **Open decisions**:
+  - Whether to run a live test inquiry during manual QA.
+  - When to confirm Netlify environment variables and production domain/DNS readiness.
+
 ## Phase 8 Inquiry Wizard Refactor — 2026-06-13
 
 - **Branch**: `codex/inquiry-wizard-refactor`
