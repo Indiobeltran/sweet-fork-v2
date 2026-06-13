@@ -65,6 +65,7 @@ export function SiteHeader({
   tagline,
 }: Readonly<SiteHeaderProps>) {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -83,8 +84,25 @@ export function SiteHeader({
     };
   }, [open]);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <header className="sticky top-0 z-50 border-b border-charcoal/6 bg-ivory/92 shadow-[0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-xl">
+    <header
+      className={cn(
+        "sticky top-0 z-50 border-b border-[#786446]/14 bg-ivory/96 backdrop-blur-md transition-shadow duration-200",
+        scrolled
+          ? "shadow-[0_8px_24px_rgba(40,32,20,0.08)]"
+          : "shadow-[0_1px_0_rgba(255,255,255,0.72)]",
+      )}
+    >
       <div className="hidden border-b border-charcoal/6 lg:block">
         <div className="section-shell flex h-11 items-center justify-between gap-6">
           <p className="text-[11px] uppercase tracking-[0.22em] text-charcoal/52">{tagline}</p>
@@ -138,13 +156,13 @@ export function SiteHeader({
           <Link
             href={defaultInquiryCta.href}
             aria-current={pathname === defaultInquiryCta.href ? "page" : undefined}
-            className="inline-flex h-10 items-center justify-center rounded-full border border-charcoal/10 bg-white/86 px-4 text-sm font-medium text-charcoal transition hover:border-charcoal/22 hover:bg-white"
+            className="inline-flex h-10 items-center justify-center rounded-full border border-charcoal/16 bg-white px-4 text-sm font-medium text-charcoal transition hover:border-charcoal/28 hover:bg-white/95"
           >
             Inquire
           </Link>
           <button
             type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-charcoal/10 bg-white/86 text-charcoal transition hover:border-charcoal/22 hover:bg-white"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-charcoal/16 bg-white text-charcoal transition hover:border-charcoal/28 hover:bg-white/95"
             onClick={() => setOpen((current) => !current)}
             aria-expanded={open}
             aria-controls="mobile-site-navigation"

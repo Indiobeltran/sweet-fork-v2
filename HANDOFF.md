@@ -1,4 +1,30 @@
+## Mobile Sticky Header Contrast and Readability Fix — 2026-06-12
+
+- **Objective**: Fix the mobile/sticky header readability/contrast issues on the live Netlify/mobile layout.
+- **Current branch**: `antigravity/mobile-header-contrast`
+- **Files changed**:
+  - `src/components/site/site-header.tsx`
+- **Styling approach used**:
+  - Replaced the transparent `bg-ivory/92` with `bg-ivory/96` (mostly solid warm ivory/cream background).
+  - Replaced `backdrop-blur-xl` with `backdrop-blur-md` (subtle blur).
+  - Added a stateful `scrolled` listener (`window.scrollY > 10`) to dynamically toggle the header shadow.
+  - Replaced `border-charcoal/6` with the faint bottom border `border-[#786446]/14` (representing `rgba(120, 100, 70, 0.14)`).
+  - Toggled the shadow dynamically: `scrolled ? "shadow-[0_8px_24px_rgba(40,32,20,0.08)]" : "shadow-[0_1px_0_rgba(255,255,255,0.72)]"`.
+  - Hardened contrast on mobile header buttons: changed `bg-white/86` to `bg-white` (solid white) and `border-charcoal/10` to `border-charcoal/16` for both the "Inquire" button and hamburger menu trigger.
+- **Browser/mobile QA routes tested**:
+  - `/` (Homepage category cards)
+  - `/custom-cakes` (Product/category card route)
+  - `/gallery` (Image-heavy gallery page)
+  - `/start-order` (Actual inquiry route linked by the "Inquire" button)
+- **Static checks run and results**:
+  - `npm run lint` (Passed)
+  - `npm run typecheck` (Passed)
+  - `npm run build` (Passed)
+  - `git diff --check` (Passed)
+- **Limitations or follow-up items**: None. The header readability issue is fixed cleanly while preserving the premium aesthetic.
+
 ## Testimonial Carousel Browser QA Pass — 2026-06-12
+
 
 - **Browser QA Date**: 2026-06-12
 - **Commit under test**: `061c6ed1e4c0b04e452a23c99f043c9d9640d664`
