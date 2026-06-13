@@ -76,6 +76,7 @@ export function TestimonialCarousel({ testimonials, className }: TestimonialCaro
   // Swipe Handlers
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.targetTouches[0].clientX;
+    touchEndX.current = e.targetTouches[0].clientX;
     setIsPaused(true);
   };
 
@@ -110,7 +111,7 @@ export function TestimonialCarousel({ testimonials, className }: TestimonialCaro
       aria-roledescription="carousel"
       aria-label="Customer Testimonials"
     >
-      <div className="relative overflow-hidden min-h-[16rem] sm:min-h-[14rem]">
+      <div className="grid grid-cols-1 grid-rows-1 overflow-hidden">
         {testimonials.map((testimonial, index) => {
           const isActive = index === currentIndex;
           
@@ -118,7 +119,7 @@ export function TestimonialCarousel({ testimonials, className }: TestimonialCaro
             <div
               key={`${testimonial.name}-${index}`}
               className={cn(
-                "absolute top-0 left-0 w-full h-full transition-opacity duration-700 ease-in-out flex items-center justify-center",
+                "col-start-1 row-start-1 w-full transition-opacity duration-700 ease-in-out flex items-center justify-center",
                 isActive ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
               )}
               aria-hidden={!isActive}
@@ -126,7 +127,7 @@ export function TestimonialCarousel({ testimonials, className }: TestimonialCaro
               aria-roledescription="slide"
               aria-label={`${index + 1} of ${testimonials.length}`}
             >
-              <blockquote className="luxury-panel rounded-[1.35rem] px-6 py-8 sm:px-10 text-center max-w-2xl mx-auto flex flex-col items-center justify-center h-full">
+              <blockquote className="luxury-panel rounded-[1.35rem] px-6 py-8 sm:px-10 text-center max-w-2xl mx-auto flex flex-col items-center justify-center w-full">
                 <p className="text-base sm:text-lg leading-relaxed text-charcoal/80 italic font-serif">
                   &ldquo;{testimonial.quote}&rdquo;
                 </p>

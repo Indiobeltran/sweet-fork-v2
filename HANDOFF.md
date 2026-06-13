@@ -1,3 +1,22 @@
+## Testimonial Carousel Browser QA Pass — 2026-06-12
+
+- **Browser QA Date**: 2026-06-12
+- **Commit under test**: `061c6ed1e4c0b04e452a23c99f043c9d9640d664`
+- **Mobile viewport tested**: 390px (iPhone-style width)
+- **Desktop viewport tested**: 1440px
+- **Whether carousel starts only when visible**: Yes, IntersectionObserver successfully gates autoplay until the section is in view.
+- **Whether swipe works**: Yes. Fixed a bug where `touchEndX` was not reset in `handleTouchStart`, which would cause simple taps to trigger slide changes. Swipe left goes next, swipe right goes previous.
+- **Whether arrows/dots work**: Yes, previous/next buttons and slide indicator tabs are fully functional and clickable.
+- **Whether hover/focus/manual pause works**: Yes, hover (`onMouseEnter`/`onMouseLeave`) and focus (`onFocus`/`onBlur`) correctly pause/resume autoplay. Manual dot/arrow clicks/touches also set focus and pause autoplay.
+- **Whether highest-priority review appears first**: Yes, the `Tanya` review (display order 100) appears first.
+- **Whether AI placeholders are absent**: Yes, verified that "Sarah M.", "Jennifer L.", and "Amanda & Ryan" are completely absent from the database queries and fallback components.
+- **Whether mobile height/text length is acceptable**: Yes. Changed the carousel container layout from a hardcoded `min-h-[16rem]` absolute stack to a CSS Grid `grid-cols-1 grid-rows-1` stacked layout. This automatically sizes the container to the tallest testimonial card on all screens, eliminating text clipping/overflow bugs on narrow screens while preventing layout shifts.
+- **Whether console/runtime errors were observed**: None. Tested hydration and mount cycles without console warnings or runtime exceptions.
+- **Fixes made**:
+  - Reset `touchEndX` to match `touchStartX` in `handleTouchStart` to avoid tap false positives.
+  - Replaced absolute wrapper (`min-h-[16rem]`) with CSS Grid overlay (`grid-cols-1 grid-rows-1`) to enable dynamic auto-height per layout requirements on mobile, preventing long text clipping.
+- **Remaining risks or follow-up items**: None. The carousel is fully accessible, responsive, and performance-friendly.
+
 ## Testimonial Refinement & Carousel Implementation — 2026-06-12
 
 - **Objective**: Refine 17 Google reviews into concise quotes, delete 3 AI placeholders, implement a Testimonial Carousel for the homepage, and fix query ordering.
