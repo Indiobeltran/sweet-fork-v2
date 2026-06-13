@@ -2,6 +2,17 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Netlify Forms Notification Bridge Live Email Verification — 2026-06-12
+
+- **Objective**: Perform one final live QA check of the Sweet Fork Netlify Forms notification email after commit `985cb38` adding Mountain Time.
+- **Current branch**: `main`.
+- **QA Inquiry Reference ID**: `SF-14045740` (Inquiry ID: `14045740-b457-4ad2-b66c-b4df7eceebcf`).
+- **Netlify Forms Verification**: Successful. The submission appears in the Netlify Forms dashboard under `inquiry-notification`.
+- **Email Delivery**: Verified. Melissa received the Netlify Forms notification email.
+- **Timestamp Format**: Verified. The email includes `submittedAtMountain` formatted using `America/Denver` displaying in Mountain Daylight Time (MDT) for June, and `submittedAtUtc` as a UTC ISO string.
+- **Duplicate Inquiry Check**: Verified. No duplicate inquiry was created in Supabase (exactly one row exists).
+- **DNS Cutover Recommendation**: **Recommended**. The end-to-end custom timezone email notification is fully verified, and no other blockers remain. Ready for production domain cutover.
+
 ## Netlify Forms Notification Bridge Custom Timestamp Polish — 2026-06-12
 
 - **Objective**: Add a human-friendly Mountain Time submission timestamp to the Sweet Fork v2 Netlify Forms notification bridge payload.
