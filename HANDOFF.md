@@ -1,3 +1,31 @@
+## Admin Media UX Fixes (Pass 2) — 2026-06-13
+
+- **Current branch**: `main`
+- **Current objective**: Fix admin media category/order UX issues, implement stale placement reminders, add conflict warnings, consolidate "Celebration" category into "Custom Cakes", and add DIY Kits category support.
+- **Starting branch**: `main`.
+- **Files modified**:
+  - `src/app/admin/(protected)/media/actions.ts`
+  - `src/components/admin/media-library-manager.tsx`
+  - `src/components/site/gallery-grid.tsx`
+  - `src/lib/admin/media-placement-utils.test.ts`
+  - `src/lib/admin/media-placement-utils.ts`
+  - `src/lib/admin/site-management.ts`
+  - `src/lib/site/product-media.ts`
+- **Implementation completed**:
+  - **Save Behavior**: Ensured all dynamically tracked states trigger `hasChanges` to keep the Save button active and sticky on mobile.
+  - **Stale Placements**: Added logic in `getPlacementWarnings` to warn if a prominent image hasn't changed in 90 days. Built an "Acknowledge" button which updates `metadata.stale_acknowledged_at` to snooze the warning.
+  - **Conflict Detection**: Added a red warning if multiple active images are assigned to the same single-image slot (e.g., product hero).
+  - **Celebration Consolidation**: Mapped "Celebration" slug to "Custom Cakes" in public filters, and hid it from `media-library-manager.tsx` category filters to prevent duplication.
+  - **Display Order Controls**: Replaced `<input type="number">` with bounded `<input type="range">` steppers (10 to 200) for more reliable UI controls on mobile.
+  - **Where this photo appears**: Added a read-only list in the edit drawer showing all page/gallery placements a photo is currently assigned to.
+  - **DIY Kits Filter**: Added "DIY Kits" to `filterCategories` in `gallery-grid.tsx` and adjusted button padding for 2-line mobile wrap support.
+- **Verification performed**:
+  - `npm run typecheck` — Passed.
+  - `npm run lint` — Passed.
+  - `npm test` — Passed for the placement utils node tests.
+- **Next steps**:
+  - Need owner confirmation of the UI updates.
+
 ## Product Page Media UX + Admin Placement Clarity — 2026-06-13
 
 - **Current branch**: `codex/product-page-media-ux`.

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 // @ts-expect-error Node's strip-types test runner needs the .ts extension.
-import { getMediaPlacementBadgeLabel, getMissingRequiredPlacementWarnings, isProminentMediaPlacement, isProductShowcasePlacement, sortMediaAssetsByPlacementUse } from "./media-placement-utils.ts";
+import { getMediaPlacementBadgeLabel, getPlacementWarnings, isProminentMediaPlacement, isProductShowcasePlacement, sortMediaAssetsByPlacementUse, type MediaPlacementWarning } from "./media-placement-utils.ts";
 
 const placementDefinitions = [
   {
@@ -65,15 +65,15 @@ describe("admin media placement semantics", () => {
   });
 
   it("reports only missing required homepage and product hero/card placements", () => {
-    const warnings = getMissingRequiredPlacementWarnings(
+    const warnings = getPlacementWarnings(
       [
         {
           id: "asset-1",
-          pageAssignments: [{ displayOrder: 10, placementKey: "product.hero.custom-cakes" }],
+          pageAssignments: [{ assignmentId: "a1", displayOrder: 10, placementKey: "product.hero.custom-cakes" }],
         },
         {
           id: "asset-2",
-          pageAssignments: [{ displayOrder: 10, placementKey: "product.hero.diy-kits" }],
+          pageAssignments: [{ assignmentId: "a2", displayOrder: 10, placementKey: "product.hero.diy-kits" }],
         },
       ],
       [
@@ -89,7 +89,7 @@ describe("admin media placement semantics", () => {
       ],
     );
 
-    assert.deepEqual(warnings.map((warning) => warning.placementKey), [
+    assert.deepEqual(warnings.map((warning: MediaPlacementWarning) => warning.placementKey), [
       "home.offering.cupcakes",
     ]);
     assert.match(warnings[0]?.message ?? "", /Cupcakes/);
@@ -102,7 +102,7 @@ describe("admin media placement semantics", () => {
         createdAt: "2026-01-04T00:00:00.000Z",
         featured: false,
         id: "gallery-only",
-        pageAssignments: [{ displayOrder: 10, placementKey: "gallery.grid" }],
+        pageAssignments: [{ displayOrder: 10, assignmentId: "a4", placementKey: "gallery.grid" }],
       },
       {
         createdAt: "2026-01-03T00:00:00.000Z",
@@ -114,18 +114,18 @@ describe("admin media placement semantics", () => {
         createdAt: "2026-01-02T00:00:00.000Z",
         featured: false,
         id: "product-examples",
-        pageAssignments: [{ displayOrder: 10, placementKey: "product.gallery.custom-cakes" }],
+        pageAssignments: [{ displayOrder: 10, assignmentId: "a3", placementKey: "product.gallery.custom-cakes" }],
       },
       {
         createdAt: "2026-01-01T00:00:00.000Z",
         featured: false,
-        id: "product-hero",
-        pageAssignments: [{ displayOrder: 10, placementKey: "product.hero.custom-cakes" }],
+        id: "hero-1",
+        pageAssignments: [{ assignmentId: "h1", displayOrder: 10, placementKey: "product.hero.custom-cakes" }],
       },
     ]);
 
     assert.deepEqual(sorted.map((asset) => asset.id), [
-      "product-hero",
+      "hero-1",
       "product-examples",
       "legacy-highlight",
       "gallery-only",

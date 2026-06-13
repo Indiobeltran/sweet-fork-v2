@@ -266,7 +266,7 @@ export function MediaLibraryManager({
       <div
         className={`rounded-[1.6rem] border px-4 py-4 sm:px-5 ${
           hasPlacementWarnings
-            ? "border-gold/28 bg-gold/10"
+            ? "border-rose-200 bg-rose-50"
             : "border-emerald-200 bg-emerald-50"
         }`}
       >
@@ -274,7 +274,7 @@ export function MediaLibraryManager({
           <span
             className={`mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
               hasPlacementWarnings
-                ? "bg-gold/18 text-charcoal"
+                ? "bg-rose-100 text-rose-800"
                 : "bg-emerald-100 text-emerald-800"
             }`}
             aria-hidden="true"
@@ -285,22 +285,43 @@ export function MediaLibraryManager({
               <CheckCircle2 className="h-4 w-4" />
             )}
           </span>
-          <div className="min-w-0 space-y-2">
+          <div className="min-w-0 space-y-2 flex-1">
             <p className="text-sm font-semibold text-charcoal">
               {hasPlacementWarnings
                 ? "Major website image placements need attention."
                 : "All major website image placements are assigned."}
             </p>
             {hasPlacementWarnings ? (
-              <ul className="space-y-1.5">
-                {placementWarnings.map((warning) => (
-                  <li
-                    key={warning.placementKey}
-                    className="text-sm leading-6 text-charcoal/70"
-                  >
-                    {warning.message}
-                  </li>
-                ))}
+              <ul className="space-y-2.5">
+                {placementWarnings.map((warning, index) => {
+                  const isHigh = warning.severity === "high";
+                  return (
+                    <li
+                      key={`${warning.placementKey}-${index}`}
+                      className={`text-sm leading-6 flex flex-col sm:flex-row sm:items-start gap-2 rounded-xl p-3 border ${
+                        isHigh
+                          ? "bg-rose-100/50 border-rose-200 text-rose-900"
+                          : "bg-amber-100/50 border-amber-200 text-amber-900"
+                      }`}
+                    >
+                      <span className="flex-1">
+                        <strong className="font-semibold">{warning.label}:</strong> {warning.message}
+                      </span>
+                      {warning.type === "stale" && warning.assignmentId ? (
+                        <form action={async (formData) => {
+                          const { acknowledgeStalePlacement } = await import("@/app/admin/(protected)/media/actions");
+                          await acknowledgeStalePlacement(formData);
+                        }}>
+                          <input type="hidden" name="assignmentId" value={warning.assignmentId} />
+                          <input type="hidden" name="redirectTo" value="/admin/media" />
+                          <Button type="submit" variant="secondary" size="sm" className="h-8 shrink-0 bg-white shadow-sm border border-amber-300 text-amber-900 hover:bg-amber-50">
+                            Acknowledge
+                          </Button>
+                        </form>
+                      ) : null}
+                    </li>
+                  );
+                })}
               </ul>
             ) : (
               <p className="text-sm leading-6 text-charcoal/70">
@@ -343,7 +364,7 @@ export function MediaLibraryManager({
               ({categoryCounts.All})
             </span>
           </button>
-          {categories.map((cat) => {
+          {categories.filter(c => c.slug !== 'celebration').map((cat) => {
             const count = categoryCounts[cat.id] ?? 0;
             if (count === 0) return null; // Only show active categories with assets
             const isActive = activeCategory === cat.id;
@@ -557,6 +578,27 @@ export function MediaLibraryManager({
                   <h3 className="text-xs font-semibold uppercase tracking-[0.15em] text-charcoal/50 border-b border-charcoal/5 pb-2">
                     1. Basic Details
                   </h3>
+
+                  {/* Read-only Current Context Section */}
+                  <div className="mb-4 rounded-xl border border-gold/20 bg-gold/5 p-3 text-sm text-charcoal/80 space-y-2">
+                    <p className="font-semibold text-charcoal flex items-center gap-1.5"><Info className="h-4 w-4 text-gold"/> Where this photo currently appears</p>
+                    {selectedAsset.pageAssignments.length > 0 || selectedAsset.categoryAssignments.length > 0 || selectedAsset.featured ? (
+                      <ul className="list-disc pl-5 space-y-1 mt-1 text-charcoal/70">
+                        {selectedAsset.pageAssignments.map((assignment) => (
+                          <li key={assignment.placementKey}>
+                            {getMediaPlacementBadgeLabel(assignment.placementKey, placements)}
+                          </li>
+                        ))}
+                        {selectedAsset.categoryAssignments.map((catAssignment) => {
+                          const catName = categories.find(c => c.id === catAssignment.categoryId)?.name ?? "Unknown Category";
+                          return <li key={catAssignment.categoryId}>Public Gallery ({catName})</li>;
+                        })}
+                        {selectedAsset.featured && <li>Highlighted generally (Featured)</li>}
+                      </ul>
+                    ) : (
+                      <p className="pl-1 italic">This photo is currently unassigned and hidden.</p>
+                    )}
+                  </div>
                   
                   <div>
                     <Label htmlFor="drawer-caption">Photo Title</Label>
@@ -610,7 +652,7 @@ export function MediaLibraryManager({
                       Gallery categories
                     </p>
                     <div className="grid gap-2 sm:grid-cols-2">
-                      {categories.map((cat) => {
+                      {categories.filter(c => c.slug !== 'celebration').map((cat) => {
                         const isChecked = categoriesSelected.has(cat.id);
                         return (
                           <label
@@ -694,44 +736,60 @@ export function MediaLibraryManager({
 
                   <div className="space-y-3">
                     {/* Active Categories ordering */}
-                    {categories.filter((cat) => categoriesSelected.has(cat.id)).map((cat) => (
+                    {categories.filter((cat) => categoriesSelected.has(cat.id)).map((cat) => {
+                      const value = categoryOrders[cat.id] ?? cat.display_order;
+                      return (
                       <div
                         key={`order-cat-${cat.id}`}
-                        className="grid grid-cols-[1fr_100px] items-center gap-3 rounded-xl border border-charcoal/8 bg-ivory/30 px-3 py-2 text-xs"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-charcoal/8 bg-ivory/30 px-3 py-2.5 text-xs"
                       >
-                        <span className="font-semibold text-charcoal truncate">{cat.name} Category Order</span>
-                        <div>
-                          <Input
+                        <span className="font-semibold text-charcoal truncate">{cat.name} Display Position</span>
+                        <div className="flex items-center gap-3">
+                          <input
                             id={`categoryOrder-${cat.id}`}
                             name={`categoryOrder.${cat.id}`}
-                            type="number"
-                            value={categoryOrders[cat.id] ?? cat.display_order}
+                            type="range"
+                            min="10"
+                            max="200"
+                            step="10"
+                            value={value}
                             onChange={(e) => handleCategoryOrderChange(cat.id, parseInt(e.target.value) || 0)}
-                            className="h-8 py-1 px-2.5 text-xs bg-white text-right"
+                            className="accent-charcoal flex-1 sm:w-32"
                           />
+                          <span className="w-16 text-right tabular-nums text-charcoal/70">
+                            Pos {value}
+                          </span>
                         </div>
                       </div>
-                    ))}
+                    )})}
 
                     {/* Active Sections ordering */}
-                    {placements.filter((placement) => placementsSelected.has(placement.key)).map((placement) => (
+                    {placements.filter((placement) => placementsSelected.has(placement.key)).map((placement) => {
+                      const value = placementOrders[placement.key] ?? 10;
+                      return (
                       <div
                         key={`order-placement-${placement.key}`}
-                        className="grid grid-cols-[1fr_100px] items-center gap-3 rounded-xl border border-charcoal/8 bg-ivory/30 px-3 py-2 text-xs"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-charcoal/8 bg-ivory/30 px-3 py-2.5 text-xs"
                       >
-                        <span className="font-semibold text-charcoal truncate">{placement.label} Section Order</span>
-                        <div>
-                          <Input
+                        <span className="font-semibold text-charcoal truncate">{placement.label} Position</span>
+                        <div className="flex items-center gap-3">
+                          <input
                             id={`placementOrder-${placement.key}`}
                             name={`placementOrder.${placement.key}`}
-                            type="number"
-                            value={placementOrders[placement.key] ?? 10}
+                            type="range"
+                            min="10"
+                            max="200"
+                            step="10"
+                            value={value}
                             onChange={(e) => handlePlacementOrderChange(placement.key, parseInt(e.target.value) || 0)}
-                            className="h-8 py-1 px-2.5 text-xs bg-white text-right"
+                            className="accent-charcoal flex-1 sm:w-32"
                           />
+                          <span className="w-16 text-right tabular-nums text-charcoal/70">
+                            Pos {value}
+                          </span>
                         </div>
                       </div>
-                    ))}
+                    )})}
 
                     {categoriesSelected.size === 0 && placementsSelected.size === 0 && (
                       <p className="text-xs text-center text-rose-700 bg-rose/5 border border-rose/10 py-3 rounded-xl">

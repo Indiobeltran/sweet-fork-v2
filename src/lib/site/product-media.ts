@@ -10,6 +10,7 @@ export const productGalleryCategoryNamesBySlug: Record<string, string[]> = {
   "sugar-cookies": ["Sugar Cookies"],
   macarons: ["Macarons"],
   "diy-kits": ["DIY Kits"],
+  celebration: ["Custom Cakes"],
 };
 
 function isRecord(value: unknown): value is JsonRecord {

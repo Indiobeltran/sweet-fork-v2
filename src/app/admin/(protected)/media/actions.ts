@@ -395,3 +395,50 @@ export async function updateGalleryCategory(formData: FormData) {
   revalidateMarketingSite(["/", "/gallery"]);
   redirectWithNotice(redirectTarget, "category-updated");
 }
+
+export async function acknowledgeStalePlacement(formData: FormData) {
+  await requireAdmin();
+
+  const assignmentId = parseRequiredString(formData.get("assignmentId"));
+  const redirectTarget = getMediaRedirectTarget(formData.get("redirectTo"));
+
+  if (!assignmentId) {
+    redirectWithNotice(redirectTarget, "media-error");
+  }
+
+  const admin = createAdminClient();
+  const { data: currentAssignment, error: fetchError } = await admin
+    .from("media_assignments")
+    .select("metadata")
+    .eq("id", assignmentId)
+    .maybeSingle();
+
+  if (fetchError || !currentAssignment) {
+    console.error("Unable to load current media assignment.", fetchError);
+    redirectWithNotice(redirectTarget, "media-error");
+  }
+
+  const currentMetadata =
+    currentAssignment.metadata && typeof currentAssignment.metadata === "object" && !Array.isArray(currentAssignment.metadata)
+      ? (currentAssignment.metadata as Record<string, Json>)
+      : {};
+
+  const { error } = await admin
+    .from("media_assignments")
+    .update({
+      metadata: {
+        ...currentMetadata,
+        stale_acknowledged_at: new Date().toISOString(),
+      },
+    })
+    .eq("id", assignmentId);
+
+  if (error) {
+    console.error("Unable to update media assignment.", error);
+    redirectWithNotice(redirectTarget, "media-error");
+  }
+
+  revalidatePaths([mediaRedirectPath]);
+  redirectWithNotice(redirectTarget, "media-updated");
+}
+

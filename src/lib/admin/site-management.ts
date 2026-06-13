@@ -7,7 +7,7 @@ import {
   type ManagedContentSection,
 } from "@/lib/site/marketing";
 import {
-  getMissingRequiredPlacementWarnings,
+  getPlacementWarnings,
   sortMediaAssetsByPlacementUse,
   type MediaPlacementWarning,
 } from "@/lib/admin/media-placement-utils";
@@ -40,8 +40,12 @@ export type MediaLibraryAsset = {
   inquiryId: string | null;
   libraryKind: "client" | "website";
   pageAssignments: Array<{
+    assignmentId: string;
     displayOrder: number;
     placementKey: string;
+    createdAt?: string;
+    updatedAt?: string;
+    metadata?: Record<string, unknown>;
   }>;
   previewUrl: string | null;
   referenceCode: string | null;
@@ -251,7 +255,7 @@ export async function getMediaLibraryData(): Promise<MediaLibraryData> {
     return {
       categories: (categoryData ?? []) as GalleryCategoryRow[],
       clientAssets: [],
-      placementWarnings: getMissingRequiredPlacementWarnings([], mediaPlacementDefinitions),
+      placementWarnings: getPlacementWarnings([], mediaPlacementDefinitions),
       websiteAssets: [],
     };
   }
@@ -265,7 +269,7 @@ export async function getMediaLibraryData(): Promise<MediaLibraryData> {
 
   const { data: assignmentData, error: assignmentError } = await supabase
     .from("media_assignments")
-    .select("assignment_type, display_order, media_asset_id, page_key, section_key, slot_key, target_id")
+    .select("id, assignment_type, display_order, media_asset_id, page_key, section_key, slot_key, target_id, created_at, updated_at, metadata")
     .in("media_asset_id", assets.map((asset) => asset.id));
 
   if (assignmentError) {
@@ -275,6 +279,7 @@ export async function getMediaLibraryData(): Promise<MediaLibraryData> {
   const assignmentsByAssetId = ((assignmentData ?? []) as Array<
     Pick<
       MediaAssignmentRow,
+      | "id"
       | "assignment_type"
       | "display_order"
       | "media_asset_id"
@@ -282,6 +287,9 @@ export async function getMediaLibraryData(): Promise<MediaLibraryData> {
       | "section_key"
       | "slot_key"
       | "target_id"
+      | "created_at"
+      | "updated_at"
+      | "metadata"
     >
   >).reduce<
     Map<
@@ -289,6 +297,7 @@ export async function getMediaLibraryData(): Promise<MediaLibraryData> {
       Array<
         Pick<
           MediaAssignmentRow,
+          | "id"
           | "assignment_type"
           | "display_order"
           | "media_asset_id"
@@ -296,6 +305,9 @@ export async function getMediaLibraryData(): Promise<MediaLibraryData> {
           | "section_key"
           | "slot_key"
           | "target_id"
+          | "created_at"
+          | "updated_at"
+          | "metadata"
         >
       >
     >
@@ -318,6 +330,7 @@ export async function getMediaLibraryData(): Promise<MediaLibraryData> {
       const pageAssignments = assignments
         .filter((assignment) => assignment.assignment_type === "page")
         .map((assignment) => ({
+          assignmentId: assignment.id,
           displayOrder: assignment.display_order,
           placementKey:
             mediaPlacementDefinitions.find(
@@ -326,6 +339,9 @@ export async function getMediaLibraryData(): Promise<MediaLibraryData> {
                 definition.sectionKey === assignment.section_key &&
                 definition.slotKey === assignment.slot_key,
             )?.key ?? `${assignment.page_key}.${assignment.section_key}`,
+          createdAt: assignment.created_at,
+          updatedAt: assignment.updated_at,
+          metadata: isRecord(assignment.metadata) ? assignment.metadata as Record<string, unknown> : undefined,
         }))
         .sort((left, right) => left.displayOrder - right.displayOrder);
       const metadata = isRecord(asset.metadata) ? asset.metadata : null;
@@ -356,7 +372,7 @@ export async function getMediaLibraryData(): Promise<MediaLibraryData> {
   return {
     categories: (categoryData ?? []) as GalleryCategoryRow[],
     clientAssets,
-    placementWarnings: getMissingRequiredPlacementWarnings(mappedAssets, mediaPlacementDefinitions),
+    placementWarnings: getPlacementWarnings(mappedAssets, mediaPlacementDefinitions),
     websiteAssets: sortMediaAssetsByPlacementUse(websiteAssets),
   };
 }

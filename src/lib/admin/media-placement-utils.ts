@@ -11,6 +11,9 @@ export type MediaPlacementWarning = {
   label: string;
   message: string;
   placementKey: string;
+  severity: "high" | "medium" | "low";
+  type: "missing" | "conflict" | "stale";
+  assignmentId?: string;
 };
 
 type MediaAssetPlacementShape = {
@@ -18,8 +21,12 @@ type MediaAssetPlacementShape = {
   featured?: boolean;
   id: string;
   pageAssignments: Array<{
+    assignmentId: string;
     displayOrder: number;
     placementKey: string;
+    createdAt?: string;
+    updatedAt?: string;
+    metadata?: Record<string, unknown>;
   }>;
 };
 
@@ -115,26 +122,92 @@ export function getMediaPlacementBadgeLabel(
   return getDefinition(placementKey, placementDefinitions)?.label ?? title;
 }
 
-export function getMissingRequiredPlacementWarnings(
+export function getPlacementWarnings(
   assets: readonly MediaAssetPlacementShape[],
   placementDefinitions: readonly PlacementDefinitionLike[],
 ): MediaPlacementWarning[] {
-  const assignedPlacementKeys = new Set(
-    assets.flatMap((asset) => asset.pageAssignments.map((assignment) => assignment.placementKey)),
-  );
+  const warnings: MediaPlacementWarning[] = [];
+  const assignedPlacements = new Map<string, Array<{ assetId: string; assignmentId: string; age: number; isStale: boolean; staleAcknowledged: boolean; createdAt?: string }>>();
 
-  return placementDefinitions
-    .filter((definition) => isRequiredMediaPlacement(definition.key))
-    .filter((definition) => !assignedPlacementKeys.has(definition.key))
-    .map((definition) => {
-      const label = getMediaPlacementBadgeLabel(definition.key, placementDefinitions);
+  const now = Date.now();
+  const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
 
-      return {
+  for (const asset of assets) {
+    for (const assignment of asset.pageAssignments) {
+      const list = assignedPlacements.get(assignment.placementKey) ?? [];
+      
+      const assignedAtStr = (assignment.metadata?.assigned_at as string | undefined) ?? assignment.createdAt;
+      const assignedAtDate = assignedAtStr ? new Date(assignedAtStr) : new Date();
+      const ageMs = now - assignedAtDate.getTime();
+      const isStale = ageMs > NINETY_DAYS_MS;
+      
+      let staleAcknowledged = false;
+      const ackDateStr = assignment.metadata?.stale_acknowledged_at as string | undefined;
+      if (ackDateStr) {
+        const ackDate = new Date(ackDateStr);
+        if (now - ackDate.getTime() < NINETY_DAYS_MS) {
+          staleAcknowledged = true;
+        }
+      }
+
+      list.push({ 
+        assetId: asset.id, 
+        assignmentId: assignment.assignmentId, 
+        age: ageMs, 
+        isStale, 
+        staleAcknowledged,
+        createdAt: assignment.createdAt 
+      });
+      assignedPlacements.set(assignment.placementKey, list);
+    }
+  }
+
+  for (const definition of placementDefinitions) {
+    const assignments = assignedPlacements.get(definition.key) ?? [];
+    const label = getMediaPlacementBadgeLabel(definition.key, placementDefinitions);
+    const isProminent = isProminentMediaPlacement(definition.key);
+    
+    // Multi-image placements don't trigger conflicts or required missing errors natively right now,
+    // but the original code only checked isProminent (which are single hero/featured slots mostly).
+    // Actually, let's treat prominent ones as single-slot and required.
+    const isSingleSlot = isProminent; 
+
+    if (isRequiredMediaPlacement(definition.key) && assignments.length === 0) {
+      warnings.push({
         label,
         message: `${label} does not have a selected photo. The site may show a fallback image until one is assigned.`,
         placementKey: definition.key,
-      };
-    });
+        severity: "high",
+        type: "missing",
+      });
+    } else if (isSingleSlot && assignments.length > 1) {
+      warnings.push({
+        label,
+        message: `${label} has ${assignments.length} images assigned. Choose one to avoid unpredictable display.`,
+        placementKey: definition.key,
+        severity: "high",
+        type: "conflict",
+      });
+    }
+
+    if (isProminent && assignments.length > 0) {
+      for (const assignment of assignments) {
+        if (assignment.isStale && !assignment.staleAcknowledged) {
+          const daysOld = Math.floor(assignment.age / (1000 * 60 * 60 * 24));
+          warnings.push({
+            label,
+            message: `The ${label} image has been active for ${daysOld} days. Consider choosing a fresh or seasonal photo.`,
+            placementKey: definition.key,
+            severity: "medium",
+            type: "stale",
+            assignmentId: assignment.assignmentId,
+          });
+        }
+      }
+    }
+  }
+
+  return warnings;
 }
 
 export function sortMediaAssetsByPlacementUse<T extends MediaAssetPlacementShape>(

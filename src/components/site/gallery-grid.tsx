@@ -47,7 +47,7 @@ function getAdjacentInteractiveIndex(
 
 function getFilterCategory(category: string): string {
   const normalized = category.toLowerCase().replace(/[-_]+/g, " ").trim();
-  if (normalized === "custom cake" || normalized === "custom cakes") {
+  if (normalized === "custom cake" || normalized === "custom cakes" || normalized === "celebration" || normalized === "celebrations") {
     return "Custom Cakes";
   }
   if (normalized === "sugar cookies" || normalized === "sugar cookie") {
@@ -61,6 +61,9 @@ function getFilterCategory(category: string): string {
   }
   if (normalized === "wedding cake" || normalized === "wedding cakes") {
     return "Wedding Cakes";
+  }
+  if (normalized === "diy kits" || normalized === "diy kit") {
+    return "DIY Kits";
   }
   return category;
 }
@@ -253,6 +256,7 @@ export function GalleryGrid({
     { key: "Macarons", label: "Macarons" },
     { key: "Cupcakes", label: "Cupcakes" },
     { key: "Wedding Cakes", label: "Wedding Cakes" },
+    { key: "DIY Kits", label: "DIY Kits" },
   ] as const;
 
   return (
@@ -276,7 +280,7 @@ export function GalleryGrid({
                 setActiveIndex(null);
               }}
               className={cn(
-                "inline-flex min-h-[2.35rem] shrink-0 items-center justify-center gap-1 rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.11em] transition duration-200 sm:min-h-[2.5rem] sm:gap-1.5 sm:px-5 sm:py-2 sm:text-xs sm:tracking-[0.14em]",
+                "inline-flex min-h-[2.35rem] shrink-0 items-center justify-center gap-1 rounded-full border px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.11em] transition duration-200 sm:min-h-[2.5rem] sm:gap-1.5 sm:px-5 sm:py-2 sm:text-xs sm:tracking-[0.14em]",
                 isActive
                   ? "bg-charcoal border-charcoal text-ivory shadow-sm"
                   : "bg-white/80 border-charcoal/10 text-charcoal/80 hover:border-charcoal/30 hover:text-charcoal"
