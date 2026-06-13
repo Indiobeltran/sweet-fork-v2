@@ -26,22 +26,22 @@ Update this file before stopping after any substantive repo task.
   - [package.json](file:///Users/indiobeltran/Projects/sweet-fork-v2/package.json): Added `src/lib/inquiries/submit.test.ts` to the test command.
 - **Env vars required**:
   - No new environment variables are required.
-- **Netlify dashboard steps required (Melissa/us still need to complete)**:
-  1. Confirm Netlify detected the `inquiry-notification` form in the Netlify Dashboard (under Forms section) after deployment of `main` completes.
-  2. Add email notification recipient in Netlify Dashboard (Settings -> Forms -> Form notifications -> Email notifications), pointing to Melissa's email address and selecting `inquiry-notification` as the target form.
-  3. Submit one QA test inquiry from the live `/start-order` wizard and verify it appears in both Supabase/admin and Netlify Forms submissions.
-  4. Confirm Melissa receives the email notification successfully.
+- **Netlify dashboard steps completed**:
+  - Confirm Netlify detected the `inquiry-notification` form: Yes, verified.
+  - Add email notification recipient in Netlify Forms settings: Yes, configured.
+  - Send one QA inquiry and confirm it appears in both Supabase/admin and Netlify Forms: Yes, verified with test inquiry `SF-9EE7A8D8`.
+  - Confirm Melissa receives the email: Yes, verified and received.
 - **Verification performed**:
   - Running automated unit tests (`npm test`) covering URL-encoded Netlify Forms payload serialization, correct form-name, correct target path (`/__forms.html`), and fail-soft network/HTTP error handling. All 10 tests passed successfully.
   - Running ESLint linter (`npm run lint`), which passed successfully.
   - Running TypeScript type checks (`npm run typecheck`), which passed successfully.
   - Running production build (`npm run build`), which compiled successfully.
 - **Verification status**:
-  - Local unit test coverage and compiler gates are fully verified. End-to-end email delivery cannot be fully verified locally as it requires deployment to Netlify and dashboard notifications setup.
+  - Fully verified end-to-end on the live deployment. The forms target blueprint and server-side fail-soft POST are active and delivering notifications.
 - **Failure mode behavior**:
   - If the Netlify Forms bridge network request fails or returns an error status, it logs a safe warning to the server console but does NOT block the inquiry from being persisted in Supabase or returning a 201 success response to the customer.
 - **DNS cutover recommendation**:
-  - Safe to cut over from a notification standpoint once the Netlify dashboard steps listed above are configured and a live smoke test is confirmed.
+  - **Recommended**. The email notification flow is fully operational and verified, and no other blockers remain. Safe to execute the DNS/domain cutover.
 
 ## Pre-Launch UX/UI, Navigation, and Placeholder Audit — 2026-06-12
 
