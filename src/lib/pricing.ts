@@ -35,6 +35,25 @@ export const defaultPricingBaseline: InquiryPricingBaseline = {
   },
 };
 
+function resolveOperationalBaseRange(
+  productType: ProductType,
+  pricing: ProductPricingBaseline,
+) {
+  const [baseMinimum, configuredBaseMaximum] = pricing.base;
+  const fallbackBaseMaximum = defaultPricingBaseline[productType].base[1];
+  const broadMaximumThreshold = Math.max(
+    fallbackBaseMaximum * 3,
+    baseMinimum * 4,
+    baseMinimum + 500,
+  );
+  const baseMaximum =
+    configuredBaseMaximum > broadMaximumThreshold
+      ? Math.max(baseMinimum, fallbackBaseMaximum)
+      : configuredBaseMaximum;
+
+  return [baseMinimum, baseMaximum] satisfies [number, number];
+}
+
 export function getProductDisplayLabel(productType: ProductType) {
   switch (productType) {
     case "custom-cake":
@@ -103,7 +122,7 @@ export function estimateItemRange(
 ) {
   const pricing = pricingBaseline[item.productType];
   const quantity = resolveEstimateQuantity(item);
-  const [baseMin, baseMax] = pricing.base;
+  const [baseMin, baseMax] = resolveOperationalBaseRange(item.productType, pricing);
 
   const unitRange = pricing.perServing ?? pricing.perUnit ?? [0, 0];
   const [unitMin, unitMax] = unitRange;

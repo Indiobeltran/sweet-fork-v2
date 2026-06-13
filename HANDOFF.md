@@ -2,6 +2,86 @@
 
 Update this file before stopping after any substantive repo task.
 
+## Netlify Final Production-Readiness Fixes — 2026-06-12
+
+- **Objective**: Fix final Netlify production-readiness blockers before DNS/domain cutover: missing gallery category filters, homepage fallback imagery, and overly broad admin inquiry estimates.
+- **Current branch**: `main`.
+- **Starting state**:
+  - `git branch --show-current`: `main`.
+  - `git status --short`: tracked tree clean; protected untracked files present and preserved (`.agents/`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `skills-lock.json`).
+  - `git log --oneline -n 10`: latest commit was `c273dbe docs: record successful Netlify inquiry validation`.
+  - `git diff --check`: passed.
+- **Gallery filter root cause**:
+  - `/gallery` loaded all 71 Supabase marketing images but every gallery item fell back to category `Celebration`.
+  - Read-only Supabase comparison showed the public client could read 71 gallery page assignments but 0 `gallery-category` assignments, while the admin client could read all 71 category assignments.
+  - Current RLS exposes public `media_assignments` rows only when `page_key is not null`; category assignments use `target_id` and no `page_key`.
+- **Gallery fix**:
+  - Updated `src/lib/site/marketing.ts` so gallery category-assignment and category-name mapping use the server admin client when a privileged key is configured, while preserving public media/page reads and fallback behavior for no-Supabase cases.
+  - No Supabase schema changes, storage mutations, import scripts, or production data writes were performed.
+- **Homepage fallback imagery root cause**:
+  - There are currently 0 explicit homepage media page assignments.
+  - The homepage featured media fallback path depended on category-assigned gallery media; because category assignments were invisible to the public client, `home.gallery` and Signature Offering cards fell back to static generated placeholder images.
+- **Homepage fix**:
+  - Restoring category assignment loading lets `home.gallery` select approved featured Supabase media again.
+  - Added a homepage offering fallback order: explicit homepage media placement first, approved category-matched gallery media second, static placeholder only when no Supabase/gallery media is available.
+- **Admin estimator root cause**:
+  - Read-only pricing inspection found the active Custom Cakes base row has `maximum_amount = 5000`.
+  - The estimator treated that broad maximum as a normal automatic estimate, producing stored/simple ranges like `$80 to $5,072` for 24-serving custom cake inquiries.
+- **Estimator fix**:
+  - Updated `src/lib/pricing.ts` to cap implausibly broad configured base maxima before item math.
+  - Updated `src/lib/admin/inquiries.ts` so admin list/detail and the internal pricing panel recalculate an operational display range when a stored estimate is clearly too broad for the item details.
+  - Added `src/lib/pricing.test.ts` and an `npm test` script covering the broad custom cake case, selected complexity, and multi-item estimates.
+- **Read-only production data checks**:
+  - Gallery category distribution from Supabase remains: Custom Cakes 29, Sugar Cookies 22, Macarons 5, Cupcakes 13, Wedding Cakes 2.
+  - Homepage page assignments under `page_key = home`: 0.
+  - Known Netlify inquiries `SF-D2B52E0E` and `SF-401FE62F` still store `$80 to $5,072`, but the operational estimate logic evaluates each as `$80 to $192`.
+- **Supabase admin QA credential setup**:
+  - Created a dedicated Supabase Auth QA user for Codex admin checks with an active `profiles` row and `manager` role in `user_roles`.
+  - Stored credentials only in ignored local `.env.local` as `CODEX_ADMIN_EMAIL` and `CODEX_ADMIN_PASSWORD`; do not print, commit, or push these values.
+  - No owner/admin real-user credentials were reused.
+- **Local validation performed**:
+  - `npm test`: passed 3/3 tests after first confirming the tests failed against the old `$5,072` behavior.
+  - `npm run lint`: passed.
+  - `npm run typecheck`: passed.
+  - `npm run build`: passed.
+  - `git diff --check`: passed.
+  - `git diff --cached --check`: passed after staging the scoped files.
+  - Build output check: `.next/server/app/gallery.html` has category counts Custom Cakes 29, Sugar Cookies 22, Macarons 5, Cupcakes 13, Wedding Cakes 2.
+  - Build output check: `.next/server/app/index.html` has 0 `placeholders/marketing` references and 0 `gallery-batch-04-repaired` references.
+- **Local browser validation performed**:
+  - Local production server: `http://127.0.0.1:3000`.
+  - Homepage desktop: real Supabase-backed bakery imagery visible in the hero; 0 placeholder image references in page DOM; no console warnings/errors.
+  - Gallery desktop: 71 cards rendered; visible filter buttons restored as All (71), Custom Cakes (29), Sugar Cookies (22), Macarons (5), Cupcakes (13), Wedding Cakes (2); no `gallery-batch-04-repaired`; no console warnings/errors.
+  - Gallery interaction: Sugar Cookies filter reduced grid to 22 cards; lightbox opened; modal image loaded from Supabase with natural dimensions; modal closed successfully.
+  - Gallery mobile `390x844`: all expected filters visible, 71 cards rendered, no horizontal overflow, no console warnings/errors.
+  - `/start-order` mobile `390x844`: page loaded, submission was not paused, no horizontal overflow, no console warnings/errors.
+  - `/admin/login` desktop: login page rendered with one email input and one password input, no framework overlay, no console warnings/errors.
+  - Authenticated admin login with the dedicated Codex QA manager account succeeded locally and redirected to `/admin/inquiries`.
+  - `/admin/inquiries` local authenticated list showed the operational `$80 to $192` range and no `$5,072` range, with no console warnings/errors.
+  - Known inquiry detail pages for `SF-D2B52E0E` and `SF-401FE62F` rendered the reference codes, customer budget `$150 to $300`, and operational estimate `$80 to $192`; no `$5,072` range or console warnings/errors appeared.
+- **Files changed recently**:
+  - `DECISIONS.md`
+  - `HANDOFF.md`
+  - `package.json`
+  - `src/lib/admin/inquiries.ts`
+  - `src/lib/pricing.ts`
+  - `src/lib/pricing.test.ts`
+  - `src/lib/site/marketing.ts`
+- **Files intentionally preserved**:
+  - `.agents/`
+  - `scratch/process-import-batch-04.mjs`
+  - `scratch/qa/`
+  - `skills-lock.json`
+  - `.env.local` contains local-only Codex admin QA credentials and remains ignored/untracked.
+  - Supabase schema, storage objects, gallery import scripts, and existing production inquiry rows were not modified.
+- **Commands still needed in this turn**:
+  - Commit with `fix: restore gallery filters and tighten admin estimates`.
+  - Push to `origin/main`.
+  - After Netlify redeploys `main`, validate the deployed Netlify URL for homepage media, gallery filters/lightbox, `/start-order`, `/admin/login`, and known inquiry estimate display using the dedicated Codex QA manager account.
+- **Known issues / cutover status**:
+  - DNS/domain cutover remains paused until the pushed Netlify deploy is validated or the remaining authenticated-admin check is explicitly accepted.
+  - Transactional email delivery remains outside this scoped task.
+
 ## Netlify Inquiry Submission Error Fix — 2026-06-12
 
 - **Objective**: Fix the Netlify `/start-order` inquiry submission error before merge/domain cutover.

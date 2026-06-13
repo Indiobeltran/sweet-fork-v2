@@ -3,9 +3,9 @@ import "server-only";
 import { createClient as createSessionClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getBudgetRangeLabel, budgetRangeOptions } from "@/lib/inquiries/config";
-import { getProductDisplayLabel } from "@/lib/pricing";
+import { estimateItemRange, getProductDisplayLabel } from "@/lib/pricing";
 import { formatCurrency, toTitleCase } from "@/lib/utils";
-import type { BudgetRangeValue } from "@/types/domain";
+import type { BudgetRangeValue, InquiryProductItem } from "@/types/domain";
 import type { Enums, Json, Tables } from "@/types/supabase.generated";
 
 type InquiryRow = Tables<"inquiries">;
@@ -17,16 +17,25 @@ type ProfileRow = Tables<"profiles">;
 
 type InquiryListItemRow = Pick<
   InquiryItemRow,
+  | "color_palette"
   | "cookie_count"
   | "cupcake_count"
+  | "design_notes"
+  | "estimated_max"
+  | "estimated_min"
   | "id"
+  | "icing_style"
+  | "inspiration_notes"
   | "kit_count"
   | "macaron_count"
   | "product_label"
   | "product_type"
   | "quantity"
   | "servings"
+  | "shape"
   | "sort_order"
+  | "tiers"
+  | "topper_text"
   | "wedding_servings"
 >;
 
@@ -486,6 +495,126 @@ function formatEstimateRange(minimum: number | null, maximum: number | null) {
   return `Up to ${formatCurrency(maximum ?? 0)}`;
 }
 
+type EstimateRange = {
+  maximum: number | null;
+  minimum: number | null;
+};
+
+type EstimableInquiryItem = Pick<
+  InquiryItemRow,
+  | "color_palette"
+  | "cookie_count"
+  | "cupcake_count"
+  | "design_notes"
+  | "estimated_max"
+  | "estimated_min"
+  | "icing_style"
+  | "inspiration_notes"
+  | "kit_count"
+  | "macaron_count"
+  | "product_type"
+  | "quantity"
+  | "servings"
+  | "shape"
+  | "tiers"
+  | "topper_text"
+  | "wedding_servings"
+>;
+
+function toOptionalText(value: string | null) {
+  return value && value.trim().length > 0 ? value : undefined;
+}
+
+function toEstimateItem(item: EstimableInquiryItem): InquiryProductItem {
+  return {
+    colorPalette: toOptionalText(item.color_palette),
+    cookieCount: item.cookie_count ?? undefined,
+    cupcakeCount: item.cupcake_count ?? undefined,
+    designNotes: toOptionalText(item.design_notes),
+    icingStyle: item.icing_style ?? undefined,
+    inspirationNotes: toOptionalText(item.inspiration_notes),
+    kitCount: item.kit_count ?? undefined,
+    macaronCount: item.macaron_count ?? undefined,
+    productType: item.product_type,
+    quantity: item.quantity,
+    servings: item.servings ?? undefined,
+    shape: item.shape ?? undefined,
+    tiers: item.tiers ?? undefined,
+    topperText: toOptionalText(item.topper_text),
+    weddingServings: item.wedding_servings ?? undefined,
+  };
+}
+
+function isStoredEstimateTooBroad(
+  stored: EstimateRange,
+  operational: EstimateRange,
+) {
+  if (stored.maximum === null || operational.maximum === null) {
+    return false;
+  }
+
+  return (
+    stored.maximum > operational.maximum * 3 &&
+    stored.maximum - operational.maximum > 500
+  );
+}
+
+function getOperationalItemEstimate(item: EstimableInquiryItem): EstimateRange {
+  const stored = {
+    maximum: item.estimated_max,
+    minimum: item.estimated_min,
+  } satisfies EstimateRange;
+  const recalculated = estimateItemRange(toEstimateItem(item));
+
+  if (isStoredEstimateTooBroad(stored, recalculated)) {
+    return {
+      maximum: recalculated.maximum,
+      minimum: recalculated.minimum,
+    };
+  }
+
+  return stored.maximum !== null || stored.minimum !== null
+    ? stored
+    : {
+        maximum: recalculated.maximum,
+        minimum: recalculated.minimum,
+      };
+}
+
+function addEstimateRanges(items: EstimateRange[]): EstimateRange {
+  const hasMinimum = items.some((item) => item.minimum !== null);
+  const hasMaximum = items.some((item) => item.maximum !== null);
+
+  return {
+    maximum: hasMaximum
+      ? items.reduce((sum, item) => sum + (item.maximum ?? 0), 0)
+      : null,
+    minimum: hasMinimum
+      ? items.reduce((sum, item) => sum + (item.minimum ?? 0), 0)
+      : null,
+  };
+}
+
+function getOperationalInquiryEstimate(
+  inquiry: Pick<InquiryRow, "estimated_max" | "estimated_min" | "fulfillment_method">,
+  items: EstimableInquiryItem[],
+) {
+  const itemRanges = items.map(getOperationalItemEstimate);
+  const itemTotal = addEstimateRanges(itemRanges);
+  const storedTotal = {
+    maximum: inquiry.estimated_max,
+    minimum: inquiry.estimated_min,
+  } satisfies EstimateRange;
+
+  if (isStoredEstimateTooBroad(storedTotal, itemTotal)) {
+    return itemTotal;
+  }
+
+  return storedTotal.maximum !== null || storedTotal.minimum !== null
+    ? storedTotal
+    : itemTotal;
+}
+
 function getEstimateDrivers(item: InquiryItemDetailRow) {
   const drivers = [`Requested scope: ${formatRequestedQuantity(item)}`];
 
@@ -516,12 +645,23 @@ function buildEstimateInsight(
   inquiry: Pick<InquiryDetailQueryRow, "estimated_max" | "estimated_min" | "fulfillment_method">,
   items: InquiryItemDetailRow[],
 ): InquiryEstimateInsight {
-  const itemMinimum = items.reduce((sum, item) => sum + (item.estimated_min ?? 0), 0);
-  const itemMaximum = items.reduce((sum, item) => sum + (item.estimated_max ?? 0), 0);
+  const itemEstimateRanges = new Map(
+    items.map((item) => [item.id, getOperationalItemEstimate(item)] as const),
+  );
+  const itemTotal = addEstimateRanges(Array.from(itemEstimateRanges.values()));
+  const totalEstimate = getOperationalInquiryEstimate(inquiry, items);
   const deliveryMinimum =
-    inquiry.estimated_min !== null ? Math.max(inquiry.estimated_min - itemMinimum, 0) : null;
+    inquiry.fulfillment_method === "delivery" &&
+    totalEstimate.minimum !== null &&
+    itemTotal.minimum !== null
+      ? Math.max(totalEstimate.minimum - itemTotal.minimum, 0)
+      : null;
   const deliveryMaximum =
-    inquiry.estimated_max !== null ? Math.max(inquiry.estimated_max - itemMaximum, 0) : null;
+    inquiry.fulfillment_method === "delivery" &&
+    totalEstimate.maximum !== null &&
+    itemTotal.maximum !== null
+      ? Math.max(totalEstimate.maximum - itemTotal.maximum, 0)
+      : null;
 
   return {
     deliveryLabel:
@@ -532,7 +672,10 @@ function buildEstimateInsight(
     lineItems: items.map((item) => ({
       detailSummary: getDetailSummary(item.detail_json),
       drivers: getEstimateDrivers(item),
-      estimatedLabel: formatEstimateRange(item.estimated_min, item.estimated_max),
+      estimatedLabel: formatEstimateRange(
+        itemEstimateRanges.get(item.id)?.minimum ?? null,
+        itemEstimateRanges.get(item.id)?.maximum ?? null,
+      ),
       id: item.id,
       productLabel: item.product_label || getProductDisplayLabel(item.product_type),
       requestedQuantityLabel: formatRequestedQuantity(item),
@@ -541,7 +684,7 @@ function buildEstimateInsight(
       inquiry.fulfillment_method === "delivery"
         ? "This estimate reflects requested quantities, finish details, and the current internal delivery allowance."
         : "This estimate reflects requested quantities and finish details against the current internal pricing baseline.",
-    totalLabel: formatEstimateRange(inquiry.estimated_min, inquiry.estimated_max),
+    totalLabel: formatEstimateRange(totalEstimate.minimum, totalEstimate.maximum),
   };
 }
 
@@ -676,13 +819,17 @@ function matchesFilters(row: InquiryListQueryRow, filters: InquiryListFilters) {
 function mapListEntry(row: InquiryListQueryRow): InquiryListEntry {
   const items = [...(row.inquiry_items ?? [])].sort((left, right) => left.sort_order - right.sort_order);
   const signals = getInquirySignals(row.metadata);
+  const operationalEstimate = getOperationalInquiryEstimate(row, items);
 
   return {
     budgetRangeLabel: getBudgetRangeLabelForInquiry(row),
     customerEmail: row.customer_email,
     customerName: row.customer_name,
     customerPhone: row.customer_phone,
-    estimatedLabel: formatEstimateRange(row.estimated_min, row.estimated_max),
+    estimatedLabel: formatEstimateRange(
+      operationalEstimate.minimum,
+      operationalEstimate.maximum,
+    ),
     eventDate: row.event_date,
     eventType: row.event_type,
     fulfillmentMethod: row.fulfillment_method,
@@ -716,7 +863,7 @@ export async function getInquiryListData(filters: InquiryListFilters): Promise<I
   const { data, error } = await supabase
     .from("inquiries")
     .select(
-      "id, status, source_channel, customer_name, customer_email, customer_phone, event_type, event_date, fulfillment_method, budget_min, budget_max, estimated_min, estimated_max, submitted_at, reviewed_at, archived_at, created_at, updated_at, metadata, inquiry_items(id, product_type, product_label, quantity, servings, cupcake_count, cookie_count, macaron_count, kit_count, wedding_servings, sort_order)",
+      "id, status, source_channel, customer_name, customer_email, customer_phone, event_type, event_date, fulfillment_method, budget_min, budget_max, estimated_min, estimated_max, submitted_at, reviewed_at, archived_at, created_at, updated_at, metadata, inquiry_items(id, product_type, product_label, quantity, servings, cupcake_count, cookie_count, macaron_count, kit_count, wedding_servings, tiers, shape, icing_style, topper_text, color_palette, design_notes, inspiration_notes, estimated_min, estimated_max, sort_order)",
     )
     .order("submitted_at", { ascending: false });
 
@@ -845,11 +992,16 @@ function mapNoteDisplay(row: InquiryNoteQueryRow): InquiryNoteDisplay {
 }
 
 function mapItemDetail(row: InquiryItemDetailRow): InquiryItemDetail {
+  const operationalEstimate = getOperationalItemEstimate(row);
+
   return {
     colorPalette: row.color_palette,
     designNotes: row.design_notes,
     detailSummary: getDetailSummary(row.detail_json),
-    estimatedLabel: formatEstimateRange(row.estimated_min, row.estimated_max),
+    estimatedLabel: formatEstimateRange(
+      operationalEstimate.minimum,
+      operationalEstimate.maximum,
+    ),
     flavorNotes: row.flavor_notes,
     icingStyleLabel: row.icing_style ? toTitleCase(row.icing_style) : null,
     id: row.id,
@@ -958,6 +1110,7 @@ export async function getInquiryDetail(inquiryId: string): Promise<InquiryDetail
     }),
   );
   const signals = getInquirySignals(inquiry.metadata);
+  const operationalEstimate = getOperationalInquiryEstimate(inquiry, itemRows);
   const uploads = assetDisplays.filter((asset) => asset.assetType === "image-upload");
   const inspirationLinks = assetDisplays.filter((asset) => asset.assetType === "reference-link");
   const inspirationTextBlocks = assetDisplays.filter((asset) => asset.assetType === "reference-text");
@@ -1001,7 +1154,10 @@ export async function getInquiryDetail(inquiryId: string): Promise<InquiryDetail
       "This will connect the inquiry to a customer and order record in the next phase. For now, use the notes and status sections to keep review moving.",
     dietaryNotes: inquiry.dietary_notes,
     estimateInsight: buildEstimateInsight(inquiry, itemRows),
-    estimatedLabel: formatEstimateRange(inquiry.estimated_min, inquiry.estimated_max),
+    estimatedLabel: formatEstimateRange(
+      operationalEstimate.minimum,
+      operationalEstimate.maximum,
+    ),
     event: {
       deliveryWindow: inquiry.delivery_window,
       eventDate: inquiry.event_date,

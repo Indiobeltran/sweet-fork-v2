@@ -2,6 +2,86 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
+## 2026-06-12 - Dedicated Codex Admin QA Account
+
+### Status
+
+Accepted
+
+### Context
+
+Final Netlify production-readiness validation requires authenticated admin checks for `/admin/login`, `/admin/inquiries`, and known deployed inquiry detail pages. The workspace did not have a reusable authenticated admin session or documented local QA credentials, which blocked repeatable admin browser validation.
+
+### Options Considered
+
+- Reuse a bakery owner/admin account.
+- Ask the user for credentials each time admin validation is needed.
+- Create a dedicated least-privilege Supabase Auth user for Codex QA checks and retain the credentials only in the ignored local environment file.
+
+### Decision
+
+Create a dedicated Supabase Auth user for Codex admin QA checks, with an active `profiles` row and a `manager` `user_roles` row. Store the email and generated password only in local `.env.local` as `CODEX_ADMIN_EMAIL` and `CODEX_ADMIN_PASSWORD`; do not print, commit, or push the password.
+
+### Consequences
+
+- Future local and deployed admin smoke checks can authenticate without using a real owner account.
+- The account has manager-level admin access, not owner-level access.
+- `.env.local` remains ignored and must not be staged or shared.
+
+## 2026-06-12 - Restore Public Gallery Categories Without Schema Changes
+
+### Status
+
+Accepted
+
+### Context
+
+After the Netlify migration reached `main`, `/gallery` still loaded all 71 approved Supabase media assets but rendered only the `All` filter. Read-only Supabase inspection showed the public client could read 71 `page` media assignments but 0 `gallery-category` assignments because the current public RLS policy only exposes `media_assignments` rows with `page_key is not null`. The category assignment rows use `target_id` and no `page_key`.
+
+The homepage also showed static generated fallback imagery because the featured/homepage media selection depends on category-assigned approved gallery media when no explicit homepage media placements exist.
+
+### Options Considered
+
+- Change Supabase RLS or schema to expose target-only gallery category assignments publicly.
+- Run media import or assignment scripts.
+- Keep reads server-side and use the existing privileged Supabase server client for category mapping when available.
+
+### Decision
+
+Use the public client for public media/page reads, but use the server admin client for gallery category-assignment and category-name mapping when a privileged server key is configured. Preserve fallback behavior for environments without Supabase media. For homepage offering images, prefer explicit homepage media placements, then approved category-matched gallery media, and only then static fallbacks.
+
+### Consequences
+
+- Restores gallery filters without schema changes, storage changes, import scripts, or production data mutation.
+- Keeps public RLS unchanged while still rendering category labels server-side.
+- Homepage can use approved Sweet Fork media from the Supabase marketing bucket even when no homepage-specific page placements have been assigned.
+
+## 2026-06-12 - Cap Extreme Pricing Maxima for Operational Inquiry Estimates
+
+### Status
+
+Accepted
+
+### Context
+
+Known Netlify test inquiries `SF-D2B52E0E` and `SF-401FE62F` stored estimates of `$80 to $5,072` for simple 24-serving custom cake inquiries with a customer budget of `$150 to $300`. Read-only pricing inspection showed the live active Custom Cakes base price row has `maximum_amount = 5000`, which was being treated as an automatic estimate maximum instead of an upper review ceiling.
+
+### Options Considered
+
+- Mutate the live `product_prices` row back to a smaller maximum.
+- Ignore the broad stored estimates and ask admins to read customer budget only.
+- Clamp implausibly broad configured maxima in code and display existing stored broad estimates through an operational estimate lens.
+
+### Decision
+
+Do not mutate production pricing data in this task. Cap extreme configured base maxima in the shared estimator when they exceed a conservative product-specific threshold, and have admin inquiry list/detail displays replace stored broad ranges with recalculated operational ranges when the stored maximum is clearly out of scale with the selected item details.
+
+### Consequences
+
+- Future simple custom cake inquiries no longer inherit the `$5,000` base maximum.
+- Existing broad stored estimates display as useful triage ranges while preserving the customer budget separately.
+- High-complexity item details can still raise the operational estimate above the base range.
+
 ## 2026-06-12 - Require Privileged Supabase Admin Key for Inquiry Writes
 
 ### Status

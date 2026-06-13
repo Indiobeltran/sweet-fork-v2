@@ -89,6 +89,7 @@ type ContentBlockRow = Tables<"content_blocks">;
 type MediaAssetRow = Tables<"media_assets">;
 type MediaAssignmentRow = Tables<"media_assignments">;
 type GalleryCategoryRow = Tables<"gallery_categories">;
+type SupabaseDataClient = ReturnType<typeof createPublicDataClient>;
 type ProductRow = Pick<
   Tables<"products">,
   | "display_order"
@@ -713,12 +714,15 @@ export async function getManagedContentSections() {
   );
 }
 
-async function getGalleryCategoryMap(categoryIds: string[]) {
+async function getGalleryCategoryMap(
+  categoryIds: string[],
+  supabaseClient?: SupabaseDataClient,
+) {
   if (!isSupabaseBrowserConfigured() || categoryIds.length === 0) {
     return new Map<string, GalleryCategoryRow>();
   }
 
-  const supabase = createPublicDataClient();
+  const supabase = supabaseClient ?? createPublicDataClient();
   const { data, error } = await supabase
     .from("gallery_categories")
     .select("*")
@@ -839,9 +843,69 @@ function getFallbackOfferingImage(slug: string) {
   return content ? getProductHeroGalleryItem(content) : null;
 }
 
+const offeringGalleryCategoriesBySlug: Record<string, string[]> = {
+  "custom-cakes": ["Custom Cakes"],
+  "wedding-cakes": ["Wedding Cakes"],
+  cupcakes: ["Cupcakes"],
+  "sugar-cookies": ["Sugar Cookies"],
+  macarons: ["Macarons"],
+  "diy-kits": ["DIY Kits", "Sugar Cookies"],
+};
+
+function isApprovedGalleryItem(item: GalleryItem) {
+  return Boolean(
+    item.imageUrl &&
+      !item.imageUrl.toLowerCase().includes("/placeholders/marketing/"),
+  );
+}
+
+async function getGalleryFallbackOfferingImagesBySlug(slugs: string[]) {
+  const imagesBySlug = new Map<string, GalleryItem>();
+
+  if (!isSupabaseBrowserConfigured() || slugs.length === 0) {
+    return imagesBySlug;
+  }
+
+  const galleryItems = (await getGalleryItemsForPlacement("gallery.grid")).filter(
+    isApprovedGalleryItem,
+  );
+  const usedItemIds = new Set<string>();
+
+  slugs.forEach((slug) => {
+    const preferredCategories = offeringGalleryCategoriesBySlug[slug] ?? [];
+    const categoryMatch = galleryItems.find(
+      (item) =>
+        preferredCategories.includes(item.category) && !usedItemIds.has(item.id),
+    );
+    const fallbackMatch =
+      categoryMatch ?? galleryItems.find((item) => !usedItemIds.has(item.id));
+
+    if (!fallbackMatch) {
+      return;
+    }
+
+    imagesBySlug.set(slug, fallbackMatch);
+    usedItemIds.add(fallbackMatch.id);
+  });
+
+  return imagesBySlug;
+}
+
 async function getOfferingImagesBySlug(slugs: string[]) {
-  const fallbackImagesBySlug = new Map(
+  const staticFallbackImagesBySlug = new Map(
     slugs.map((slug) => [slug, getFallbackOfferingImage(slug)] as const),
+  );
+  const galleryFallbackImagesBySlug = await getGalleryFallbackOfferingImagesBySlug(slugs);
+  const fallbackImagesBySlug = new Map(
+    slugs.map(
+      (slug) =>
+        [
+          slug,
+          galleryFallbackImagesBySlug.get(slug) ??
+            staticFallbackImagesBySlug.get(slug) ??
+            null,
+        ] as const,
+    ),
   );
 
   if (!isSupabaseConfigured() || slugs.length === 0) {
@@ -1206,7 +1270,8 @@ export async function getGalleryItemsForPlacement(
   }
 
   const assetIds = assets.map((asset) => asset.id);
-  const { data: categoryAssignmentsData, error: categoryAssignmentsError } = await supabase
+  const assignmentClient = isSupabaseConfigured() ? createAdminClient() : supabase;
+  const { data: categoryAssignmentsData, error: categoryAssignmentsError } = await assignmentClient
     .from("media_assignments")
     .select("display_order, media_asset_id, target_id")
     .eq("assignment_type", "gallery-category")
@@ -1228,6 +1293,7 @@ export async function getGalleryItemsForPlacement(
     categoryAssignments
       .map((assignment) => assignment.target_id)
       .filter((value): value is string => Boolean(value)),
+    assignmentClient,
   );
   const assignmentsByAssetId = categoryAssignments.reduce<
     Map<string, Array<Pick<MediaAssignmentRow, "display_order" | "media_asset_id" | "target_id">>>
