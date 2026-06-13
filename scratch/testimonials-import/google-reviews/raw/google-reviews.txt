@@ -13,13 +13,13 @@ Rules:
 - Add more review blocks as needed.
 Review block format:
 ---
-Reviewer name:
+Reviewer name: Marizel
 Reviewer display name:
-Rating:
-Review date:
+Rating:5
+Review date:Over a month ago
 Relative review date:
-Review text:
-Product/context notes:
+Review text:I ordered a cake and cookies for my daughter’s baby shower. Not only were they the most adorable looking cookies and cake but they tasted amazing!!! The buttercream icing on the cookies were outstanding and everyone at the party raved about them. Melissa was wonderful to work with…she asked for some inspo ideas and photos so she could get the pastries aligned with the theme, was very prompt, gave some suggestions, and the final product was more than I ever could’ve imagined. I would definitely order from The Sweet Fork again and recommend it to anyone looking for custom treats! And, working with Melissa was just the cherry on top!!
+Product/context notes:Food 5/5; Service 5/5; Atmosphere 5/5
 Recommended featured?:
 Feature priority:
 Admin notes:
@@ -27,13 +27,222 @@ Admin notes:
 Paste reviews below this line.
 ================================================================================
 ---
-Reviewer name:
+Reviewer name:Greg
+Reviewer display name:
+Rating: 5
+Review date:9 months ago
+Relative review date:
+Review text:SO GOOD! SO BEAUTIFUL! SO WELL DONE!
+We bought a wedding cake and 300 custom cupcakes from The Sweet Fork for our daughter's wedding. Ordering was easy. We told her what we wanted inducing fillings and some other customers touches. She absolutely delivered!
+
+The cake and cupcakes arrived to our venue in tact, and were beautifully presented. All the guests were asking me where I got the cake from, not only because it was beautiful, but because it was delicious! I'm glad we ordered more than 1 cupcake per person, as people definitely ate more than 1 each! Haha
+
+We got vanilla with lemon filling and chocolate with raspberry filling. I'm not usually a chocolate cake fan, but I am of Sweet Fork chocolate cake. Pretty sure I had 4 cupcakes that night. We might have to celebrate our daughter's one week anniversary so we can order another dozen! Haha
+
+Give The Sweet Fork a try for an event of yours, large or small. You wont regret it!
+Product/context notes:Food: 5/5  |  Service: 5/5  |  Atmosphere: 5/5
+Recommended featured?:
+Feature priority:
+Admin notes:
+---
+---
+Reviewer name:Lisa
+Reviewer display name:
+Rating: 5
+Review date:8 months ago
+Relative review date:
+Review text:We ordered two dozen custom cupcakes for a baby shower, vanilla with buttercream frosting. Not only were they beautiful, but also tasted divine! The buttercream frosting was delicious and the cupcakes were perfectly moist and the flavor was amazing. Melissa was so easy to work with and so detailed oriented. I would absolutely order from her again in the future and feel confident that anything she makes would taste lovely and have the utmost care and detail put into it!
+Product/context notes:
+Recommended featured?:
+Feature priority:
+Admin notes:
+---
+---
+Reviewer name:Ann
 Reviewer display name:
 Rating: 5
 Review date:
 Relative review date:
-Review text:
+Review text:Melissa was such a dream to work with! I live out of state and needed a surprise birthday cake delivered to my father-in-law and Melissa was able to bring my vision to life. I reached out less than a week before I needed the cake and she was so patient and responsive and made the whole process so easy and stress free. Delivery was on time, packaged beautifully and she even went above and beyond and offered to attempt redelivery at an another time if my dad wasn’t home. I ordered the rich chocolate cake with mocha filling and everyone loved it. She really exceeded my expectations and I would absolutely order from her again.
+Product/context notes:Food: 5/5  |  Service: 5/5
+
+Group size
+Suitable for all group sizes
+Recommended featured?:
+Feature priority:
+Admin notes:
+---
+---
+Reviewer name:Ashley
+Reviewer display name:
+Rating: 5
+Review date:
+Relative review date:
+Review text:Melissa at Sweet Fork is a delight to work with! Which was just a cherry on top of the absolutely perfect chocolate milk cupcakes she made for my son’s 5th birthday. They looked and tasted perfect. Everyone raved! You won’t regret having Sweet Fork make your sweets!
 Product/context notes:
+Recommended featured?: Food: 5/5  |  Service: 5/5  |  Atmosphere: 5/5
+Feature priority:
+Admin notes:
+---
+---
+Reviewer name:Robert
+Reviewer display name:
+Rating: 5
+Review date:
+Relative review date:
+Review text:My wife and I ordered some cookies and two dozen cupcakes from Melissa. One dozen were "regular" cupcakes, but they were better than any regular cupcake I've ever had before. The second dozen were super fancy ones with a bunch of extra bells and whistles and she knocked it out of the park. Her frosting is the best I've ever tasted!
+
+The cookies we ordered were anything but a standard cookie. We sent her a screen shot of something silly that we had no idea how she would be able to pull it off. She exceeded our expectations, and let me tell you that the craftsmanship was outstanding and better than we thought would even be possible.
+
+Her turn around time for our order was just a couple days, and was faster than we expected for such a custom job. I posted photos of the cupcakes but not the cookies because they were about something personal, but let me tell you they were perfect.
+
+10 out of 10, would recommend, and we will definitely be ordering from her again.
+Product/context notes:
+Recommended featured?:Food: 5/5  |  Service: 5/5  |  Atmosphere: 5/5
+Feature priority:
+Admin notes:
+---
+---
+Reviewer name:Nicole
+Reviewer display name:
+Rating: 5
+Review date:
+Relative review date:
+Review text:I got my son’s second birthday cake and cookies done here (shark themed of course) and oh my heavens she absolutely killed it! Not only was she so communicative, patient and kind to me she nailed my theme exactly! Now the best part… THE TASTE! Are you kidding me!!! They were soooo amazing! All of my guests were asking where we got the treats and everyone was so impressed. I was looking for a bakery but didn’t want anything too “commercial”. She was so detail oriented from the design, cake instructions and even putting marshmallows in the cookie boxes so they didn’t bump into one another. I can’t wait till our next even so we can use her again!!
+Product/context notes:Food: 5/5  |  Service: 5/5  |  Atmosphere: 5/5
+Recommended featured?:
+Feature priority:
+Admin notes:
+---
+---
+Reviewer name:Carol
+Reviewer display name:
+Rating: 5
+Review date:
+Relative review date:
+Review text:My Great Granddaughters wanted a unicorn themed Birthday Party and sfter contacting several different bakers Sweet Fork agreed to provide the cupcakes on short notice. These were not only very cute but delicious as well. Highly recommend this company and plan on using them in the future. This is the second time I've ordered from her and both times I was happy with the product.
+Product/context notes:Food: 5/5  |  Service: 5/5  |  Atmosphere: 5/5
+Recommended featured?:
+Feature priority:
+Admin notes:
+---
+---
+Reviewer name:Tara
+Reviewer display name:
+Rating: 5
+Review date:
+Relative review date:
+Review text: My son turned 4 and wanted a monster mash birthday party. I contacted Melissa and sent her the video of the song and she did a stellar job. My son loved it and the cake/cup cakes were very yummy!!! Highly recommend!
+
+Product/context notes:
+Recommended featured?:Food: 5/5  |  Service: 5/5
+
+Recommended dishes
+Birthday Cake, Cupcake, Dozen Cupcakes
+Feature priority:
+Admin notes:
+---
+---
+Reviewer name:Rosemarie
+Reviewer display name:
+Rating: 5
+Review date:
+Relative review date:
+Review text:We were so happy with our custom cake from “The Sweet Fork”. Melissa was very responsive and easy to work with. She took my ideas, put her spin on it and the cake was decorated so so cute!! The cake was absolutely delicious too! Everyone said that this was the best cake they had ever tasted!! It was a huge success. I will definitely order from her again!
+A custom cake from The Sweet Fork really says that “this” is a special occasion.
+Product/context notes:Food: 5/5  |  Service: 5/5  |  Atmosphere: 5/5
+Recommended featured?:
+Feature priority:
+Admin notes:
+---
+---
+Reviewer name: Lana
+Reviewer display name:
+Rating: 5
+Review date:
+Relative review date:
+Review text:Melissa was so great to work with. She was very responsive and make the occasion that much better. I would for sure recommend The Sweet Fork and will use them again.
+Product/context notes:Food: 5/5  |  Service: 5/5
+Recommended featured?:
+Feature priority:
+Admin notes:
+---
+---
+Reviewer name:Tanya
+Reviewer display name:
+Rating: 5
+Review date:
+Relative review date:
+Review text:If there’s one thing about me, it’s that I will find any reason to order a cake. Graduation? Of course. Birthdays? Obviously. Tuesday? Why not. I love celebrating big and small moments with sweets—especially cakes. And after years of ordering cakes, I’ve been through it all: the good, the mediocre, and the absolute disasters. (One time, the entire back of a birthday cake was left undecorated, and they actually told me to just “face it the other way.” I cried. True story.)
+
+So when I needed a cake for my daughter’s 16th birthday, I took a chance on someone I came across through a Facebook mom group—and I’m so glad I did. This cake was genuinely one of the best cakes I’ve ever ordered. First off, it was fluffy. Fully baked through (not always a given, sadly), light but still rich, and the buttercream icing was the perfect balance—not too sweet, which I really appreciate. The entire cake held up beautifully, even in the box, and she included care instructions which was such a thoughtful touch.
+
+Now, let’s talk about the design: absolutely stunning. I’ve had cakes that looked good but tasted meh, and I’ve had cakes that tasted good but looked like an afterthought. This one? It nailed both. It was as delicious as it was beautiful. And the price? Totally reasonable. There were 14 of us, and the 8-inch double-layer cake was more than enough—everyone had a piece, and we still had some left over.
+
+I truly cannot recommend this cake decorator enough. She restored my cake-ordering faith, and I will absolutely be going back for every excuse I can come up with. If you’re on the fence—take the chance. You’ll be so glad you did!
+Product/context notes:Food: 5/5  |  Service: 5/5
+Recommended featured?:
+Feature priority:
+Admin notes:
+---
+---
+Reviewer name:Austin
+Reviewer display name:
+Rating: 5
+Review date:
+Relative review date:
+Review text:Cant say enough good here. She helped with the cake idea for my wifes birthday. The cake was top notch with great detail and the theme showed so well.
+Product/context notes:Food: 5/5  |  Service: 5/5  |  Atmosphere: 5/5
+Recommended featured?:
+Feature priority:
+Admin notes:
+---
+---
+Reviewer name:Karla
+Reviewer display name:
+Rating: 5
+Review date:
+Relative review date:
+Review text:Loved working with the sweet fork! Easy to work with, great customer service, and really talented!! Definitely recommend!!! I will be using her again!!
+Product/context notes:Food: 5/5  |  Service: 5/5  |  Atmosphere: 5/5
+Recommended featured?:
+Feature priority:
+Admin notes:
+---
+---
+Reviewer name:Edye
+Reviewer display name:
+Rating: 5
+Review date:
+Relative review date:
+Review text:Amazing! Melissa went above and beyond and created a delicious and adorable golf themed carrot cake. It was a hit!
+Product/context notes: Food: 5/5  |  Service: 5/5
+Recommended featured?:
+Feature priority:
+Admin notes:
+---
+---
+Reviewer name:Sarah
+Reviewer display name:
+Rating: 5
+Review date:
+Relative review date:
+Review text:Update: We returned to Melissa for my son's first birthday party and the results were just an incredible! I've already booked treats for a bridal shower and another birthday party, our family and friends have come to expect her delicious treats. I honestly still can't get over these puppy cookies and cupcakes
+
+Melissa absolutely knocked our socks off! She had the fastest turnaround and created such delicious cookies and mini cupcakes that were almost too beautiful to eat. I’ll also add the mini cupcakes were the perfect size for my 3-year-old and her friends at her birthday party with minimum mess and maximum delight. Melissa took a very half-baked vision of what we wanted and created something we will always remember. I would highly recommend Sweet Fork and I will certainly be returning for our next celebration
+Product/context notes:Food: 5/5  |  Service: 5/5  |  Atmosphere: 5/5
+Recommended featured?:
+Feature priority:
+Admin notes:
+---
+---
+Reviewer name:Crystal
+Reviewer display name:
+Rating: 5
+Review date:
+Relative review date:
+Review text:Sweet Fork has the best cake ever. Got married and had 2 different receptions. Bought from a big box bakery for one and this small company for the other. Seriously wish I had gotten both from Sweet Fork. The cake was so delicious and the decor was amazing. I will use Sweet Fork from now on. My whole bridal party kept begging me for more of these cakes, they couldn’t get enough. Love that you can try samples before hand and know exactly what you are getting. Thank you so much for making my special day even better!
+Product/context notes:Food: 5/5  |  Service: 5/5  |  Atmosphere: 5/5
 Recommended featured?:
 Feature priority:
 Admin notes:

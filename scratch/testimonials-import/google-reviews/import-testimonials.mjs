@@ -45,6 +45,15 @@ async function main() {
 
   console.log('\n--- Importing Testimonials into Supabase ---');
 
+  const { data: dbTestimonials, error: fetchError } = await supabase
+    .from('testimonials')
+    .select('id, quote, attribution_name');
+
+  if (fetchError) {
+    throw new Error(`Failed to fetch existing testimonials: ${fetchError.message}`);
+  }
+  console.log(`Fetched ${dbTestimonials.length} existing testimonials from database for duplicate checking.`);
+
   let imported = 0;
   let skipped = 0;
 
@@ -66,34 +75,42 @@ async function main() {
       is_published: item.status === 'published'
     };
 
-    // Check for existing by exact quote or attribution_name
-    const { data: existing, error: searchError } = await supabase
-      .from('testimonials')
-      .select('id, quote, attribution_name')
-      .or(`quote.eq."${payload.quote}",attribution_name.eq."${payload.attribution_name}"`);
+    const existing = dbTestimonials.find(t =>
+      t.quote === payload.quote || t.attribution_name === payload.attribution_name
+    );
 
-    if (searchError) {
-      throw new Error(`Failed to search existing testimonials: ${searchError.message}`);
-    }
-
-    if (existing && existing.length > 0) {
+    if (existing) {
       console.log(`Found existing testimonial for ${payload.attribution_name}, updating...`);
       const { error: updateError } = await supabase
         .from('testimonials')
         .update(payload)
-        .eq('id', existing[0].id);
+        .eq('id', existing.id);
 
       if (updateError) {
         throw new Error(`Failed to update testimonial: ${updateError.message}`);
       }
+
+      // Update local cache
+      existing.quote = payload.quote;
+      existing.attribution_name = payload.attribution_name;
     } else {
       console.log(`Creating new testimonial for ${payload.attribution_name}...`);
-      const { error: insertError } = await supabase
+      const { data: inserted, error: insertError } = await supabase
         .from('testimonials')
-        .insert(payload);
+        .insert(payload)
+        .select('id');
 
       if (insertError) {
         throw new Error(`Failed to insert testimonial: ${insertError.message}`);
+      }
+
+      // Add to local cache
+      if (inserted && inserted.length > 0) {
+        dbTestimonials.push({
+          id: inserted[0].id,
+          quote: payload.quote,
+          attribution_name: payload.attribution_name
+        });
       }
     }
     imported++;
