@@ -36,6 +36,16 @@ Update this file before stopping after any substantive repo task.
   - `/gallery` renders the Supabase-backed gallery again with 71 filter items / 73 images in the browser smoke check.
   - Smoke status checks returned HTTP 200 for `/gallery`, `/start-order`, and `/admin/login` on the primary deploy URL.
   - Netlify CLI did not return env metadata for this project, so the exact remote state cannot be safely distinguished between missing privileged key and present-but-unprivileged key. The failing selector path is `isSupabaseConfigured()` -> `getAdminSupabaseKey()` -> no privileged candidate from `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY`.
+- **Post-Netlify env correction validation**:
+  - Rechecked `https://sweet-fork-v2.netlify.app/gallery` in the in-app Browser. The page rendered `All (71)` with 71 Supabase-backed images and no fallback wording or browser console warnings/errors.
+  - Rechecked `https://sweet-fork-v2.netlify.app/start-order`. The page no longer showed `Online submission is paused`, `Inquiry submission is temporarily unavailable`, or `The string did not match the expected pattern`; step controls and live catalog-driven options rendered.
+  - Rechecked `https://sweet-fork-v2.netlify.app/admin/login`. The staff login page rendered with email and password fields and no browser console warnings/errors.
+  - Submitted controlled deployed no-upload inquiry `SF-D2B52E0E` with HTTP 201 and `uploadedAssetCount: 0`.
+  - Submitted controlled deployed one-upload inquiry `SF-401FE62F` with HTTP 201 and `uploadedAssetCount: 1`.
+  - Supabase verification found both inquiries as `status = new`, `source_channel = web`, each with one `inquiry_items` row and one pending internal `notification_logs` row.
+  - Supabase verification found the upload case has one `image-upload` `inquiry_assets` row linked to a PNG `media_assets` row in the `inspiration` bucket.
+  - Supabase connector required reauthentication, so verification used the repo's existing local Supabase environment and `@supabase/supabase-js` without printing secret values.
+  - Domain cutover is now technically safe from the Netlify inquiry/gallery/admin validation perspective, assuming no separate DNS, analytics, transactional email delivery, or business sign-off blockers remain.
 - **Files changed recently**:
   - `src/lib/env.ts`
   - `src/components/inquiry/start-order-wizard.tsx`
@@ -51,16 +61,12 @@ Update this file before stopping after any substantive repo task.
   - Supabase storage/data was not deleted or modified outside controlled test inquiry submissions.
   - Gallery import scripts, schema migrations, pricing/business logic, DNS, and main-branch merge state were not touched.
 - **Next exact task**:
-  - Push the public-read split follow-up fix and wait for Netlify redeploy.
-  - Verify `/gallery` returns the Supabase-backed gallery again and `/start-order` loads live catalog data.
-  - In Netlify, configure a privileged Supabase server key for the project/deploy context as either `SUPABASE_SECRET_KEY=sb_secret_...` or legacy `SUPABASE_SERVICE_ROLE_KEY=<service_role JWT>`. Do not expose it with a `NEXT_PUBLIC_` prefix.
-  - Redeploy Netlify after the env fix if the key is added after the code redeploy.
-  - Re-run controlled no-upload and one-upload inquiry submissions against the deployed URL.
-  - Confirm deployed inquiries appear in Supabase/admin with `inquiry_items`, inquiry assets for upload, and pending notification log rows.
-  - Re-smoke `https://sweet-fork-v2.netlify.app/gallery`, `/start-order`, and `/admin/login`.
+  - Complete any remaining non-code launch checks for DNS cutover, including DNS plan, canonical domain behavior, analytics, and owner/business sign-off.
+  - Decide whether controlled validation inquiries should be archived in admin after review; do not delete Supabase storage objects unless explicitly requested.
 - **Known issues / cutover status**:
-  - Domain cutover remains blocked. The code fix redeployed and local/simulated submissions pass, but the actual Netlify project still lacks usable Supabase server configuration for deployed inquiry writes and Supabase-backed gallery/start-order data.
-  - Netlify customers no longer see the raw `The string did not match the expected pattern` message; the deployed API now returns a safe temporary-unavailable message and the page disables online submission.
+  - The previous Netlify inquiry environment blocker is resolved by validation.
+  - No code changes were needed after the Netlify environment correction.
+  - Transactional email delivery remains outside this validation; pending internal notification log creation was confirmed.
 
 ## Mobile Inquiry Wizard Item Focus Fix — 2026-06-12
 
