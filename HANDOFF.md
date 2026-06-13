@@ -1,7 +1,7 @@
 ## Product Page Media UX + Admin Placement Clarity — 2026-06-13
 
 - **Current branch**: `codex/product-page-media-ux`.
-- **Commit**: Pending at the time of this handoff edit; update with the final commit hash after commit.
+- **Implementation commit**: `d0b1945` (`fix: improve product page media presentation`).
 - **Current objective**: Fix product-page hero image crop/readability, add category-specific product-page examples with full-gallery CTAs, clarify admin “featured/used on site” semantics, sort active placements first, and warn when major homepage/product placements are missing.
 - **Starting branch**: `main`.
 - **Starting working tree**: Tracked files were clean. Pre-existing untracked files were present and preserved: `.agents/`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `skills-lock.json`.
