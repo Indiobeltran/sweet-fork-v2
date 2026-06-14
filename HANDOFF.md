@@ -1,4 +1,30 @@
+## Inquiry File-Upload Removal Live Production QA — 2026-06-13
+
+- **Branch**: `main` (aligned with `origin/main` at `42fd6f805a397d49e9db11b04a4811e1ac714298`).
+- **QA Objective**: Perform live production QA on the Netlify-deployed Sweet Fork v2 file-upload removal changes.
+- **Verification URL**: `https://sweet-fork-v2.netlify.app`
+- **Viewports tested**: 320px, 375px, 430px, and 1280px.
+- **Verification methodology**: Programmatic Puppeteer execution and visual inspection via screenshot capture (stored in the artifacts directory `/Users/indiobeltran/.gemini/antigravity/brain/391f2912-7ce0-410f-ab4d-1ead7e3b35fa/`).
+- **Customer-facing `/start-order` checklist outcome**:
+  - No file input, upload dropzone, or picker is present in the inquiry wizard (Verified `noUploadDropzone: true`).
+  - No customer-facing copy mentions uploading photos or files (Verified `noUploadCopy: true`).
+  - Style & Inspiration step still contains inspiration links and written style notes (Verified `inspirationLinksPresent: true`, `writtenNotesPresent: true`).
+  - Optional reassurance copy ("No inspiration ready yet? That is completely okay — we can help shape the design from your event details.") appears and feels natural (Verified `reassuranceCopyPresent: true`).
+  - Users can proceed through all steps without files (Verified `proceedWithoutFiles: true`).
+  - The review snapshot contains no mention of file uploads or file counts (Verified `snapshotNoFiles: true`).
+  - Code analysis confirms the success screen removes "Uploads saved" and correctly displays a third "Fulfillment" summary card showing the selected fulfillment method (pickup/delivery).
+  - Validation blocks empty required fields (Verified `validation: true`).
+  - Multi-product selections (e.g. Custom Cakes and Sugar Cookies) work seamlessly (Verified `multiProductWorks: true`).
+  - **No real inquiry was submitted** in production during this QA.
+- **Admin panel checklist outcome**:
+  - Direct access to `/admin/settings` redirects to `/admin/login` correctly.
+  - `/admin/settings` loads successfully without crashing and no longer shows the "Allow file uploads" toggle (Verified `noAllowUploadToggle: true`).
+  - `/admin/inquiries` loads successfully (Verified `adminInquiriesLoads: true`).
+  - Loading historical inquiries detail views with attachments displays correctly without breaking or crashing (Verified `historicalInquiryWorks: true`).
+- **Production Status**: **APPROVED** for live release. No regressions or browser console errors detected.
+
 ## Phase 10 / Inquiry Settings Cleanup: Permanent Removal of File Uploads — 2026-06-14
+
 
 - **Branch**: `codex/remove-inquiry-file-uploads`
 - **Scope**: Permanently remove customer-facing file upload capabilities from the inquiry form, maintaining existing admin state and historical data access.
