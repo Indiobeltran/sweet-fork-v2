@@ -830,7 +830,7 @@ export function StartOrderWizard({
                       Tell us about your order so we can prepare a custom quote.
                     </h2>
                     <p className="hidden max-w-2xl text-[0.95rem] leading-7 text-charcoal/70 sm:block sm:text-base sm:leading-8">
-                      Choose your desserts, share your event date, add inspiration photos, and tell
+                      Choose your desserts, share your event date, share style inspiration, and tell
                       us the best way to reach you. We&apos;ll review the details and follow up with
                       next steps.
                     </p>
