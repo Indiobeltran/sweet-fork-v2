@@ -591,29 +591,29 @@ export const contentSectionDefinitions: ContentSectionDefinition[] = [
     blockType: "rich-text",
     fallback: {
       body:
-        "The Sweet Fork began with the idea that handmade desserts can feel both personal and beautifully composed, and it continues to grow as a small, intentional bakery serving Northern Utah.",
+        "I'm a home baker in Centerville, Utah who believes handmade desserts should feel personal and beautifully made. The Sweet Fork is my small, intentional bakery serving families across Northern Utah.",
       eyebrow: "About",
-      heading: "A small bakery rooted in Centerville, Utah, with a luxury-minded finish.",
+      heading: "Hi, I'm Melissa — the baker behind The Sweet Fork.",
       items: [
         {
           text:
-            "What began as a passion project has become a made-to-order bakery focused on custom cakes, macarons, cupcakes, and decorated sugar cookies for celebrations across Northern Utah.",
+            "What began as a love of baking for the people around me has grown into a made-to-order bakery for custom cakes, macarons, cupcakes, and decorated sugar cookies — created for celebrations across Northern Utah.",
         },
         {
           text:
-            "Every order is made from scratch in a home kitchen using quality ingredients, careful technique, and an intentionally limited production calendar.",
+            "Every order is baked from scratch in my home kitchen with the kind of care you'd expect for your own family celebration. I keep my calendar intentionally small so each cake and dessert gets the attention it deserves.",
         },
         {
           text:
-            "That smaller scale allows each client to receive thoughtful guidance from inquiry through pickup or delivery.",
+            "From birthday cakes and decorated sugar cookies to wedding tastings and macarons, my goal is to make the whole process feel personal, clear, and special — from your first inquiry through pickup or delivery.",
         },
       ],
       settings: {
         accent:
-          "The Sweet Fork operates under Utah's Home Consumption and Homemade Food Act and serves Davis, Salt Lake, and nearby Weber County communities.",
-        studioEyebrow: "The Sweet Fork",
+          "The Sweet Fork operates under Utah's Home Consumption and Homemade Food Act, baking for Centerville and the surrounding Davis, Salt Lake, and nearby Weber County communities.",
+        studioEyebrow: "From Melissa's kitchen",
         studioQuote:
-          "\"Handcrafted for life's sweetest moments.\"",
+          "\"Baked from my home kitchen in Centerville, with the kind of care I'd want for my own family's celebration.\"",
       },
     },
   },

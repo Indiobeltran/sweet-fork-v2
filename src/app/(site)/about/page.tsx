@@ -27,11 +27,24 @@ export default async function AboutPage() {
         cta={defaultCta}
       />
       <section className="section-shell grid gap-8 py-16 md:py-20 lg:grid-cols-[0.95fr_1.05fr]">
-        <div className="rounded-[2rem] border border-charcoal/8 bg-charcoal p-8 text-ivory shadow-soft">
-          <p className="text-xs uppercase tracking-[0.2em] text-gold/70">{data.settings.studioEyebrow}</p>
-          <p className="mt-6 font-serif text-4xl leading-tight tracking-[-0.04em]">
-            {data.settings.studioQuote}
-          </p>
+        <div className="overflow-hidden rounded-[2rem] border border-charcoal/8 bg-charcoal text-ivory shadow-soft">
+          {/* Founder/kitchen photo-ready area. No stock or AI people imagery is used;
+              this brand-styled panel gracefully supports a real founder photo when one is added. */}
+          <div className="relative flex min-h-[15rem] items-end bg-[radial-gradient(circle_at_top_right,rgba(184,150,92,0.22),transparent_55%),linear-gradient(150deg,rgba(44,36,27,0.0),rgba(0,0,0,0.28))] p-8">
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
+            <p className="font-serif text-3xl leading-none tracking-[-0.03em] text-ivory/90">
+              The Sweet Fork
+            </p>
+          </div>
+          <div className="border-t border-white/10 p-8">
+            <p className="text-xs uppercase tracking-[0.2em] text-gold/70">{data.settings.studioEyebrow}</p>
+            <p className="mt-5 font-serif text-3xl leading-tight tracking-[-0.04em] sm:text-4xl">
+              {data.settings.studioQuote}
+            </p>
+            <p className="mt-6 text-sm font-semibold uppercase tracking-[0.16em] text-ivory/70">
+              — Melissa, The Sweet Fork
+            </p>
+          </div>
         </div>
         <div className="space-y-5 text-base leading-8 text-charcoal/72">
           {data.items.map((item) => (

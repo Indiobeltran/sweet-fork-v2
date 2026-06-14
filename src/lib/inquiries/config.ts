@@ -14,7 +14,7 @@ export const inquiryStepTitles = [
 ] as const;
 
 export const inquiryStepDescriptions = [
-  "Confirm the event type, date, fulfillment plan, and investment range.",
+  "Confirm the event type, date, fulfillment plan, and budget range.",
   "Choose the desserts you would like included in your quote.",
   "Add serving counts, flavors, and design notes for each dessert.",
   "Share color direction, inspiration images, links, or written notes.",
@@ -39,37 +39,37 @@ export const budgetRangeOptions: Array<{
   {
     value: "under-150",
     label: "Under $150",
-    note: "A good fit for smaller dessert orders and simpler celebration needs.",
+    note: "Smaller dessert orders and simpler celebrations.",
   },
   {
     value: "150-300",
     label: "$150 to $300",
-    note: "Comfortable for smaller custom cakes, dessert assortments, and more tailored finishes.",
+    note: "Smaller custom cakes and dessert assortments.",
   },
   {
     value: "300-600",
     label: "$300 to $600",
-    note: "A strong range for larger cakes, wedding work, and multi-item dessert tables.",
+    note: "Larger cakes, wedding work, and dessert tables.",
   },
   {
     value: "600-1000",
     label: "$600 to $1,000",
-    note: "Best for fuller dessert spreads, statement cakes, and more involved event styling.",
+    note: "Fuller dessert spreads and statement cakes.",
   },
   {
     value: "1000-2000",
     label: "$1,000 to $2,000",
-    note: "Ideal for larger weddings, higher guest counts, and more complex dessert planning.",
+    note: "Larger weddings and higher guest counts.",
   },
   {
     value: "2000-plus",
     label: "$2,000+",
-    note: "A fit for high-capacity wedding and event orders with layered design or service needs.",
+    note: "High-capacity wedding and event orders.",
   },
   {
     value: "not-sure",
     label: "Not sure yet",
-    note: "Choose this if you would like guidance before narrowing the investment range.",
+    note: "We'll help you narrow it down — no pressure.",
   },
 ];
 

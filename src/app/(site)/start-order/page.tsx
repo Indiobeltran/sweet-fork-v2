@@ -17,7 +17,7 @@ export default async function StartOrderPage() {
   const pageData = await getStartOrderPageData();
 
   return (
-    <div className="pb-6 pt-8 sm:pt-10">
+    <div className="pb-6 pt-5 sm:pt-10">
       <h1 className="sr-only">Start your inquiry</h1>
       <StartOrderWizard {...pageData} />
     </div>

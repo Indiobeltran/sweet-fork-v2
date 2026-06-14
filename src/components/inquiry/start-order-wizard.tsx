@@ -919,11 +919,11 @@ export function StartOrderWizard({
 
               {!hasStarted ? (
                 <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
-                  <div className="min-w-0 space-y-3">
-                    <h2 className="font-serif text-4xl tracking-[-0.04em] text-charcoal sm:text-5xl">
+                  <div className="min-w-0 space-y-2.5 sm:space-y-3">
+                    <h2 className="font-serif text-[1.7rem] leading-[1.05] tracking-[-0.04em] text-charcoal sm:text-5xl sm:leading-tight">
                       Tell us about your order so we can prepare a custom quote.
                     </h2>
-                    <p className="max-w-2xl text-base leading-8 text-charcoal/70">
+                    <p className="hidden max-w-2xl text-[0.95rem] leading-7 text-charcoal/70 sm:block sm:text-base sm:leading-8">
                       Choose your desserts, share your event date, add inspiration photos, and tell
                       us the best way to reach you. We&apos;ll review the details and follow up with
                       next steps.
@@ -1165,7 +1165,7 @@ export function StartOrderWizard({
                 </div>
 
                 <div>
-                  <FieldLabel id="budget-range-label" required>Investment comfort range</FieldLabel>
+                  <FieldLabel id="budget-range-label" required>Comfortable budget range</FieldLabel>
                   <div
                     className="grid gap-3 md:grid-cols-2"
                     role="group"
@@ -1181,7 +1181,7 @@ export function StartOrderWizard({
                         ref={index === 0 ? registerFieldRef("budgetRange") : undefined}
                         aria-pressed={values.budgetRange === option.value}
                         className={cn(
-                          "rounded-[1.6rem] border p-4 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50",
+                          "rounded-[1.4rem] border px-4 py-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50 sm:rounded-[1.6rem] sm:py-4",
                           values.budgetRange === option.value
                             ? "border-charcoal bg-charcoal text-ivory"
                             : "border-charcoal/10 bg-white hover:border-charcoal/30",
@@ -1192,7 +1192,7 @@ export function StartOrderWizard({
                         <p className="text-sm font-semibold">{option.label}</p>
                         <p
                           className={cn(
-                            "mt-2 text-sm leading-7",
+                            "mt-1 text-xs leading-5 sm:text-sm sm:leading-6",
                             values.budgetRange === option.value
                               ? "text-ivory/72"
                               : "text-charcoal/62",
@@ -2438,7 +2438,7 @@ export function StartOrderWizard({
                 value={normalizedValues.fulfillmentMethod === "delivery" ? "Delivery" : "Pickup"}
               />
               <StatRow
-                label="Investment"
+                label="Budget"
                 value={getBudgetRangeLabel(normalizedValues.budgetRange)}
               />
             </div>

@@ -113,14 +113,14 @@ export default async function HomePage() {
       />
       <section className="grain-surface relative overflow-hidden border-b border-charcoal/7 bg-paper">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/35 to-transparent" />
-        <div className="section-shell grid gap-8 py-8 sm:py-10 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-14 lg:py-16 xl:py-20">
-          <div className="space-y-5 section-reveal">
+        <div className="section-shell grid gap-6 py-6 sm:gap-8 sm:py-10 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-14 lg:py-16 xl:py-20">
+          <div className="space-y-4 section-reveal sm:space-y-5">
             <p className="eyebrow-label">{data.hero.eyebrow}</p>
-            <div className="space-y-4">
-              <h1 className="max-w-5xl text-balance font-serif text-[2.85rem] leading-[0.94] text-charcoal sm:text-[4.1rem] lg:text-[5.35rem]">
+            <div className="space-y-3 sm:space-y-4">
+              <h1 className="max-w-5xl text-balance font-serif text-[2.3rem] leading-[0.97] text-charcoal sm:text-[4.1rem] sm:leading-[0.94] lg:text-[5.35rem]">
                 {data.hero.heading}
               </h1>
-              <p className="max-w-xl text-base leading-7 text-charcoal/74 sm:text-lg">
+              <p className="max-w-xl text-[0.95rem] leading-6 text-charcoal/74 sm:text-lg sm:leading-7">
                 {data.hero.body}
               </p>
             </div>
@@ -331,11 +331,27 @@ export default async function HomePage() {
 
       <section className="border-y border-charcoal/7 bg-cream/58 py-12 md:py-16">
         <div className="section-shell grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-          <SectionHeading
-            eyebrow={data.weddingHighlight.eyebrow}
-            title={data.weddingHighlight.heading}
-            description={data.weddingHighlight.body}
-          />
+          <div className="space-y-6">
+            <SectionHeading
+              eyebrow={data.weddingHighlight.eyebrow}
+              title={data.weddingHighlight.heading}
+              description={data.weddingHighlight.body}
+            />
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Link
+                href="/wedding-cakes"
+                className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-charcoal px-6 py-3 text-center text-sm font-semibold tracking-[0.02em] text-ivory shadow-[0_16px_34px_rgba(44,36,27,0.14)] transition duration-200 hover:-translate-y-0.5 hover:bg-charcoal/92 active:scale-[0.985] sm:w-auto"
+              >
+                Explore Wedding Cakes
+              </Link>
+              <Link
+                href="/start-order"
+                className="inline-flex min-h-12 w-full items-center justify-center rounded-full px-4 py-3 text-center text-sm font-semibold tracking-[0.02em] text-charcoal underline decoration-gold/40 underline-offset-4 transition hover:decoration-gold sm:w-auto"
+              >
+                Start a Wedding Inquiry
+              </Link>
+            </div>
+          </div>
           <div className="grid gap-3 sm:grid-cols-3">
             {[
               "Limited weekend availability",

@@ -1,3 +1,67 @@
+## Conversion + Trust Pass: Mobile Hero, Wedding CTA, About Trust Copy, Inquiry Step 1 — 2026-06-14
+
+### SITREP
+- **Branch**: `codex/mobile-conversion-about-trust` (created from `main`, which equals `origin/main` at `55ba88e08a94cf5a027cd3575e36221cf0d0e674` — `fix: hide inquiry uploads when disabled`).
+- **Pre-existing working tree**: tracked files clean at start. Pre-existing untracked items preserved and NOT modified/staged: `.agents/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `skills-lock.json`. (`.claude/launch.json` was added locally as a preview/QA aid only — untracked, not committed.)
+- **Scope**: Customer-facing only. Admin untouched except by shared-code safety. No Supabase schema changes. No gallery/media-architecture changes. No upload-toggle behavior changes.
+
+### Summary of customer-facing changes
+- **Phase 1 — Mobile above-the-fold (Home)**: Reduced mobile hero vertical padding (`py-8` → `py-6`, restored at `sm`) and scaled the H1 down on mobile only (`text-[2.85rem]` → `text-[2.3rem]`, `sm`/`lg` sizes unchanged so desktop stays at 4.1rem/5.35rem). Tightened body copy/spacing on mobile. Result: H1 drops from ~6 lines to 4 lines at 320px and the primary CTA sits within the first viewport.
+- **Phase 1 — Mobile above-the-fold (Start Order)**: Reduced page top padding (`pt-8` → `pt-5`, restored at `sm`). On the not-started wizard intro, scaled the editorial H2 down on mobile (`text-4xl` → `text-[1.7rem]`, `sm:text-5xl` preserved) and hid the redundant explainer paragraph on mobile only (`hidden sm:block`) since the visible step rail already conveys it. First interactive Step 1 field (`#event-type`) moved up from ~1228px to ~991px at 320px (~240px / ~1.4 viewports earlier).
+- **Phase 2 — Wedding highlight CTA (Home)**: Added a primary `Explore Wedding Cakes` button → `/wedding-cakes` and a secondary `Start a Wedding Inquiry` underlined link → `/start-order` inside the homepage wedding highlight section, using the existing button styling system. Tappable on mobile, clean on desktop.
+- **Phase 3 — Humanize About**: Rewrote the About story to first-person founder copy naming Melissa ("Hi, I'm Melissa — the baker behind The Sweet Fork."), warmer body + three founder-forward paragraphs, a Melissa-signed studio quote, and `From Melissa's kitchen` eyebrow. Kept the Utah Home Consumption and Homemade Food Act cottage-food disclosure (lightly reworded, still clear/honest). Reworked the About studio panel into an image-ready founder callout (brand-styled photo area + signature `— Melissa, The Sweet Fork`) that gracefully supports a future real founder/kitchen photo. **No stock or AI people imagery was added.**
+  - **IMPORTANT (content data, not schema)**: About copy is served from the admin-managed `content_blocks` row `about:story:main`, which overrides the code fallback. With explicit user approval, that row's `heading`/`body`/`items_json`/`settings_json` were updated to the humanized copy (id `c676ae28-735e-47b0-9e6b-8346e878e6a6`, `updated_at` 2026-06-14). This is a content-value edit only — **no schema/DDL change**. Local dev and production share the same Supabase project (`renjsmdsrzjnppqpaoaa`), so this took effect on the live About page immediately, the same way the admin content editor works. The matching code fallback in `src/lib/site/marketing.ts` was also humanized so code and data stay consistent. The exact prior values are preserved in this handoff's git history / the SQL below for reversibility.
+- **Phase 4/5 — Inquiry Step 1 friction + copy polish**: Renamed the customer-facing budget label `Investment comfort range` → `Comfortable budget range`; renamed the review-aside StatRow label `Investment` → `Budget`; changed the Step 1 description "investment range" → "budget range". Shortened all seven budget-tier `note` strings to one compact line each and tightened the budget cards on mobile (smaller padding, `text-xs` notes, restored at `sm`). All options preserved, including "Not sure yet" (now "We'll help you narrow it down — no pressure."). No changes to validation, multi-product flow, progress stepper, aria-live wiring, upload-toggle behavior, or the final inquiry snapshot.
+
+### Files touched
+- `src/app/(site)/page.tsx` — Home mobile hero scaling/padding + wedding highlight CTA.
+- `src/app/(site)/about/page.tsx` — image-ready founder callout panel + Melissa signature.
+- `src/app/(site)/start-order/page.tsx` — reduced mobile top padding.
+- `src/components/inquiry/start-order-wizard.tsx` — not-started intro H2/paragraph mobile tightening; budget label rename; compact budget cards; `Budget` StatRow label.
+- `src/lib/inquiries/config.ts` — Step 1 description wording; shortened budget-tier notes; "Not sure yet" copy.
+- `src/lib/site/marketing.ts` — humanized `about.story` fallback (heading/body/items/settings) to mirror the DB content.
+- `HANDOFF.md` — this entry.
+- Supabase `content_blocks` row `about:story:main` — content-value update (no schema change).
+
+### Verification performed (all passed)
+- `npm run lint` — Passed (`--max-warnings=0`).
+- `npm run typecheck` — Passed.
+- `npm test` — Passed (57/57). Netlify Forms bridge tests still intentionally log fail-soft 404/network fixtures.
+- `npm run build` — Passed; all routes compile (`/start-order` dynamic 33.5 kB).
+- `git diff --check` — Clean.
+- `git status --short` — Only the six source files + `HANDOFF.md` modified; untracked files preserved.
+
+### Manual QA results (local dev on real Supabase, by viewport)
+- **320px**: No horizontal overflow on `/`, `/about`, `/start-order`, `/wedding-cakes`. Home primary CTA ("Start Your Inquiry") within first viewport (bottom ~456px / vh 692+). Start Order `#event-type` at ~991px (was ~1228px). H1 36.8px. About names Melissa, cottage-food disclosure intact, founder callout + signature render. Budget label "Comfortable budget range"; cards compact; "Not sure yet" preserved.
+- **375px**: No overflow on Home/Start Order. Home CTA within first viewport (bottom ~421px). Start Order `#event-type` at ~919px.
+- **430px**: No overflow on `/`, `/about`, `/start-order`, `/wedding-cakes`. About still names Melissa.
+- **1280px**: No overflow; Home H1 restored to 85.6px (5.35rem); two-column hero, side-by-side CTAs, premium editorial feel preserved.
+- Wedding CTA verified: `Explore Wedding Cakes` → `/wedding-cakes`, `Start a Wedding Inquiry` → `/start-order`.
+- No real inquiry was submitted.
+
+### Guardrails confirmed
+- **Admin was not redesigned** (no admin files touched).
+- **No Supabase schema/migration/media-architecture change** — only a single managed `content_blocks` row content value was edited (with user approval); gallery/media placement architecture untouched.
+- **Inquiry upload-toggle behavior preserved** — no changes to `wizard-helpers.ts` upload UI state, `validateInspirationUploads`, the `site_settings` `inquiry.flags` `uploadsEnabled` source of truth, the dropzone, or the submission FormData. Inquiry validation, multi-product readiness, progress stepper, and aria-live behavior unchanged.
+- Gallery filters/Supabase imagery untouched.
+
+### Reversibility (prior About content row values)
+```sql
+-- Restore the pre-change About content_blocks row if ever needed:
+update content_blocks set
+  heading = 'A small bakery rooted in Centerville, Utah, with a luxury-minded finish.',
+  body = 'The Sweet Fork began with the idea that handmade desserts can feel both personal and beautifully composed, and it continues to grow as a small, intentional bakery serving Northern Utah.',
+  items_json = '[{"text":"What began as a passion project has become a made-to-order bakery focused on custom cakes, macarons, cupcakes, and decorated sugar cookies for celebrations across Northern Utah."},{"text":"Every order is made from scratch in a home kitchen using quality ingredients, careful technique, and an intentionally limited production calendar."},{"text":"That smaller scale allows each client to receive thoughtful guidance from inquiry through pickup or delivery."}]'::jsonb,
+  settings_json = '{"accent":"The Sweet Fork operates under Utah''s Home Consumption and Homemade Food Act and serves Davis, Salt Lake, and nearby Weber County communities.","studioQuote":"\"Handcrafted for life''s sweetest moments.\"","studioEyebrow":"The Sweet Fork"}'::jsonb,
+  updated_at = now()
+where id = 'c676ae28-735e-47b0-9e6b-8346e878e6a6';
+```
+
+### Limitations / follow-ups
+- About now has an image-ready founder callout but **no real founder/kitchen photo is wired** — when Melissa provides one, it can be added through the existing media system / placed in this panel (no fake imagery should be substituted in the meantime).
+- Changes are gate-verified and locally QA'd against the production Supabase content. Branch is committed but not merged/pushed; Netlify deploy QA of the layout changes still happens after merge to `main`. (The About content row change is already live.)
+- "Product mix" wording in Step 2 was intentionally left alone to keep scope on the audited Step 1 friction.
+
 ## Launch Hotfix: Inquiry Upload Toggle Respect — 2026-06-14
 
 - **Branch**: `codex/fix-upload-toggle-wizard`
