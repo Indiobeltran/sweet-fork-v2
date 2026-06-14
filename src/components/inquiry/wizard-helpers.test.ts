@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 // @ts-expect-error Node's strip-types test runner needs the .ts extension.
-import { findStepForErrors, flattenIssues, formatSelectedItemSummary, getFieldErrorClass, getSafeSubmissionErrorMessage, getStepErrorMessage, isErrorForStep } from "./wizard-helpers.ts";
+import { findStepForErrors, flattenIssues, formatSelectedItemSummary, getFieldErrorClass, getInspirationUploadUiState, getSafeSubmissionErrorMessage, getStepErrorMessage, isErrorForStep } from "./wizard-helpers.ts";
 import type { InquiryProductItem } from "@/types/domain";
 
 describe("formatSelectedItemSummary", () => {
@@ -129,5 +129,27 @@ describe("getFieldErrorClass", () => {
   it("returns an error class only when a message is present", () => {
     assert.equal(getFieldErrorClass(undefined, undefined), undefined);
     assert.match(getFieldErrorClass("Required") ?? "", /border-rose-300/);
+  });
+});
+
+describe("getInspirationUploadUiState", () => {
+  it("shows customer upload controls and review counts when uploads are enabled", () => {
+    assert.deepEqual(
+      getInspirationUploadUiState({ uploadsEnabled: true }, 2),
+      {
+        reviewUploadCount: 2,
+        showUploadControls: true,
+      },
+    );
+  });
+
+  it("hides customer upload controls and clears review counts when uploads are disabled", () => {
+    assert.deepEqual(
+      getInspirationUploadUiState({ uploadsEnabled: false }, 2),
+      {
+        reviewUploadCount: 0,
+        showUploadControls: false,
+      },
+    );
   });
 });

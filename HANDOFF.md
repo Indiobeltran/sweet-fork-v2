@@ -1,3 +1,38 @@
+## Launch Hotfix: Inquiry Upload Toggle Respect — 2026-06-14
+
+- **Branch**: `codex/fix-upload-toggle-wizard`
+- **Starting point**: `main` / `origin/main` aligned at `c80280e40875ebceed55743186eee5b430781f76` (`fix: repair inquiry submission and customer copy`).
+- **Manual QA finding**: Admin settings had customer inspiration/photo uploads turned off, but `/start-order` still showed the inspiration image upload dropzone. Customers could attempt to add files while the server setting rejected uploads, creating confusing submission failure behavior.
+- **Root cause / mismatch found**:
+  - Source of truth is `site_settings.setting_key = inquiry.flags`, field `uploadsEnabled`, managed from `/admin/settings` as **Inquiry feature flags → Allow file uploads**.
+  - `/start-order` already receives the resolved `featureFlags` from `getStartOrderPageData()` in `src/lib/inquiries/catalog.ts`.
+  - The API/server path already validates files against `featureFlags.uploadsEnabled` through `validateInspirationUploads()`, but the customer wizard rendered a disabled-looking upload control instead of hiding the upload option.
+- **Fix made**:
+  - Added `getInspirationUploadUiState()` in `src/components/inquiry/wizard-helpers.ts`.
+  - Updated `src/components/inquiry/start-order-wizard.tsx` so uploads enabled preserves the current dropzone, accepted file types, upload list, and remove behavior.
+  - When uploads are disabled, the customer upload control is not rendered, upload-specific intro copy is replaced with links/notes wording, the review step omits the inspiration-file count, stale upload drafts are cleared, and stale sessions do not append files to the inquiry `FormData`.
+  - Added a customer-facing fallback note: “Have inspiration photos? Mention the style, colors, or details in the notes, and we’ll follow up if we need anything else.”
+- **Server/API consistency**: Existing server validation remains in place. If a stale client still sends files while uploads are disabled, the API rejects the upload safely with the existing customer-safe validation path; no raw errors or secrets are exposed.
+- **Tests added/updated**:
+  - Updated `src/components/inquiry/wizard-helpers.test.ts` to cover upload UI state for uploads enabled vs disabled.
+  - Verified the new test failed before the helper existed, then passed after implementation.
+- **Verification performed**:
+  - `npm test -- src/components/inquiry/wizard-helpers.test.ts` — Red before helper export, then passed after implementation. The npm script still runs the configured suite plus the provided file argument.
+  - `npm run lint` — Passed.
+  - `npm run typecheck` — Initially caught the multiline `.ts` test import annotation issue, then passed after restoring the repo’s single-line import pattern.
+  - `npm run lint` — Passed after the typecheck adjustment.
+  - `npm test` — Passed (57/57). Netlify Forms bridge tests still intentionally log fail-soft warning fixtures.
+  - `npm run build` — Passed.
+  - `git diff --check` — Passed.
+  - Local browser smoke with `INQUIRY_UPLOAD_ENABLED=false npm run dev -- --port 3001` — `/start-order` reached Step 4; dropzone text absent, disabled fallback note visible, upload-specific intro absent, links/notes intro visible.
+  - Local browser smoke with `INQUIRY_UPLOAD_ENABLED=true npm run dev -- --port 3001` — `/start-order` reached Step 4; upload dropzone text visible, disabled fallback note absent, upload-specific intro visible.
+- **Guardrails confirmed**:
+  - No Supabase schema changes, migrations, database-architecture changes, DNS changes, Netlify deployment-setting changes, gallery import changes, admin broad redesigns, or package/dependency changes.
+  - Inquiry payload shape is preserved. Multi-product inquiry support, internal estimate privacy, Netlify Forms bridge behavior, and uploads-enabled behavior are preserved.
+  - Pre-existing untracked files preserved: `.agents/`, `.claude/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `skills-lock.json`.
+- **Remaining risks / follow-ups**:
+  - Manual Netlify QA is still needed after deploy: toggle uploads off in admin, hard-refresh `/start-order`, confirm the upload UI is hidden, submit a no-image inquiry, then toggle uploads on and confirm the upload UI and one safe image submission work if desired.
+
 ## Launch Hotfix: Netlify Inquiry Submission + Wizard Copy — 2026-06-13
 
 - **Branch**: `codex/fix-inquiry-submit-copy`

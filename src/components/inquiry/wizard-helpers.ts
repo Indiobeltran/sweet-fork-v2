@@ -36,6 +36,23 @@ export function formatFileSize(size: number) {
   return `${Math.round(size / 1024 / 102.4) / 10} MB`;
 }
 
+export function getInspirationUploadUiState(
+  flags: { uploadsEnabled: boolean },
+  uploadCount: number,
+) {
+  if (!flags.uploadsEnabled) {
+    return {
+      reviewUploadCount: 0,
+      showUploadControls: false,
+    };
+  }
+
+  return {
+    reviewUploadCount: uploadCount,
+    showUploadControls: true,
+  };
+}
+
 export function getErrorDescriptionId(key: string) {
   return `${key.replace(/[^a-z0-9_-]+/gi, "-")}-error`;
 }
