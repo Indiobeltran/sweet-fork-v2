@@ -1,3 +1,26 @@
+## About Page Founder Photo Media Slot — 2026-06-14
+
+- **Branch**: `codex/about-founder-photo-media-slot`
+- **Scope**: Add admin-manageable media support for the About page founder photo slot (`about.founder.photo`), allowing the admin to upload/select a real photo of Melissa or the kitchen and render it in the founder panel with safe fallback behavior.
+- **Summary of changes**:
+  - **Media Placement Definition**: Registered `about.founder.photo` key in `mediaPlacementDefinitions` inside `src/lib/site/marketing.ts` with descriptive, admin-friendly labeling.
+  - **Semantic Placement Utilities**: Configured `isProminentMediaPlacement` and `isSingleSlotMediaPlacement` in `src/lib/admin/media-placement-utils.ts` to recognize `about.founder.photo`.
+  - **Unit Tests**: Updated `src/lib/admin/media-placement-utils.test.ts` with checks verifying the prominent, single-slot status of the new placement key.
+  - **About Page Wiring**: Updated `src/app/(site)/about/page.tsx` to fetch the assigned media asset and render it with custom Next.js Image component parameters (using quality 82, matching the configured next.config.ts image qualities). Kept the pre-existing text-only photo-ready fallback card when no assignment exists.
+- **Verification performed**:
+  - `npm run lint` — Passed.
+  - `npm run typecheck` — Passed.
+  - `npm test` — Passed (55/55).
+  - `npm run build` — Passed (compiled `/about` successfully).
+  - `git diff --check` — Clean.
+  - **Programmatic QA validation** (`scratch/qa/about-founder-photo-qa.mjs`) — Verified end-to-end that `/about` renders the text fallback when unassigned, and renders the assigned image correctly when assigned, then leaves the database clean.
+- **Handoff details**:
+  - **New placement key**: `about.founder.photo`
+  - **Admin Steps to assign**: Navigate to `/admin/media`, find the slot labeled "About founder photo", select or upload a portrait/4:5 image of Melissa or the kitchen (no stock/AI people imagery), and save.
+  - **Fallback behavior**: If unassigned, the About page automatically renders the polished text-only "The Sweet Fork" card fallback with the signed signature.
+  - **Database Status**: Dev database was verified programmatically and left clean (temporary assignments deleted).
+- **Follow-up items**: None. The slot is fully wired and ready for the admin to assign a photo.
+
 ## Inquiry File-Upload Removal Live Production QA — 2026-06-13
 
 - **Branch**: `main` (aligned with `origin/main` at `42fd6f805a397d49e9db11b04a4811e1ac714298`).

@@ -81,6 +81,7 @@ export function isProminentMediaPlacement(placementKey: string) {
   return (
     placementKey === "home.hero" ||
     placementKey === "home.gallery" ||
+    placementKey === "about.founder.photo" ||
     placementKey.startsWith("home.offering.") ||
     placementKey.startsWith("product.hero.")
   );
@@ -89,6 +90,7 @@ export function isProminentMediaPlacement(placementKey: string) {
 export function isSingleSlotMediaPlacement(placementKey: string) {
   return (
     placementKey === "home.hero" ||
+    placementKey === "about.founder.photo" ||
     placementKey.startsWith("home.offering.") ||
     placementKey.startsWith("product.hero.")
   );

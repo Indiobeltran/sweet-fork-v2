@@ -390,6 +390,14 @@ export const mediaPlacementDefinitions: MediaPlacementDefinition[] = [
     sectionKey: "grid",
     slotKey: "gallery",
   },
+  {
+    description: "Real photo of Melissa, the kitchen, or a behind-the-scenes baking moment for the About page founder callout. Do not use stock or AI people imagery.",
+    key: "about.founder.photo",
+    label: "About founder photo",
+    pageKey: "about",
+    sectionKey: "founder",
+    slotKey: "photo",
+  },
 ];
 
 export const publicSitePaths = [

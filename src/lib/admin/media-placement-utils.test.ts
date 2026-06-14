@@ -37,6 +37,14 @@ const placementDefinitions = [
     sectionKey: "hero",
     slotKey: "diy-kits",
   },
+  {
+    description: "Real photo of Melissa, the kitchen, or a behind-the-scenes baking moment for the About page founder callout. Do not use stock or AI people imagery.",
+    key: "about.founder.photo",
+    label: "About founder photo",
+    pageKey: "about",
+    sectionKey: "founder",
+    slotKey: "photo",
+  },
 ] as const;
 
 describe("admin media placement semantics", () => {
@@ -45,6 +53,7 @@ describe("admin media placement semantics", () => {
     assert.equal(isProminentMediaPlacement("home.offering.cupcakes"), true);
     assert.equal(isProminentMediaPlacement("home.hero"), true);
     assert.equal(isProminentMediaPlacement("home.gallery"), true);
+    assert.equal(isProminentMediaPlacement("about.founder.photo"), true);
     assert.equal(isProminentMediaPlacement("product.gallery.custom-cakes"), false);
     assert.equal(isProminentMediaPlacement("gallery.grid"), false);
     assert.equal(isProductShowcasePlacement("product.gallery.custom-cakes"), true);
@@ -53,6 +62,7 @@ describe("admin media placement semantics", () => {
     assert.equal(isSingleSlotMediaPlacement("home.hero"), true);
     assert.equal(isSingleSlotMediaPlacement("home.gallery"), false);
     assert.equal(isSingleSlotMediaPlacement("product.hero.custom-cakes"), true);
+    assert.equal(isSingleSlotMediaPlacement("about.founder.photo"), true);
   });
 
   it("creates owner-friendly placement badge labels", () => {
@@ -69,6 +79,10 @@ describe("admin media placement semantics", () => {
       getMediaPlacementBadgeLabel("product.hero.diy-kits", placementDefinitions),
       "Product hero: DIY Kits",
     );
+    assert.equal(
+      getMediaPlacementBadgeLabel("about.founder.photo", placementDefinitions),
+      "About founder photo",
+    );
   });
 
   it("reports only missing required homepage and product hero/card placements", () => {
@@ -81,6 +95,10 @@ describe("admin media placement semantics", () => {
         {
           id: "asset-2",
           pageAssignments: [{ assignmentId: "a2", displayOrder: 10, placementKey: "product.hero.diy-kits" }],
+        },
+        {
+          id: "asset-3",
+          pageAssignments: [{ assignmentId: "a3", displayOrder: 10, placementKey: "about.founder.photo" }],
         },
       ],
       [
