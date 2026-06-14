@@ -13,7 +13,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   inquirySchema,
   normalizeInquiryFormValues,
-  validateInspirationUploads,
   type InquiryFormValues,
 } from "@/lib/validations/inquiry";
 import { siteConfig } from "@/lib/content/site-content";
@@ -24,8 +23,6 @@ import type { TablesInsert } from "@/types/supabase.generated";
 
 type SubmissionCleanup = {
   inquiryId: string;
-  mediaAssetIds: string[];
-  storagePaths: string[];
 };
 
 export class InquirySubmissionError extends Error {
@@ -41,16 +38,7 @@ export class InquirySubmissionError extends Error {
 export type InquirySubmissionResult = {
   inquiryId: string;
   referenceCode: string;
-  uploadedAssetCount: number;
 };
-
-function slugifySegment(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
-}
 
 function getReferenceCode(inquiryId: string) {
   return `SF-${inquiryId.slice(0, 8).toUpperCase()}`;
@@ -78,7 +66,6 @@ function describeItem(item: InquiryProductItem) {
 function buildSignals(
   values: InquiryFormValues,
   estimate: InquiryEstimate,
-  uploadCount: number,
 ) {
   const eventDate = new Date(`${values.eventDate}T00:00:00`);
   const now = new Date();
@@ -87,7 +74,6 @@ function buildSignals(
     (eventDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
   );
   const inspirationSignals =
-    uploadCount +
     values.inspirationLinks.length +
     (values.inspirationText ? 1 : 0);
   const detailedItems = values.orderItems.filter(
@@ -143,52 +129,16 @@ function buildInternalSummary(
   ].join(" ");
 }
 
-async function ensureStorageBucket(bucket: string) {
-  const admin = createAdminClient();
-  const { data: existingBucket } = await admin.storage.getBucket(bucket);
-
-  if (existingBucket) {
-    return;
-  }
-
-  const { error } = await admin.storage.createBucket(bucket, {
-    public: false,
-  });
-
-  if (error && !error.message.toLowerCase().includes("already exists")) {
-    throw error;
-  }
-}
-
 async function cleanupFailedSubmission(
   bucket: string,
   cleanup: SubmissionCleanup,
 ) {
   const admin = createAdminClient();
 
-  if (cleanup.storagePaths.length > 0) {
-    await admin.storage.from(bucket).remove(cleanup.storagePaths);
-  }
-
-  if (cleanup.mediaAssetIds.length > 0) {
-    await admin.from("media_assets").delete().in("id", cleanup.mediaAssetIds);
-  }
-
   await admin.from("inquiries").delete().eq("id", cleanup.inquiryId);
 }
-
-function getStoragePath(inquiryId: string, file: File) {
-  const extension = file.name.includes(".")
-    ? file.name.slice(file.name.lastIndexOf(".")).toLowerCase()
-    : "";
-  const safeName = slugifySegment(file.name.replace(/\.[^.]+$/, "")) || "inspiration";
-
-  return `inquiries/${inquiryId}/${crypto.randomUUID()}-${safeName}${extension}`;
-}
-
 export async function submitInquiry(
   rawValues: unknown,
-  files: File[],
   origin?: string,
 ): Promise<InquirySubmissionResult> {
   const values = normalizeInquiryFormValues(rawValues);
@@ -202,11 +152,6 @@ export async function submitInquiry(
 
   const { catalog, featureFlags, pricingBaseline, deliveryRange } =
     await getStartOrderPageData();
-  const uploadIssues = validateInspirationUploads(files, featureFlags);
-
-  if (uploadIssues.length > 0) {
-    throw new InquirySubmissionError(uploadIssues[0]);
-  }
 
   if (!isSupabaseConfigured()) {
     throw new InquirySubmissionError(
@@ -220,14 +165,12 @@ export async function submitInquiry(
     pricing: pricingBaseline,
     deliveryRange,
   });
-  const signals = buildSignals(parsed.data, estimate, files.length);
+  const signals = buildSignals(parsed.data, estimate);
   const budgetRange = resolveBudgetRangeValues(parsed.data.budgetRange);
   const inquiryId = crypto.randomUUID();
   const referenceCode = getReferenceCode(inquiryId);
   const cleanup: SubmissionCleanup = {
     inquiryId,
-    mediaAssetIds: [],
-    storagePaths: [],
   };
   const admin = createAdminClient();
 
@@ -266,7 +209,6 @@ export async function submitInquiry(
           parsed.data.budgetFlexibility,
         ),
         placeholderSignals: signals,
-        uploadCount: files.length,
         linkCount: parsed.data.inspirationLinks.length,
       },
     };
@@ -327,83 +269,13 @@ export async function submitInquiry(
       throw itemsError;
     }
 
-    if (files.length > 0) {
-      await ensureStorageBucket(featureFlags.storageBucket);
-
-      for (const [index, file] of files.entries()) {
-        const mediaAssetId = crypto.randomUUID();
-        const storagePath = getStoragePath(inquiryId, file);
-        const fileBuffer = Buffer.from(await file.arrayBuffer());
-
-        cleanup.mediaAssetIds.push(mediaAssetId);
-        cleanup.storagePaths.push(storagePath);
-
-        const { error: uploadError } = await admin.storage
-          .from(featureFlags.storageBucket)
-          .upload(storagePath, fileBuffer, {
-            cacheControl: "3600",
-            contentType: file.type,
-            upsert: false,
-          });
-
-        if (uploadError) {
-          throw uploadError;
-        }
-
-        const mediaAssetInsert: TablesInsert<"media_assets"> = {
-          id: mediaAssetId,
-          bucket: featureFlags.storageBucket,
-          storage_path: storagePath,
-          public_url: null,
-          asset_kind: "image",
-          source_kind: "upload",
-          mime_type: file.type,
-          original_filename: file.name,
-          file_size_bytes: file.size,
-          metadata: {
-            inquiryId,
-            referenceCode,
-            source: "start-order-wizard",
-          },
-        };
-
-        const { error: mediaAssetError } = await admin
-          .from("media_assets")
-          .insert(mediaAssetInsert);
-
-        if (mediaAssetError) {
-          throw mediaAssetError;
-        }
-
-        const inquiryAssetInsert: TablesInsert<"inquiry_assets"> = {
-          inquiry_id: inquiryId,
-          asset_type: "image-upload",
-          media_asset_id: mediaAssetId,
-          label: file.name,
-          sort_order: index,
-          metadata: {
-            source: "start-order-wizard",
-            storageBucket: featureFlags.storageBucket,
-          },
-        };
-
-        const { error: inquiryAssetError } = await admin
-          .from("inquiry_assets")
-          .insert(inquiryAssetInsert);
-
-        if (inquiryAssetError) {
-          throw inquiryAssetError;
-        }
-      }
-    }
-
     const referenceAssets: TablesInsert<"inquiry_assets">[] = [
       ...parsed.data.inspirationLinks.map((link, index) => ({
         inquiry_id: inquiryId,
         asset_type: "reference-link" as const,
         external_url: link,
         label: `Reference link ${index + 1}`,
-        sort_order: files.length + index,
+        sort_order: index,
         metadata: {
           source: "start-order-wizard",
         },
@@ -415,7 +287,7 @@ export async function submitInquiry(
               asset_type: "reference-text" as const,
               text_content: parsed.data.inspirationText,
               label: "Inspiration notes",
-              sort_order: files.length + parsed.data.inspirationLinks.length,
+              sort_order: parsed.data.inspirationLinks.length,
               metadata: {
                 source: "start-order-wizard",
               },
@@ -511,7 +383,6 @@ export async function submitInquiry(
     return {
       inquiryId,
       referenceCode,
-      uploadedAssetCount: files.length,
     };
   } catch (error) {
     await cleanupFailedSubmission(featureFlags.storageBucket, cleanup).catch(() => undefined);

@@ -122,12 +122,6 @@ const adminSettingDefinitions: AdminSettingDefinition[] = [
     section: "inquiries",
     fields: [
       {
-        key: "uploadsEnabled",
-        label: "Allow file uploads",
-        helpText: "Turn this off if storage is unavailable or you need to accept links only for a while.",
-        type: "boolean",
-      },
-      {
         key: "linkFallbackEnabled",
         label: "Allow inspiration links",
         helpText: "Leave this on if clients should still be able to share Pinterest or Instagram references.",
@@ -142,7 +136,6 @@ const adminSettingDefinitions: AdminSettingDefinition[] = [
       },
     ],
     fallback: {
-      uploadsEnabled: defaultInquiryFeatureFlags.uploadsEnabled,
       linkFallbackEnabled: defaultInquiryFeatureFlags.linkFallbackEnabled,
       storageBucket: defaultInquiryFeatureFlags.storageBucket,
     },
@@ -329,11 +322,11 @@ export async function getSettingsAdminData(): Promise<SettingsAdminData> {
         detail: "Business details, inquiry controls, and launch notice copy are all kept in one place.",
       },
       {
-        label: "Uploads",
-        value: inquiryFlags?.value.uploadsEnabled ? "On" : "Off",
+        label: "Inspiration links",
+        value: inquiryFlags?.value.linkFallbackEnabled ? "On" : "Off",
         detail: inquiryFlags?.value.linkFallbackEnabled
-          ? "Clients can still fall back to links if uploads are unavailable."
-          : "Link fallback is off, so file uploads need to stay healthy.",
+          ? "Clients can provide inspiration via links."
+          : "Inspiration links are turned off.",
       },
       {
         label: "Booking notice",

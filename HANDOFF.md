@@ -1,3 +1,23 @@
+## Phase 10 / Inquiry Settings Cleanup: Permanent Removal of File Uploads — 2026-06-14
+
+- **Branch**: `codex/remove-inquiry-uploads`
+- **Scope**: Permanently remove customer-facing file upload capabilities from the inquiry form, maintaining existing admin state and historical data access.
+- **Summary of changes**:
+  - **Admin Settings**: Removed "Allow file uploads" UI toggle to prevent customer-facing confusion. Maintained settings JSON parser safety to tolerate legacy `uploadsEnabled` keys gracefully without requiring DB migrations.
+  - **Inquiry Configuration (`config.ts`)**: Removed `uploadsEnabled` from the `InquiryFeatureFlags` type so the server/client no longer evaluate it.
+  - **Inquiry Wizard UI**: Replaced the drag-and-drop Dropzone UI and validation in Step 3 with new link/notes guidance. Cleaned up state, refs, and upload manipulation functions.
+  - **API Validation & Routes**: Removed `validateInspirationUploads` checks. Overhauled `/api/inquiries/route.ts` to strictly catch stale client requests uploading files with a customer-safe 400 error.
+  - **Submission Flow (`submit.ts`)**: Gutted Supabase Storage uploading and `media_assets` insertion code. Submissions now solely handle order form values, inspiration links, and notes.
+- **Verification performed**:
+  - `npm run lint` — Passed.
+  - `npm run typecheck` — Passed.
+  - `npm test` — Passed.
+  - `git diff --check` — Clean.
+- **Guardrails confirmed**:
+  - No Supabase schema changes or database migrations.
+  - No changes to existing or historical attachments/media assets records. Admin detail views are unaffected.
+  - Preserved multi-step inquiry flow, validation, and multi-product functionality.
+
 ## Conversion + Trust Pass: Mobile Hero, Wedding CTA, About Trust Copy, Inquiry Step 1 — 2026-06-14
 
 ### SITREP

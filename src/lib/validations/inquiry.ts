@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-import type { InquiryFeatureFlags } from "@/lib/inquiries/config";
-import { defaultInquiryFeatureFlags } from "@/lib/inquiries/config";
 import {
   budgetFlexibilityValues,
   budgetRangeValues,
@@ -29,19 +27,7 @@ const publicUrlSchema = z
     }
   }, "Use a public http or https inspiration link.");
 const zipCodePattern = /^\d{5}(?:-\d{4})?$/;
-const supportedImageMimeTypes = new Set([
-  "image/avif",
-  "image/heic",
-  "image/heif",
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-]);
-const supportedImageExtensionPattern = /\.(?:avif|heic|heif|jpe?g|png|webp)$/i;
 const phoneAllowedPattern = /^[+\d().\-\s]+$/;
-
-export const MAX_INSPIRATION_UPLOADS = 6;
-export const MAX_INSPIRATION_FILE_SIZE_BYTES = 8 * 1024 * 1024;
 export const MAX_INQUIRY_PAYLOAD_SIZE_BYTES = 75_000;
 
 const trimmedOptionalString = (max: number) =>
@@ -170,16 +156,6 @@ function normalizeInstagramHandle(value: unknown) {
 
 function toStringArray(value: unknown) {
   return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
-}
-
-function isSupportedInspirationImage(file: File) {
-  const fileType = file.type.trim().toLowerCase();
-  const fileName = file.name.trim();
-
-  return (
-    supportedImageMimeTypes.has(fileType) &&
-    (fileName.length === 0 || supportedImageExtensionPattern.test(fileName))
-  );
 }
 
 export function getMinimumInquiryDate(referenceDate = new Date()) {
@@ -477,39 +453,6 @@ export function normalizeInquiryFormValues(values: unknown): InquiryFormValues {
           : undefined,
     })),
   };
-}
-
-export function validateInspirationUploads(
-  files: File[],
-  flags: InquiryFeatureFlags = defaultInquiryFeatureFlags,
-) {
-  const issues: string[] = [];
-
-  if (!flags.uploadsEnabled && files.length > 0) {
-    issues.push("Image uploads are turned off right now. Use links or notes instead.");
-  }
-
-  if (files.length > MAX_INSPIRATION_UPLOADS) {
-    issues.push(`You can upload up to ${MAX_INSPIRATION_UPLOADS} inspiration images.`);
-  }
-
-  files.forEach((file) => {
-    const fileLabel = file.name || "This upload";
-
-    if (file.size === 0) {
-      issues.push(`${fileLabel} is empty.`);
-    }
-
-    if (!isSupportedInspirationImage(file)) {
-      issues.push(`${fileLabel} must be a JPEG, PNG, WebP, AVIF, or HEIC image.`);
-    }
-
-    if (file.size > MAX_INSPIRATION_FILE_SIZE_BYTES) {
-      issues.push(`${fileLabel} is larger than 8 MB.`);
-    }
-  });
-
-  return issues;
 }
 
 export function createEmptyInquiryValues(): InquiryFormValues {

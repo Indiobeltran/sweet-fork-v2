@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  type DragEvent,
   type MouseEvent,
   useEffect,
   useLayoutEffect,
@@ -57,23 +56,19 @@ import {
   inquirySelectionSchema,
   inquiryInspirationSchema,
   normalizeInquiryFormValues,
-  validateInspirationUploads,
   type InquiryFormValues,
 } from "@/lib/validations/inquiry";
 import type { InquiryProductItem, ProductType } from "@/types/domain";
 import {
   findStepForErrors,
   flattenIssues,
-  formatFileSize,
   formatSelectedItemSummary,
   getDescribedBy,
   getErrorDescriptionId,
   getFieldErrorClass,
-  getInspirationUploadUiState,
   getSafeSubmissionErrorMessage,
   getStepErrorMessage,
   isErrorForStep,
-  SUPPORTED_INSPIRATION_IMAGE_ACCEPT,
   type ErrorMap,
 } from "@/components/inquiry/wizard-helpers";
 import {
@@ -93,11 +88,6 @@ type StartOrderWizardProps = {
   submissionUnavailableMessage?: string;
 };
 
-type UploadDraft = {
-  id: string;
-  file: File;
-};
-
 export function StartOrderWizard({
   catalog,
   catalogSource,
@@ -110,7 +100,6 @@ export function StartOrderWizard({
   const [hasStarted, setHasStarted] = useState(false);
   const [activeItemType, setActiveItemType] = useState<ProductType | null>(null);
   const [values, setValues] = useState<InquiryFormValues>(() => createEmptyInquiryValues());
-  const [uploads, setUploads] = useState<UploadDraft[]>([]);
   const [errors, setErrors] = useState<ErrorMap>({});
   const [honeypotValue, setHoneypotValue] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -123,7 +112,6 @@ export function StartOrderWizard({
   const stepViewportRef = useRef<HTMLDivElement | null>(null);
   const stepMarkerRefs = useRef<Array<HTMLDivElement | null>>([]);
   const stepHeadingRef = useRef<HTMLHeadingElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const hasMountedRef = useRef(false);
   const fieldRefs = useRef<Record<string, HTMLElement | null>>({});
   const shouldFocusErrorRef = useRef(false);
@@ -134,7 +122,6 @@ export function StartOrderWizard({
     ((currentStep + 1) / inquiryStepTitles.length) * 100,
   );
   const selectedItems = normalizedValues.orderItems;
-  const uploadUiState = getInspirationUploadUiState(featureFlags, uploads.length);
   const catalogMap = catalog.reduce(
     (accumulator, item) => {
       accumulator[item.productType] = item;
@@ -153,23 +140,6 @@ export function StartOrderWizard({
       setActiveItemType(selectedItems[0].productType);
     }
   }, [activeItemType, selectedItems]);
-
-  useEffect(() => {
-    if (featureFlags.uploadsEnabled) {
-      return;
-    }
-
-    setUploads([]);
-    setErrors((current) => {
-      if (!current.inspirationUploads) {
-        return current;
-      }
-
-      const next = { ...current };
-      delete next.inspirationUploads;
-      return next;
-    });
-  }, [featureFlags.uploadsEnabled]);
 
   useEffect(() => {
     if (currentStep > 0) {
@@ -349,54 +319,6 @@ export function StartOrderWizard({
     });
   };
 
-  const addInspirationFiles = (fileList: FileList | null) => {
-    if (!uploadUiState.showUploadControls || !fileList) {
-      return;
-    }
-
-    const nextUploads = [
-      ...uploads,
-      ...Array.from(fileList).map((file) => ({
-        id: crypto.randomUUID(),
-        file,
-      })),
-    ];
-
-    setUploads(nextUploads);
-    setErrors((current) => {
-      const next = { ...current };
-      delete next.inspirationUploads;
-      return next;
-    });
-  };
-
-  const handleInspirationDragOver = (event: DragEvent<HTMLLabelElement>) => {
-    if (!uploadUiState.showUploadControls) {
-      return;
-    }
-
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "copy";
-  };
-
-  const handleInspirationDrop = (event: DragEvent<HTMLLabelElement>) => {
-    if (!uploadUiState.showUploadControls) {
-      return;
-    }
-
-    event.preventDefault();
-    addInspirationFiles(event.dataTransfer.files);
-  };
-
-  const removeUpload = (uploadId: string) => {
-    setUploads((current) => current.filter((upload) => upload.id !== uploadId));
-    setErrors((current) => {
-      const next = { ...current };
-      delete next.inspirationUploads;
-      return next;
-    });
-  };
-
   const setInspirationLink = (index: number, value: string) => {
     const nextLinks = [...values.inspirationLinks];
     nextLinks[index] = value;
@@ -417,7 +339,6 @@ export function StartOrderWizard({
   const validateStep = (
     stepIndex: number,
     nextValues = values,
-    nextUploads = uploads,
     options: { focusOnError?: boolean } = {},
   ) => {
     const { focusOnError = true } = options;
@@ -471,15 +392,6 @@ export function StartOrderWizard({
 
       if (!result.success) {
         nextErrors = flattenIssues(result.error.issues);
-      }
-
-      const uploadIssues = validateInspirationUploads(
-        featureFlags.uploadsEnabled ? nextUploads.map((upload) => upload.file) : [],
-        featureFlags,
-      );
-
-      if (uploadIssues.length > 0) {
-        nextErrors.inspirationUploads = uploadIssues[0];
       }
 
       if (!featureFlags.linkFallbackEnabled && preparedValues.inspirationLinks.length > 0) {
@@ -545,7 +457,7 @@ export function StartOrderWizard({
     }
 
     window.setTimeout(() => {
-      validateStep(stepIndex, values, uploads, { focusOnError: false });
+      validateStep(stepIndex, values, { focusOnError: false });
     }, 0);
   };
 
@@ -681,12 +593,6 @@ export function StartOrderWizard({
       formData.append("payload", JSON.stringify(result.data));
       formData.append("startedAt", String(startedAt));
       formData.append("website", honeypotValue);
-
-      const uploadsToSubmit = featureFlags.uploadsEnabled ? uploads : [];
-
-      uploadsToSubmit.forEach((upload) => {
-        formData.append("inspirationFiles", upload.file);
-      });
 
       const response = await fetch("/api/inquiries", {
         method: "POST",
@@ -1853,12 +1759,10 @@ export function StartOrderWizard({
                 <div className="grid gap-3 rounded-[2rem] border border-charcoal/8 bg-cream/60 p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
                   <div className="space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                      Inspiration
+                      Style & inspiration
                     </p>
                     <p className="text-sm leading-7 text-charcoal/68">
-                      {uploadUiState.showUploadControls
-                        ? "Upload direct references when you have them, then add links or written notes if they tell the story better."
-                        : "Share color direction, inspiration links, or written notes so we can understand the style you have in mind."}
+                      Share any inspiration links or describe the look you have in mind. Pinterest boards, Instagram posts, invitations, color palettes, florals, and mood-board links are all helpful.
                     </p>
                   </div>
                   <ImagePlus className="h-6 w-6 text-charcoal/45" />
@@ -1876,90 +1780,7 @@ export function StartOrderWizard({
                   />
                 </div>
 
-                <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-                  {uploadUiState.showUploadControls ? (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <Label className="mb-0">Inspiration photos</Label>
-                        <p className="text-xs uppercase tracking-[0.16em] text-charcoal/45">
-                          Optional
-                        </p>
-                      </div>
-                      <label
-                        ref={registerFieldRef("inspirationUploads")}
-                        tabIndex={0}
-                        onDragOver={handleInspirationDragOver}
-                        onDrop={handleInspirationDrop}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter" || event.key === " ") {
-                            event.preventDefault();
-                            fileInputRef.current?.click();
-                          }
-                        }}
-                        className={cn(
-                          "flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-[2rem] border border-dashed border-charcoal/18 bg-cream/45 px-5 py-7 text-center transition hover:border-charcoal/35 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-gold/50 sm:min-h-[220px] sm:px-6 sm:py-8",
-                          errors.inspirationUploads && "border-rose-300 bg-rose-50/70",
-                        )}
-                      >
-                        <ImagePlus className="h-8 w-8" />
-                        <p className="mt-4 font-medium text-charcoal">
-                          Drop inspiration images here or browse
-                        </p>
-                        <p className="mt-2 max-w-sm text-sm leading-7 text-charcoal/60">
-                          Add cake references, invitation details, floral cues, mood boards, or
-                          dessert-table inspiration.
-                        </p>
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept={SUPPORTED_INSPIRATION_IMAGE_ACCEPT}
-                          multiple
-                          className="sr-only"
-                          onChange={(event) => addInspirationFiles(event.target.files)}
-                        />
-                      </label>
-                      <InlineError message={errors.inspirationUploads} />
-
-                      {uploads.length > 0 ? (
-                        <div className="space-y-3">
-                          {uploads.map((upload) => (
-                            <div
-                              key={upload.id}
-                              className="flex items-center justify-between gap-4 rounded-[1.4rem] border border-charcoal/8 bg-white px-4 py-3"
-                            >
-                              <div className="min-w-0">
-                                <p className="truncate text-sm font-medium text-charcoal">
-                                  {upload.file.name}
-                                </p>
-                                <p className="text-xs uppercase tracking-[0.16em] text-charcoal/45">
-                                  {formatFileSize(upload.file.size)}
-                                </p>
-                              </div>
-                              <button
-                                type="button"
-                                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-charcoal/10 text-charcoal transition hover:border-charcoal/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50"
-                                onClick={() => removeUpload(upload.id)}
-                                aria-label={`Remove ${upload.file.name}`}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : (
-                    <div className="rounded-[2rem] border border-charcoal/10 bg-cream/45 px-5 py-6 sm:px-6">
-                      <p className="text-sm font-semibold uppercase tracking-[0.16em] text-charcoal/45">
-                        Inspiration photos
-                      </p>
-                      <p className="mt-3 text-sm leading-7 text-charcoal/68">
-                        Have inspiration photos? Mention the style, colors, or details in the
-                        notes, and we&apos;ll follow up if we need anything else.
-                      </p>
-                    </div>
-                  )}
-
+                <div className="grid gap-6 lg:grid-cols-2">
                   <div className="space-y-6">
                     <div>
                       <div className="flex items-center justify-between gap-3">
@@ -1968,6 +1789,9 @@ export function StartOrderWizard({
                           {featureFlags.linkFallbackEnabled ? "Optional" : "Currently unavailable"}
                         </p>
                       </div>
+                      <p className="mt-2 text-sm leading-7 text-charcoal/60">
+                        Paste Pinterest, Instagram, Canva, Google Drive, or other inspiration links here.
+                      </p>
                       {featureFlags.linkFallbackEnabled ? (
                         <div className="mt-3 space-y-3">
                           {values.inspirationLinks.map((link, index) => (
@@ -2009,7 +1833,7 @@ export function StartOrderWizard({
                         </div>
                       ) : (
                         <p className="mt-3 text-sm leading-7 text-charcoal/60">
-                          Share photos or written notes instead when links are unavailable.
+                          Share written notes instead when links are unavailable.
                         </p>
                       )}
                       <InlineError
@@ -2017,34 +1841,46 @@ export function StartOrderWizard({
                         message={errors.inspirationLinks}
                       />
                     </div>
-
-                    <div>
-                      <Label htmlFor="inspiration-text">Written inspiration notes</Label>
-                      <Textarea
-                        id="inspiration-text"
-                        ref={registerFieldRef("inspirationText")}
-                        value={values.inspirationText ?? ""}
-                        onChange={(event) =>
-                          setFieldValue("inspirationText", event.target.value)
-                        }
-                        placeholder="Share the mood, must-have details, floral direction, venue feel, or anything the images do not explain well."
-                        className={cn(
-                          "min-h-[180px]",
-                          getFieldErrorClass(errors.inspirationText),
-                        )}
-                        aria-describedby={
-                          errors.inspirationText
-                            ? getErrorDescriptionId("inspirationText")
-                            : undefined
-                        }
-                        aria-invalid={Boolean(errors.inspirationText)}
-                      />
-                      <InlineError
-                        id={getErrorDescriptionId("inspirationText")}
-                        message={errors.inspirationText}
-                      />
-                    </div>
                   </div>
+
+                  <div>
+                    <Label htmlFor="inspiration-text">Style notes</Label>
+                    <p className="mt-1 mb-3 text-sm leading-7 text-charcoal/60">
+                      Tell us about colors, themes, florals, textures, favorite designs, or anything you want us to know.
+                    </p>
+                    <Textarea
+                      id="inspiration-text"
+                      ref={registerFieldRef("inspirationText")}
+                      value={values.inspirationText ?? ""}
+                      onChange={(event) =>
+                        setFieldValue("inspirationText", event.target.value)
+                      }
+                      placeholder="Share the mood, must-have details, floral direction, venue feel, or anything the images do not explain well."
+                      className={cn(
+                        "min-h-[180px]",
+                        getFieldErrorClass(errors.inspirationText),
+                      )}
+                      aria-describedby={
+                        errors.inspirationText
+                          ? getErrorDescriptionId("inspirationText")
+                          : undefined
+                      }
+                      aria-invalid={Boolean(errors.inspirationText)}
+                    />
+                    <InlineError
+                      id={getErrorDescriptionId("inspirationText")}
+                      message={errors.inspirationText}
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-[2rem] border border-charcoal/10 bg-cream/45 px-5 py-6 sm:px-6">
+                  <p className="text-sm font-semibold uppercase tracking-[0.16em] text-charcoal/45">
+                    Optional
+                  </p>
+                  <p className="mt-3 text-sm leading-7 text-charcoal/68">
+                    No inspiration ready yet? That is completely okay — we can help shape the design from your event details.
+                  </p>
                 </div>
               </div>
             ) : null}
@@ -2287,12 +2123,6 @@ export function StartOrderWizard({
                       </div>
                       <div className="mt-4 space-y-3 text-sm leading-7 text-ivory/72">
                         <p>Overall palette: {normalizedValues.colorPalette ?? "Not shared yet"}</p>
-                        {uploadUiState.showUploadControls ? (
-                          <p>
-                            Inspiration files: {uploadUiState.reviewUploadCount} upload
-                            {uploadUiState.reviewUploadCount === 1 ? "" : "s"}
-                          </p>
-                        ) : null}
                         <p>
                           Inspiration links: {normalizedValues.inspirationLinks.length} link
                           {normalizedValues.inspirationLinks.length === 1 ? "" : "s"}

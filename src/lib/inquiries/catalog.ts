@@ -54,10 +54,6 @@ function mergeFeatureFlags(settingFlags?: Partial<InquiryFeatureFlags>) {
   const envOverrides = getInquiryFeatureFlagEnvOverrides();
 
   return {
-    uploadsEnabled:
-      envOverrides.uploadEnabled ??
-      settingFlags?.uploadsEnabled ??
-      defaultInquiryFeatureFlags.uploadsEnabled,
     linkFallbackEnabled:
       envOverrides.linkFallbackEnabled ??
       settingFlags?.linkFallbackEnabled ??
@@ -75,7 +71,6 @@ function parseFeatureFlags(value: Json | null) {
   }
 
   return mergeFeatureFlags({
-    uploadsEnabled: parseBoolean(value.uploadsEnabled),
     linkFallbackEnabled: parseBoolean(value.linkFallbackEnabled),
     storageBucket: parseString(value.storageBucket),
   });

@@ -5,17 +5,13 @@ import { NextResponse } from "next/server";
 import { InquirySubmissionError, submitInquiry } from "@/lib/inquiries/submit";
 import { isAllowedInquiryRequestOrigin } from "@/lib/inquiries/request-origin";
 import {
-  MAX_INSPIRATION_FILE_SIZE_BYTES,
-  MAX_INSPIRATION_UPLOADS,
   MAX_INQUIRY_PAYLOAD_SIZE_BYTES,
   normalizeInquiryFormValues,
 } from "@/lib/validations/inquiry";
 
 const MIN_SUBMISSION_TIME_MS = 3500;
 const MAX_INQUIRY_REQUEST_SIZE_BYTES =
-  MAX_INQUIRY_PAYLOAD_SIZE_BYTES +
-  MAX_INSPIRATION_UPLOADS * MAX_INSPIRATION_FILE_SIZE_BYTES +
-  1_000_000;
+  MAX_INQUIRY_PAYLOAD_SIZE_BYTES + 50_000_000;
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const MAX_SUBMISSIONS_PER_WINDOW = 5;
 const DUPLICATE_SUBMISSION_WINDOW_MS = 15 * 60 * 1000;
@@ -139,7 +135,7 @@ function validateRequestSize(request: Request) {
   }
 }
 
-function createSubmissionFingerprint(payload: unknown, files: File[]) {
+function createSubmissionFingerprint(payload: unknown) {
   const normalized = normalizeInquiryFormValues(payload);
 
   const itemFingerprint = [...normalized.orderItems]
@@ -181,12 +177,8 @@ function createSubmissionFingerprint(payload: unknown, files: File[]) {
     preferredContact: normalized.preferredContact,
   };
 
-  const uploadFingerprint = files
-    .map((file) => `${file.name}:${file.size}:${file.type}`)
-    .sort();
-
   return createHash("sha256")
-    .update(JSON.stringify({ payload: payloadFingerprint, uploads: uploadFingerprint }))
+    .update(JSON.stringify({ payload: payloadFingerprint }))
     .digest("hex");
 }
 
@@ -286,8 +278,18 @@ export async function POST(request: Request) {
     const files = formData
       .getAll("inspirationFiles")
       .filter((entry): entry is File => entry instanceof File);
+
+    if (files.length > 0) {
+      return NextResponse.json(
+        {
+          error: "Image uploads are no longer supported. Please use links or notes instead.",
+        },
+        { status: 400 },
+      );
+    }
+
     const parsedPayload = parsePayload(payload);
-    const fingerprint = createSubmissionFingerprint(parsedPayload, files);
+    const fingerprint = createSubmissionFingerprint(parsedPayload);
 
     if (hasRecentSubmission(identifier, fingerprint)) {
       return NextResponse.json(
@@ -305,7 +307,7 @@ export async function POST(request: Request) {
 
     try {
       const requestUrl = new URL(request.url);
-      result = await submitInquiry(parsedPayload, files, requestUrl.origin);
+      result = await submitInquiry(parsedPayload, requestUrl.origin);
     } catch (error) {
       clearPendingSubmission(identifier, fingerprint);
       throw error;

@@ -158,13 +158,11 @@ export const icingStyleOptions = [
 ] as const;
 
 export type InquiryFeatureFlags = {
-  uploadsEnabled: boolean;
   linkFallbackEnabled: boolean;
   storageBucket: string;
 };
 
 export const defaultInquiryFeatureFlags: InquiryFeatureFlags = {
-  uploadsEnabled: true,
   linkFallbackEnabled: true,
   storageBucket: "inspiration",
 };

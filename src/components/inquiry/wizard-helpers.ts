@@ -11,8 +11,7 @@ import type { InquiryProductItem } from "@/types/domain";
 
 export type ErrorMap = Record<string, string>;
 
-export const SUPPORTED_INSPIRATION_IMAGE_ACCEPT =
-  "image/avif,image/heic,image/heif,image/jpeg,image/png,image/webp";
+
 
 export function flattenIssues(
   issues: Array<{ path: (string | number)[]; message: string }>,
@@ -28,30 +27,7 @@ export function flattenIssues(
   }, {});
 }
 
-export function formatFileSize(size: number) {
-  if (size < 1024 * 1024) {
-    return `${Math.round(size / 102.4) / 10} KB`;
-  }
 
-  return `${Math.round(size / 1024 / 102.4) / 10} MB`;
-}
-
-export function getInspirationUploadUiState(
-  flags: { uploadsEnabled: boolean },
-  uploadCount: number,
-) {
-  if (!flags.uploadsEnabled) {
-    return {
-      reviewUploadCount: 0,
-      showUploadControls: false,
-    };
-  }
-
-  return {
-    reviewUploadCount: uploadCount,
-    showUploadControls: true,
-  };
-}
 
 export function getErrorDescriptionId(key: string) {
   return `${key.replace(/[^a-z0-9_-]+/gi, "-")}-error`;
@@ -128,8 +104,7 @@ export function isErrorForStep(key: string, stepIndex: number) {
   if (stepIndex === 3) {
     return (
       key.startsWith("colorPalette") ||
-      key.startsWith("inspiration") ||
-      key === "inspirationUploads"
+      key.startsWith("inspiration")
     );
   }
 
@@ -185,8 +160,7 @@ export function findStepForErrors(errors: ErrorMap) {
     keys.some(
       (key) =>
         key.startsWith("colorPalette") ||
-        key.startsWith("inspiration") ||
-        key === "inspirationUploads",
+        key.startsWith("inspiration"),
     )
   ) {
     return 3;
