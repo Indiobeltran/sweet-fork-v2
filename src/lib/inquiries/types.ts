@@ -28,5 +28,4 @@ export type StartOrderPageData = {
 export type InquirySubmissionResponse = {
   inquiryId: string;
   referenceCode: string;
-  uploadedAssetCount: number;
 };

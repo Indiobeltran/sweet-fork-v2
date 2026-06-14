@@ -396,7 +396,7 @@ export function StartOrderWizard({
 
       if (!featureFlags.linkFallbackEnabled && preparedValues.inspirationLinks.length > 0) {
         nextErrors.inspirationLinks =
-          "Reference links are turned off right now. Use image uploads or notes instead.";
+          "Reference links are turned off right now. Use notes instead.";
       }
     }
 
@@ -573,7 +573,7 @@ export function StartOrderWizard({
       shouldFocusErrorRef.current = true;
       setErrors({
         inspirationLinks:
-          "Reference links are turned off right now. Use image uploads or notes instead.",
+          "Reference links are turned off right now. Use notes instead.",
       });
       setCurrentStep(3);
       return;
@@ -740,10 +740,10 @@ export function StartOrderWizard({
               </div>
               <div className="rounded-[1.8rem] border border-charcoal/8 bg-cream/70 p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                  Uploads saved
+                  Fulfillment
                 </p>
-                <p className="mt-3 text-lg font-medium text-charcoal">
-                  {submissionResult.uploadedAssetCount}
+                <p className="mt-3 text-lg font-medium text-charcoal capitalize">
+                  {normalizedValues.fulfillmentMethod}
                 </p>
               </div>
             </div>

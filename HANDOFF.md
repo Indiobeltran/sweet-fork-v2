@@ -1,17 +1,18 @@
 ## Phase 10 / Inquiry Settings Cleanup: Permanent Removal of File Uploads — 2026-06-14
 
-- **Branch**: `codex/remove-inquiry-uploads`
+- **Branch**: `codex/remove-inquiry-file-uploads`
 - **Scope**: Permanently remove customer-facing file upload capabilities from the inquiry form, maintaining existing admin state and historical data access.
 - **Summary of changes**:
   - **Admin Settings**: Removed "Allow file uploads" UI toggle to prevent customer-facing confusion. Maintained settings JSON parser safety to tolerate legacy `uploadsEnabled` keys gracefully without requiring DB migrations.
-  - **Inquiry Configuration (`config.ts`)**: Removed `uploadsEnabled` from the `InquiryFeatureFlags` type so the server/client no longer evaluate it.
-  - **Inquiry Wizard UI**: Replaced the drag-and-drop Dropzone UI and validation in Step 3 with new link/notes guidance. Cleaned up state, refs, and upload manipulation functions.
-  - **API Validation & Routes**: Removed `validateInspirationUploads` checks. Overhauled `/api/inquiries/route.ts` to strictly catch stale client requests uploading files with a customer-safe 400 error.
+  - **Inquiry Configuration (`config.ts` & `catalog.ts`)**: Removed `uploadsEnabled` from the `InquiryFeatureFlags` type so the server/client no longer evaluate it, and cleaned up setting flag resolution.
+  - **Inquiry Wizard UI**: Replaced the drag-and-drop Dropzone UI and validation in Step 3 with new link/notes guidance. Cleaned up state, refs, and upload manipulation functions. Corrected stale error copy that mentioned file uploads. Replaced the "Uploads saved" card on the success screen with a "Fulfillment" summary card displaying the selected fulfillment method.
+  - **API Validation, Routes & Types**: Removed `validateInspirationUploads` checks. Overhauled `/api/inquiries/route.ts` to strictly catch stale client requests uploading files with a customer-safe 400 error. Removed `uploadedAssetCount` from `InquirySubmissionResponse` in `types.ts`.
   - **Submission Flow (`submit.ts`)**: Gutted Supabase Storage uploading and `media_assets` insertion code. Submissions now solely handle order form values, inspiration links, and notes.
 - **Verification performed**:
   - `npm run lint` — Passed.
   - `npm run typecheck` — Passed.
-  - `npm test` — Passed.
+  - `npm test` — Passed (55/55).
+  - `npm run build` — Passed (production build gate verified).
   - `git diff --check` — Clean.
 - **Guardrails confirmed**:
   - No Supabase schema changes or database migrations.
