@@ -19,7 +19,7 @@ export function SectionHeading({
   const isInverse = tone === "inverse";
 
   return (
-    <div className={cn("max-w-2xl space-y-5", align === "center" && "mx-auto text-center")}>
+    <div className={cn("min-w-0 max-w-2xl space-y-5", align === "center" && "mx-auto text-center")}>
       <Badge
         className={
           isInverse

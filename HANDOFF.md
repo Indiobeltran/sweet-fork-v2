@@ -1,3 +1,96 @@
+## Production Domain Cutover Readiness QA — 2026-06-15
+
+- **Branch**: `codex/production-domain-cutover` created from `main`.
+- **Starting SITREP**:
+  - Baseline branch before task work: `main`.
+  - `main` and `origin/main` both resolved to `6b658aed87e6e76c9469dd74422cf388fbc8e962`.
+  - Latest commit at start: `6b658ae feat: add about founder photo media slot`.
+  - Pre-existing untracked files preserved and not staged: `.agents/`, `.claude/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `skills-lock.json`.
+- **Current Netlify URL**: `https://sweet-fork-v2.netlify.app`.
+- **Production target**: `https://www.thesweetfork.com`.
+- **Metadata / site URL findings**:
+  - `src/lib/env.ts` hard-codes production canonical identity as `https://www.thesweetfork.com`.
+  - In `NODE_ENV=production`, `resolveSiteUrl()` normalizes configured `localhost`, `.vercel.app`, and `.netlify.app` values back to `https://www.thesweetfork.com`.
+  - Live Netlify HTML currently emits canonical and `og:url` values for `https://www.thesweetfork.com` on `/`, `/gallery`, `/about`, `/pricing`, `/faq`, and `/start-order`.
+  - Live `robots.txt` uses `Host: https://www.thesweetfork.com` and `Sitemap: https://www.thesweetfork.com/sitemap.xml`.
+  - Live `sitemap.xml` emits `https://www.thesweetfork.com/...` URLs.
+  - Netlify project env vars, via connector, currently do **not** include `NEXT_PUBLIC_SITE_URL`; production canonical behavior is therefore coming from the app default/resolver.
+  - Local ignored `.env.local` still contains an old Vercel preview value for `NEXT_PUBLIC_SITE_URL`; because it is ignored and production code normalizes preview domains, no source change was required for production metadata.
+- **Netlify project findings**:
+  - Connector found project `sweet-fork-v2`, site id `9b4f4bcc-418a-4e39-ba79-4b71b445b5f4`, current deploy `6a2e22de44ccfa0008aa10cb`, state `ready`, forms `enabled`.
+  - Local Netlify CLI is not linked in this checkout (`npx netlify env:get NEXT_PUBLIC_SITE_URL --context production` reported no project id).
+- **Live functional QA results on current Netlify deploy**:
+  - Routes checked across 320px, 375px, 430px, and 1280px: `/`, `/gallery`, `/about`, `/pricing`, `/faq`, `/start-order`, `/admin/login`, `/admin/media`.
+  - `/gallery`, `/about`, `/pricing`, `/faq`, `/start-order`, `/admin/login`, and `/admin/media` rendered without horizontal overflow, framework overlays, broken images, or console warnings/errors in the checked browser session.
+  - Current live `/` has a **pre-deploy blocker** at 320px and 375px: document width exceeded viewport (`scrollWidth` 388px). Root cause was homepage testimonial carousel min-width/control overflow.
+  - Source fix made locally: added shrink-safe `min-w-0` handling to the section heading/testimonial carousel containers and allowed testimonial controls to wrap/compress on small screens. Local patched homepage now passes at 320px, 375px, 430px, and 1280px (`scrollWidth === clientWidth`, no console warnings/errors).
+  - Because this fix is not deployed yet, the current live Netlify URL should be treated as **not ready for DNS cutover** until this branch is merged/deployed and live QA is rerun.
+- **Interaction QA results**:
+  - Gallery filters work: `Sugar Cookies` filtered to 21 visible cards with 21 Supabase-backed images, no broken images, no overflow.
+  - Gallery lightbox works: first filtered image opened a dialog with a larger image and caption/details.
+  - FAQ interactions work: a closed `<details>/<summary>` item opened and displayed its answer without overflow or console errors.
+  - About page loads with the assigned Supabase-backed founder slot image; no broken image. Admin media shows the `ABOUT FOUNDER PHOTO` placement.
+  - `/start-order` has no file input, upload dropzone, file picker, or upload copy.
+  - Budget label appears as `COMFORTABLE BUDGET RANGE`.
+  - Style & Inspiration uses overall palette, inspiration links, and style notes only; no uploads.
+  - Validation blocks missing event type/date with customer-safe messages.
+  - Multi-product dry run selected Custom Cakes + Cupcakes, reached item detail panels for both, filled required counts, and reached Style & Inspiration with two selections and a synced snapshot.
+  - Admin login was verified by signing out, then signing in with the dedicated local QA account from ignored `.env.local`; redirected to `/admin/inquiries` with no login error or console warnings.
+- **Live test inquiry**:
+  - Submitted one real no-upload test inquiry from `/start-order`.
+  - Reference code: `SF-F3312B2F`.
+  - Inquiry id: `f3312b2f-a75a-49a4-9d3d-1d410c8e9bb0`.
+  - Name: `TEST Launch QA`.
+  - Event: `Launch QA Test — please ignore`.
+  - Date: `2026-07-22`.
+  - Product: Custom Cakes, 12 servings.
+  - Notes: `Production launch test. Please ignore/delete.`
+  - Submission succeeded and success state displayed `INQUIRY RECEIVED` with reference `SF-F3312B2F`.
+  - Admin inquiry list showed the test inquiry with the correct reference, name, and event.
+  - Internal Supabase notification log was created for `thesweetfork@yahoo.com` with subject `New inquiry SF-F3312B2F from TEST Launch QA`, status `pending`, channel `internal`.
+  - Netlify Forms `inquiry-notification` submission #7 was created and included correct reference, event date, item summary, notes, `submittedAtMountain` (`Jun 15, 2026, 6:09 PM MDT`), and `submittedAtUtc` (`2026-06-16T00:09:11.109Z`).
+  - Connected Gmail search did **not** find a matching email for `SF-F3312B2F` / `TEST Launch QA`; direct inbox receipt by the real notification recipient remains unverified from this workspace.
+  - Test inquiry was safely archived via the existing admin status UI. Supabase confirmed status `archived`, with `archived_at` and `reviewed_at` set.
+- **DNS/domain cutover instructions**:
+  - Do not change DNS until the patched branch is deployed and live homepage overflow is verified fixed.
+  - In Netlify production domains for site `sweet-fork-v2`, add/verify `www.thesweetfork.com`.
+  - Add/verify `thesweetfork.com` as an alternate domain.
+  - Recommend primary domain: `www.thesweetfork.com`.
+  - DNS `www`: CNAME to `sweet-fork-v2.netlify.app`.
+  - DNS apex/root `@`: A record to `75.2.60.5`, unless the DNS provider supports ALIAS/ANAME/flattened CNAME to the Netlify target.
+  - After DNS points correctly, confirm Netlify HTTPS certificate provisioning and verify both `https://www.thesweetfork.com` and `https://thesweetfork.com` load/redirect as intended.
+  - Current DNS check: `www.thesweetfork.com` CNAME resolves to `regal-marzipan-c99724.netlify.app`, not `sweet-fork-v2.netlify.app`; apex/root A resolves to `75.2.60.5`.
+- **Commands / tools run**:
+  - `git branch --show-current`
+  - `git status --short`
+  - `git log --oneline -n 10`
+  - `git rev-parse main`
+  - `git rev-parse origin/main`
+  - `sed`/`rg` inspections for `AGENTS.md`, `ROADMAP.md`, `GATES.md`, `HANDOFF.md`, `DECISIONS.md`, `BACKLOG.md`, `README.md`, `src/lib/env.ts`, `src/lib/seo.ts`, `src/app/sitemap.ts`, `src/app/robots.ts`, `next.config.ts`, `netlify.toml`, inquiry submission/admin files, and page/component sources.
+  - Netlify connector project/env/form/submission reads.
+  - Supabase read-only verification queries for `SF-F3312B2F`.
+  - Gmail connector searches for the QA reference.
+  - Browser QA via in-app Browser at requested viewports.
+  - Local dev server: `npm run dev -- --port 3002`.
+  - `npm run lint` — passed.
+  - `npm run typecheck` — passed.
+  - `npm test` — passed (55/55; expected Netlify bridge fail-soft fixture warnings).
+  - `npm run build` — passed.
+  - Local production server: `npm run start -- --port 3003`; patched built homepage passed 320px, 375px, 430px, and 1280px overflow checks.
+  - `git diff --check` — clean.
+  - `git status --short`.
+- **Files changed by this task so far**:
+  - `src/app/(site)/page.tsx` — adds shrink-safe wrapper use for homepage testimonial carousel.
+  - `src/components/site/section-heading.tsx` — allows shared section headings to shrink inside constrained layouts.
+  - `src/components/site/testimonial-carousel.tsx` — prevents testimonial content/controls from creating 320px horizontal overflow.
+  - `HANDOFF.md` — records this launch cutover QA and DNS checklist.
+- **Commands still needed**:
+  - After merge/deploy: rerun live homepage overflow checks at 320px/375px and rerun final cutover smoke checks before changing DNS.
+- **Known blockers / open verification**:
+  - Current live Netlify deploy is not ready for DNS cutover because of homepage horizontal overflow on 320px/375px. Source is fixed locally but not deployed.
+  - Direct email receipt in the actual notification inbox was not verified from this workspace; Netlify Forms submission and internal notification log were verified.
+  - Netlify production domain configuration itself was not changed, and DNS was not changed.
+
 ## About Page Founder Photo Media Slot — 2026-06-14
 
 - **Branch**: `codex/about-founder-photo-media-slot`

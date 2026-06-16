@@ -100,7 +100,7 @@ export function TestimonialCarousel({ testimonials, className }: TestimonialCaro
   return (
     <div
       ref={containerRef}
-      className={cn("relative w-full max-w-4xl mx-auto", className)}
+      className={cn("relative mx-auto w-full min-w-0 max-w-4xl", className)}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onFocus={() => setIsPaused(true)}
@@ -111,7 +111,7 @@ export function TestimonialCarousel({ testimonials, className }: TestimonialCaro
       aria-roledescription="carousel"
       aria-label="Customer Testimonials"
     >
-      <div className="grid grid-cols-1 grid-rows-1 overflow-hidden">
+      <div className="grid min-w-0 grid-cols-1 grid-rows-1 overflow-hidden">
         {testimonials.map((testimonial, index) => {
           const isActive = index === currentIndex;
           
@@ -119,7 +119,7 @@ export function TestimonialCarousel({ testimonials, className }: TestimonialCaro
             <div
               key={`${testimonial.name}-${index}`}
               className={cn(
-                "col-start-1 row-start-1 w-full transition-opacity duration-700 ease-in-out flex items-center justify-center",
+                "col-start-1 row-start-1 flex w-full min-w-0 items-center justify-center transition-opacity duration-700 ease-in-out",
                 isActive ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
               )}
               aria-hidden={!isActive}
@@ -127,7 +127,7 @@ export function TestimonialCarousel({ testimonials, className }: TestimonialCaro
               aria-roledescription="slide"
               aria-label={`${index + 1} of ${testimonials.length}`}
             >
-              <blockquote className="luxury-panel rounded-[1.35rem] px-6 py-8 sm:px-10 text-center max-w-2xl mx-auto flex flex-col items-center justify-center w-full">
+              <blockquote className="luxury-panel mx-auto flex w-full min-w-0 max-w-2xl flex-col items-center justify-center rounded-[1.35rem] px-6 py-8 text-center sm:px-10">
                 <p className="text-base sm:text-lg leading-relaxed text-charcoal/80 italic font-serif">
                   &ldquo;{testimonial.quote}&rdquo;
                 </p>
@@ -144,7 +144,7 @@ export function TestimonialCarousel({ testimonials, className }: TestimonialCaro
       </div>
 
       {testimonials.length > 1 && (
-        <div className="flex items-center justify-center gap-6 mt-6">
+        <div className="mt-6 flex max-w-full items-center justify-center gap-3 sm:gap-6">
           <button
             onClick={prevSlide}
             className="p-2 text-charcoal/40 hover:text-charcoal transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold rounded-full"
@@ -155,7 +155,7 @@ export function TestimonialCarousel({ testimonials, className }: TestimonialCaro
             </svg>
           </button>
 
-          <div className="flex gap-2" role="tablist" aria-label="Slides">
+          <div className="flex max-w-[10rem] flex-wrap justify-center gap-2 sm:max-w-none" role="tablist" aria-label="Slides">
             {testimonials.map((_, index) => (
               <button
                 key={index}

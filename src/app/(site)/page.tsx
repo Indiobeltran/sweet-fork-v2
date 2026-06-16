@@ -323,8 +323,8 @@ export default async function HomePage() {
             title="The details clients remember."
             description="Thoughtful bakes, clear communication, and details that guests remember long after the last bite."
           />
-          <div className="flex w-full items-center">
-            <TestimonialCarousel testimonials={data.testimonials} />
+          <div className="flex min-w-0 w-full items-center">
+            <TestimonialCarousel className="min-w-0" testimonials={data.testimonials} />
           </div>
         </div>
       </section>
