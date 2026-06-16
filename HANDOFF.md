@@ -1,3 +1,71 @@
+## Homepage Gallery Carousel Preview — 2026-06-15
+
+- **Branch**: `codex/production-domain-cutover`.
+- **Objective**: Enhance the homepage gallery preview into a mobile-safe timed carousel while preserving the production cutover mobile overflow fixes.
+- **Starting SITREP**:
+  - Current branch at start: `codex/production-domain-cutover`.
+  - Latest commit at start: `dc042cf chore: prepare production domain cutover`.
+  - No tracked changes at start.
+  - Pre-existing untracked files preserved and not staged: `.agents/`, `.claude/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `skills-lock.json`.
+- **Existing homepage gallery architecture found**:
+  - `src/lib/site/marketing.ts` loaded homepage preview media via `getGalleryItemsForPlacement("home.gallery", { limit: 6 })`.
+  - `src/app/(site)/page.tsx` filtered image-backed items, excluded the hero image when needed, then sliced to 3 and rendered a static horizontal mobile scroller / 3-column desktop preview.
+  - The existing data source is Supabase-backed `media_assets`/`media_assignments` via the `home.gallery` placement, with fallback static gallery items if Supabase media is unavailable.
+  - The previous homepage overflow risk came from unconstrained carousel/control widths; the new gallery carousel keeps `min-w-0`, clipped overflow, responsive grid tracks, wrapping controls, and no mobile horizontal scroller.
+- **Implementation completed**:
+  - Added `src/components/site/home-gallery-carousel.tsx`, a homepage-only client carousel.
+  - Added `src/components/site/home-gallery-carousel-utils.ts` with pure helpers for wrapped windows, slide advancement, and category-spread ordering.
+  - Added `src/components/site/home-gallery-carousel-utils.test.ts` and wired it into `npm test`.
+  - Updated `src/lib/site/marketing.ts` to fetch up to 10 homepage gallery items.
+  - Updated `src/app/(site)/page.tsx` to pass up to 9 image-backed preview items into the carousel after excluding the hero image when applicable.
+  - Added a distinct `View the Gallery` link in the carousel controls row while keeping each preview card linked to `/gallery`.
+- **Carousel behavior**:
+  - Mobile renders 1 prominent card at a time.
+  - `sm` and larger viewports render 3 visible cards at a time.
+  - The carousel auto-advances every 4.5 seconds.
+  - Previous/next buttons and slide dots are available.
+  - Auto-advance pauses on hover/focus and after manual controls.
+  - `prefers-reduced-motion: reduce` disables auto-advance through `window.matchMedia`.
+  - Items are ordered to spread repeated categories apart when possible.
+  - Browser QA saw 9 slide dots, 3 rendered cards per window, 1 visible card at 430px, and 3 visible cards at 1280px.
+- **Verification performed**:
+  - TDD red: `node --no-warnings --experimental-strip-types --test src/components/site/home-gallery-carousel-utils.test.ts` failed before the helper existed.
+  - Targeted helper test after implementation: passed (4/4).
+  - `npm run lint` — passed.
+  - `npm run typecheck` — passed.
+  - `npm test` — passed (59/59; expected Netlify bridge fail-soft fixture warnings still print during mocked network/404 tests).
+  - `npm run build` — passed after the final CTA refinement.
+  - Local production server: `npm run start -- --port 3003`.
+  - Browser QA through the in-app Browser against `http://localhost:3003`.
+- **Browser QA results**:
+  - Routes checked at 320px, 375px, 430px, and 1280px: `/`, `/gallery`, `/start-order`, `/about`.
+  - All checked route/viewport combinations had `scrollWidth === clientWidth`; no horizontal overflow.
+  - All checked route/viewport combinations had no console warnings/errors, no framework overlay, and no broken completed images.
+  - Homepage carousel at 430px: 1 visible card, Supabase-backed carousel images present, first title changed from `Lemon Birthday Cake` to `Pink and Coral Macaron Box` after 5.1 seconds.
+  - Manual next control changed the first visible title to `Blue and White Pearl Cupcakes`.
+  - `View the Gallery` CTA uniquely resolved and navigated to `/gallery`.
+  - Homepage carousel at 1280px: 3 visible cards, no overflow.
+  - Gallery filter regression: `Sugar Cookies (22)` filter produced 22 visible cards, 0 non-sugar-cookie visible cards, and no overflow.
+  - `/start-order` regression: 0 file inputs, no upload/dropzone/file-picker/add-photos copy, no overflow.
+  - `/about` regression: page loaded without broken images or overflow; current local data path rendered the founder photo fallback panel rather than an assigned founder image.
+- **Files changed recently**:
+  - `HANDOFF.md`
+  - `package.json`
+  - `src/app/(site)/page.tsx`
+  - `src/components/site/home-gallery-carousel.tsx`
+  - `src/components/site/home-gallery-carousel-utils.ts`
+  - `src/components/site/home-gallery-carousel-utils.test.ts`
+  - `src/lib/site/marketing.ts`
+- **Commands still needed**:
+  - Rerun final gates after this handoff edit before commit.
+  - After merge/deploy: rerun live Netlify homepage carousel and overflow QA at 320px, 375px, 430px, and 1280px.
+- **Known blockers / open verification**:
+  - Current live Netlify deploy still needs verification after this branch is merged/pushed/deployed.
+  - Direct notification email receipt from the prior production cutover QA remains unconfirmed unless the actual recipient inbox is checked.
+  - DNS was not changed.
+  - Supabase schema was not changed.
+  - Inquiry file uploads were not reintroduced.
+
 ## Production Domain Cutover Readiness QA — 2026-06-15
 
 - **Branch**: `codex/production-domain-cutover` created from `main`.

@@ -1751,7 +1751,7 @@ export async function getPublicFaqItems(): Promise<PublicFaqItem[]> {
 export async function getHomePageData(): Promise<HomePageData> {
   const [contentSections, gallery, heroGalleryItems, testimonials, offerings] = await Promise.all([
     getManagedContentSections(),
-    getGalleryItemsForPlacement("home.gallery", { limit: 6 }),
+    getGalleryItemsForPlacement("home.gallery", { limit: 10 }),
     getGalleryItemsForPlacement("home.hero", { limit: 1, requireExplicit: true }),
     getPublicTestimonials(),
     getPublicOfferingCards(),

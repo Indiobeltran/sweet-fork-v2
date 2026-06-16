@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { HomeGalleryCarousel } from "@/components/site/home-gallery-carousel";
 import { InquiryCta } from "@/components/site/inquiry-cta";
 import { SectionHeading } from "@/components/site/section-heading";
 import { SitePrimaryCta } from "@/components/site/site-primary-cta";
@@ -70,11 +71,11 @@ export default async function HomePage() {
     null;
   const galleryTeaserItems = data.galleryItems
     .filter((item) => item.imageUrl && (hasExplicitHero || item.id !== heroGalleryItem?.id))
-    .slice(0, 3);
+    .slice(0, 9);
   const visibleGalleryTeaserItems =
     galleryTeaserItems.length > 0
       ? galleryTeaserItems
-      : data.galleryItems.filter((item) => item.imageUrl).slice(0, 3);
+      : data.galleryItems.filter((item) => item.imageUrl).slice(0, 9);
   const offeringCards = data.offerings.slice(0, 6);
   const featuredTestimonial = data.testimonials[0] ?? null;
   const secondaryCtaHref = data.hero.settings.secondaryCtaHref ?? "/gallery";
@@ -276,43 +277,7 @@ export default async function HomePage() {
             title="Recent work from The Sweet Fork."
             description="A small preview of recent work, from polished cakes to custom cookies and dessert-table details."
           />
-          <div
-            className="-mx-5 flex snap-x gap-4 overflow-x-auto px-5 pb-3 sm:-mx-8 sm:px-8 lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0 lg:pb-0 lg:gap-3"
-            aria-label="Recent work preview"
-            role="list"
-          >
-            {visibleGalleryTeaserItems.map((item, index) => (
-              <Link
-                key={item.id}
-                href="/gallery"
-                className="group w-[72vw] max-w-[18rem] shrink-0 snap-start overflow-hidden rounded-[1.45rem] border border-charcoal/7 bg-white/88 shadow-[0_16px_42px_rgba(44,36,27,0.06)] transition hover:-translate-y-1 hover:border-gold/32 hover:shadow-[0_22px_54px_rgba(44,36,27,0.09)] sm:w-[18rem] lg:w-auto lg:max-w-none"
-                role="listitem"
-              >
-                <div className="relative aspect-[4/5] overflow-hidden bg-cream">
-                  <CuratedImage
-                    item={item}
-                    priority={false}
-                    sizes="(max-width: 640px) 72vw, (max-width: 1024px) 18rem, 270px"
-                    className="transition duration-500 group-hover:scale-[1.03]"
-                  />
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(44,36,27,0.02),rgba(44,36,27,0.5))]" />
-                  <div className="absolute inset-x-0 bottom-0 p-4 text-ivory">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-gold/88">
-                      {item.category}
-                    </p>
-                    <h3 className="mt-2 font-serif text-2xl leading-[1.02]">
-                      {item.title}
-                    </h3>
-                    {index === visibleGalleryTeaserItems.length - 1 ? (
-                      <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-ivory/82">
-                        View full gallery
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <HomeGalleryCarousel items={visibleGalleryTeaserItems} />
         </div>
       </section>
 
