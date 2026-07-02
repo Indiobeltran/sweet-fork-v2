@@ -1,3 +1,78 @@
+## Post-Audit Merge, Deploy, and Production Verification — 2026-07-02
+
+- **Branch**: `main`.
+- **Objective**: Safely review, merge, deploy, and verify Fable's completed prelaunch UI/UX audit branch without repeating the broad audit or introducing new visual changes.
+- **Audit branch reviewed**: `claude/sweet-fork-prelaunch-audit-4wr0p4`.
+- **Source commit reviewed / merged**: `b6af29de2b514a3aedd9cbc5b2651052bbc30fe4` (`refactor: refine prelaunch UI and UX`).
+- **Main state before merge**: local `main` and `origin/main` aligned at `63ae66c7a83302f41a561afec535254a2ac84f37` (`feat: add homepage gallery carousel preview`).
+- **Source validation**:
+  - Confirmed `b6af29d` exists, is reachable from `origin/claude/sweet-fork-prelaunch-audit-4wr0p4`, and the audit branch is a direct descendant of `main`.
+  - Reviewed `git show --stat --summary b6af29d`, `git show --name-status b6af29d`, `git diff --stat main...origin/claude/sweet-fork-prelaunch-audit-4wr0p4`, and `git diff --name-status main...origin/claude/sweet-fork-prelaunch-audit-4wr0p4`.
+  - Inspected the complete diff for `tailwind.config.ts`, `src/app/globals.css`, `src/components/inquiry/wizard-ui.tsx`, `src/components/site/gallery-grid.tsx`, `src/lib/content/site-content.ts`, `src/app/(site)/page.tsx`, `docs/UI_UX_PRELAUNCH_AUDIT.md`, and `HANDOFF.md`.
+  - Confirmed the rose-scale fix preserves brand `rose.DEFAULT` for bare utilities such as `bg-rose`, `text-rose`, and `border-rose`, while restoring Tailwind scale utilities such as `text-rose-700`, `bg-rose-50`, and `border-rose-200`.
+- **Merge method**: Fast-forward merge from `claude/sweet-fork-prelaunch-audit-4wr0p4` into `main`; no conflicts, no squash, no merge commit.
+- **Automated verification on audit branch**:
+  - `npm install` — completed; reported existing Node engine mismatch warning (`required 24.x`, current `v25.6.1`) and npm audit vulnerabilities, with no tracked dependency/lockfile changes.
+  - `npm run lint` — passed.
+  - `npm run typecheck` — passed.
+  - `npm test` — passed (59/59; expected Netlify bridge fail-soft network/404 warnings printed by tests).
+  - `npm run build` — passed.
+  - `git diff --check` — clean.
+- **Automated verification on merged `main` before push**:
+  - `npm run lint` — passed.
+  - `npm run typecheck` — passed.
+  - `npm test` — passed (59/59; expected Netlify bridge fail-soft network/404 warnings printed by tests).
+  - `npm run build` — passed.
+  - `git diff --check` — clean.
+- **Targeted local production QA**:
+  - Local production server: `npm run start -- --port 3004`.
+  - Temporary Playwright runner installed outside the repo under `/tmp/sweet-fork-pw-runner`; no project dependency or lockfile changes.
+  - Checked local production build at 320px, 375px, 430px, and 1280px across `/`, `/start-order`, `/gallery`, `/custom-cakes`, `/wedding-cakes`, `/diy-kits`, and `/admin/login`.
+  - Focused interactions at 375px and 1280px verified inquiry validation rose error styling, wizard step-title wrapping, gallery badge sizing, gallery lightbox open/Escape close and normalized labels, `.luxury-panel` computed border, DIY Kits image loading, homepage `Start Your Inquiry` CTA copy, and admin/login rose-scale probe.
+  - Result: temporary Playwright test passed (28 route/viewport checks plus changed-surface probes).
+- **Push / deployment**:
+  - Pushed `main` to `origin/main`; local and remote `main` aligned at `b6af29de2b514a3aedd9cbc5b2651052bbc30fe4`.
+  - Netlify project: `sweet-fork-v2`, site id `9b4f4bcc-418a-4e39-ba79-4b71b445b5f4`.
+  - Netlify production deploy: `6a45d2ebdb0cdc0008157616`, branch `main`, commit `b6af29de2b514a3aedd9cbc5b2651052bbc30fe4`, state `ready`, published at `2026-07-02T02:55:56.260Z`, deploy time 79s.
+- **Targeted live production QA**:
+  - URL: `https://sweet-fork-v2.netlify.app`.
+  - Public viewports checked: 320px, 375px, 430px, and 1280px.
+  - Public routes checked: `/`, `/start-order`, `/gallery`, `/custom-cakes`, `/wedding-cakes`, `/diy-kits`, `/admin/login`.
+  - Focused live interactions at 375px and 1280px verified inquiry validation error styling and no step-title truncation; gallery badge legibility, lightbox open, normalized labels, and Escape close; product `.luxury-panel` border; DIY Kits image loading; homepage `Start Your Inquiry` CTA; no document-level overflow; no broken completed images; no material console warnings/errors.
+  - Result: live Playwright test passed (28 route/viewport checks plus changed-surface probes).
+- **Admin production spot-check**:
+  - Used the established ignored local QA admin credentials; no credentials printed or committed.
+  - Safely verified invalid login error styling on `/admin/login` (expected auth 400 ignored as part of the deliberate invalid-login check).
+  - Signed in and read `/admin`, `/admin/orders`, and `/admin/media` without modifying records.
+  - Verified no overflow or material console errors on those admin routes.
+  - Current production data did not expose active rose urgency/balance chips on `/admin` or `/admin/orders`; `/admin/media` did include one rose element. A rose-scale probe on each authenticated route verified `text-rose-700`, `bg-rose-50`, and `border-rose-200` render correctly.
+- **Inquiry email-gate status**:
+  - Still open. The direct recipient inbox receipt for production inquiry notifications was not verified in this task because this workspace does not have access to the actual `thesweetfork@yahoo.com` inbox.
+  - Netlify API `listSiteForms` returned `Not Found` through the current CLI/API path, so dashboard confirmation of form notification settings remains manual unless a reliable Netlify Forms API path is available.
+  - No new live inquiry was submitted during this task because direct recipient inbox verification was unavailable.
+  - Exact manual procedure for Melissa: submit one clearly labeled QA inquiry from `/start-order`, record the reference code and timestamp, confirm it appears in `/admin/inquiries`, confirm the `inquiry-notification` form submission exists in Netlify, confirm the notification email arrives in `thesweetfork@yahoo.com`, verify the email includes the reference code/event details/Mountain Time timestamp and appropriate reply-to behavior, then archive/delete the QA inquiry as desired.
+- **DNS status**: DNS was not changed.
+- **Known issues / remaining blockers**:
+  - Direct production inquiry-notification email receipt remains unverified after this merge/deploy.
+  - Existing npm audit output still reports 6 vulnerabilities (4 moderate, 2 high); not changed in this task.
+  - Shell is running Node `v25.6.1` while the project declares Node `24.x`; gates passed despite the engine warning.
+- **Files changed by audit merge**:
+  - `HANDOFF.md`
+  - `docs/UI_UX_PRELAUNCH_AUDIT.md`
+  - `src/app/(site)/page.tsx`
+  - `src/app/globals.css`
+  - `src/components/inquiry/wizard-ui.tsx`
+  - `src/components/site/gallery-grid.tsx`
+  - `src/lib/content/site-content.ts`
+  - `tailwind.config.ts`
+- **Files changed after merge**:
+  - `HANDOFF.md` — this post-audit merge/deploy/production verification entry.
+- **Unrelated local work intentionally preserved and unstaged**:
+  - `.gitignore` local addition for `.netlify`.
+  - `.agents/`, `.claude/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `scratch/verification.mjs`, `skills-lock.json`.
+- **Next exact action**: Have Melissa verify direct receipt of the next clearly labeled production inquiry notification email before DNS cutover.
+- **Launch recommendation from this pass**: Technically ready from the audited UI/UX, deployment, and targeted production QA perspective; email receipt verification remains the open launch gate.
+
 ## Pre-Launch UI/UX Audit & Refinement Pass — 2026-07-02
 
 - **Branch**: `claude/sweet-fork-prelaunch-audit-4wr0p4`.
