@@ -1,11 +1,14 @@
 "use client";
 
 import Script from "next/script";
-import { usePathname } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
 
-import { getAnalyticsRuntimeState } from "@/lib/analytics/events";
-import { trackAnalyticsPageView } from "@/lib/analytics/client";
+import {
+  getAnalyticsRuntimeState,
+  getGoogleAnalyticsInitScript,
+  trackAnalyticsPageViewForRuntime,
+} from "@/lib/analytics/events";
 
 type GoogleAnalyticsProviderProps = {
   measurementId?: string;
@@ -13,16 +16,15 @@ type GoogleAnalyticsProviderProps = {
 
 function GoogleAnalyticsRuntime({ measurementId }: GoogleAnalyticsProviderProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [host, setHost] = useState("");
   const [isReady, setIsReady] = useState(false);
-  const trackedPathRef = useRef<string | null>(null);
   const normalizedMeasurementId = measurementId?.trim();
+  const searchKey = searchParams.toString();
 
   useEffect(() => {
     setHost(window.location.hostname);
   }, []);
-
-  const path = pathname;
 
   const runtimeState =
     host.length > 0
@@ -34,19 +36,87 @@ function GoogleAnalyticsRuntime({ measurementId }: GoogleAnalyticsProviderProps)
         })
       : { enabled: false as const, reason: "preview_or_temporary_host" as const };
 
+  const trackCurrentPageView = useCallback(
+    (path: string) => {
+      if (!normalizedMeasurementId) {
+        return false;
+      }
+
+      return trackAnalyticsPageViewForRuntime({
+        hostname: window.location.hostname,
+        measurementId: normalizedMeasurementId,
+        nodeEnv: process.env.NODE_ENV,
+        pathname: path,
+      });
+    },
+    [normalizedMeasurementId],
+  );
+
   useEffect(() => {
     if (!runtimeState.enabled || !normalizedMeasurementId || !isReady) {
       return;
     }
 
-    if (trackedPathRef.current === path) {
+    trackCurrentPageView(`${pathname}${searchKey ? `?${searchKey}` : ""}`);
+  }, [
+    isReady,
+    normalizedMeasurementId,
+    pathname,
+    runtimeState.enabled,
+    searchKey,
+    trackCurrentPageView,
+  ]);
+
+  useEffect(() => {
+    if (!runtimeState.enabled || !normalizedMeasurementId || !isReady) {
       return;
     }
 
-    if (trackAnalyticsPageView(normalizedMeasurementId, path)) {
-      trackedPathRef.current = path;
-    }
-  }, [isReady, normalizedMeasurementId, path, runtimeState.enabled]);
+    const trackLocation = () => {
+      queueMicrotask(() => {
+        trackCurrentPageView(`${window.location.pathname}${window.location.search}`);
+      });
+    };
+
+    const originalPushState = window.history.pushState;
+    const originalReplaceState = window.history.replaceState;
+
+    const wrappedPushState: History["pushState"] = function pushState(
+      this: History,
+      ...args
+    ) {
+      const result = originalPushState.apply(this, args);
+      trackLocation();
+
+      return result;
+    };
+
+    const wrappedReplaceState: History["replaceState"] = function replaceState(
+      this: History,
+      ...args
+    ) {
+      const result = originalReplaceState.apply(this, args);
+      trackLocation();
+
+      return result;
+    };
+
+    window.history.pushState = wrappedPushState;
+    window.history.replaceState = wrappedReplaceState;
+    window.addEventListener("popstate", trackLocation);
+
+    return () => {
+      window.removeEventListener("popstate", trackLocation);
+
+      if (window.history.pushState === wrappedPushState) {
+        window.history.pushState = originalPushState;
+      }
+
+      if (window.history.replaceState === wrappedReplaceState) {
+        window.history.replaceState = originalReplaceState;
+      }
+    };
+  }, [isReady, normalizedMeasurementId, runtimeState.enabled, trackCurrentPageView]);
 
   if (!runtimeState.enabled || !normalizedMeasurementId) {
     return null;
@@ -62,13 +132,7 @@ function GoogleAnalyticsRuntime({ measurementId }: GoogleAnalyticsProviderProps)
         strategy="afterInteractive"
       />
       <Script id="ga4-init" strategy="afterInteractive" onReady={() => setIsReady(true)}>
-        {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          window.gtag = window.gtag || gtag;
-          gtag('js', new Date());
-          gtag('config', '${normalizedMeasurementId}', { send_page_view: false });
-        `}
+        {getGoogleAnalyticsInitScript(normalizedMeasurementId)}
       </Script>
     </>
   );

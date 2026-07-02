@@ -1,3 +1,151 @@
+## GA4 Page View Defect Fix — 2026-07-02
+
+- **Branch**: `main`.
+- **Objective**: Fix the confirmed production GA4 defect where direct landing on public production routes did not emit an initial GA4 `page_view`, while preserving admin/local/preview suppression and avoiding duplicate page views.
+- **Starting state**:
+  - `git branch --show-current`: `main`.
+  - `git status --short`: pre-existing `.gitignore`, `.agents/`, `.claude/`, `.superpowers/`, `scratch/*`, `skills-lock.json`, plus the unstaged post-cutover `HANDOFF.md` verification entry.
+  - `git log --oneline --decorate -n 10`: `HEAD -> main, origin/main` at `9290870 feat: add analytics and SEO migration readiness`.
+  - Required docs read: `AGENTS.md`, `ROADMAP.md`, `GATES.md`, `HANDOFF.md`, `DECISIONS.md`, `BACKLOG.md`, `README.md`.
+  - Existing GA provider, analytics client/events modules, tests, and all `gtag`, `page_view`, `usePathname`, `useSearchParams`, `popstate`, `history.pushState`, and `history.replaceState` references were inspected.
+- **Root cause**:
+  - GA bootstrap intentionally disabled automatic page views with `send_page_view: false`.
+  - Manual page-view tracking also called `gtag('config', measurementId, { ..., send_page_view: false })`, which updates config but does not reliably send a `page_view` hit.
+  - Initial direct loads therefore initialized GA but emitted no `/g/collect` `page_view`; history restoration was not observed centrally.
+- **Implementation approach**:
+  - Added centralized explicit GA4 page-view tracking in `src/lib/analytics/events.ts`.
+  - Page views now use `gtag('event', 'page_view', { send_to, page_location, page_path, page_title })`.
+  - Bootstrap still uses one `gtag('config', ..., { send_page_view: false })` to prevent automatic duplicates.
+  - Normalized page paths strip query strings and hashes before tracking; query-only and hash-only changes dedupe to the same path.
+  - Window-level `__sweetForkAnalytics.lastPageViewKey` prevents duplicates from rerenders, Strict Mode, and provider remounts.
+  - `src/components/analytics/ga4-provider.tsx` now observes `usePathname`, `useSearchParams`, History API `pushState`/`replaceState`, and `popstate`, then delegates to the centralized tracker.
+  - Existing public-host gating, admin exclusion, localhost suppression, Netlify/noncanonical suppression, and missing-ID suppression were preserved.
+- **Tests added/updated**:
+  - Added `src/lib/analytics/client.test.ts`.
+  - Updated `package.json` test command to include the new analytics client test.
+  - Tests cover initial page view, no duplicate rerender page view, App Router navigation, browser back, browser forward, query stripping/dedupe, hash-only dedupe, admin suppression, localhost suppression, Netlify suppression, missing ID suppression, one bootstrap config call with automatic page views disabled, and custom-event PII allowlist behavior.
+- **Verification completed locally**:
+  - Targeted red run first failed before implementation because `getGoogleAnalyticsInitScript` was missing; after implementation, targeted analytics tests passed.
+  - `node --no-warnings --experimental-strip-types --test src/lib/analytics/events.test.ts src/lib/analytics/client.test.ts` passed.
+  - `npm run lint` passed.
+  - `npm run typecheck` passed.
+  - `npm test` passed: 74/74 tests. Expected Netlify bridge fail-soft warnings printed.
+  - `npm run build` passed.
+  - `git diff --check` passed.
+  - Local production server on port 3007 verified with temporary Chrome/CDP:
+    - `http://localhost:3007/` rendered homepage, no GA scripts, no `window.gtag`, no GA requests, no framework overlay.
+    - Client navigation to `/gallery` rendered correctly and still had no GA on localhost.
+    - `/admin/login` rendered `noindex, nofollow`, no GA scripts, no `window.gtag`, no GA requests.
+- **Remaining production verification steps**:
+  - After commit and Git-triggered Netlify deploy, verify `https://thesweetfork.com` direct homepage load emits exactly one `page_view`.
+  - Verify a direct product route such as `/custom-cakes` emits exactly one `page_view`.
+  - Verify client navigation emits exactly one `page_view`.
+  - Verify browser back emits exactly one `page_view`.
+  - Verify browser forward emits exactly one `page_view`.
+  - Verify no duplicate `gtag.js`, no duplicate bootstrap config, no GA on `/admin`, no GA on Netlify preview host, and no PII in GA payloads.
+  - GA4 Realtime/DebugView still requires owner account access; do not claim account-level verification without observing it.
+- **Files changed by this task so far**:
+  - `DECISIONS.md`
+  - `HANDOFF.md`
+  - `package.json`
+  - `src/components/analytics/ga4-provider.tsx`
+  - `src/lib/analytics/client.test.ts`
+  - `src/lib/analytics/client.ts`
+  - `src/lib/analytics/events.ts`
+- **Files intentionally preserved**:
+  - Pre-existing unrelated `.gitignore`, `.agents/`, `.claude/`, `.superpowers/`, `scratch/*`, and `skills-lock.json`.
+- **DNS / external settings**:
+  - DNS was not changed.
+  - Registrar settings were not changed.
+  - GA4 account settings were not changed.
+  - Search Console settings were not changed.
+  - Supabase schema and media architecture were not changed.
+- **Next exact action**: Review final diff, stage only task-owned files, commit `fix: track initial and history page views`, push `main`, wait for a Git-traceable Netlify deploy, then run production network verification.
+
+## Post-Cutover Production Verification — 2026-07-02 13:20 MDT
+
+- **Branch**: `main`.
+- **Objective**: Full post-cutover production verification for `https://thesweetfork.com` against expected project `sweet-fork-v2`, expected commit `9290870`, and expected GA4 Measurement ID `G-3FG4VD58VP`.
+- **Repository SITREP**:
+  - `git branch --show-current`: `main`.
+  - `git rev-parse HEAD`: `9290870fb5532edc1c3d93b247ec3d8be90ee122`.
+  - `git rev-parse origin/main`: `9290870fb5532edc1c3d93b247ec3d8be90ee122`.
+  - Local `main` and `origin/main` match expected commit `9290870`.
+  - Pre-existing unrelated local files preserved: `.gitignore`, `.agents/`, `.claude/`, `.superpowers/`, `scratch/*`, `skills-lock.json`.
+  - No DNS, registrar, Netlify, GA4, Search Console, or application-code changes were made.
+- **Netlify production deploy**:
+  - Site name: `sweet-fork-v2`.
+  - Site ID: `9b4f4bcc-418a-4e39-ba79-4b71b445b5f4`.
+  - Active deploy ID: `6a46b051e81902a5b8d775e6`.
+  - Active deploy status: `ready`, production context, published `2026-07-02T18:40:57.656Z`.
+  - Deploy URL: `https://main--sweet-fork-v2.netlify.app`.
+  - Active deploy has `commit_ref: null` and title `Deploy triggered by upload`; it is an API/upload deploy.
+  - Immediately previous production deploy `6a46afea848fd70008c1fbdb` is Git-based with commit `9290870fb5532edc1c3d93b247ec3d8be90ee122`.
+  - Live behavior, routes, redirects, 410s, metadata, sitemap, robots, and GA code match the expected `9290870` v2 migration behavior, but the active deploy itself is not commit-traceable because it was overwritten by upload deploy.
+  - Git auto-deploy appears connected historically because the expected commit deployed from `main`; current active published deploy is still upload-based. Some Netlify build/branch/DNS API endpoints returned `Not Found` or `Unauthorized` through the current token, so future auto-deploy should be verified by a harmless test commit or dashboard inspection before relying on it.
+- **Domain, DNS, HTTPS**:
+  - `https://thesweetfork.com` loads v2 directly with `200`, 0 redirects, valid TLS.
+  - `https://www.thesweetfork.com` returns one `301` to `https://thesweetfork.com/...` with path/query preserved.
+  - `http://thesweetfork.com` returns one `301` to `https://thesweetfork.com/...` with path/query preserved.
+  - `http://www.thesweetfork.com` returns two hops: HTTP `www` -> HTTPS `www` -> HTTPS apex, with path/query preserved.
+  - Certificate subject `CN=www.thesweetfork.com`; SAN covers `thesweetfork.com` and `www.thesweetfork.com`; issuer Let's Encrypt `YE1`; expires `2026-09-04 22:53:51 GMT`.
+  - Apex DNS A resolves to `75.2.60.5`; no AAAA response from local resolver.
+  - `www.thesweetfork.com` still CNAMEs to `regal-marzipan-c99724.netlify.app` and resolves to `98.84.224.111`, `18.208.88.157`. Behavior redirects safely to apex, but the stale CNAME target remains a DNS cleanup discrepancy.
+  - DNS should be considered functionally stable for apex traffic; `www` should be cleaned up when owner is ready.
+- **Production content identity**:
+  - Homepage renders the v2 premium Sweet Fork site with expected hero, navigation, gallery, FAQ, inquiry wizard, privacy, terms, route metadata, redirects, and 410 behavior.
+  - Browser smoke verified homepage nonblank, no framework overlay, no relevant console errors, and v2 visual/content markers.
+- **Robots and sitemap**:
+  - `robots.txt` returns `200`, allows `/`, disallows `/admin`, `/admin/`, `/api`, `/api/`, and references `https://thesweetfork.com/sitemap.xml`.
+  - `sitemap.xml` returns `200` valid XML with 15 intended public apex URLs.
+  - Sitemap contains no `www`, Netlify URLs, admin routes, API routes, redirect-only routes, 410 routes, preview URLs, or stale demo/storefront URLs.
+- **SEO/indexability**:
+  - Representative public routes `/`, `/about`, `/custom-cakes`, `/wedding-cakes`, `/cupcakes`, `/sugar-cookies`, `/macarons`, `/diy-kits`, `/gallery`, `/pricing`, `/faq`, `/how-to-order`, `/start-order`, `/privacy`, and `/terms` returned `200`.
+  - Each representative public route has index/follow robots, one H1, unique title, meta description, apex canonical, apex `og:url`, and no conflicting canonical tags.
+  - JSON-LD parsed on routes where present: homepage `Bakery`, product pages `Service`, FAQ `FAQPage`; no invalid JSON-LD blocks found.
+  - `/admin`, `/admin/login`, and `/admin/inquiries` are noindex; protected admin descendants redirect signed-out users to `/admin/login`; admin routes are absent from sitemap.
+- **Legacy redirects**:
+  - `/category/sugar-cookies?qa=1&safe=two` -> `308` -> `/sugar-cookies?qa=1&safe=two`; destination canonical `https://thesweetfork.com/sugar-cookies`.
+  - `/terms-of-service?qa=1&safe=two` -> `308` -> `/terms?qa=1&safe=two`; destination canonical `https://thesweetfork.com/terms`.
+  - `/menu?qa=1&safe=two` -> `308` -> `/custom-cakes?qa=1&safe=two`; destination canonical `https://thesweetfork.com/custom-cakes`.
+- **Retired URL 410s**:
+  - `/signin`, `/events`, `/category/`, `/product/`, `/product/wool-throw-blanket`, `/category/pillows`, `/product/grey-ceramic-plate`, and `/category/bedroom` return HTTP `410`.
+  - Each retired URL includes `X-Robots-Tag: noindex, nofollow`, does not redirect to homepage, and does not render an indexable page.
+- **GA4 code/network verification**:
+  - Production apex loads exactly one `gtag.js` script for `G-3FG4VD58VP`; no GTM container or duplicate `gtm.js` found.
+  - `/admin/login` loads no GA script, has no `window.gtag`, and sends no GA network requests.
+  - `https://main--sweet-fork-v2.netlify.app/` sends no GA network requests and has `X-Robots-Tag: noindex, nofollow`; page-level meta remains index/follow, but header controls indexing.
+  - Source allowlist includes the approved event taxonomy: `product_viewed`, `product_cta_clicked`, `pricing_section_viewed`, `faq_opened`, `gallery_filter_used`, `gallery_item_viewed`, `gallery_item_navigated`, `inquiry_started`, `inquiry_step_viewed`, `inquiry_step_completed`, `inquiry_step_back`, `inquiry_validation_error`, `inquiry_submission_error`, `inquiry_submitted`, `wedding_consultation_started`, and `contact_method_clicked`.
+  - Network observer confirmed `faq_opened` sends to GA4 with no PII in payload.
+  - Network observer confirmed one click-based App Router navigation to `/gallery` sends exactly one `page_view`.
+  - **Defect found**: initial homepage load sends zero GA collect/page_view requests after 10 seconds. Evidence: `gtag.js` loads, `window.gtag` exists, dataLayer has config calls with `send_page_view: false`, but no `/g/collect` request fires on initial landing. Severity: Medium analytics defect.
+  - **Defect found**: browser history back/forward restored `/` and `/gallery` without duplicate page_views, but also without additional page_view events. Severity: Low/Medium analytics attribution gap.
+  - No PII observed in GA payloads checked: no customer name, email, phone, address, inquiry/order/Supabase IDs, event date, free-form inquiry text, uploaded filename, or uploaded URL.
+  - GA4 Realtime/DebugView was not verified because no GA account access was used.
+  - No QA inquiry was submitted, so `inquiry_submitted`, inquiry delivery, and duplicate submission record checks remain owner-only/not verified.
+- **Customer journey QA**:
+  - Browser verified homepage renders and navigation works.
+  - Browser verified gallery filter, lightbox open, next navigation, close behavior, no broken images, and clean console.
+  - Browser verified FAQ interaction opens an answer and clean console.
+  - Browser verified inquiry wizard validation, future date entry (`2026-08-15`), Step 1 -> Step 2 -> Step 3 progression, summary sync, and Back to Step 2 without submitting.
+  - Chrome desktop route sweep verified all representative public routes render, have one H1, no horizontal overflow, no broken images, no failed image/API/script responses, and no framework overlay.
+  - Chrome mobile 390px sweep verified `/`, `/gallery`, `/custom-cakes`, `/faq`, and `/start-order` render with no horizontal overflow, no broken images, no failed image/API/script responses, and no framework overlay.
+  - Contact links were inspected in DOM: phone `tel:(801) 739-4168`, email `mailto:thesweetfork@yahoo.com`, Instagram `https://www.instagram.com/the_sweet_fork`.
+- **Performance and security spot check**:
+  - Homepage temporary Chrome resource timing: about 45 resources, about 769 KB observed transfer, largest optimized image about 65 KB via `/_next/image`.
+  - No mixed content found in smoke checks.
+  - Security headers present: CSP, HSTS, Referrer-Policy, X-Content-Type-Options, X-Frame-Options, `frame-ancestors 'none'`, and Permissions-Policy.
+  - Non-blocking Chrome warnings observed for preloaded gallery images not used within a few seconds after navigation; not a cutover blocker.
+- **Search Console readiness**:
+  - Site is ready for owner Search Console actions: sitemap live/valid, homepage/offering pages indexable, apex canonical, `www` redirects, old useful URLs redirect, stale demo URLs 410, no production-wide noindex.
+  - Owner still needs to submit `https://thesweetfork.com/sitemap.xml`, inspect priority URLs, request indexing where appropriate, monitor Pages/Core Web Vitals, and verify Google Business Profile website URL.
+- **Defects / follow-ups**:
+  - Medium: initial GA4 page_view missing on direct landing. Proposed fix: change manual page-view tracking to send an explicit `gtag('event', 'page_view', ...)` or remove `send_page_view: false` from the manual route-change config call while keeping the initial bootstrap duplicate-safe. Risk: careless change could reintroduce duplicate pageviews, so verify with Chrome network and GA4 DebugView before deploy.
+  - Low/Medium: GA4 history back/forward pageviews not observed. Proposed fix should be covered by the same page-view tracking correction and verified across App Router click, back, and forward navigation. Risk: duplicate pageviews if path de-duping is not kept.
+  - Low: `www` DNS still references `regal-marzipan-c99724.netlify.app`. Proposed remediation: owner updates DNS CNAME to the intended Netlify target after confirming current Netlify domain instructions. Risk: DNS propagation and temporary `www` interruption if mistyped.
+  - Traceability: active production deploy is upload-based with `commit_ref: null`. Proposed remediation: publish a future Git-based deploy from `main` after approval, or restore the Git deploy if identical. Risk: redeploy could change production if environment/build output differs; run quality gates first.
+- **Next exact action**: Ask owner whether to fix the GA4 initial/history page_view defect in code. Do not change DNS, Netlify settings, GA4 settings, Search Console settings, or application code without approval.
+
 ## GA4, SEO, and V1-to-V2 Migration Readiness — 2026-07-02
 
 - **Branch**: `codex/ga4-seo-migration-readiness`.

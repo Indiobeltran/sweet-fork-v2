@@ -62,6 +62,19 @@ export type AnalyticsRuntimeState =
         | "preview_or_temporary_host";
     };
 
+declare global {
+  interface Window {
+    __sweetForkAnalytics?: {
+      lastPageViewKey?: string;
+    };
+    gtag?: (
+      command: "config" | "event" | "js",
+      targetId: string | Date,
+      config?: Record<string, unknown>,
+    ) => void;
+  }
+}
+
 const analyticsEventNameSet = new Set<string>(analyticsEventNames);
 const allowedParamKeys = new Set<AnalyticsParamKey>([
   "budget_bucket",
@@ -121,6 +134,73 @@ export function getAnalyticsRuntimeState({
   }
 
   return { enabled: true, reason: "enabled" };
+}
+
+function getPageViewStore() {
+  window.__sweetForkAnalytics = window.__sweetForkAnalytics ?? {};
+
+  return window.__sweetForkAnalytics;
+}
+
+export function normalizeAnalyticsPagePath(path: string) {
+  const rawPath = path.trim() || "/";
+
+  try {
+    return new URL(rawPath, "https://thesweetfork.com").pathname || "/";
+  } catch {
+    return rawPath.split(/[?#]/)[0] || "/";
+  }
+}
+
+export function getGoogleAnalyticsInitScript(measurementId: string) {
+  return `
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          window.gtag = window.gtag || gtag;
+          gtag('js', new Date());
+          gtag('config', '${measurementId}', { send_page_view: false });
+        `;
+}
+
+export function trackAnalyticsPageView(measurementId: string, path: string) {
+  if (typeof window === "undefined" || typeof window.gtag !== "function") {
+    return false;
+  }
+
+  const normalizedPath = normalizeAnalyticsPagePath(path);
+  const pageViewStore = getPageViewStore();
+
+  if (pageViewStore.lastPageViewKey === normalizedPath) {
+    return false;
+  }
+
+  try {
+    window.gtag("event", "page_view", {
+      page_location: `${window.location.origin}${normalizedPath}`,
+      page_path: normalizedPath,
+      page_title: document.title,
+      send_to: measurementId,
+    });
+    pageViewStore.lastPageViewKey = normalizedPath;
+    return true;
+  } catch {
+    // Page-view tracking is non-critical and must fail closed.
+    return false;
+  }
+}
+
+export function trackAnalyticsPageViewForRuntime(input: AnalyticsRuntimeInput) {
+  const normalizedPath = normalizeAnalyticsPagePath(input.pathname);
+  const runtimeState = getAnalyticsRuntimeState({
+    ...input,
+    pathname: normalizedPath,
+  });
+
+  if (!runtimeState.enabled || !input.measurementId?.trim()) {
+    return false;
+  }
+
+  return trackAnalyticsPageView(input.measurementId, normalizedPath);
 }
 
 export function buildAnalyticsEventPayload(

@@ -2,6 +2,34 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
+## 2026-07-02 - Explicit GA4 Page View Events
+
+### Status
+
+Accepted
+
+### Context
+
+Post-cutover production verification showed the direct GA4 tag initialized on `https://thesweetfork.com`, but direct landing on the homepage did not send a GA4 `/g/collect` `page_view` request. Automatic page views were intentionally disabled with `send_page_view: false` to avoid duplicates, but the manual route-change tracker also used a `gtag('config', ..., { send_page_view: false })` call, which updates GA4 configuration without reliably emitting a page-view hit. Client-side navigation emitted one page view in production, but initial landing and browser history restoration were not deterministic.
+
+### Options Considered
+
+- Re-enable automatic GA4 page views and keep manual App Router tracking.
+- Keep `gtag('config')` route-change calls and remove `send_page_view: false`.
+- Use one centralized tracker that emits explicit `gtag('event', 'page_view')` events and keeps bootstrap config page-view suppression.
+
+### Decision
+
+Keep the single direct GA4 tag and bootstrap config with `send_page_view: false`, then emit page views through one centralized explicit `gtag('event', 'page_view')` tracker. Deduplicate by normalized canonical path, strip query strings and hashes from page-view payloads, preserve public-host/admin/localhost/preview gating, and observe App Router pathname changes plus History API `pushState`, `replaceState`, and `popstate`.
+
+### Consequences
+
+- Initial public production route loads, App Router navigations, and browser back/forward restorations can each emit exactly one intended page view when the normalized path changes.
+- Query values are not sent to GA4, reducing PII risk.
+- Hash-only and query-only changes do not create extra page views.
+- Strict Mode rerenders and provider remounts are guarded by a window-level last-page-view key.
+- Production verification must confirm no duplicate page views after Git deployment.
+
 ## 2026-07-02 - Direct GA4 And Apex Canonical Migration Readiness
 
 ### Status
