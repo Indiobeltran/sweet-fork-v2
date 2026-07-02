@@ -197,7 +197,7 @@ export default async function HomePage() {
             href="/start-order"
             className="inline-flex min-h-12 items-center justify-center rounded-full bg-charcoal px-5 py-3 text-sm font-semibold tracking-[0.02em] text-ivory shadow-[0_16px_34px_rgba(44,36,27,0.14)] transition hover:-translate-y-0.5 hover:bg-charcoal/92"
           >
-            Start an inquiry
+            Start Your Inquiry
           </Link>
         </div>
 

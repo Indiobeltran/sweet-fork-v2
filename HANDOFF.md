@@ -1,3 +1,33 @@
+## Pre-Launch UI/UX Audit & Refinement Pass — 2026-07-02
+
+- **Branch**: `claude/sweet-fork-prelaunch-audit-4wr0p4`.
+- **Starting commit**: `63ae66c feat: add homepage gallery carousel preview` (clean tree; local main == origin/main at start).
+- **Objective**: Final pre-production visual/usability review of the public and admin experiences; implement only safe, high-confidence, low-risk fixes; document larger recommendations.
+- **Audit document**: `docs/UI_UX_PRELAUNCH_AUDIT.md` (findings table SF-01…SF-17, page-by-page assessment, deferred recommendations).
+- **Environment limitations (important context for the results below)**:
+  - The review sandbox's network policy blocks both `sweet-fork-v2.netlify.app` and `renjsmdsrzjnppqpaoaa.supabase.co`, so all rendered QA ran against a **local production build** (`npm run build` + `next start`) with the curated fallback content path. The live production deploy was **not** directly inspected in this pass.
+  - Admin routes could not be authenticated (Supabase unreachable), so admin findings are code-level plus the rendered `/admin/login`; no production admin flow was exercised.
+  - Remote Supabase-storage images requested through the Next image optimizer were served from local placeholder bytes during browser QA to keep the local server stable; imagery *quality* judgments therefore rely on local placeholder assets.
+- **Public routes reviewed (rendered)**: `/`, `/gallery`, `/custom-cakes`, `/cupcakes`, `/sugar-cookies`, `/macarons`, `/wedding-cakes`, `/diy-kits`, `/about`, `/faq`, `/start-order` (all 5 wizard steps driven at 375 and 1280, including forced validation errors), `/how-to-order`, `/pricing`, `/admin/login`; plus mobile nav drawer and gallery lightbox interactions.
+- **Viewports reviewed**: 320, 375, 430, 768, 1280, 1440 (all 14 routes x 6 widths measured for document overflow, console/page errors, single-h1, missing alt, broken images — all clean before and after changes).
+- **Findings by severity**: 1 P1 (fixed), 5 P2 (all fixed), 11 P3/documentation-level (7 documented for near-term/future, 1 fixed as a trivial label alignment, SF-16 is the admin verification gap, SF-17 touch-target note).
+- **Changes implemented** (all verified by computed-style probes + before/after screenshots at affected widths):
+  - `tailwind.config.ts`: restored Tailwind's default `rose-50…950` scale (brand rose kept as `DEFAULT`). The previous string override deleted the scale, so ~40 `rose-*` usages (wizard validation errors/alerts, required asterisks, admin login error, dashboard "Due within 7 days" pill, orders balance-due chips, media high-severity warnings, inquiry-detail actions) compiled to nothing and rendered unstyled. Verified compiled CSS now contains every used `rose-*` class and wizard errors render rose-on-rose.
+  - `src/app/globals.css`: `.luxury-panel` border used invalid `rgba(var(--color-charcoal), 0.07)` syntax, so panels rendered with **no border**; now `rgb(var(--color-charcoal) / 0.07)` (computed border verified `1px solid rgba(44,36,27,0.07)`). Note: `.eyebrow-label` has the same invalid pattern but was deliberately **left unchanged** — see SF-08 in the audit (a naive fix would fail AA contrast and would override `text-gold/80` on product heroes due to source-order cascade; needs a post-launch `@layer components` cleanup).
+  - `src/components/site/gallery-grid.tsx`: gallery card badges raised from 7.5px to 9px (mobile) / 9px to 10px (`sm+`); lightbox category badge now uses the same normalized label as the cards (was showing raw values like "WEDDING-CAKE").
+  - `src/components/inquiry/wizard-ui.tsx`: desktop step-marker titles no longer `truncate` (all five titles were clipped at 1280, e.g. "Select Desse…"); they now wrap to two lines; verified none clipped at 1280 and layout intact.
+  - `src/lib/content/site-content.ts`: DIY kits fallback hero pointed at remote Supabase storage (the only fallback hero not using a local placeholder), which defeats the fallback's purpose during a Supabase outage; now `/placeholders/marketing/diy-kit.jpg` like its siblings. Production still uses the approved Supabase hero assignment via `getProductPageContentWithApprovedHero`.
+  - `src/app/(site)/page.tsx`: offerings-section CTA "Start an inquiry" aligned to the site-standard "Start Your Inquiry".
+- **Recommendations deferred (documented, not implemented)**: `@layer components` cascade cleanup + eyebrow-label opacity decision (SF-08/SF-09), wizard "100% complete" progress semantics (SF-10), empty-showcase duplicate gallery CTA (SF-11), footer navigation column (SF-12), mobile-drawer "Home under Shop by category" label (SF-13), paused-banner copy tightening (SF-14), shared category-label helper (SF-15), 44px filter-chip touch targets (SF-17).
+- **Automated checks run**: `npm run lint` (pass, 0 warnings), `npm run typecheck` (pass), `npm test` (59/59 pass), `npm run build` (pass), `git diff --check` (clean).
+- **Browser checks run**: full 84-combo overflow/console sweep before and after changes (all clean); wizard 5-step walkthrough at 375/1280 with zero page errors; forced validation-error rendering; gallery lightbox open/navigate at 375/1280; mobile nav drawer; keyboard focus walk on `/` (skip link first, visible outlines, logical order).
+- **Known limitations / follow-ups for the owner**:
+  - Production (Netlify) re-verification of the changed surfaces at 320/375/430/1280 could not be performed from this environment and should be done after deploy: `/start-order` error states, `/gallery` badges + lightbox, any product page's luxury panels, `/diy-kits`, homepage CTA row. Netlify deploys `main`; this work is on the task branch above, so it will not deploy until merged to `main`. This session's repository access is scoped to the task branch, so the verified commit was pushed there rather than directly to `main`.
+  - Admin surfaces should be spot-checked on production after deploy (the rose-scale fix restores danger/urgent colors on dashboard, orders, media, login).
+  - The direct inquiry-notification email gate (BACKLOG: transactional email / Netlify Forms decision) **remains open** and was not changed by this pass.
+  - DNS was **not** touched.
+- **Recommended next action**: review/merge this branch into `main`, let Netlify deploy, then re-check the five changed surfaces above at 320/375/430/1280 on production and run the admin spot-checks while signed in.
+
 ## Homepage Gallery Carousel Preview — 2026-06-15
 
 - **Branch**: `codex/production-domain-cutover`.

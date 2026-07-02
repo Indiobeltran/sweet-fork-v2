@@ -266,8 +266,8 @@ export const productPageContent: Record<string, ProductPageContent> = {
       "Available year-round, these all-inclusive kits are designed for family nights, classroom treats, party activities, farmers markets and vendor events, and giftable sweet moments that still feel beautifully put together.",
     heroStatement: "An easy way to bring The Sweet Fork aesthetic into birthdays, holidays, vendor booths, and group activities.",
     heroImage: {
-      src: "https://renjsmdsrzjnppqpaoaa.supabase.co/storage/v1/object/public/marketing/marketing/gallery-batch-01/sweet-fork-st-patricks-day-diy-cookie-kit-centerville-utah.jpg",
-      alt: "St. Patrick's Day DIY cookie decorating kit with shamrock cookies, frosting bags, sprinkles, and decorating instructions.",
+      src: "/placeholders/marketing/diy-kit.jpg",
+      alt: "DIY cookie decorating kit with cookies, frosting bags, sprinkles, and decorating instructions.",
     },
     startingPriceLabel: "$25+",
     pricingNote: "DIY kits begin at $25 each.",

@@ -75,7 +75,7 @@ export function StepMarker({
           </p>
           <p
             className={cn(
-              "truncate text-sm font-medium",
+              "text-sm font-medium leading-tight",
               active ? "text-ivory" : complete ? "text-charcoal/68" : "text-charcoal/52",
             )}
           >

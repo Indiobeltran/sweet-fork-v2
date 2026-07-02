@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import defaultColors from "tailwindcss/colors";
 
 const config: Config = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
@@ -10,7 +11,14 @@ const config: Config = {
         gold: "rgb(var(--color-gold) / <alpha-value>)",
         charcoal: "rgb(var(--color-charcoal) / <alpha-value>)",
         stone: "rgb(var(--color-stone) / <alpha-value>)",
-        rose: "rgb(var(--color-rose) / <alpha-value>)",
+        // Keep the brand rose as the bare `rose` value, but preserve Tailwind's
+        // default rose-50…950 scale: overriding `rose` with a plain string
+        // removes the scale and silently voids every `rose-*` error/danger
+        // class used by the inquiry wizard and admin surfaces.
+        rose: {
+          ...defaultColors.rose,
+          DEFAULT: "rgb(var(--color-rose) / <alpha-value>)",
+        },
       },
       fontFamily: {
         serif: ["var(--font-display)", "serif"],
