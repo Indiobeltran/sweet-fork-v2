@@ -2,7 +2,7 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
-## 2026-07-02 - Explicit GA4 Page View Events
+## 2026-07-02 - GA4 Initial Page View With Enhanced History Measurement
 
 ### Status
 
@@ -10,25 +10,26 @@ Accepted
 
 ### Context
 
-Post-cutover production verification showed the direct GA4 tag initialized on `https://thesweetfork.com`, but direct landing on the homepage did not send a GA4 `/g/collect` `page_view` request. Automatic page views were intentionally disabled with `send_page_view: false` to avoid duplicates, but the manual route-change tracker also used a `gtag('config', ..., { send_page_view: false })` call, which updates GA4 configuration without reliably emitting a page-view hit. Client-side navigation emitted one page view in production, but initial landing and browser history restoration were not deterministic.
+Post-cutover production verification showed the direct GA4 tag initialized on `https://thesweetfork.com`, but direct landing on the homepage did not send a GA4 `/g/collect` `page_view` request. Automatic page views were intentionally disabled with `send_page_view: false` to avoid duplicates, but the manual route-change tracker also used a `gtag('config', ..., { send_page_view: false })` call, which updates GA4 configuration without reliably emitting a page-view hit. Client-side navigation emitted one page view in production through GA4 Enhanced Measurement. A first code pass that emitted explicit page views for every App Router/history change fixed initial loads but duplicated navigation, back, and forward page views because the GA4 data stream also sends page views for browser history changes independently of `send_page_view: false`.
 
 ### Options Considered
 
 - Re-enable automatic GA4 page views and keep manual App Router tracking.
 - Keep `gtag('config')` route-change calls and remove `send_page_view: false`.
-- Use one centralized tracker that emits explicit `gtag('event', 'page_view')` events and keeps bootstrap config page-view suppression.
+- Emit explicit `gtag('event', 'page_view')` events for every App Router/history change.
+- Emit one explicit initial page view from code and let the GA4 data stream's Enhanced Measurement history listener own SPA navigation page views.
 
 ### Decision
 
-Keep the single direct GA4 tag and bootstrap config with `send_page_view: false`, then emit page views through one centralized explicit `gtag('event', 'page_view')` tracker. Deduplicate by normalized canonical path, strip query strings and hashes from page-view payloads, preserve public-host/admin/localhost/preview gating, and observe App Router pathname changes plus History API `pushState`, `replaceState`, and `popstate`.
+Keep the single direct GA4 tag and bootstrap config with `send_page_view: false`, then emit one explicit initial `gtag('event', 'page_view')` from code after the tag is ready on eligible public production hosts. Do not emit explicit page views for later App Router/history changes while the production GA4 stream's Enhanced Measurement browser-history page-view setting remains enabled. Strip query strings and hashes from the code-owned initial page-view payload, preserve public-host/admin/localhost/preview gating, and keep custom event payload allowlists unchanged.
 
 ### Consequences
 
-- Initial public production route loads, App Router navigations, and browser back/forward restorations can each emit exactly one intended page view when the normalized path changes.
-- Query values are not sent to GA4, reducing PII risk.
-- Hash-only and query-only changes do not create extra page views.
-- Strict Mode rerenders and provider remounts are guarded by a window-level last-page-view key.
-- Production verification must confirm no duplicate page views after Git deployment.
+- Initial public production route loads get the missing page view without turning bootstrap automatic page views back on.
+- App Router navigation, browser back, and browser forward stay single-counted in production because GA4 Enhanced Measurement remains the single source for history-change page views.
+- Query values are not sent by the code-owned initial page view, reducing PII risk.
+- Strict Mode rerenders and provider remounts are guarded by a ref plus the window-level last-page-view key.
+- If the GA4 data-stream Enhanced Measurement setting for browser-history page changes is disabled in the GA4 UI later, SPA navigation page views will require either a GA4 setting change or a new code strategy. That owner-only GA4 setting was not changed by this task.
 
 ## 2026-07-02 - Direct GA4 And Apex Canonical Migration Readiness
 

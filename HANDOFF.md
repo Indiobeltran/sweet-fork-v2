@@ -12,13 +12,15 @@
   - GA bootstrap intentionally disabled automatic page views with `send_page_view: false`.
   - Manual page-view tracking also called `gtag('config', measurementId, { ..., send_page_view: false })`, which updates config but does not reliably send a `page_view` hit.
   - Initial direct loads therefore initialized GA but emitted no `/g/collect` `page_view`; history restoration was not observed centrally.
+  - First Git deploy of the explicit-history tracker fixed direct loads but production network verification showed two `page_view` requests on App Router navigation, browser back, and browser forward. Evidence: one explicit code-owned hit plus one GA4 Enhanced Measurement browser-history hit from the data stream. Google documents that Enhanced Measurement history page views are independent of the `send_page_view: false` config flag.
 - **Implementation approach**:
   - Added centralized explicit GA4 page-view tracking in `src/lib/analytics/events.ts`.
   - Page views now use `gtag('event', 'page_view', { send_to, page_location, page_path, page_title })`.
   - Bootstrap still uses one `gtag('config', ..., { send_page_view: false })` to prevent automatic duplicates.
   - Normalized page paths strip query strings and hashes before tracking; query-only and hash-only changes dedupe to the same path.
   - Window-level `__sweetForkAnalytics.lastPageViewKey` prevents duplicates from rerenders, Strict Mode, and provider remounts.
-  - `src/components/analytics/ga4-provider.tsx` now observes `usePathname`, `useSearchParams`, History API `pushState`/`replaceState`, and `popstate`, then delegates to the centralized tracker.
+  - `src/components/analytics/ga4-provider.tsx` now emits exactly one explicit initial page view after GA is ready on eligible public production hosts.
+  - The provider intentionally does not emit explicit page views for later App Router/history changes because the production GA4 data stream's Enhanced Measurement browser-history listener already sends those page views. If that owner-only GA4 setting is later disabled, SPA page-view tracking will need either a GA4 setting change or a new code strategy.
   - Existing public-host gating, admin exclusion, localhost suppression, Netlify/noncanonical suppression, and missing-ID suppression were preserved.
 - **Tests added/updated**:
   - Added `src/lib/analytics/client.test.ts`.
@@ -36,13 +38,10 @@
     - `http://localhost:3007/` rendered homepage, no GA scripts, no `window.gtag`, no GA requests, no framework overlay.
     - Client navigation to `/gallery` rendered correctly and still had no GA on localhost.
     - `/admin/login` rendered `noindex, nofollow`, no GA scripts, no `window.gtag`, no GA requests.
-- **Remaining production verification steps**:
-  - After commit and Git-triggered Netlify deploy, verify `https://thesweetfork.com` direct homepage load emits exactly one `page_view`.
-  - Verify a direct product route such as `/custom-cakes` emits exactly one `page_view`.
-  - Verify client navigation emits exactly one `page_view`.
-  - Verify browser back emits exactly one `page_view`.
-  - Verify browser forward emits exactly one `page_view`.
-  - Verify no duplicate `gtag.js`, no duplicate bootstrap config, no GA on `/admin`, no GA on Netlify preview host, and no PII in GA payloads.
+- **Deployment / production verification status**:
+  - First Git deploy from commit `b71f6606a3f07fa109571d6271c420ca856e6912` produced active Netlify deploy `6a46bd05d428290008d6d051` with populated `commit_ref`; Git auto-deploy worked.
+  - Production verification on that first deploy confirmed direct homepage and `/custom-cakes` loads emitted exactly one `page_view`, but App Router navigation/back/forward emitted duplicate page views because GA4 Enhanced Measurement also tracks browser history changes.
+  - Follow-up code now removes explicit history tracking. After committing and pushing, wait for a new Git-traceable Netlify deploy and re-run production network verification for direct homepage, direct product route, client navigation, browser back, browser forward, `/admin`, Netlify host suppression, duplicate tag/config checks, and PII scan.
   - GA4 Realtime/DebugView still requires owner account access; do not claim account-level verification without observing it.
 - **Files changed by this task so far**:
   - `DECISIONS.md`
@@ -60,7 +59,7 @@
   - GA4 account settings were not changed.
   - Search Console settings were not changed.
   - Supabase schema and media architecture were not changed.
-- **Next exact action**: Review final diff, stage only task-owned files, commit `fix: track initial and history page views`, push `main`, wait for a Git-traceable Netlify deploy, then run production network verification.
+- **Next exact action**: Review final diff, stage only task-owned files, commit the follow-up duplicate-prevention change, push `main`, wait for a Git-traceable Netlify deploy, then run production network verification again.
 
 ## Post-Cutover Production Verification — 2026-07-02 13:20 MDT
 
