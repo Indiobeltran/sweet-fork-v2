@@ -2,6 +2,36 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
+## 2026-07-02 - Direct GA4 And Apex Canonical Migration Readiness
+
+### Status
+
+Accepted
+
+### Context
+
+The owner confirmed an existing active GA4 web stream for The Sweet Fork with Measurement ID `G-3FG4VD58VP`, no known GTM container, and an existing Search Console Domain property for `thesweetfork.com`. The current public v1 site was verified to use a direct Google tag for the same Measurement ID and no GTM marker was found in fetched HTML. Search Console examples show search equity split across apex, `www`, HTTP, legacy category routes, and stale storefront/demo URLs.
+
+### Options Considered
+
+- Create a new GA4 property or web stream for v2.
+- Create and install Google Tag Manager for v2.
+- Reuse the existing GA4 stream with a direct, public-route-only GA4 implementation.
+- Keep `https://www.thesweetfork.com` as canonical because older v2 code used it.
+- Switch v2 canonical output to `https://thesweetfork.com` and redirect `www` to apex.
+
+### Decision
+
+Reuse the existing GA4 stream with direct GA4 integration through `NEXT_PUBLIC_GA_MEASUREMENT_ID`. Do not add GTM, Google Ads remarketing, Google Signals, advertising personalization, Meta Pixel, or a cookie banner in this implementation. Gate tracking so it is disabled without a Measurement ID, disabled outside production, disabled on localhost, disabled on Netlify/Vercel temporary hosts, and absent from admin routes. Use `https://thesweetfork.com` as the v2 canonical origin for metadata, sitemap, robots, Open Graph, and structured data. Add explicit 301 mappings for useful legacy paths and 410 responses for stale storefront/demo URLs.
+
+### Consequences
+
+- Historical GA4 reporting is preserved instead of starting over.
+- Duplicate GA/GTM installations are avoided.
+- V2 preview and Netlify-host QA traffic does not pollute production GA4 by default.
+- The owner must configure `NEXT_PUBLIC_GA_MEASUREMENT_ID=G-3FG4VD58VP` in Netlify production and verify GA4 Realtime/DebugView after DNS cutover.
+- Existing Search Console property can continue to be used, with sitemap submission deferred until production-domain cutover.
+
 ## 2026-07-02 - Pre-Cutover Security Hardening Scope
 
 ### Status

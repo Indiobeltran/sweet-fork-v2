@@ -17,7 +17,7 @@ type KeySource =
   | "unprivileged"
   | "missing";
 
-const productionSiteUrl = "https://www.thesweetfork.com";
+const productionSiteUrl = "https://thesweetfork.com";
 
 function getDefaultSiteUrl() {
   return process.env.NODE_ENV === "development"

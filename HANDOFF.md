@@ -1,3 +1,136 @@
+## GA4, SEO, and V1-to-V2 Migration Readiness — 2026-07-02
+
+- **Branch**: `codex/ga4-seo-migration-readiness`.
+- **Objective**: Implement production-ready direct GA4, privacy-safe event taxonomy, apex canonical SEO posture, v1-to-v2 URL migration handling, and owner cutover documentation without changing DNS.
+- **Starting branch/status**:
+  - Started on `main`.
+  - Created scoped branch `codex/ga4-seo-migration-readiness`.
+  - Pre-existing local work preserved: `.gitignore`, `.agents/`, `.claude/`, `.superpowers/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `scratch/verification.mjs`, `skills-lock.json`.
+- **Audit completed before implementation**:
+  - Required git checks run: `git branch --show-current`, `git status --short`, `git log --oneline -n 10`.
+  - Required docs read: `AGENTS.md`, `ROADMAP.md`, `GATES.md`, `HANDOFF.md`, `DECISIONS.md`, `BACKLOG.md`, `README.md`.
+  - Inspected App Router routes, root/site layouts, metadata utilities, sitemap/robots, middleware, `next.config.ts`, `netlify.toml`, inquiry wizard, validation schema, API submission handler, gallery, product templates, footer/contact links, privacy/terms content, and existing docs.
+  - V2 source had no existing GA/GTM code.
+  - Current v1 public site fetched from `https://www.thesweetfork.com` uses direct `gtag.js` with `G-3FG4VD58VP`; no GTM marker found in fetched HTML.
+  - V1 apex currently redirects to `www`; v1 serves `200` for stale/demo paths including `/product/wool-throw-blanket` and `/category/pillows`.
+- **Implementation completed**:
+  - Added direct GA4 provider under the public `(site)` layout only.
+  - Added typed analytics allowlist and runtime gating:
+    - disabled without `NEXT_PUBLIC_GA_MEASUREMENT_ID`
+    - disabled outside production
+    - disabled on localhost
+    - disabled on Netlify/Vercel temporary hosts
+    - absent from admin routes by layout placement and runtime guard
+  - Added manual App Router page views with `send_page_view: false` to avoid duplicate page views.
+  - Added Phase 1 custom event instrumentation for product views/CTAs, wedding CTA, pricing visibility, FAQ opens, gallery filter/lightbox/navigation, inquiry funnel steps/errors/submission, and footer contact clicks.
+  - Added privacy-safe event payload allowlist that drops unknown/PII-like parameters.
+  - Switched v2 canonical origin to `https://thesweetfork.com`.
+  - Added `www` to apex host redirect preserving path/query.
+  - Added legacy redirects:
+    - `/category/sugar-cookies` -> `/sugar-cookies`
+    - `/terms-of-service` -> `/terms`
+    - `/menu` -> `/custom-cakes`
+  - Added `410 Gone` retired responses with `X-Robots-Tag: noindex, nofollow` for `/signin`, `/events`, `/category`, `/category/*`, `/product`, and `/product/*`; middleware handles trailing `/category/` and `/product/` directly.
+  - Added preview/temporary host `X-Robots-Tag: noindex, nofollow` in middleware.
+  - Updated CSP to allow GA4 endpoints.
+  - Updated privacy policy copy with GA4 disclosure, non-advertising posture, browser/Google opt-out controls, effective date, and consent reassessment triggers.
+  - Added docs:
+    - `docs/analytics-measurement-plan.md`
+    - `docs/v1-v2-url-migration-map.md`
+  - Updated environment docs and launch notes.
+  - Logged durable GA4/canonical/redirect decision in `DECISIONS.md`.
+- **Files changed recently by this task**:
+  - `.env.example`
+  - `DECISIONS.md`
+  - `HANDOFF.md`
+  - `README.md`
+  - `docs/analytics-measurement-plan.md`
+  - `docs/phase-8-launch-readiness.md`
+  - `docs/v1-v2-url-migration-map.md`
+  - `next.config.ts`
+  - `package.json`
+  - `src/app/(site)/faq/page.tsx`
+  - `src/app/(site)/layout.tsx`
+  - `src/app/(site)/pricing/page.tsx`
+  - `src/app/category/route.ts`
+  - `src/app/category/[slug]/route.ts`
+  - `src/app/events/route.ts`
+  - `src/app/product/route.ts`
+  - `src/app/product/[slug]/route.ts`
+  - `src/app/signin/route.ts`
+  - `src/components/analytics/ga4-provider.tsx`
+  - `src/components/analytics/product-analytics.tsx`
+  - `src/components/analytics/visibility-analytics.tsx`
+  - `src/components/inquiry/start-order-wizard.tsx`
+  - `src/components/site/faq-list.tsx`
+  - `src/components/site/gallery-grid.tsx`
+  - `src/components/site/inquiry-cta.tsx`
+  - `src/components/site/product-page-template.tsx`
+  - `src/components/site/site-footer.tsx`
+  - `src/components/site/site-primary-cta.tsx`
+  - `src/components/site/sticky-product-cta.tsx`
+  - `src/lib/analytics/client.ts`
+  - `src/lib/analytics/events.test.ts`
+  - `src/lib/analytics/events.ts`
+  - `src/lib/content/site-content.ts`
+  - `src/lib/env.ts`
+  - `src/lib/retired-url.ts`
+  - `src/middleware.ts`
+- **Verification completed**:
+  - `node --no-warnings --experimental-strip-types --test src/lib/analytics/events.test.ts` passed.
+  - `npm run lint` passed.
+  - `npm run typecheck` passed.
+  - `npm test` passed (66/66; expected Netlify bridge fail-soft warnings printed).
+  - `npm run build` passed after final middleware changes.
+  - Local production server on port 3006 verified:
+    - homepage canonical and `og:url` use `https://thesweetfork.com`
+    - `robots.txt` Host/Sitemap use `https://thesweetfork.com`
+    - `sitemap.xml` locs use `https://thesweetfork.com`
+    - localhost/no Measurement ID emitted no GA markers
+    - preview host header emitted `X-Robots-Tag: noindex, nofollow`
+    - `www.thesweetfork.com` host redirected to `https://thesweetfork.com/...` with query preserved
+    - legacy redirects returned permanent redirects
+    - stale/demo URLs returned `410 Gone` with noindex header
+  - In-app Browser QA against local production:
+    - `/gallery` loaded nonblank with no relevant console warnings/errors; canonical/OG apex; no GA script/gtag on localhost; Sugar Cookies filter reduced visible cards to 22; lightbox opened and locked body scroll.
+    - `/faq` loaded with no relevant console warnings/errors; first three details were open; opening a closed item increased open count.
+    - `/start-order` loaded nonblank with no relevant console warnings/errors; GA remained absent on localhost.
+  - Final pre-commit review on July 2, 2026:
+    - `git branch --show-current` confirmed `codex/ga4-seo-migration-readiness`.
+    - `git status --short`, `git diff --stat`, and `git diff --check` were run before final edits; `git diff --check` passed.
+    - Task diff was reviewed for unrelated changes, accidental secrets, duplicated analytics initialization/page views, production/preview gating, admin tracking, noindex behavior, redirect loops/chains, sitemap inclusion, structured-data conflicts, privacy-policy consistency, and unrelated Supabase/media/admin changes.
+    - After the final `/menu` mapping change, reran `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, and `git diff --check`; all passed.
+    - Local production server on port 3006 confirmed `/signin`, `/category/`, `/product/`, `/events`, `/product/wool-throw-blanket`, `/category/pillows`, `/product/grey-ceramic-plate`, and `/category/bedroom` return actual `410 Gone` HTTP responses with `X-Robots-Tag: noindex, nofollow`.
+    - Local production server on port 3006 confirmed `/menu` returns `308 Permanent Redirect` to `/custom-cakes`, `/category/sugar-cookies` redirects to `/sugar-cookies`, `/terms-of-service` redirects to `/terms`, `www.thesweetfork.com` redirects to apex with query preserved, preview hosts emit noindex, and the v2 sitemap contains only canonical public routes.
+    - No DNS changes were made.
+    - Pre-existing unrelated workspace files were preserved and intentionally left out of this task: `.gitignore`, `.agents/`, `.claude/`, `.superpowers/`, `scratch/*`, and `skills-lock.json`.
+  - V1 sitemap clarification:
+    - Public v1 sitemap was verified directly on July 2, 2026.
+    - `https://thesweetfork.com/sitemap.xml` returned `301` to `https://www.thesweetfork.com/sitemap.xml`.
+    - Final sitemap URL returned `200`, `content-type: application/xml; charset=utf-8`, valid XML shape, and approximately 13 `<loc>` URLs.
+    - A publicly available sitemap and a sitemap submitted in Search Console are separate facts. This task did not modify or submit the v1 sitemap.
+  - Final `/menu` decision:
+    - HTTP fetch of `https://www.thesweetfork.com/menu` returned `200` HTML shell, and rendered browser verification landed on `https://www.thesweetfork.com/custom-cakes`.
+    - Rendered page title was `Custom Cakes | The Sweet Fork | Centerville, Utah`, H1 was `Custom Cakes`, and content focused on cake process, cake types, and starting prices.
+    - V2 `/custom-cakes` is therefore the closest existing destination; `/menu` now redirects to `/custom-cakes`, not the homepage.
+- **GA4 verification status**:
+  - Code-level and local browser/network gating verified.
+  - GA4 Realtime, DebugView, and event receipt were not verified because no Google account access was used and DNS was not cut over.
+- **Owner actions still required**:
+  - Configure `NEXT_PUBLIC_GA_MEASUREMENT_ID=G-3FG4VD58VP` in Netlify production before deployed v2 should emit GA4 on `https://thesweetfork.com`.
+  - After DNS cutover, verify GA4 Realtime/DebugView and one successful `inquiry_submitted` conversion.
+  - Mark `inquiry_submitted` as a GA4 key event; consider `wedding_consultation_started` only if desired.
+  - Submit `https://thesweetfork.com/sitemap.xml` to the existing Search Console property after production-domain cutover.
+  - Verify Google Business Profile website/contact/service-area alignment after cutover.
+- **Known limitations / follow-ups**:
+  - No DNS changes were made.
+  - No GTM account/container was created.
+  - No GA4 account settings were modified.
+  - Deployed Netlify production verification was not performed in this task.
+  - Deployed Netlify verification still required: production env var presence, apex canonical/robots/sitemap output, preview-host noindex, deployed legacy redirects/410 responses, no duplicate GA tags, GA4 Realtime/DebugView, one successful `inquiry_submitted` event, Search Console sitemap submission after cutover, and Google Business Profile alignment.
+  - `.gitignore` remains a pre-existing unrelated modified file and is not part of this task.
+- **Next exact action**: Stage only task-owned files and commit with `feat: add analytics and SEO migration readiness`. Do not stage the pre-existing `.gitignore` change or unrelated untracked workspace files.
+
 ## Pre-DNS-Cutover Security Review — 2026-07-02
 
 - **Branch**: `codex/pre-cutover-security-review`.

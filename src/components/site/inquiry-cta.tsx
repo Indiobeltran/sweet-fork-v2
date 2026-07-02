@@ -1,5 +1,6 @@
 import { getInquiryCtaBySlug } from "@/lib/site/cta";
 import { SitePrimaryCta } from "@/components/site/site-primary-cta";
+import { getProductCategory } from "@/lib/analytics/events";
 
 type InquiryCtaProps = {
   slug?: string;
@@ -17,6 +18,7 @@ export function InquiryCta({
   urgencyNote = "Dates around weddings, holidays, and peak weekends tend to book first.",
 }: InquiryCtaProps) {
   const cta = getInquiryCtaBySlug(slug);
+  const productCategory = slug ? getProductCategory(slug) : undefined;
 
   return (
     <section
@@ -38,6 +40,16 @@ export function InquiryCta({
             label={cta.label}
             subtext={cta.subtext}
             buttonClassName="bg-ivory text-charcoal hover:bg-white sm:w-full"
+            analyticsEvent={
+              slug === "wedding-cakes"
+                ? "wedding_consultation_started"
+                : "product_cta_clicked"
+            }
+            analyticsParams={{
+              cta_location: slug ? "product_final_cta" : "site_final_cta",
+              ...(productCategory ? { product_category: productCategory } : {}),
+              ...(slug ? { page_path: `/${slug}`, product_slug: slug } : {}),
+            }}
           />
           <p className="text-sm leading-7 text-ivory/66">
             {urgencyNote}

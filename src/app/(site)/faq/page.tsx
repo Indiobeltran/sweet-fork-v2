@@ -1,4 +1,5 @@
 import { InquiryCta } from "@/components/site/inquiry-cta";
+import { FaqList } from "@/components/site/faq-list";
 import { PublicPageHero } from "@/components/site/public-page-hero";
 import { getInquiryCtaBySlug } from "@/lib/site/cta";
 import { getPublicFaqItems } from "@/lib/site/marketing";
@@ -40,28 +41,7 @@ export default async function FaqPage() {
         accent="If anything still feels open-ended, include it in the inquiry and The Sweet Fork will address it in the first reply."
         cta={defaultCta}
       />
-      <section className="section-shell space-y-4 py-16 md:py-20">
-        {faqItems.map((item, index) => (
-          <details
-            key={item.question}
-            className="group luxury-panel rounded-[1.8rem] p-0"
-            open={index < 3}
-          >
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-5 px-6 py-6 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50">
-              <h2 className="text-lg font-medium text-charcoal">{item.question}</h2>
-              <span
-                aria-hidden="true"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-charcoal/10 text-xl leading-none text-charcoal/58 transition group-open:rotate-45"
-              >
-                +
-              </span>
-            </summary>
-            <div className="px-6 pb-6 pt-0">
-              <p className="max-w-3xl text-sm leading-7 text-charcoal/68">{item.answer}</p>
-            </div>
-          </details>
-        ))}
-      </section>
+      <FaqList items={faqItems} />
       <InquiryCta
         title="Ready to ask about your own celebration?"
         description="The inquiry form is the simplest way to share your date, dessert needs, and design direction without any commitment to book."

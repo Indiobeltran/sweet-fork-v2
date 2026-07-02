@@ -705,6 +705,12 @@ export const termsSections = [
 
 export const privacySections = [
   {
+    title: "Effective date",
+    points: [
+      "This privacy overview is effective July 2, 2026.",
+    ],
+  },
+  {
     title: "Information collected with an inquiry",
     points: [
       "The website collects the contact details, event information, product selections, design notes, budget details, and other information entered into the inquiry form.",
@@ -716,6 +722,23 @@ export const privacySections = [
     points: [
       "Submitted information is used to review availability, prepare quotes, coordinate pickup or delivery, and manage the order from inquiry through fulfillment.",
       "Preferred contact details are used so The Sweet Fork can follow up about the request and any confirmed order.",
+    ],
+  },
+  {
+    title: "Website analytics",
+    points: [
+      "The Sweet Fork uses Google Analytics 4 to understand site performance, popular pages, and the inquiry journey so the website can be improved for local customers.",
+      "Google Analytics may use cookies or similar technologies to collect general technical and usage information such as page views, broad interaction events, browser or device information, and approximate traffic patterns.",
+      "Customer inquiry details such as names, email addresses, phone numbers, street addresses, exact event dates, free-form inquiry notes, uploaded file names, image URLs, and internal order or inquiry identifiers are not intentionally sent to Google Analytics.",
+      "Analytics is used for first-party site measurement and inquiry-funnel improvement. The Sweet Fork does not currently use Google Analytics for personalized advertising, remarketing, Google Ads audiences, Meta Pixel tracking, or cross-site behavioral advertising.",
+    ],
+  },
+  {
+    title: "Cookie and analytics controls",
+    points: [
+      "Customers can control cookies through their browser settings and can use Google's Analytics opt-out browser add-on if they prefer not to be measured by Google Analytics.",
+      "The Sweet Fork should reassess consent and tracking requirements before international marketing, international orders or shipping, national expansion, Google Ads remarketing, Meta Pixel installation, personalized advertising, cross-site behavioral tracking, material business-scale changes, or material privacy-law changes.",
+      "The current absence of a cookie banner reflects the current local Utah bakery measurement posture and is not permanent legal advice.",
     ],
   },
   {

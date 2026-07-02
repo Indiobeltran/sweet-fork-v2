@@ -27,6 +27,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { trackAnalyticsEvent } from "@/lib/analytics/client";
+import {
+  getBudgetBucket,
+  getLeadTimeBucket,
+  getProductCategory,
+} from "@/lib/analytics/events";
 import { cn, formatDate } from "@/lib/utils";
 import {
   budgetFlexibilityOptions,
@@ -115,6 +121,9 @@ export function StartOrderWizard({
   const hasMountedRef = useRef(false);
   const fieldRefs = useRef<Record<string, HTMLElement | null>>({});
   const shouldFocusErrorRef = useRef(false);
+  const viewedStepsRef = useRef<Set<number>>(new Set());
+  const inquiryStartedTrackedRef = useRef(false);
+  const submissionTrackedRef = useRef(false);
 
   const normalizedValues = normalizeInquiryFormValues(values);
   const minimumEventDate = getMinimumInquiryDate();
@@ -145,6 +154,19 @@ export function StartOrderWizard({
     if (currentStep > 0) {
       setHasStarted(true);
     }
+  }, [currentStep]);
+
+  useEffect(() => {
+    if (viewedStepsRef.current.has(currentStep)) {
+      return;
+    }
+
+    viewedStepsRef.current.add(currentStep);
+    trackAnalyticsEvent("inquiry_step_viewed", {
+      page_path: "/start-order",
+      step_name: inquiryStepTitles[currentStep].toLowerCase().replace(/\s+/g, "_"),
+      step_number: currentStep + 1,
+    });
   }, [currentStep]);
 
   useEffect(() => {
@@ -254,6 +276,47 @@ export function StartOrderWizard({
       }
 
       return next;
+    });
+  };
+
+  const trackStepCompleted = (stepIndex: number) => {
+    const preparedValues = normalizeInquiryFormValues(values);
+
+    trackAnalyticsEvent("inquiry_step_completed", {
+      budget_bucket: stepIndex === 0 ? getBudgetBucket(preparedValues.budgetRange) : undefined,
+      delivery_method:
+        stepIndex === 0 ? preparedValues.fulfillmentMethod : undefined,
+      has_inspiration_images:
+        stepIndex === 3 ? preparedValues.inspirationLinks.length > 0 : undefined,
+      lead_time_bucket:
+        stepIndex === 0 ? getLeadTimeBucket(preparedValues.eventDate) : undefined,
+      page_path: "/start-order",
+      selected_product_count:
+        stepIndex >= 1 ? preparedValues.orderItems.length : undefined,
+      step_name: inquiryStepTitles[stepIndex].toLowerCase().replace(/\s+/g, "_"),
+      step_number: stepIndex + 1,
+    });
+  };
+
+  const trackInquiryStarted = () => {
+    if (inquiryStartedTrackedRef.current) {
+      return;
+    }
+
+    inquiryStartedTrackedRef.current = true;
+    trackAnalyticsEvent("inquiry_started", {
+      page_path: "/start-order",
+    });
+  };
+
+  const trackValidationErrors = (stepIndex: number, nextErrors: ErrorMap) => {
+    Object.keys(nextErrors).forEach((key) => {
+      trackAnalyticsEvent("inquiry_validation_error", {
+        error_category: key.split(".").at(-1) ?? "unknown",
+        page_path: "/start-order",
+        step_name: inquiryStepTitles[stepIndex].toLowerCase().replace(/\s+/g, "_"),
+        step_number: stepIndex + 1,
+      });
     });
   };
 
@@ -428,6 +491,8 @@ export function StartOrderWizard({
     });
 
     if (Object.keys(nextErrors).length > 0) {
+      trackValidationErrors(stepIndex, nextErrors);
+
       if (focusOnError) {
         shouldFocusErrorRef.current = true;
       }
@@ -466,10 +531,19 @@ export function StartOrderWizard({
       return;
     }
 
+    if (currentStep === 0) {
+      trackInquiryStarted();
+    }
+    trackStepCompleted(currentStep);
     setCurrentStep((current) => Math.min(current + 1, inquiryStepTitles.length - 1));
   };
 
   const goToPreviousStep = () => {
+    trackAnalyticsEvent("inquiry_step_back", {
+      page_path: "/start-order",
+      step_name: inquiryStepTitles[currentStep].toLowerCase().replace(/\s+/g, "_"),
+      step_number: currentStep + 1,
+    });
     setCurrentStep((current) => Math.max(current - 1, 0));
   };
 
@@ -479,6 +553,11 @@ export function StartOrderWizard({
     }
 
     if (stepIndex < currentStep) {
+      trackAnalyticsEvent("inquiry_step_back", {
+        page_path: "/start-order",
+        step_name: inquiryStepTitles[currentStep].toLowerCase().replace(/\s+/g, "_"),
+        step_number: currentStep + 1,
+      });
       setCurrentStep(stepIndex);
       return;
     }
@@ -490,6 +569,11 @@ export function StartOrderWizard({
         setCurrentStep(index);
         return;
       }
+
+      if (index === 0) {
+        trackInquiryStarted();
+      }
+      trackStepCompleted(index);
     }
 
     setCurrentStep(stepIndex);
@@ -563,6 +647,7 @@ export function StartOrderWizard({
 
     if (!result.success) {
       const nextErrors = flattenIssues(result.error.issues);
+      trackValidationErrors(findStepForErrors(nextErrors), nextErrors);
       shouldFocusErrorRef.current = true;
       setErrors(nextErrors);
       setCurrentStep(findStepForErrors(nextErrors));
@@ -570,6 +655,12 @@ export function StartOrderWizard({
     }
 
     if (!featureFlags.linkFallbackEnabled && preparedValues.inspirationLinks.length > 0) {
+      trackAnalyticsEvent("inquiry_validation_error", {
+        error_category: "inspiration_links_disabled",
+        page_path: "/start-order",
+        step_name: inquiryStepTitles[3].toLowerCase().replace(/\s+/g, "_"),
+        step_number: 4,
+      });
       shouldFocusErrorRef.current = true;
       setErrors({
         inspirationLinks:
@@ -580,6 +671,10 @@ export function StartOrderWizard({
     }
 
     if (!submissionAvailable) {
+      trackAnalyticsEvent("inquiry_submission_error", {
+        error_category: "submission_paused",
+        page_path: "/start-order",
+      });
       setSubmitError(
         "Online submission is paused. Use the email button below to send these details directly.",
       );
@@ -615,8 +710,31 @@ export function StartOrderWizard({
         throw new Error("We could not submit the inquiry right now.");
       }
 
+      if (!submissionTrackedRef.current) {
+        submissionTrackedRef.current = true;
+        trackAnalyticsEvent("inquiry_submitted", {
+          budget_bucket: getBudgetBucket(preparedValues.budgetRange),
+          delivery_method: preparedValues.fulfillmentMethod,
+          has_inspiration_images:
+            preparedValues.inspirationLinks.length > 0 ||
+            Boolean(preparedValues.inspirationText),
+          lead_time_bucket: getLeadTimeBucket(preparedValues.eventDate),
+          page_path: "/start-order",
+          product_category:
+            preparedValues.orderItems.length === 1
+              ? getProductCategory(preparedValues.orderItems[0].productType)
+              : "multiple",
+          selected_product_count: preparedValues.orderItems.length,
+          step_name: inquiryStepTitles[4].toLowerCase().replace(/\s+/g, "_"),
+          step_number: 5,
+        });
+      }
       setSubmissionResult(payload as InquirySubmissionResponse);
     } catch (error) {
+      trackAnalyticsEvent("inquiry_submission_error", {
+        error_category: "submission_failed",
+        page_path: "/start-order",
+      });
       setSubmitError(getSafeSubmissionErrorMessage(error));
     } finally {
       setIsSubmitting(false);

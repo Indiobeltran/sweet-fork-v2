@@ -5,16 +5,16 @@ const isProduction = process.env.NODE_ENV === "production";
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
-  "connect-src 'self' ws: wss: https://*.supabase.co",
+  "connect-src 'self' ws: wss: https://*.supabase.co https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com",
   "font-src 'self' data:",
   "form-action 'self'",
   "frame-src 'none'",
   "frame-ancestors 'none'",
-  "img-src 'self' data: blob: https://*.supabase.co",
+  "img-src 'self' data: blob: https://*.supabase.co https://www.google-analytics.com https://www.googletagmanager.com",
   "manifest-src 'self'",
   "media-src 'self' data: blob: https://*.supabase.co",
   "object-src 'none'",
-  `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"}`,
+  `script-src 'self' 'unsafe-inline' https://www.googletagmanager.com${isProduction ? "" : " 'unsafe-eval'"}`,
   "script-src-attr 'none'",
   "style-src 'self' 'unsafe-inline'",
   "style-src-elem 'self' 'unsafe-inline'",
@@ -59,6 +59,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  skipTrailingSlashRedirect: true,
   images: {
     formats: ["image/avif", "image/webp"],
     qualities: [75, 82],
@@ -79,6 +80,36 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: securityHeaders,
+      },
+    ];
+  },
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "host",
+            value: "www.thesweetfork.com",
+          },
+        ],
+        destination: "https://thesweetfork.com/:path*",
+        permanent: true,
+      },
+      {
+        source: "/category/sugar-cookies",
+        destination: "/sugar-cookies",
+        permanent: true,
+      },
+      {
+        source: "/terms-of-service",
+        destination: "/terms",
+        permanent: true,
+      },
+      {
+        source: "/menu",
+        destination: "/custom-cakes",
+        permanent: true,
       },
     ];
   },

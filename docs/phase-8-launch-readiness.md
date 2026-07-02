@@ -38,6 +38,11 @@ Then verify the seeded reference data:
 ## Launch Checklist
 
 - Confirm at least one valid owner account exists in both `profiles` and `user_roles`.
+- Configure `NEXT_PUBLIC_GA_MEASUREMENT_ID=G-3FG4VD58VP` in Netlify production when v2 is ready to receive production analytics.
+- Confirm v2 uses the existing GA4 property directly and that no GTM container or second GA tag is installed.
+- Confirm canonical URLs, Open Graph URLs, robots, sitemap, and structured data use `https://thesweetfork.com`.
+- Before DNS cutover, verify the redirect and retirement map in `docs/v1-v2-url-migration-map.md`.
+- Do not submit the v2 sitemap to Search Console until the production domain is cut over or the owner explicitly approves submission.
 - Open `/admin/users` and confirm the owner and manager list matches reality.
 - Open `/admin/settings` and review:
   - brand identity
@@ -62,7 +67,17 @@ Then verify the seeded reference data:
 - Run:
   - `npm run typecheck`
   - `npm run lint`
+  - `npm test`
   - `npm run build`
+
+## Analytics And SEO Cutover Notes
+
+- Measurement plan: `docs/analytics-measurement-plan.md`.
+- Migration map: `docs/v1-v2-url-migration-map.md`.
+- Primary GA4 key event recommendation: `inquiry_submitted`.
+- Optional secondary GA4 key event: `wedding_consultation_started`, only if the owner wants wedding lead actions separated.
+- GA4 Realtime, DebugView, and Search Console sitemap submission are owner/account checks after deployed-domain verification; do not claim them from code-only verification.
+- Reassess consent requirements before international marketing, international orders or shipping, national expansion, remarketing, Meta Pixel installation, personalized advertising, cross-site behavioral tracking, material business-scale changes, or material privacy-law changes.
 
 ## How To Operate The App
 

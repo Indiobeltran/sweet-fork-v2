@@ -1,3 +1,4 @@
+import { VisibilityAnalytics } from "@/components/analytics/visibility-analytics";
 import { InquiryCta } from "@/components/site/inquiry-cta";
 import { PublicPageHero } from "@/components/site/public-page-hero";
 import { getInquiryCtaBySlug } from "@/lib/site/cta";
@@ -28,6 +29,13 @@ export default async function PricingPage() {
       />
 
       <section className="border-y border-charcoal/8 bg-cream/70 py-16 md:py-20">
+        <VisibilityAnalytics
+          eventName="pricing_section_viewed"
+          params={{
+            page_path: "/pricing",
+            cta_location: "pricing_matrix",
+          }}
+        />
         <div className="section-shell grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="space-y-5">
             <p className="eyebrow-label">Starting prices</p>

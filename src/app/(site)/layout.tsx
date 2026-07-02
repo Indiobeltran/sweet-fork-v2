@@ -1,3 +1,4 @@
+import { GoogleAnalyticsProvider } from "@/components/analytics/ga4-provider";
 import { BackToTopButton } from "@/components/site/back-to-top-button";
 import { PublicBookingNoticeBanner } from "@/components/site/public-booking-notice";
 import { SiteFooter } from "@/components/site/site-footer";
@@ -7,9 +8,11 @@ import { getPublicSiteChromeData } from "@/lib/site/marketing";
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   const chrome = await getPublicSiteChromeData();
+  const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim();
 
   return (
     <div className="min-h-screen bg-ivory text-charcoal">
+      <GoogleAnalyticsProvider measurementId={gaMeasurementId} />
       <a
         href="#site-main"
         className="sr-only absolute left-4 top-4 z-[60] rounded-full bg-charcoal px-4 py-2 text-sm font-medium text-ivory focus-visible:not-sr-only focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50"

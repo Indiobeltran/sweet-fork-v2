@@ -4,6 +4,7 @@ import { type TouchEvent, useEffect, useId, useMemo, useRef, useState } from "re
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
+import { trackAnalyticsEvent } from "@/lib/analytics/client";
 import type { GalleryItem } from "@/types/domain";
 import { cn } from "@/lib/utils";
 
@@ -199,16 +200,34 @@ export function GalleryGrid({
       return;
     }
 
+    const item = filteredItems[index];
+    trackAnalyticsEvent("gallery_item_viewed", {
+      gallery_category: getFilterCategory(item.category).toLowerCase().replace(/\s+/g, "_"),
+      gallery_position: index + 1,
+      page_path: "/gallery",
+    });
     setActiveIndex(index);
   };
 
   const showGalleryControls = interactiveIndexes.length > 1 && activeIndex !== null;
   const showPreviousItem = () => {
+    trackAnalyticsEvent("gallery_item_navigated", {
+      gallery_category: activeItem
+        ? getFilterCategory(activeItem.category).toLowerCase().replace(/\s+/g, "_")
+        : undefined,
+      page_path: "/gallery",
+    });
     setActiveIndex((current) =>
       getAdjacentInteractiveIndex(current, interactiveIndexes, "previous"),
     );
   };
   const showNextItem = () => {
+    trackAnalyticsEvent("gallery_item_navigated", {
+      gallery_category: activeItem
+        ? getFilterCategory(activeItem.category).toLowerCase().replace(/\s+/g, "_")
+        : undefined,
+      page_path: "/gallery",
+    });
     setActiveIndex((current) =>
       getAdjacentInteractiveIndex(current, interactiveIndexes, "next"),
     );
@@ -276,6 +295,12 @@ export function GalleryGrid({
               key={category.key}
               type="button"
               onClick={() => {
+                if (activeCategory !== category.key) {
+                  trackAnalyticsEvent("gallery_filter_used", {
+                    gallery_category: category.key.toLowerCase().replace(/\s+/g, "_"),
+                    page_path: "/gallery",
+                  });
+                }
                 setActiveCategory(category.key);
                 setActiveIndex(null);
               }}

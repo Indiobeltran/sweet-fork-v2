@@ -2,10 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
+import { ProductAnalytics } from "@/components/analytics/product-analytics";
 import { InquiryCta } from "@/components/site/inquiry-cta";
 import { SectionHeading } from "@/components/site/section-heading";
 import { SitePrimaryCta } from "@/components/site/site-primary-cta";
 import { StickyProductCta } from "@/components/site/sticky-product-cta";
+import { getProductCategory } from "@/lib/analytics/events";
 import { getPublicEnv } from "@/lib/env";
 import { siteConfig } from "@/lib/content/site-content";
 import { getInquiryCtaBySlug } from "@/lib/site/cta";
@@ -25,6 +27,7 @@ export function ProductPageTemplate({
   const pageUrl = new URL(`/${content.slug}`, siteUrl).toString();
   const galleryHref = "/gallery";
   const hasShowcaseItems = showcaseItems.length > 0;
+  const productCategory = getProductCategory(content.slug);
   const serviceJsonLd = {
     "@context": "https://schema.org",
     "@type": "Service",
@@ -56,6 +59,7 @@ export function ProductPageTemplate({
 
   return (
     <div className="pb-24 md:pb-0">
+      <ProductAnalytics slug={content.slug} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
@@ -73,7 +77,22 @@ export function ProductPageTemplate({
                 {content.intro}
               </p>
             </div>
-            <SitePrimaryCta href={cta.href} label={cta.label} subtext={cta.subtext} />
+            <SitePrimaryCta
+              href={cta.href}
+              label={cta.label}
+              subtext={cta.subtext}
+              analyticsEvent={
+                content.slug === "wedding-cakes"
+                  ? "wedding_consultation_started"
+                  : "product_cta_clicked"
+              }
+              analyticsParams={{
+                cta_location: "product_hero",
+                page_path: `/${content.slug}`,
+                product_category: productCategory,
+                product_slug: content.slug,
+              }}
+            />
           </div>
 
           <div className="grid gap-4 section-reveal">
@@ -258,6 +277,17 @@ export function ProductPageTemplate({
         href={cta.href}
         label={cta.label}
         subtext={cta.subtext}
+        analyticsEvent={
+          content.slug === "wedding-cakes"
+            ? "wedding_consultation_started"
+            : "product_cta_clicked"
+        }
+        analyticsParams={{
+          cta_location: "product_sticky_cta",
+          page_path: `/${content.slug}`,
+          product_category: productCategory,
+          product_slug: content.slug,
+        }}
       />
     </div>
   );

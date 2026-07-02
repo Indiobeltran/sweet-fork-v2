@@ -1,6 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 
+import { trackAnalyticsEvent } from "@/lib/analytics/client";
 import type { SiteShellData } from "@/lib/site/marketing";
 
 type SiteFooterProps = {
@@ -29,12 +32,22 @@ export function SiteFooter({ legalLinks, site }: Readonly<SiteFooterProps>) {
             <p>{site.location}</p>
             <a
               href={`tel:${site.phone}`}
+              onClick={() =>
+                trackAnalyticsEvent("contact_method_clicked", {
+                  contact_method: "phone",
+                })
+              }
               className="w-fit rounded-full transition hover:text-ivory focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50"
             >
               {site.phone}
             </a>
             <a
               href={`mailto:${site.email}`}
+              onClick={() =>
+                trackAnalyticsEvent("contact_method_clicked", {
+                  contact_method: "email",
+                })
+              }
               className="w-fit rounded-full transition hover:text-ivory focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50"
             >
               {site.email}
@@ -43,6 +56,11 @@ export function SiteFooter({ legalLinks, site }: Readonly<SiteFooterProps>) {
               href={site.instagramUrl}
               target="_blank"
               rel="noreferrer"
+              onClick={() =>
+                trackAnalyticsEvent("contact_method_clicked", {
+                  contact_method: "instagram",
+                })
+              }
               className="w-fit rounded-full transition hover:text-ivory focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50"
             >
               @{site.instagramHandle}

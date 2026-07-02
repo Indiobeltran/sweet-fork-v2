@@ -64,6 +64,7 @@ Legacy key names are still supported during migration:
 General app configuration:
 
 - `NEXT_PUBLIC_SITE_URL`
+- `NEXT_PUBLIC_GA_MEASUREMENT_ID`
 - `INQUIRY_UPLOAD_ENABLED`
 - `INQUIRY_LINK_FALLBACK_ENABLED`
 - `SUPABASE_STORAGE_BUCKET`

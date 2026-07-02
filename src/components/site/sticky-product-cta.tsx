@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { trackAnalyticsEvent } from "@/lib/analytics/client";
+import type { AnalyticsEventName, AnalyticsParams } from "@/lib/analytics/events";
 import { cn } from "@/lib/utils";
 
 type StickyProductCtaProps = {
@@ -10,6 +12,8 @@ type StickyProductCtaProps = {
   label: string;
   subtext: string;
   targetId?: string;
+  analyticsEvent?: AnalyticsEventName;
+  analyticsParams?: AnalyticsParams;
 };
 
 export function StickyProductCta({
@@ -17,6 +21,8 @@ export function StickyProductCta({
   label,
   subtext,
   targetId = "product-final-cta",
+  analyticsEvent,
+  analyticsParams,
 }: StickyProductCtaProps) {
   const [hasScrolledIntoPage, setHasScrolledIntoPage] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -71,6 +77,11 @@ export function StickyProductCta({
       <div className="pointer-events-auto mx-auto max-w-md rounded-full border border-charcoal/10 bg-ivory/94 p-1.5 shadow-[0_18px_48px_rgba(40,31,24,0.18)] backdrop-blur-xl">
         <Link
           href={href}
+          onClick={() => {
+            if (analyticsEvent) {
+              trackAnalyticsEvent(analyticsEvent, analyticsParams);
+            }
+          }}
           className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-charcoal px-5 py-3 text-center text-sm font-semibold tracking-[0.02em] text-ivory shadow-soft transition duration-200 active:scale-[0.985] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50"
         >
           {label}
