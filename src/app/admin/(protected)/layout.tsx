@@ -3,6 +3,12 @@ import { AdminShellChrome } from "@/components/admin/admin-shell-chrome";
 import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
+export const metadata = {
+  robots: {
+    follow: false,
+    index: false,
+  },
+};
 
 export default async function AdminProtectedLayout({
   children,

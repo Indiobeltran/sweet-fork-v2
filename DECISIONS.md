@@ -2,6 +2,32 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
+## 2026-07-02 - Pre-Cutover Security Hardening Scope
+
+### Status
+
+Accepted
+
+### Context
+
+The pre-DNS-cutover security review found no confirmed Critical issue, but `npm audit --omit=dev` identified production dependency advisories affecting the installed Next.js patch line and transitive `ws`. Admin routes were already protected by server-side role checks and `robots.txt`, but did not emit explicit noindex metadata. Netlify env metadata also showed `SECRETS_SCAN_OMIT_KEYS` suppressing scanning for `SUPABASE_SECRET_KEY`.
+
+### Options Considered
+
+- Defer all security changes and only document findings.
+- Apply a broad framework/dependency upgrade.
+- Apply only localized, patch-level remediation and document non-blocking configuration hardening.
+
+### Decision
+
+Update the Next.js and `eslint-config-next` package declarations to the current 15.5 patch line, refresh the audited dependency graph, and add explicit `noindex,nofollow` metadata to admin login/protected layouts. Do not change DNS, rotate credentials, remove Netlify env vars, or redesign CSP/Auth/Storage during this launch gate review.
+
+### Consequences
+
+- Production dependency audit is clean after remediation.
+- Admin pages have an additional crawl-prevention signal beyond `robots.txt` and redirects.
+- The Netlify secret-scan omission remains a documented owner-review item rather than an untested launch-day config change.
+
 ## 2026-06-13 - Derive Featured Placement Semantics From Media Assignments
 
 ### Status

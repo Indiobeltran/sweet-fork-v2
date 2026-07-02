@@ -1,3 +1,59 @@
+## Pre-DNS-Cutover Security Review — 2026-07-02
+
+- **Branch**: `codex/pre-cutover-security-review`.
+- **Objective**: Focused defensive source-code, configuration, authorization, Supabase, Storage, dependency, and production-verification review before DNS cutover.
+- **Baseline reviewed**: `7e7d3287390e88844ce293196ff82d8cfefad01d` (`docs: record post-audit production verification`), matching `origin/main` at review start.
+- **Production URL reviewed**: `https://sweet-fork-v2.netlify.app`.
+- **Report**: `docs/PRE_CUTOVER_SECURITY_REVIEW.md`.
+- **Findings by severity**:
+  - Critical: 0.
+  - High: 1 confirmed dependency finding, fixed locally (`next` patch line and transitive `ws` audit state).
+  - Medium: 1 deferred Netlify configuration hardening item (`SECRETS_SCAN_OMIT_KEYS` suppresses scanning for `SUPABASE_SECRET_KEY`; owner should remove or document rationale).
+  - Low: 2 defense-in-depth findings: admin noindex fixed; CSP unsafe-inline deferred for post-launch report-only nonce/hash work.
+  - Informational: normal authenticated non-admin negative test not live-run because no non-admin production QA account was available and no account was created.
+- **Fixes implemented**:
+  - `package.json`: updated `next` and `eslint-config-next` to `^15.5.20`.
+  - `src/app/admin/(auth)/login/page.tsx`: added `robots: { index: false, follow: false }`.
+  - `src/app/admin/(protected)/layout.tsx`: added `robots: { index: false, follow: false }`.
+  - `docs/PRE_CUTOVER_SECURITY_REVIEW.md`: added full review report and retest instructions.
+  - `DECISIONS.md`: recorded pre-cutover security hardening scope.
+- **Checks performed**:
+  - Required git state inspection: branch, status, log, HEAD, `origin/main`.
+  - Read `AGENTS.md`, `ROADMAP.md`, `GATES.md`, `HANDOFF.md`, `DECISIONS.md`, `BACKLOG.md`, `README.md`.
+  - Supabase changelog/product-security docs checked for current security context.
+  - Source review of public routes, admin routes/actions, middleware, Supabase clients, inquiry validation/submission, Netlify bridge, security headers, sitemap/robots, migrations/RLS.
+  - Targeted secret search in tracked files/history; no committed active secret found.
+  - Local `.env.local` inspected only for variable names and set/empty status; values were not recorded.
+  - Netlify project/forms/env metadata inspected; secret values intentionally excluded from report/handoff.
+  - Anonymous Supabase count checks: sensitive tables returned 0 visible rows; public marketing tables remained readable.
+  - Existing QA admin Supabase Auth sign-in succeeded; count-only protected-table reads succeeded.
+  - Anonymous Storage tiny-PNG upload probes to `marketing` and `inspiration` were denied by RLS; no test object was created.
+  - Production headers checked on `/`, `/gallery`, `/start-order`, `/admin/login`, `/admin/inquiries`.
+  - Safe invalid inquiry checks: cross-origin and honeypot submissions rejected.
+  - `npm audit --omit=dev --json` initially found advisories, then reported zero production vulnerabilities after remediation.
+  - `npm outdated --json` captured broad non-security update state; broad upgrades deferred.
+  - `npm run lint` passed.
+  - `npm run typecheck` passed.
+  - `npm test` passed (59/59; expected Netlify bridge fail-soft warnings printed).
+  - `npm run build` passed on Next.js 15.5.20.
+  - `git diff --check` clean.
+  - `.next/static` secret-value search found no privileged Supabase or QA credential values.
+  - Local production server on port 3005 confirmed `/admin/login` renders `noindex, nofollow` and signed-out `/admin/inquiries` redirects to `/admin/login` with security headers and private/no-store caching.
+- **Remaining blockers**:
+  - No unresolved Critical or High security finding after local remediation, pending final gates.
+  - Direct production inquiry-notification email receipt remains the operational launch gate.
+  - Netlify `SECRETS_SCAN_OMIT_KEYS` should be owner-reviewed but is not classified as a DNS blocker because no active repo/history secret exposure was found.
+- **Inquiry email-gate status**: Still open; direct recipient inbox receipt was not verified in this security review.
+- **DNS status**: DNS was not changed.
+- **Open decisions**:
+  - Whether to remove `SECRETS_SCAN_OMIT_KEYS` or document a Netlify false-positive rationale.
+  - Whether to create a dedicated non-admin QA account for repeatable negative authenticated RLS tests.
+  - Whether/when to add admin MFA/passkeys.
+- **Exact next action**: Inspect final diff, stage only intended files, commit, then merge/push/deploy only if no new Critical/High security issue appears.
+- **Unrelated local work intentionally preserved and unstaged**:
+  - `.gitignore` local `.netlify` addition.
+  - `.agents/`, `.claude/`, `.superpowers/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `scratch/verification.mjs`, `skills-lock.json`.
+
 ## Post-Audit Merge, Deploy, and Production Verification — 2026-07-02
 
 - **Branch**: `main`.

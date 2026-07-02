@@ -10,6 +10,10 @@ import { signOutAdmin } from "@/app/admin/actions";
 
 export const metadata = {
   title: "Admin Login",
+  robots: {
+    follow: false,
+    index: false,
+  },
 };
 
 export default async function AdminLoginPage() {
