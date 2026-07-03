@@ -1,9 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth";
+import {
+  getSafeRedirectTarget,
+  parseOptionalString,
+  parseRequiredString,
+  redirectWithNotice,
+} from "@/lib/admin/action-helpers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   Constants,
@@ -11,32 +16,12 @@ import {
   type TablesUpdate,
 } from "@/types/supabase.generated";
 
-function redirectWithNotice(path: string, notice: string): never {
-  const url = new URL(path, "http://localhost");
-  url.searchParams.set("notice", notice);
-
-  redirect(`${url.pathname}${url.search}`);
-}
-
 function getSafeCustomerRedirectTarget(value: FormDataEntryValue | null, customerId?: string) {
-  if (typeof value === "string" && value.startsWith("/admin/customers")) {
-    return value;
-  }
-
-  return customerId ? `/admin/customers/${customerId}` : "/admin/customers";
-}
-
-function parseOptionalString(value: FormDataEntryValue | null) {
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
-function parseRequiredString(value: FormDataEntryValue | null) {
-  return parseOptionalString(value) ?? "";
+  return getSafeRedirectTarget(
+    value,
+    "/admin/customers",
+    customerId ? `/admin/customers/${customerId}` : "/admin/customers",
+  );
 }
 
 export async function updateCustomerDetails(formData: FormData) {

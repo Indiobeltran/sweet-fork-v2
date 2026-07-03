@@ -1,9 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth";
+import {
+  getSafeRedirectTarget,
+  redirectWithNotice,
+} from "@/lib/admin/action-helpers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   Constants,
@@ -12,12 +15,8 @@ import {
   type TablesUpdate,
 } from "@/types/supabase.generated";
 
-function getSafeRedirectTarget(value: FormDataEntryValue | null, inquiryId: string) {
-  if (typeof value === "string" && value.startsWith("/admin/inquiries")) {
-    return value;
-  }
-
-  return `/admin/inquiries/${inquiryId}`;
+function getSafeInquiryRedirectTarget(value: FormDataEntryValue | null, inquiryId: string) {
+  return getSafeRedirectTarget(value, "/admin/inquiries", `/admin/inquiries/${inquiryId}`);
 }
 
 function getSafeListRedirectTarget(value: FormDataEntryValue | null) {
@@ -32,19 +31,12 @@ function getSafeListRedirectTarget(value: FormDataEntryValue | null) {
     : "/admin/inquiries";
 }
 
-function redirectWithNotice(path: string, notice: string): never {
-  const url = new URL(path, "http://localhost");
-  url.searchParams.set("notice", notice);
-
-  redirect(`${url.pathname}${url.search}`);
-}
-
 export async function updateInquiryStatus(formData: FormData) {
   await requireAdmin();
 
   const inquiryId = String(formData.get("inquiryId") ?? "").trim();
   const nextStatus = String(formData.get("status") ?? "").trim();
-  const redirectTarget = getSafeRedirectTarget(formData.get("redirectTo"), inquiryId);
+  const redirectTarget = getSafeInquiryRedirectTarget(formData.get("redirectTo"), inquiryId);
 
   if (!inquiryId) {
     redirectWithNotice("/admin/inquiries", "status-error");
@@ -90,7 +82,7 @@ export async function addInquiryNote(formData: FormData) {
   const admin = await requireAdmin();
 
   const inquiryId = String(formData.get("inquiryId") ?? "").trim();
-  const redirectTarget = getSafeRedirectTarget(formData.get("redirectTo"), inquiryId);
+  const redirectTarget = getSafeInquiryRedirectTarget(formData.get("redirectTo"), inquiryId);
   const noteBody = String(formData.get("noteBody") ?? "").trim();
   const isPinned = formData.get("isPinned") === "on";
 

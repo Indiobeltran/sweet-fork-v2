@@ -55,6 +55,13 @@ export async function upsertProductPricing(formData: FormData) {
         throw new Error(`Missing pricing details for ${kind}.`);
       }
 
+      if (
+        minimumAmount < 0 ||
+        (maximumAmount !== null && (maximumAmount < 0 || maximumAmount < minimumAmount))
+      ) {
+        throw new Error(`Invalid pricing range for ${kind}.`);
+      }
+
       if (priceId) {
         const update: TablesUpdate<"product_prices"> = {
           is_active: isActive,

@@ -63,6 +63,24 @@ export function parseNumber(value: FormDataEntryValue | null) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+export function parseAmount(value: FormDataEntryValue | null) {
+  const parsed = parseNumber(value);
+  return parsed === null ? null : Math.max(parsed, 0);
+}
+
+export function parseDateInput(value: FormDataEntryValue | null) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
+    return null;
+  }
+
+  return value.trim();
+}
+
+export function parseDateInputAsIso(value: FormDataEntryValue | null) {
+  const dateInput = parseDateInput(value);
+  return dateInput ? new Date(`${dateInput}T12:00:00.000Z`).toISOString() : null;
+}
+
 export function parseStringList(values: FormDataEntryValue[]) {
   return values
     .map((value) => (typeof value === "string" ? value.trim() : ""))

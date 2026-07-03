@@ -388,19 +388,9 @@ function getBudgetRangeValue(
   if (minimum >= 2000) {
     return "2000-plus";
   }
-  if (maximum !== null && maximum <= 75) {
-    return "under-75";
-  }
-  if (minimum >= 75 && maximum !== null && maximum <= 150) {
-    return "75-150";
-  }
-  if (minimum >= 300 && maximum !== null && maximum <= 500) {
-    return "300-500";
-  }
-  if (minimum >= 500) {
-    return "500-plus";
-  }
 
+  // Legacy ranges (under-75, 75-150, 300-500, 500-plus) are no longer offered;
+  // rows that only fit those fall back to the formatted min/max label instead.
   return null;
 }
 

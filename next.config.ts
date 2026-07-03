@@ -60,6 +60,13 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   skipTrailingSlashRedirect: true,
+  experimental: {
+    serverActions: {
+      // Media uploads go through server actions; keep this explicit and in
+      // sync with MAX_UPLOAD_BYTES in src/app/admin/(protected)/media/actions.ts.
+      bodySizeLimit: "12mb",
+    },
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     qualities: [75, 82],

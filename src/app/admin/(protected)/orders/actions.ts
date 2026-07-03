@@ -1,9 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth";
+import {
+  getSafeRedirectTarget,
+  parseAmount,
+  parseDateInputAsIso,
+  parseOptionalString,
+  parseRequiredString,
+  redirectWithNotice,
+} from "@/lib/admin/action-helpers";
 import {
   calculateOrderPaymentSnapshot,
   getStoredPaymentType,
@@ -66,63 +73,20 @@ type OrderQuickActionResult =
       message: string;
     };
 
-function redirectWithNotice(path: string, notice: string): never {
-  const url = new URL(path, "http://localhost");
-  url.searchParams.set("notice", notice);
-
-  redirect(`${url.pathname}${url.search}`);
-}
-
 function getSafeOrderRedirectTarget(value: FormDataEntryValue | null, orderId?: string) {
-  if (typeof value === "string" && value.startsWith("/admin/orders")) {
-    return value;
-  }
-
-  return orderId ? `/admin/orders/${orderId}` : "/admin/orders";
+  return getSafeRedirectTarget(
+    value,
+    "/admin/orders",
+    orderId ? `/admin/orders/${orderId}` : "/admin/orders",
+  );
 }
 
 function getSafeInquiryRedirectTarget(value: FormDataEntryValue | null, inquiryId?: string) {
-  if (typeof value === "string" && value.startsWith("/admin/inquiries")) {
-    return value;
-  }
-
-  return inquiryId ? `/admin/inquiries/${inquiryId}` : "/admin/inquiries";
-}
-
-function parseOptionalString(value: FormDataEntryValue | null) {
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
-function parseRequiredString(value: FormDataEntryValue | null) {
-  return parseOptionalString(value) ?? "";
-}
-
-function parseAmount(value: FormDataEntryValue | null) {
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  const cleaned = value.replace(/[$,\s]/g, "");
-
-  if (!cleaned) {
-    return null;
-  }
-
-  const amount = Number(cleaned);
-  return Number.isFinite(amount) ? Math.max(amount, 0) : null;
-}
-
-function parseDateInput(value: FormDataEntryValue | null) {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
-    return null;
-  }
-
-  return new Date(`${value.trim()}T12:00:00.000Z`).toISOString();
+  return getSafeRedirectTarget(
+    value,
+    "/admin/inquiries",
+    inquiryId ? `/admin/inquiries/${inquiryId}` : "/admin/inquiries",
+  );
 }
 
 function getStatusTransitionPatch(
@@ -202,10 +166,31 @@ async function rollbackCreatedOrder(
   supabase: ReturnType<typeof createAdminClient>,
   context: OrderCreationRollbackContext,
 ) {
-  await supabase.from("payments").delete().eq("order_id", context.orderId);
-  await supabase.from("order_items").delete().eq("order_id", context.orderId);
-  await supabase.from("orders").delete().eq("id", context.orderId);
-  await supabase
+  const logRollbackError = (step: string, error: unknown) => {
+    if (error) {
+      console.error(`Order conversion rollback step failed (${step}).`, error);
+    }
+  };
+
+  const { error: paymentsError } = await supabase
+    .from("payments")
+    .delete()
+    .eq("order_id", context.orderId);
+  logRollbackError("payments", paymentsError);
+
+  const { error: itemsError } = await supabase
+    .from("order_items")
+    .delete()
+    .eq("order_id", context.orderId);
+  logRollbackError("order_items", itemsError);
+
+  const { error: orderError } = await supabase
+    .from("orders")
+    .delete()
+    .eq("id", context.orderId);
+  logRollbackError("orders", orderError);
+
+  const { error: inquiryError } = await supabase
     .from("inquiries")
     .update({
       customer_id: context.inquirySnapshot.customer_id,
@@ -213,20 +198,26 @@ async function rollbackCreatedOrder(
       status: context.inquirySnapshot.status,
     })
     .eq("id", context.inquirySnapshot.id);
+  logRollbackError("inquiries", inquiryError);
 
   if (context.createdCustomerId) {
-    await supabase.from("customers").delete().eq("id", context.createdCustomerId);
+    const { error: customerDeleteError } = await supabase
+      .from("customers")
+      .delete()
+      .eq("id", context.createdCustomerId);
+    logRollbackError("customers delete", customerDeleteError);
     return;
   }
 
   if (context.customerSnapshot) {
-    await supabase
+    const { error: customerRestoreError } = await supabase
       .from("customers")
       .update({
         last_inquiry_at: context.customerSnapshot.last_inquiry_at,
         last_order_at: context.customerSnapshot.last_order_at,
       })
       .eq("id", context.customerId);
+    logRollbackError("customers restore", customerRestoreError);
   }
 }
 
@@ -290,20 +281,70 @@ export async function createManualOrder(formData: FormData) {
     redirectWithNotice(errorPath, "manual-order-error");
   }
 
-  const { data: customer, error: customerError } = await supabase
-    .from("customers")
-    .insert({
-      email: customerEmail,
-      full_name: customerName,
-      last_order_at: new Date().toISOString(),
-      phone: customerPhone,
-      preferred_contact: customerPhone ? "text" : "email",
-    } satisfies TablesInsert<"customers">)
-    .select("id")
-    .single();
+  const { data: existingCustomer } = customerEmail
+    ? await supabase
+        .from("customers")
+        .select("id, last_order_at")
+        .eq("email", customerEmail)
+        .maybeSingle()
+    : { data: null };
 
-  if (customerError || !customer) {
-    redirectWithNotice(errorPath, "manual-order-error");
+  let customer: { id: string };
+  let createdCustomerId: string | null = null;
+  let previousLastOrderAt: string | null = null;
+
+  if (existingCustomer) {
+    previousLastOrderAt = existingCustomer.last_order_at;
+    customer = { id: existingCustomer.id };
+
+    const { error: customerTouchError } = await supabase
+      .from("customers")
+      .update({ last_order_at: new Date().toISOString() })
+      .eq("id", existingCustomer.id);
+
+    if (customerTouchError) {
+      redirectWithNotice(errorPath, "manual-order-error");
+    }
+  } else {
+    const { data: newCustomer, error: customerError } = await supabase
+      .from("customers")
+      .insert({
+        email: customerEmail,
+        full_name: customerName,
+        last_order_at: new Date().toISOString(),
+        phone: customerPhone,
+        preferred_contact: customerPhone ? "text" : "email",
+      } satisfies TablesInsert<"customers">)
+      .select("id")
+      .single();
+
+    if (customerError || !newCustomer) {
+      redirectWithNotice(errorPath, "manual-order-error");
+    }
+
+    customer = newCustomer;
+    createdCustomerId = newCustomer.id;
+  }
+
+  async function rollbackManualOrderCustomer() {
+    if (createdCustomerId) {
+      const { error } = await supabase.from("customers").delete().eq("id", createdCustomerId);
+
+      if (error) {
+        console.error("Unable to roll back manual-order customer insert.", error);
+      }
+
+      return;
+    }
+
+    const { error } = await supabase
+      .from("customers")
+      .update({ last_order_at: previousLastOrderAt })
+      .eq("id", customer.id);
+
+    if (error) {
+      console.error("Unable to restore customer after manual-order failure.", error);
+    }
   }
 
   const statusTimestamps = getStatusTransitionPatch("confirmed", {
@@ -336,7 +377,7 @@ export async function createManualOrder(formData: FormData) {
     .single();
 
   if (orderError || !order) {
-    await supabase.from("customers").delete().eq("id", customer.id);
+    await rollbackManualOrderCustomer();
     redirectWithNotice(errorPath, "manual-order-error");
   }
 
@@ -353,7 +394,7 @@ export async function createManualOrder(formData: FormData) {
 
   if (itemError) {
     await supabase.from("orders").delete().eq("id", order.id);
-    await supabase.from("customers").delete().eq("id", customer.id);
+    await rollbackManualOrderCustomer();
     redirectWithNotice(errorPath, "manual-order-error");
   }
 
@@ -374,7 +415,7 @@ export async function createManualOrder(formData: FormData) {
     if (paymentError) {
       await supabase.from("order_items").delete().eq("order_id", order.id);
       await supabase.from("orders").delete().eq("id", order.id);
-      await supabase.from("customers").delete().eq("id", customer.id);
+      await rollbackManualOrderCustomer();
       redirectWithNotice(errorPath, "manual-order-error");
     }
   }
@@ -580,8 +621,8 @@ export async function createOrderFromInquiry(formData: FormData) {
   const estimatedTotalAmount = parseAmount(formData.get("estimatedTotalAmount"));
   const totalAmount = parseAmount(formData.get("totalAmount")) ?? 0;
   const depositDueAmount = parseAmount(formData.get("depositDueAmount")) ?? 0;
-  const depositDueAt = parseDateInput(formData.get("depositDueAt"));
-  const finalDueAt = parseDateInput(formData.get("finalDueAt"));
+  const depositDueAt = parseDateInputAsIso(formData.get("depositDueAt"));
+  const finalDueAt = parseDateInputAsIso(formData.get("finalDueAt"));
   const internalSummary = parseOptionalString(formData.get("internalSummary"));
   const fulfillmentNotes = parseOptionalString(formData.get("fulfillmentNotes"));
 
@@ -599,7 +640,7 @@ export async function createOrderFromInquiry(formData: FormData) {
   const inquiryPromise = supabase
     .from("inquiries")
     .select(
-      "id, customer_id, customer_name, customer_email, customer_phone, instagram_handle, preferred_contact, how_did_you_hear, event_type, event_date, fulfillment_method, delivery_window, venue_name, venue_address, reviewed_at, status",
+      "id, customer_id, customer_name, customer_email, customer_phone, instagram_handle, preferred_contact, how_did_you_hear, event_type, event_date, fulfillment_method, delivery_window, venue_name, venue_address, reviewed_at, status, submitted_at",
     )
     .eq("id", inquiryId)
     .maybeSingle();
@@ -828,7 +869,7 @@ export async function createOrderFromInquiry(formData: FormData) {
     supabase
       .from("customers")
       .update({
-        last_inquiry_at: inquiry.event_date,
+        last_inquiry_at: inquiry.submitted_at,
         last_order_at: new Date().toISOString(),
       })
       .eq("id", customerId),
@@ -886,8 +927,8 @@ export async function updateOrderDetails(formData: FormData) {
   const taxAmount = parseAmount(formData.get("taxAmount")) ?? 0;
   const totalAmount = parseAmount(formData.get("totalAmount")) ?? 0;
   const depositDueAmount = parseAmount(formData.get("depositDueAmount")) ?? 0;
-  const depositDueAt = parseDateInput(formData.get("depositDueAt"));
-  const finalDueAt = parseDateInput(formData.get("finalDueAt"));
+  const depositDueAt = parseDateInputAsIso(formData.get("depositDueAt"));
+  const finalDueAt = parseDateInputAsIso(formData.get("finalDueAt"));
   const internalSummary = parseOptionalString(formData.get("internalSummary"));
   const productionNotes = parseOptionalString(formData.get("productionNotes"));
   const estimatedTotalAmount = parseAmount(formData.get("estimatedTotalAmount"));
@@ -978,8 +1019,8 @@ export async function addOrderPayment(formData: FormData) {
   const amount = parseAmount(formData.get("amount"));
   const status = parseRequiredString(formData.get("status"));
   const method = parseRequiredString(formData.get("method"));
-  const dueAt = parseDateInput(formData.get("dueAt"));
-  const paidAt = parseDateInput(formData.get("paidAt"));
+  const dueAt = parseDateInputAsIso(formData.get("dueAt"));
+  const paidAt = parseDateInputAsIso(formData.get("paidAt"));
   const referenceCode = parseOptionalString(formData.get("referenceCode"));
   const providerName = parseOptionalString(formData.get("providerName"));
   const providerIntentId = parseOptionalString(formData.get("providerIntentId"));
@@ -1048,8 +1089,8 @@ export async function updateOrderPayment(formData: FormData) {
   const amount = parseAmount(formData.get("amount"));
   const status = parseRequiredString(formData.get("status"));
   const method = parseRequiredString(formData.get("method"));
-  const dueAt = parseDateInput(formData.get("dueAt"));
-  const paidAt = parseDateInput(formData.get("paidAt"));
+  const dueAt = parseDateInputAsIso(formData.get("dueAt"));
+  const paidAt = parseDateInputAsIso(formData.get("paidAt"));
   const referenceCode = parseOptionalString(formData.get("referenceCode"));
   const providerName = parseOptionalString(formData.get("providerName"));
   const providerIntentId = parseOptionalString(formData.get("providerIntentId"));

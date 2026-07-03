@@ -216,10 +216,15 @@ export async function getCalendarDayDetails(dateKey: string, contributingOrderId
   const supabase = createAdminClient();
 
   // 1. Fetch products
-  const { data: productsData } = await supabase
+  const { data: productsData, error: productsError } = await supabase
     .from("products")
     .select("id, capacity_points, product_type, prep_days, min_lead_time_days");
-  
+
+  if (productsError) {
+    throw productsError;
+  }
+
+
   const productLookup = buildProductPointLookup(
     (productsData ?? []).map((product) => ({
       capacityPoints: product.capacity_points ?? null,
@@ -242,7 +247,7 @@ export async function getCalendarDayDetails(dateKey: string, contributingOrderId
     inquiry: { id: string; metadata: Json } | null;
   }> = [];
   if (contributingOrderIds.length > 0) {
-    const { data } = await supabase
+    const { data, error: ordersError } = await supabase
       .from("orders")
       .select(`
         id,
@@ -255,11 +260,16 @@ export async function getCalendarDayDetails(dateKey: string, contributingOrderId
         inquiry:inquiries(id, metadata)
       `)
       .in("id", contributingOrderIds);
+
+    if (ordersError) {
+      throw ordersError;
+    }
+
     orders = (data ?? []) as unknown as typeof orders; // Cast from Supabase select output type
   }
 
   // 3. Fetch active inquiries on dateKey
-  const { data: inquiriesData } = await supabase
+  const { data: inquiriesData, error: inquiriesError } = await supabase
     .from("inquiries")
     .select(`
       id,
@@ -274,6 +284,10 @@ export async function getCalendarDayDetails(dateKey: string, contributingOrderId
     .eq("event_date", dateKey)
     .in("status", ["new", "reviewing", "quoted", "approved"])
     .order("submitted_at", { ascending: true });
+
+  if (inquiriesError) {
+    throw inquiriesError;
+  }
 
   const inquiries = (inquiriesData ?? []).map((inq) => {
     const todayKey = inq.submitted_at ? inq.submitted_at.slice(0, 10) : "";
@@ -305,21 +319,29 @@ export async function getCalendarDayDetails(dateKey: string, contributingOrderId
   });
 
   // 4. Fetch blackout dates
-  const { data: blackouts } = await supabase
+  const { data: blackouts, error: blackoutsError } = await supabase
     .from("blackout_dates")
     .select("id, starts_on, ends_on, reason, scope, notes, is_active")
     .lte("starts_on", dateKey)
     .gte("ends_on", dateKey);
 
+  if (blackoutsError) {
+    throw blackoutsError;
+  }
+
   // 5. Fetch notes (calendar entries)
   const startOfDay = `${dateKey}T00:00:00.000Z`;
   const endOfDay = `${dateKey}T23:59:59.999Z`;
-  const { data: notes } = await supabase
+  const { data: notes, error: notesError } = await supabase
     .from("calendar_entries")
     .select("id, entry_type, title, starts_at, ends_at, all_day, notes, is_private, location_text")
     .lte("starts_at", endOfDay)
     .or(`ends_at.gte.${startOfDay},ends_at.is.null`)
     .order("starts_at", { ascending: true });
+
+  if (notesError) {
+    throw notesError;
+  }
 
   const filteredNotes = (notes ?? []).filter((note) => {
     const startKey = note.starts_at.slice(0, 10);
