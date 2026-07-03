@@ -1,4 +1,10 @@
-## Phase 8.5 Capacity Settings Panel & Legend Explainer — 2026-07-03
+# Sweet Fork v2 Handoff & Instructions
+
+> [!IMPORTANT]
+> * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
+> * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
+
+## Phase CAL-8.5 Capacity Settings Panel & Legend Explainer — 2026-07-03
 
 - **Current branch**: `main` (Merged and pushed).
 - **Initial working-tree state**: Clean branch `codex/capacity-settings` cut from `main`.
@@ -34,7 +40,7 @@
 - **Remaining risks or follow-up items**:
   - None.
 
-## Phase 8 Calendar Day Drawer — 2026-07-03
+## Phase CAL-8 Calendar Day Drawer — 2026-07-03
 
 - **Current branch**: `main`.
 - **Current objective**: Replace the hover tooltips on click/tap with an interactive day drawer panel showing detailed daily bookings, capacity details, inquiries (including short-lead flags calculated via the shared `isShortLeadTime` utility), blackout details, and quick actions (pre-filled note and blackout forms, and confirm-to-remove blackouts).
@@ -55,7 +61,7 @@
 - **Next exact task**:
   - Run the application locally and perform the manual visual checks (July 15 order, July 14 prep shadow, July 10 short-lead inquiry, July 29 blackout creation/deletion verification, mobile view/gestures, and visual regression checks).
 
-## Phase 7 Prep Shadows & Lead-Time Rules — 2026-07-03
+## Phase CAL-7 Prep Shadows & Lead-Time Rules — 2026-07-03
 
 - **Current branch**: `main`.
 - **Current objective**: Orders don't just occupy their due date — they consume prep days before it. This phase makes the calendar reflect that, and flags inquiries that arrive inside a product's minimum lead time. [Phase 7 is Closed and Merged].
@@ -127,7 +133,7 @@
 - **Next exact task**:
   - Wait for owner review on live site to confirm capacity features. Once approved, clean up the pending test data using the SQL statements above.
 
-## Phase 6 Capacity Foundation — 2026-07-03
+## Phase CAL-6 Capacity Foundation — 2026-07-03
 
 - **Current branch**: `codex/capacity-foundation`.
 - **Current objective**: Add workload-based capacity scoring to the admin operational calendar for confirmed-order day/week load.
@@ -1182,7 +1188,7 @@
   - Loading historical inquiries detail views with attachments displays correctly without breaking or crashing (Verified `historicalInquiryWorks: true`).
 - **Production Status**: **APPROVED** for live release. No regressions or browser console errors detected.
 
-## Phase 10 / Inquiry Settings Cleanup: Permanent Removal of File Uploads — 2026-06-14
+## Phase CORE-10 / Inquiry Settings Cleanup: Permanent Removal of File Uploads — 2026-06-14
 
 
 - **Branch**: `codex/remove-inquiry-file-uploads`
@@ -1398,7 +1404,7 @@ where id = 'c676ae28-735e-47b0-9e6b-8346e878e6a6';
   - Whether to run a live test inquiry during manual QA.
   - When to confirm Netlify environment variables and production domain/DNS readiness.
 
-## Phase 8 Inquiry Wizard Refactor — 2026-06-13
+## Phase CORE-8 Inquiry Wizard Refactor — 2026-06-13
 
 - **Branch**: `codex/inquiry-wizard-refactor`
 - **Pre-change status**: Started from `main` aligned with `origin/main` at `0843965` (`fix: strengthen product page practical copy`). Tracked files clean. Pre-existing untracked files preserved: `.agents/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `skills-lock.json`.
@@ -1440,7 +1446,7 @@ where id = 'c676ae28-735e-47b0-9e6b-8346e878e6a6';
 - **Remaining risks / follow-up**: Risk is low — the extraction is mechanical (no logic edited) and is gate-verified, but the wizard has no automated rendering test, so the manual Netlify QA above is the behavioral confirmation. Optional future follow-up (not done here to keep scope tight): the identical `describeItem` summary logic still exists in `submit.ts` and `netlify-bridge.ts`; it could later be consolidated onto `formatSelectedItemSummary` from `wizard-helpers.ts`, but that crosses the client/server submission boundary and was intentionally deferred. A second seam (splitting each step's JSX into per-step components) is also possible later if further size reduction is wanted.
 - **Next recommended phase**: Manual Netlify QA of the wizard on the deployed `main`, then proceed to the next roadmap phase / launch-readiness checkpoint once QA passes.
 
-## Phase 7 Product Page Practical Copy — 2026-06-13
+## Phase CORE-7 Product Page Practical Copy — 2026-06-13
 
 - **Branch**: `codex/product-page-practical-copy`
 - **Pre-change status**: Started from `main` aligned with `origin/main` at `e609459` (`fix: improve admin order detail workflow`). Tracked files clean. Pre-existing untracked files preserved: `.agents/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `skills-lock.json`.
@@ -1480,7 +1486,7 @@ where id = 'c676ae28-735e-47b0-9e6b-8346e878e6a6';
 - **Remaining risks / follow-up**: Visual/copy QA on the Netlify deploy — confirm the added FAQ rows and detail bullets render cleanly on mobile, the new pickup/delivery language is not repetitive across consecutive sections, and the DIY year-round/vendor framing reads as intended. Consider, in a later content pass, mirroring the same per-product fulfillment clarity into Supabase `products` long descriptions if/when those are populated.
 - **Next recommended phase**: Phase 8 — Inquiry Wizard Refactor.
 
-## Phase 6 Order Detail Workflow — 2026-06-13
+## Phase CORE-6 Order Detail Workflow — 2026-06-13
 
 - **Branch**: `codex/order-detail-workflow`
 - **Pre-change status**: Started from `main` aligned with `origin/main` at `dc11a50`. Tracked files clean. Pre-existing untracked files preserved: `.agents/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `skills-lock.json`.
@@ -1524,7 +1530,7 @@ where id = 'c676ae28-735e-47b0-9e6b-8346e878e6a6';
 - **Remaining risks / follow-up**: Visual/mobile QA on Netlify deploy — confirm the single console header renders without overflow, the Next-action chip color/tone reads clearly, the sticky save footer stays reachable on long forms and respects the mobile safe area / admin bottom nav, and the Timestamps disclosure toggles via keyboard.
 - **Next recommended phase**: Phase 7 — Product Page Practical Copy.
 
-## Phase 5 Admin Estimate Rationale — 2026-06-13
+## Phase CORE-5 Admin Estimate Rationale — 2026-06-13
 
 - **Branch**: `codex/admin-estimate-rationale`
 - **Pre-change status**: Started from `main` aligned with `origin/main` at `1012094`. Tracked files clean. Pre-existing untracked files preserved: `.agents/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `skills-lock.json`.
@@ -1589,7 +1595,7 @@ where id = 'c676ae28-735e-47b0-9e6b-8346e878e6a6';
 - **Remaining risks / follow-up**: Visual QA on Netlify deploy — confirm horizontal scroll on mobile, 3-col grid on desktop, no horizontal page overflow. At sm (640–1023px) tablet, cards scroll horizontally (acceptable; can revisit for 2-col grid if preferred).
 - **Next recommended phase**: Phase 5 — Estimate Rationale Popover/Drawer.
 
-## Phase 4 Public CTA and Fulfillment Copy — 2026-06-13
+## Phase CORE-4 Public CTA and Fulfillment Copy — 2026-06-13
 
 - **Current branch**: `codex/public-cta-fulfillment-copy`
 - **Objective**: Improve customer-facing CTA language and fulfillment/process clarity across the Sweet Fork public site while preserving the premium brand.
@@ -1627,7 +1633,7 @@ where id = 'c676ae28-735e-47b0-9e6b-8346e878e6a6';
 - **Next recommended step**: Merge to `main` and execute manual Netlify QA if deployed automatically, or move to the next phase if one exists.
 - **Remaining risks / follow-up**: None.
 
-## Phase 3 Admin Needs-Attention Dashboard — 2026-06-13
+## Phase CORE-3 Admin Needs-Attention Dashboard — 2026-06-13
 
 - **Current branch**: `codex/admin-needs-attention-dashboard`
 - **Objective**: Improve the `/admin` dashboard so the owner can quickly see what needs attention upon login without redesigning the architecture.
@@ -1662,7 +1668,7 @@ where id = 'c676ae28-735e-47b0-9e6b-8346e878e6a6';
 - **Remaining risks / follow-up**:
   - Consider adding specific pickup/delivery confirmation tracking in future database schema migrations (deferred in this task).
 
-## Phase 2 Admin Queues Live QA — 2026-06-13
+## Phase CORE-2 Admin Queues Live QA — 2026-06-13
 
 - **Branch checked**: `main` (aligned with `origin/main`)
 - **Latest commit hash verified**: `fd727e7d2ec9fc1205388eefa769c06687b7485d` (feat(admin): compact inquiry and order queues and add inquiry search)
@@ -1693,7 +1699,7 @@ where id = 'c676ae28-735e-47b0-9e6b-8346e878e6a6';
 - **Follow-up recommendations**:
   - Searching across deep inquiry item details (like item notes or description) remains a potential follow-up if database query search becomes necessary in the future.
 
-## Phase 2 Admin Queues Density Update — 2026-06-13
+## Phase CORE-2 Admin Queues Density Update — 2026-06-13
 
 - **Implementation branch**: `codex/compact-admin-queues`
 - **Current objective**: Make `/admin/inquiries` and `/admin/orders` faster for the owner to scan and manage day-to-day business activity without changing the underlying database schema or order/inquiry architecture.
