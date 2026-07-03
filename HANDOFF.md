@@ -1,3 +1,38 @@
+## Phase 8.5 Capacity Settings Panel & Legend Explainer — 2026-07-03
+
+- **Current branch**: `codex/capacity-settings`.
+- **Initial working-tree state**: Clean branch `codex/capacity-settings` cut from `main`.
+- **Files changed**:
+  - `src/lib/admin/capacity.ts` (validator, workload estimator)
+  - `src/lib/admin/capacity.test.ts` (test cases for validator & estimator)
+  - `src/lib/admin/calendar.ts` (products in CalendarPageData)
+  - `src/app/admin/(protected)/calendar/actions.ts` (dedicated `updateProductCapacitySettings` action, updated ceiling action)
+  - `src/app/admin/(protected)/products/actions.ts` (revalidation path added)
+  - `src/app/admin/(protected)/calendar/page.tsx` (legend explainer section, layout cleanups)
+  - `src/components/admin/interactive-calendar.tsx` (Configure Workload Capacity settings panel, inline forms, states)
+- **Capacity behavior confirmed**:
+  - Only confirmed orders are included. Canceled/completed/etc. are excluded.
+  - Workload points are distributed (spread) across the prep window leading up to the due date, not repeated.
+  - Lead time warnings are checked but do not affect heat.
+  - Calculations verified programmatically using `verify_capacity_settings.mjs` before/after editing Custom Cakes from 8 to 11 points, then successfully restored.
+- **UI changes implemented**:
+  - Deleted redundant standalone capacity ceiling form from header.
+  - Implemented keyboard-accessible, collapsed-by-default disclosure settings panel `#capacity-settings-panel` directly above the calendar grid.
+  - Separated active and inactive products clearly.
+  - Implemented inline client-side form states (pending, success, error) for each product row and weekly ceiling separately.
+  - Linked to `#capacity-settings-panel` from legend.
+- **Validation added**:
+  - Weekly ceiling: positive integer [1, 100].
+  - Capacity points: integer [1, 100].
+  - Prep days: non-negative integer [0, 30].
+  - Minimum lead time: non-negative integer [0, 100].
+  - Rejects blank, negative, NaN, decimals, and out-of-range values.
+- **Tests performed**:
+  - Added new unit test suite to `capacity.test.ts` (now 102/102 test cases pass).
+  - Production build compiled successfully.
+- **Remaining risks or follow-up items**:
+  - Perform manual UI visual check (confirming scrollability, no horizontal overflow on mobile view).
+
 ## Phase 8 Calendar Day Drawer — 2026-07-03
 
 - **Current branch**: `main`.

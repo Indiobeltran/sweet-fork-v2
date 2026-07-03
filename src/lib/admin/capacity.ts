@@ -337,3 +337,59 @@ export function buildCapacityLoad({
 
   return { days, weeks };
 }
+
+export function validateProductCapacitySettings(
+  capacityPoints: number,
+  prepDays: number,
+  minLeadTimeDays: number
+): { success: boolean; error?: string } {
+  if (Number.isNaN(capacityPoints) || capacityPoints < 1 || capacityPoints > 100) {
+    return { success: false, error: "Capacity points must be an integer between 1 and 100." };
+  }
+  if (Number.isNaN(prepDays) || prepDays < 0 || prepDays > 30) {
+    return { success: false, error: "Prep days must be an integer between 0 and 30." };
+  }
+  if (Number.isNaN(minLeadTimeDays) || minLeadTimeDays < 0 || minLeadTimeDays > 100) {
+    return { success: false, error: "Minimum lead time must be an integer between 0 and 100." };
+  }
+  return { success: true };
+}
+
+export function getCapacityEstimateSentence(
+  weeklyCapacityCeiling: number,
+  products: Array<{ id: string; name: string; is_active: boolean; capacity_points: number | null }>
+): string {
+  const activeProducts = products.filter((p) => p.is_active);
+  const validProducts = activeProducts.filter(
+    (p) => p.capacity_points !== null && p.capacity_points > 0
+  );
+
+  if (validProducts.length === 0) {
+    return `Based on currently saved settings, your weekly limit of ${weeklyCapacityCeiling} points cannot be illustrated because no active products have point weights configured.`;
+  }
+
+  const sorted = [...validProducts].sort((a, b) => (a.capacity_points ?? 0) - (b.capacity_points ?? 0));
+  const minProduct = sorted[0];
+  const maxProduct = sorted[sorted.length - 1];
+
+  const minPts = minProduct.capacity_points ?? 2;
+  const maxPts = maxProduct.capacity_points ?? 2;
+
+  if (weeklyCapacityCeiling < minPts) {
+    return `Based on currently saved settings, even 1 order of your smallest product (${minProduct.name}, ${minPts} pts) exceeds your weekly ceiling of ${weeklyCapacityCeiling} pts.`;
+  }
+
+  const minCount = Math.floor(weeklyCapacityCeiling / minPts);
+  const maxCount = Math.floor(weeklyCapacityCeiling / maxPts);
+
+  if (minProduct.id === maxProduct.id) {
+    return `Based on currently saved settings, a ${weeklyCapacityCeiling}-point week is roughly equivalent to ${minCount} ${minProduct.name} order${minCount === 1 ? "" : "s"} (${minPts} pts each).`;
+  }
+
+  if (maxCount > 0) {
+    return `Based on currently saved settings, a ${weeklyCapacityCeiling}-point week is roughly equivalent to ${minCount} ${minProduct.name} order${minCount === 1 ? "" : "s"} (${minPts} pts each), ${maxCount} larger ${maxProduct.name} order${maxCount === 1 ? "" : "s"} (${maxPts} pts each), or a mixed workload.`;
+  }
+
+  return `Based on currently saved settings, a ${weeklyCapacityCeiling}-point week is roughly equivalent to ${minCount} ${minProduct.name} order${minCount === 1 ? "" : "s"} (${minPts} pts each) or a mixed workload.`;
+}
+

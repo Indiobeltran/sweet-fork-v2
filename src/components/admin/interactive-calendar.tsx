@@ -15,6 +15,7 @@ import {
   Ban,
 } from "lucide-react";
 
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,10 +27,17 @@ import {
   createCalendarEntry,
   deleteBlackoutDate,
   getCalendarDayDetails,
+  updateWeeklyCapacityCeiling,
+  updateProductCapacitySettings,
 } from "@/app/admin/(protected)/calendar/actions";
 import { cn, toTitleCase } from "@/lib/utils";
 import type { CalendarDay, CalendarDayItem } from "@/lib/admin/calendar";
-import type { CapacityLoadState, CapacityWeekLoad } from "@/lib/admin/capacity";
+import {
+  getCapacityEstimateSentence,
+  type CapacityLoadState,
+  type CapacityWeekLoad,
+} from "@/lib/admin/capacity";
+import type { Tables } from "@/types/supabase.generated";
 
 const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const calendarEntryTypeOptions = [
@@ -332,7 +340,151 @@ type InteractiveCalendarProps = {
   weeklyCapacityCeiling: number;
   weeks: CapacityWeekLoad[];
   redirectTo: string;
+  products: Tables<"products">[];
 };
+
+function ProductCapacityRow({
+  product,
+  redirectTo,
+  onSaveSuccess,
+}: {
+  product: Tables<"products">;
+  redirectTo: string;
+  onSaveSuccess: () => void;
+}) {
+  const [isPending, setIsPending] = useState(false);
+  const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState("");
+  const router = useRouter();
+
+  const handleSave = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsPending(true);
+    setStatus("idle");
+    setErrorMessage("");
+
+    try {
+      const formData = new FormData(event.currentTarget);
+      const res = await updateProductCapacitySettings(formData);
+      if (res.success) {
+        setStatus("success");
+        onSaveSuccess();
+        router.refresh();
+        // Clear success status after 3 seconds
+        setTimeout(() => setStatus("idle"), 3000);
+      } else {
+        setStatus("error");
+        setErrorMessage(res.error ?? "Failed to save settings.");
+      }
+    } catch (err) {
+      console.error(err);
+      setStatus("error");
+      setErrorMessage("An unexpected error occurred.");
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return (
+    <form
+      onSubmit={handleSave}
+      className="grid grid-cols-1 sm:grid-cols-5 gap-3 items-center border-b border-charcoal/6 py-3 last:border-b-0 text-xs"
+    >
+      <input type="hidden" name="productId" value={product.id} />
+      <input type="hidden" name="redirectTo" value={redirectTo} />
+
+      {/* Product Name */}
+      <div className="font-semibold text-charcoal sm:col-span-1">{product.name}</div>
+
+      {/* Capacity Points */}
+      <div className="flex flex-col gap-1 sm:col-span-1">
+        <Label htmlFor={`pts-${product.id}`} className="text-[10px] text-charcoal/52 sm:hidden">
+          Capacity Points
+        </Label>
+        <Input
+          id={`pts-${product.id}`}
+          name="capacityPoints"
+          type="number"
+          step="1"
+          min="1"
+          max="100"
+          defaultValue={product.capacity_points ?? 2}
+          required
+          aria-describedby={`pts-desc-${product.id}`}
+          className="h-8 w-full sm:w-20 text-xs"
+        />
+        <span id={`pts-desc-${product.id}`} className="sr-only">
+          Production effort points for {product.name}
+        </span>
+      </div>
+
+      {/* Prep Days */}
+      <div className="flex flex-col gap-1 sm:col-span-1">
+        <Label htmlFor={`prep-${product.id}`} className="text-[10px] text-charcoal/52 sm:hidden">
+          Prep Days
+        </Label>
+        <Input
+          id={`prep-${product.id}`}
+          name="prepDays"
+          type="number"
+          step="1"
+          min="0"
+          max="30"
+          defaultValue={product.prep_days}
+          required
+          aria-describedby={`prep-desc-${product.id}`}
+          className="h-8 w-full sm:w-20 text-xs"
+        />
+        <span id={`prep-desc-${product.id}`} className="sr-only">
+          Prep shadow days before due date for {product.name}
+        </span>
+      </div>
+
+      {/* Minimum Lead Time */}
+      <div className="flex flex-col gap-1 sm:col-span-1">
+        <Label htmlFor={`lead-${product.id}`} className="text-[10px] text-charcoal/52 sm:hidden">
+          Min Lead Time (days)
+        </Label>
+        <Input
+          id={`lead-${product.id}`}
+          name="minLeadTimeDays"
+          type="number"
+          step="1"
+          min="0"
+          max="100"
+          defaultValue={product.min_lead_time_days}
+          required
+          aria-describedby={`lead-desc-${product.id}`}
+          className="h-8 w-full sm:w-20 text-xs"
+        />
+        <span id={`lead-desc-${product.id}`} className="sr-only">
+          Minimum advance notice days for {product.name}
+        </span>
+      </div>
+
+      {/* Save Button & Feedback */}
+      <div className="flex flex-col gap-1 sm:col-span-1 items-stretch sm:items-end justify-center">
+        <Button
+          type="submit"
+          variant="secondary"
+          size="sm"
+          disabled={isPending}
+          className="h-8 px-3 text-[11px] font-semibold w-full sm:w-auto"
+        >
+          {isPending ? "Saving..." : "Save changes"}
+        </Button>
+        <div aria-live="polite" className="text-[10px] h-3 text-center sm:text-right">
+          {status === "success" && (
+            <span className="text-emerald-700 font-medium">✓ Saved</span>
+          )}
+          {status === "error" && (
+            <span className="text-rose-700 font-medium">{errorMessage}</span>
+          )}
+        </div>
+      </div>
+    </form>
+  );
+}
 
 type DayDetailsState = {
   orders: Array<{
@@ -380,6 +532,7 @@ export function InteractiveCalendar({
   weeklyCapacityCeiling,
   weeks,
   redirectTo,
+  products,
 }: Readonly<InteractiveCalendarProps>) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeDateKey, setActiveDateKey] = useState<string | null>(null);
@@ -387,6 +540,38 @@ export function InteractiveCalendar({
   const [drawerView, setDrawerView] = useState<"detail" | "add-blackout" | "add-note">("detail");
   const [dayDetails, setDayDetails] = useState<DayDetailsState | null>(null);
   const drawerDialogId = useId();
+
+  // Ceiling Save form state
+  const [ceilingPending, setCeilingPending] = useState(false);
+  const [ceilingStatus, setCeilingStatus] = useState<"idle" | "success" | "error">("idle");
+  const [ceilingError, setCeilingError] = useState("");
+  const router = useRouter();
+
+  const handleCeilingSave = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setCeilingPending(true);
+    setCeilingStatus("idle");
+    setCeilingError("");
+
+    try {
+      const formData = new FormData(event.currentTarget);
+      const res = await updateWeeklyCapacityCeiling(formData);
+      if (res.success) {
+        setCeilingStatus("success");
+        router.refresh();
+        setTimeout(() => setCeilingStatus("idle"), 3000);
+      } else {
+        setCeilingStatus("error");
+        setCeilingError(res.error ?? "Failed to save ceiling.");
+      }
+    } catch (err) {
+      console.error(err);
+      setCeilingStatus("error");
+      setCeilingError("An unexpected error occurred.");
+    } finally {
+      setCeilingPending(false);
+    }
+  };
 
   // Mobile gestures state
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
@@ -531,7 +716,127 @@ export function InteractiveCalendar({
   };
 
   return (
-    <>
+    <div className="space-y-4">
+      {/* Capacity Settings Panel */}
+      <details
+        id="capacity-settings-panel"
+        className="group rounded-[1.25rem] border border-charcoal/8 bg-white/60 p-3 transition-all [&_summary::-webkit-details-marker]:hidden"
+      >
+        <summary className="flex cursor-pointer items-center justify-between gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-charcoal/60 outline-none select-none">
+          <span>Configure Workload Capacity</span>
+          <span className="text-[10px] lowercase text-charcoal/40 group-open:hidden">(click to expand)</span>
+          <span className="hidden text-[10px] lowercase text-charcoal/40 group-open:inline">(click to collapse)</span>
+        </summary>
+        <div className="mt-3 border-t border-charcoal/6 pt-3 space-y-6">
+          {/* Weekly ceiling editor */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-charcoal/50">Weekly Ceiling Limit</h3>
+            <form onSubmit={handleCeilingSave} className="flex flex-col gap-3 rounded-[1rem] border border-charcoal/8 bg-white/70 p-3 sm:flex-row sm:items-end">
+              <input type="hidden" name="redirectTo" value={redirectTo} />
+              <div className="min-w-0 flex-1">
+                <Label htmlFor="panel-weekly-capacity-ceiling" className="text-xs font-semibold text-charcoal">
+                  Weekly Capacity Ceiling
+                </Label>
+                <p className="text-[11px] text-charcoal/52 leading-relaxed mt-0.5">
+                  Set the point limit at which a week is considered fully booked. Load bars and colors update relative to this value.
+                </p>
+              </div>
+              <div className="w-full sm:w-28">
+                <Input
+                  id="panel-weekly-capacity-ceiling"
+                  name="weeklyCapacityCeiling"
+                  type="number"
+                  step="1"
+                  min="1"
+                  max="100"
+                  defaultValue={weeklyCapacityCeiling}
+                  required
+                  className="h-9 text-xs"
+                />
+              </div>
+              <div className="flex flex-col gap-1 sm:items-end">
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  size="sm"
+                  disabled={ceilingPending}
+                  className="h-9 px-4 text-xs font-semibold w-full sm:w-auto"
+                >
+                  {ceilingPending ? "Saving..." : "Save ceiling"}
+                </Button>
+                <div aria-live="polite" className="text-[10px] h-3 text-center sm:text-right">
+                  {ceilingStatus === "success" && (
+                    <span className="text-emerald-700 font-medium">✓ Saved successfully</span>
+                  )}
+                  {ceilingStatus === "error" && (
+                    <span className="text-rose-700 font-medium">{ceilingError}</span>
+                  )}
+                </div>
+              </div>
+            </form>
+          </div>
+
+          {/* Product capacity section */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-charcoal/50">Product Capacity Weights</h3>
+            
+            {/* Table Header (Desktop only) */}
+            <div className="hidden sm:grid grid-cols-5 gap-3 border-b border-charcoal/10 pb-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-charcoal/40">
+              <div>Product</div>
+              <div>Capacity Points (effort)</div>
+              <div>Prep Days</div>
+              <div>Min Lead Time (days)</div>
+              <div className="text-right">Actions</div>
+            </div>
+
+            {/* Active Products */}
+            <div className="space-y-1">
+              <h4 className="text-[10px] font-bold text-emerald-800 uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded w-max mb-2">
+                Active Products
+              </h4>
+              {products.filter((p) => p.is_active).map((product) => (
+                <ProductCapacityRow
+                  key={product.id}
+                  product={product}
+                  redirectTo={redirectTo}
+                  onSaveSuccess={() => {}}
+                />
+              ))}
+            </div>
+
+            {/* Inactive Products */}
+            {products.some((p) => !p.is_active) && (
+              <div className="space-y-1 pt-4 border-t border-dashed border-charcoal/8">
+                <h4 className="text-[10px] font-bold text-charcoal/52 uppercase tracking-widest bg-charcoal/5 px-2 py-0.5 rounded w-max mb-2">
+                  Inactive Products
+                </h4>
+                {products.filter((p) => !p.is_active).map((product) => (
+                  <ProductCapacityRow
+                    key={product.id}
+                    product={product}
+                    redirectTo={redirectTo}
+                    onSaveSuccess={() => {}}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Live Summary Line & Explainer */}
+          <div className="rounded-[1rem] border border-charcoal/8 bg-ivory/40 p-3 space-y-2 text-xs">
+            <div className="font-semibold text-charcoal/82">
+              {getCapacityEstimateSentence(weeklyCapacityCeiling, products)}
+            </div>
+            <p className="text-[10px] text-charcoal/48 italic leading-relaxed">
+              Disclaimer: This is a rough planning estimate based on saved settings. Point totals alone do not guarantee availability.
+            </p>
+            <p className="text-[11px] text-charcoal/54 leading-relaxed pt-1.5 border-t border-charcoal/6">
+              <strong>Notice:</strong> Capacity points estimate the workload/effort of confirmed orders. Prep days shadow the workload onto preceding days. Minimum lead time flags active inquiries requiring faster notice than normal.
+            </p>
+          </div>
+        </div>
+      </details>
+
       {/* 1. Static Layout matching pre-refactor identically */}
       <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
         {weekdayLabels.map((label) => (
@@ -1219,6 +1524,6 @@ export function InteractiveCalendar({
           </div>
         </>
       )}
-    </>
+    </div>
   );
 }

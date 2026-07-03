@@ -12,7 +12,7 @@ import {
 } from "@/lib/admin/action-helpers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Constants, type Enums, type TablesInsert, type Json } from "@/types/supabase.generated";
-import { buildProductPointLookup, isShortLeadTime } from "@/lib/admin/capacity";
+import { buildProductPointLookup, isShortLeadTime, validateProductCapacitySettings } from "@/lib/admin/capacity";
 import { getInquiryReferenceCode } from "@/lib/admin/order-workflow";
 
 function parseDateInput(value: FormDataEntryValue | null) {
@@ -151,15 +151,10 @@ export async function createCalendarEntry(formData: FormData) {
 export async function updateWeeklyCapacityCeiling(formData: FormData) {
   await requireAdmin();
 
-  const redirectTarget = getSafeRedirectTarget(
-    formData.get("redirectTo"),
-    "/admin/calendar",
-    "/admin/calendar",
-  );
   const weeklyCapacityCeiling = parseInteger(formData.get("weeklyCapacityCeiling"), 12);
 
-  if (weeklyCapacityCeiling < 1 || weeklyCapacityCeiling > 100) {
-    redirectWithNotice(redirectTarget, "calendar-error");
+  if (Number.isNaN(weeklyCapacityCeiling) || weeklyCapacityCeiling < 1 || weeklyCapacityCeiling > 100) {
+    return { success: false, error: "Weekly ceiling must be a positive integer between 1 and 100." };
   }
 
   const payload: TablesInsert<"site_settings"> = {
@@ -180,11 +175,11 @@ export async function updateWeeklyCapacityCeiling(formData: FormData) {
 
   if (error) {
     console.error("Unable to update weekly capacity ceiling.", error);
-    redirectWithNotice(redirectTarget, "calendar-error");
+    return { success: false, error: "Database error saving capacity ceiling." };
   }
 
   revalidatePaths(["/admin/calendar", "/admin/settings"]);
-  redirectWithNotice(redirectTarget, "calendar-updated");
+  return { success: true };
 }
 
 export async function deleteBlackoutDate(formData: FormData) {
@@ -351,4 +346,39 @@ export async function getCalendarDayDetails(dateKey: string, contributingOrderId
     blackouts: blackouts ?? [],
     notes: filteredNotes,
   };
+}
+
+export async function updateProductCapacitySettings(formData: FormData) {
+  await requireAdmin();
+
+  const productId = parseRequiredString(formData.get("productId"));
+  const capacityPoints = parseInteger(formData.get("capacityPoints"), 2);
+  const prepDays = parseInteger(formData.get("prepDays"), 0);
+  const minLeadTimeDays = parseInteger(formData.get("minLeadTimeDays"), 3);
+
+  if (!productId) {
+    return { success: false, error: "Missing product identifier." };
+  }
+
+  const validation = validateProductCapacitySettings(capacityPoints, prepDays, minLeadTimeDays);
+  if (!validation.success) {
+    return { success: false, error: validation.error };
+  }
+
+  const { error } = await createAdminClient()
+    .from("products")
+    .update({
+      capacity_points: capacityPoints,
+      prep_days: prepDays,
+      min_lead_time_days: minLeadTimeDays,
+    })
+    .eq("id", productId);
+
+  if (error) {
+    console.error("Unable to update product capacity settings.", error);
+    return { success: false, error: "Database error saving capacity settings." };
+  }
+
+  revalidatePaths(["/admin/calendar", "/admin/products", "/admin/pricing"]);
+  return { success: true };
 }

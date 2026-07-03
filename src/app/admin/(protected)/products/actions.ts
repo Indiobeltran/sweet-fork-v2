@@ -58,7 +58,7 @@ export async function updateProduct(formData: FormData) {
     redirectWithNotice(redirectTarget, "product-error");
   }
 
-  revalidatePaths([productsRedirectPath, "/admin/pricing"]);
+  revalidatePaths([productsRedirectPath, "/admin/pricing", "/admin/calendar"]);
   revalidateMarketingSite();
   redirectWithNotice(redirectTarget, "product-updated");
 }

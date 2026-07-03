@@ -72,6 +72,7 @@ export type CalendarPageData = {
   }>;
   weeklyCapacityCeiling: number;
   weeks: CapacityWeekLoad[];
+  products: ProductRow[];
 };
 
 type CalendarOrderItemRow = Pick<
@@ -748,5 +749,6 @@ export async function getCalendarPageData(filters: CalendarFilters): Promise<Cal
     ],
     weeklyCapacityCeiling: capacitySettings.weeklyCapacityCeiling,
     weeks: capacity.weeks,
+    products: products,
   };
 }

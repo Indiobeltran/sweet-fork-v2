@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 // @ts-expect-error Node's strip-types test runner needs the .ts extension.
-import { buildCapacityLoad, getOrderLoadDistribution, buildProductPointLookup } from "./capacity.ts";
+import { buildCapacityLoad, getOrderLoadDistribution, buildProductPointLookup, validateProductCapacitySettings, getCapacityEstimateSentence } from "./capacity.ts";
 
 const products = [
   { capacityPoints: 2, id: "custom-cake", productType: "custom-cake", prepDays: 0, minLeadTimeDays: 3 },
@@ -238,5 +238,52 @@ describe("calendar capacity load", () => {
     assert.deepEqual(distribution, [
       { dateKey: "2026-07-18", points: 6, isDue: true }
     ]);
+  });
+});
+
+describe("capacity estimate and validation helpers", () => {
+  it("validateProductCapacitySettings accepts valid values and rejects invalid ones", () => {
+    assert.deepEqual(validateProductCapacitySettings(5, 2, 7), { success: true });
+    
+    // reject invalid capacity points
+    assert.equal(validateProductCapacitySettings(0, 2, 7).success, false);
+    assert.equal(validateProductCapacitySettings(101, 2, 7).success, false);
+    assert.equal(validateProductCapacitySettings(NaN, 2, 7).success, false);
+    
+    // reject invalid prep days
+    assert.equal(validateProductCapacitySettings(5, -1, 7).success, false);
+    assert.equal(validateProductCapacitySettings(5, 31, 7).success, false);
+    
+    // reject invalid lead time
+    assert.equal(validateProductCapacitySettings(5, 2, -1).success, false);
+    assert.equal(validateProductCapacitySettings(5, 2, 101).success, false);
+  });
+
+  it("getCapacityEstimateSentence builds correct examples", () => {
+    const productsList = [
+      { id: "p1", name: "Cupcakes", is_active: true, capacity_points: 2 },
+      { id: "p2", name: "Custom Cake", is_active: true, capacity_points: 8 },
+      { id: "p3", name: "Inactive Cake", is_active: false, capacity_points: 15 },
+    ];
+
+    // normal active illustration
+    const estimate = getCapacityEstimateSentence(12, productsList);
+    assert.match(estimate, /roughly equivalent to 6 Cupcakes/);
+    assert.match(estimate, /1 larger Custom Cake/);
+    
+    // inactive products are excluded from examples
+    assert.doesNotMatch(estimate, /Inactive Cake/);
+
+    // empty active products list
+    assert.match(
+      getCapacityEstimateSentence(12, []),
+      /cannot be illustrated because no active products/
+    );
+
+    // ceiling lower than all product point values
+    assert.match(
+      getCapacityEstimateSentence(1, productsList),
+      /even 1 order of your smallest product/
+    );
   });
 });

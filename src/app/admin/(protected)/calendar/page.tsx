@@ -5,7 +5,6 @@ import {
   createBlackoutDate,
   createCalendarEntry,
   toggleBlackoutDateState,
-  updateWeeklyCapacityCeiling,
 } from "@/app/admin/(protected)/calendar/actions";
 import { ActiveFilterPills } from "@/components/admin/active-filter-pills";
 import { AdminNoticeBanner } from "@/components/admin/admin-notice-banner";
@@ -25,7 +24,6 @@ import {
   type CalendarAgendaItem,
   type CalendarDay,
   type CalendarDayItem,
-  type CalendarPageData,
 } from "@/lib/admin/calendar";
 import type { CapacityLoadState } from "@/lib/admin/capacity";
 import { cn, toTitleCase } from "@/lib/utils";
@@ -358,41 +356,6 @@ function WeekFocusSection({
   );
 }
 
-function CapacitySettingsForm({
-  data,
-  redirectTo,
-}: Readonly<{
-  data: CalendarPageData;
-  redirectTo: string;
-}>) {
-  return (
-    <form
-      action={updateWeeklyCapacityCeiling}
-      className="flex flex-col gap-3 rounded-[1.25rem] border border-charcoal/8 bg-white/76 p-3 sm:flex-row sm:items-end"
-    >
-      <input type="hidden" name="redirectTo" value={redirectTo} />
-      <div className="min-w-0 flex-1">
-        <Label htmlFor="weekly-capacity-ceiling">Weekly capacity ceiling</Label>
-        <p className="mt-1 text-xs leading-5 text-charcoal/56">Calendar load is scored in owner-tuned points.</p>
-      </div>
-      <div className="w-full sm:w-36">
-        <Input
-          id="weekly-capacity-ceiling"
-          name="weeklyCapacityCeiling"
-          type="number"
-          min="1"
-          max="100"
-          defaultValue={data.weeklyCapacityCeiling}
-          required
-        />
-      </div>
-      <Button type="submit" variant="secondary">
-        Save capacity
-      </Button>
-    </form>
-  );
-}
-
 function BlackoutForm({
   defaultDate,
   redirectTo,
@@ -700,6 +663,33 @@ export default async function AdminCalendarPage({ searchParams }: AdminCalendarP
                       <div className="pl-1 text-charcoal/80">• <em>X items / X:</em> Scheduled items count (only if 0 order points).</div>
                     </div>
                   </div>
+
+                  <div className="sm:col-span-2 border-t border-charcoal/6 pt-3">
+                    <h4 className="font-semibold text-charcoal mb-1.5 uppercase tracking-wider text-[10px] text-charcoal/50">How Capacity Works</h4>
+                    <div className="space-y-2 text-[11px] leading-relaxed text-charcoal/74">
+                      <div>
+                        <strong>Weekly Capacity limit:</strong> A week is considered full at <strong>{data.weeklyCapacityCeiling} points</strong>.
+                      </div>
+                      <div>
+                        <strong>Capacity Points:</strong> Estimated production effort per product used to calculate workload. Active products are:{" "}
+                        {data.products
+                          .filter((p) => p.is_active)
+                          .map((p) => `${p.name} (${p.capacity_points ?? 0} pts)`)
+                          .join(", ")}.
+                      </div>
+                      <div>
+                        <strong>Prep-day Shadows:</strong> Workload starts before the due date. Confirming large orders spreads (distributes) their capacity points across the prep days leading up to the event date.
+                      </div>
+                      <div>
+                        <strong>Minimum Lead Time:</strong> The advance notice required. Active inquiries submitted within a product&apos;s minimum lead time window will be flagged as short lead. Note: lead time warnings do not affect calendar heat.
+                      </div>
+                      <div className="pt-1">
+                        <a href="#capacity-settings-panel" className="underline text-gold hover:text-gold/80 font-semibold">
+                          Configure these settings in the Capacity Settings Panel &rarr;
+                        </a>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </details>
@@ -717,7 +707,6 @@ export default async function AdminCalendarPage({ searchParams }: AdminCalendarP
           </div>
         </div>
 
-        <CapacitySettingsForm data={data} redirectTo={redirectTo} />
       </AdminPageHeader>
 
       <section className="rounded-[1.7rem] border border-charcoal/10 bg-white/88 p-3 shadow-soft sm:p-4">
@@ -726,6 +715,7 @@ export default async function AdminCalendarPage({ searchParams }: AdminCalendarP
           weeklyCapacityCeiling={data.weeklyCapacityCeiling}
           weeks={data.weeks}
           redirectTo={redirectTo}
+          products={data.products}
         />
       </section>
 
