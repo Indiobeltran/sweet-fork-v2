@@ -1,6 +1,8 @@
 import Link from "next/link";
-import { AlertCircle, ArrowRight, CalendarDays, CheckCircle2, Clock, FileText, ImageIcon, Layers, MessageCircle } from "lucide-react";
+import { AlertCircle, ArrowRight, CalendarDays, CheckCircle2, Clock, FileText, ImageIcon, Layers, MessageCircle, PlusCircle } from "lucide-react";
 
+import { buildDashboardFinanceSummary, buildDashboardGreetingSummary, getCurrentDateLabel } from "@/lib/admin/finance";
+import { getDashboardFinanceSetting } from "@/lib/admin/finance-data";
 import { getInquiryListData } from "@/lib/admin/inquiries";
 import { getOrderListData } from "@/lib/admin/orders";
 import { getMediaLibraryData } from "@/lib/admin/site-management";
@@ -11,7 +13,7 @@ export const metadata = {
 };
 
 export default async function AdminDashboardPage() {
-  const [inquiriesData, ordersData, mediaData] = await Promise.all([
+  const [inquiriesData, ordersData, mediaData, showFinanceOnDashboard] = await Promise.all([
     getInquiryListData({
       budgetRange: "all",
       eventDateFrom: "",
@@ -32,6 +34,7 @@ export default async function AdminDashboardPage() {
       status: "all",
     }),
     getMediaLibraryData(),
+    getDashboardFinanceSetting(),
   ]);
 
   const newInquiriesCount = inquiriesData.statusCounts.new;
@@ -53,6 +56,7 @@ export default async function AdminDashboardPage() {
 
   const dueSoonOrdersCount = upcomingOrders.filter((entry) => entry.eventDate <= nextWeek).length;
   const paymentAttentionCount = upcomingOrders.filter((entry) => entry.paymentState !== "paid").length;
+  const waitingInquiriesCount = newInquiriesCount + reviewingInquiriesCount + quotedInquiriesCount;
 
   const mediaWarningsCount = mediaData.placementWarnings.length;
 
@@ -70,13 +74,33 @@ export default async function AdminDashboardPage() {
   );
   const needsAttentionInquiries = [...newInquiries, ...reviewingInquiries].slice(0, 4);
   const immediateOrders = upcomingOrders.slice(0, 4);
+  const financeSummary = buildDashboardFinanceSummary({
+    inquiries: inquiriesData.entries.map((entry) => ({
+      estimatedMax: entry.estimatedMax,
+      estimatedMin: entry.estimatedMin,
+      status: entry.status,
+    })),
+    orders: ordersData.entries.map((entry) => ({
+      eventDate: entry.eventDate,
+      status: entry.status,
+      totalAmount: entry.totalAmount,
+    })),
+    today,
+  });
+  const greetingSummary = buildDashboardGreetingSummary({
+    inquiryCount: waitingInquiriesCount,
+    orderCount: dueSoonOrdersCount,
+  });
 
   return (
     <div className="space-y-6 sm:space-y-8 px-2 sm:px-4 md:px-6">
       <header className="rounded-[1.65rem] border border-charcoal/10 bg-white/88 p-5 sm:p-6 shadow-soft">
         <h1 className="font-serif text-3xl tracking-[-0.03em] text-charcoal">Today at The Sweet Fork</h1>
+        <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+          {getCurrentDateLabel(new Date())}
+        </p>
         <p className="mt-2 text-charcoal/70 text-[0.95rem] sm:text-base leading-relaxed">
-          Here&apos;s a quick look at what needs your attention right now.
+          {greetingSummary}
         </p>
       </header>
 
@@ -132,13 +156,35 @@ export default async function AdminDashboardPage() {
         </section>
       )}
 
+      {showFinanceOnDashboard ? (
+        <section aria-labelledby="dashboard-finance-heading" className="grid gap-3 sm:grid-cols-2">
+          <h2 id="dashboard-finance-heading" className="sr-only">Dashboard Finance</h2>
+          <article className="rounded-[1.35rem] border border-gold/20 bg-white/86 px-4 py-3 shadow-[0_2px_8px_rgba(53,37,29,0.02)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-charcoal/45">
+              Booked ahead
+            </p>
+            <p className="mt-1 font-serif text-[1.45rem] tracking-[-0.03em] text-charcoal">
+              {financeSummary.bookedAheadLabel}
+            </p>
+          </article>
+          <article className="rounded-[1.35rem] border border-gold/20 bg-white/86 px-4 py-3 shadow-[0_2px_8px_rgba(53,37,29,0.02)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-charcoal/45">
+              Pending value
+            </p>
+            <p className="mt-1 font-serif text-[1.45rem] tracking-[-0.03em] text-charcoal">
+              {financeSummary.pendingValueLabel}
+            </p>
+          </article>
+        </section>
+      ) : null}
+
       <div className="grid gap-6 lg:gap-8 lg:grid-cols-2">
         <section aria-labelledby="attention-inquiries-heading" className="space-y-4">
           <div className="flex items-center justify-between px-1">
             <h2 id="attention-inquiries-heading" className="font-serif text-2xl tracking-[-0.02em] text-charcoal">
               Active Inquiries
             </h2>
-            <Link href="/admin/inquiries" className="text-sm font-medium text-charcoal/60 hover:text-charcoal transition-colors">
+            <Link href="/admin/inquiries" className="text-sm font-medium text-gold hover:text-gold/80 transition-colors">
               View all
             </Link>
           </div>
@@ -168,12 +214,12 @@ export default async function AdminDashboardPage() {
                 </Link>
               ))
             ) : (
-              <div className="rounded-[1.35rem] border border-dashed border-charcoal/15 bg-ivory/40 p-6 text-center">
-                <p className="text-charcoal/80 text-sm">Your inquiry desk is clear right now!</p>
-                <Link href="/admin/inquiries" className="mt-2 inline-block text-sm font-medium text-gold hover:text-gold/80 hover:underline">
-                  Check all inquiries
+              <p className="px-1 text-sm text-charcoal/68">
+                No active inquiries <span className="text-charcoal/35">·</span>{" "}
+                <Link href="/admin/inquiries" className="font-medium text-gold hover:text-gold/80 hover:underline">
+                  View all
                 </Link>
-              </div>
+              </p>
             )}
           </div>
         </section>
@@ -183,7 +229,7 @@ export default async function AdminDashboardPage() {
             <h2 id="upcoming-orders-heading" className="font-serif text-2xl tracking-[-0.02em] text-charcoal">
               Upcoming Orders
             </h2>
-            <Link href="/admin/orders" className="text-sm font-medium text-charcoal/60 hover:text-charcoal transition-colors">
+            <Link href="/admin/orders" className="text-sm font-medium text-gold hover:text-gold/80 transition-colors">
               View all
             </Link>
           </div>
@@ -210,12 +256,12 @@ export default async function AdminDashboardPage() {
                 </Link>
               ))
             ) : (
-              <div className="rounded-[1.35rem] border border-dashed border-charcoal/15 bg-ivory/40 p-6 text-center">
-                <p className="text-charcoal/80 text-sm">No confirmed upcoming events.</p>
-                <Link href="/admin/orders" className="mt-2 inline-block text-sm font-medium text-gold hover:text-gold/80 hover:underline">
-                  View order history
+              <p className="px-1 text-sm text-charcoal/68">
+                No upcoming orders <span className="text-charcoal/35">·</span>{" "}
+                <Link href="/admin/calendar" className="font-medium text-gold hover:text-gold/80 hover:underline">
+                  View calendar
                 </Link>
-              </div>
+              </p>
             )}
           </div>
         </section>
@@ -225,25 +271,15 @@ export default async function AdminDashboardPage() {
         <h2 id="quick-actions-heading" className="font-serif text-2xl tracking-[-0.02em] text-charcoal px-1">
           Quick Actions
         </h2>
-        <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <Link
-            href="/admin/inquiries"
+            href="/admin/orders/new"
             className="flex items-center gap-3 rounded-[1.5rem] border border-charcoal/10 bg-white/90 p-4 transition-all hover:border-charcoal/30 hover:bg-white shadow-[0_2px_8px_rgba(53,37,29,0.02)]"
           >
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-charcoal/5 text-charcoal/80">
-              <FileText className="h-5 w-5" />
+              <PlusCircle className="h-5 w-5" />
             </div>
-            <span className="font-medium text-[0.95rem] text-charcoal">Manage inquiries</span>
-          </Link>
-
-          <Link
-            href="/admin/orders"
-            className="flex items-center gap-3 rounded-[1.5rem] border border-charcoal/10 bg-white/90 p-4 transition-all hover:border-charcoal/30 hover:bg-white shadow-[0_2px_8px_rgba(53,37,29,0.02)]"
-          >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-charcoal/5 text-charcoal/80">
-              <CalendarDays className="h-5 w-5" />
-            </div>
-            <span className="font-medium text-[0.95rem] text-charcoal">Upcoming orders</span>
+            <span className="font-medium text-[0.95rem] text-charcoal">Add manual order</span>
           </Link>
 
           <Link

@@ -7,7 +7,7 @@ import type { Json, Tables } from "@/types/supabase.generated";
 
 type SiteSettingRow = Tables<"site_settings">;
 
-type SettingSectionKey = "business" | "inquiries" | "booking";
+type SettingSectionKey = "business" | "inquiries" | "booking" | "operations";
 
 type TextFieldDefinition = {
   key: string;
@@ -99,6 +99,12 @@ const sectionDefinitions: Array<Pick<SettingsAdminSection, "description" | "key"
     description:
       "Use this when you need a calm heads-up ready for launch week, holiday closures, or limited availability messaging.",
   },
+  {
+    key: "operations",
+    title: "Owner dashboard",
+    description:
+      "Small workspace preferences for the private dashboard and operations views.",
+  },
 ];
 
 const adminSettingDefinitions: AdminSettingDefinition[] = [
@@ -186,6 +192,26 @@ const adminSettingDefinitions: AdminSettingDefinition[] = [
         "Most custom orders need at least 2 weeks notice. Holiday and wedding weekends can book earlier.",
       title: "Limited booking notice",
       tone: "limited",
+    },
+  },
+  {
+    key: "dashboard.finance",
+    categoryKey: "dashboard",
+    label: "Dashboard finance",
+    description:
+      "Controls whether booked-ahead and pending-value cards appear on the private dashboard.",
+    public: false,
+    section: "operations",
+    fields: [
+      {
+        key: "showFinance",
+        label: "Show finance on dashboard",
+        helpText: "Turn this off when you want the dashboard to focus only on operational status.",
+        type: "boolean",
+      },
+    ],
+    fallback: {
+      showFinance: true,
     },
   },
 ];
@@ -309,6 +335,7 @@ export async function getSettingsAdminData(): Promise<SettingsAdminData> {
 
   const inquiryFlags = settings.find((setting) => setting.definition.key === "inquiry.flags");
   const bookingNotice = settings.find((setting) => setting.definition.key === "booking.notice");
+  const dashboardFinance = settings.find((setting) => setting.definition.key === "dashboard.finance");
 
   return {
     sections: sectionDefinitions.map((section) => ({
@@ -334,6 +361,14 @@ export async function getSettingsAdminData(): Promise<SettingsAdminData> {
         detail: bookingNotice?.value.enabled
           ? "A banner-style message is saved for launch or busy-season communication."
           : "No saved booking notice is currently turned on.",
+      },
+      {
+        label: "Dashboard finance",
+        value: dashboardFinance?.value.showFinance === false ? "Hidden" : "Shown",
+        detail:
+          dashboardFinance?.value.showFinance === false
+            ? "Dashboard finance cards are hidden."
+            : "Dashboard finance cards are shown.",
       },
     ],
   };

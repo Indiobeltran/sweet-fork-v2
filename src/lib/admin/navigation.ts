@@ -9,6 +9,7 @@ export type AdminPageKey =
   | "faqs"
   | "testimonials"
   | "customers"
+  | "reports"
   | "public-site"
   | "notifications"
   | "users"
@@ -51,6 +52,7 @@ export const ADMIN_MORE_NAV_ITEMS: AdminMoreNavItem[] = [
   { group: "Site", href: "/admin/testimonials", key: "testimonials", label: "Testimonials" },
   { group: "Site", href: "/", key: "public-site", label: "View public site" },
   { group: "Operations", href: "/admin/customers", key: "customers", label: "Customers" },
+  { group: "Operations", href: "/admin/reports", key: "reports", label: "Reports" },
   {
     group: "Operations",
     href: "/admin/notifications",
@@ -66,6 +68,14 @@ const PRIMARY_TITLE_BY_KEY: Record<AdminPrimaryNavKey, string> = {
   calendar: "Calendar",
   inquiries: "Inquiries",
   orders: "Orders",
+};
+
+const EXACT_ROUTE_META: Record<string, AdminPageMeta> = {
+  "/admin/orders/new": {
+    activePrimaryKey: "orders",
+    key: "orders",
+    title: "Add manual order",
+  },
 };
 
 const DETAIL_ROUTE_META: Array<{ href: string; key: AdminPageKey; title: string; activePrimaryKey: AdminPrimaryNavKey | "more" }> = [
@@ -118,6 +128,11 @@ export function getAdminMoreGroups() {
 
 export function getAdminPageMeta(pathname: string): AdminPageMeta {
   const normalizedPathname = pathname === "/admin" ? ADMIN_HOME_HREF : pathname;
+  const exactRoute = EXACT_ROUTE_META[normalizedPathname];
+
+  if (exactRoute) {
+    return exactRoute;
+  }
 
   const detailRoute = DETAIL_ROUTE_META.find(
     (route) => normalizedPathname !== route.href && isAdminHrefActive(normalizedPathname, route.href),

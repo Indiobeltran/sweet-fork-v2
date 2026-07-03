@@ -329,6 +329,10 @@ function NoticeBanner({ notice }: { notice: string | undefined }) {
       className: "border-emerald-200 bg-emerald-50 text-emerald-900",
       text: "Order created and linked to an existing customer match.",
     },
+    "manual-order-created": {
+      className: "border-emerald-200 bg-emerald-50 text-emerald-900",
+      text: "Manual order created.",
+    },
     "order-error": {
       className: "border-rose/24 bg-rose/10 text-charcoal",
       text: "The order update did not save. Please try again.",

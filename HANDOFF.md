@@ -4,6 +4,178 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## Admin Orders Follow-Up: Overdue, Completed, Quick-Add Custom Items — 2026-07-03
+
+- **Current branch**: `codex/admin-dashboard-finance`.
+- **Current objective**: Small Orders-list-only follow-up: verify/fix Overdue behavior, Completed queue behavior, and Quick add custom item storage without touching dashboard/reports/settings/finance code.
+- **Last completed work**:
+  - Moved Orders queue filtering rules into tested `src/lib/admin/order-list-view.ts`.
+  - Finished statuses are now `completed`, `fulfilled`, and `cancelled`; fulfilled/completed orders are excluded from Active, Awaiting payment, Upcoming, and urgency sections.
+  - Completed queue now includes both `completed` and `fulfilled` orders.
+  - `groupOrdersByDueDate` skips finished orders, keeps Overdue pinned first, and sorts Overdue oldest first.
+  - Overdue sections render with the existing rose attention treatment.
+  - Completed queue renders as a flat `Completed orders` section when not searching, rather than urgency sections.
+  - Quick add now stores custom order items with `order_items.product_id = null`, keeps entered item description as `product_label`, and uses existing `product_type` only as the required category fallback.
+  - Logged the data-shape decision in `DECISIONS.md`.
+- **Manual QA data lifecycle**:
+  - Browser QA at `390x844` opened `/admin/orders?search=TEST`: two legacy `TEST — Delete Me` orders appeared in Active/Search results with no horizontal overflow.
+  - Marked the first legacy TEST order completed through the card quick-action menu. Per user instruction, it was not deleted and was intentionally left completed for owner cleanup.
+  - Verified Active/Awaiting/Upcoming counts dropped from 2 to 1 and the completed order left Active search results.
+  - Opened `/admin/orders?queue=completed&search=TEST` and confirmed the completed TEST order remains searchable under Completed with no horizontal overflow.
+  - Created temporary future-dated quick-add order `QA CUSTOM ITEM — delete me`, verified its order item stored `product_id: null`, `product_label: "QA standalone custom dessert line"`, `product_type: "custom-cake"`, then deleted its payments/order item/order/customer.
+- **In-progress work**: None.
+- **Next exact task**: Review diff and decide whether to stage/commit/push/open a PR. No staging has been performed.
+- **Commands run**:
+  - `curl -L --max-time 20 https://supabase.com/changelog.md | sed -n '1,120p'`
+  - `node --no-warnings --experimental-strip-types --test src/lib/admin/order-list-view.test.ts` (red for missing queue helper, then green)
+  - `npx eslint 'src/app/admin/(protected)/orders/**/*.{ts,tsx}' src/lib/admin/order-list-view.ts src/lib/admin/order-list-view.test.ts --max-warnings=0`: passed
+  - `npm run typecheck`: failed once for nullable product ID narrowing, then passed
+  - `npm run lint`: passed
+  - `npm test`: passed, 118/118
+  - `npm run build`: passed
+  - `npm run dev -- --hostname 127.0.0.1 --port 3000`
+  - Browser QA via in-app browser at `http://127.0.0.1:3000`, viewport `390x844`
+  - Supabase verification/cleanup script using `.env.local` and `SUPABASE_SECRET_KEY`
+- **Commands still needed**:
+  - None for this scoped Orders task unless the user wants commit/push/PR work.
+- **Files changed recently for this scoped run**:
+  - `DECISIONS.md`
+  - `HANDOFF.md`
+  - `src/app/admin/(protected)/orders/actions.ts`
+  - `src/app/admin/(protected)/orders/new/page.tsx`
+  - `src/app/admin/(protected)/orders/page.tsx`
+  - `src/lib/admin/order-list-view.ts`
+  - `src/lib/admin/order-list-view.test.ts`
+- **Files intentionally preserved / not touched in this run**:
+  - Dashboard, reports, settings, finance, and prior uncommitted files were not edited.
+  - Existing untracked support/scratch files were left untouched.
+- **Known issues / notes**:
+  - One legacy `TEST — Delete Me` order was intentionally marked completed and left in the database; owner will handle cleanup.
+  - Browser DOM snapshot was not used because the environment previously failed with `incrementalAriaSnapshot`; this QA used browser URL/title, read-only DOM evaluation, screenshots, console logs, and interactions.
+- **Assumptions made**:
+  - `fulfilled` is operationally finished for list filtering and belongs with the Completed queue.
+  - Quick add can use nullable `order_items.product_id` with a category fallback in `product_type`; no migration is needed.
+- **Open decisions**:
+  - Whether Quick add should later expose an explicit product category selector instead of using the first active product's category as a hidden fallback.
+
+## Admin Orders List Overhaul + Quick Add QA — 2026-07-03
+
+- **Current branch**: `codex/admin-dashboard-finance`.
+- **Current objective**: Complete the Orders list screen overhaul only, finish manual order creation verification, add a Quick add variant for backfilled orders, preserve dashboard/reports/settings/finance work untouched.
+- **Last completed work**:
+  - Added `/admin/orders/new?mode=quick` as a tabbed Quick add variant on the existing manual order form. It uses the same `createManualOrder` action and records customer name, due date, occasion, item description, total, amount paid, and fulfillment type; optional contact fields remain available.
+  - Extended manual order creation to record an initial paid payment when `amountPaid > 0`, sync order balance/payment status, and use the Quick add item description as the order item label.
+  - Added a visible `+ New order` entry point to the Orders header.
+  - Redesigned Orders list cards to match the recent Calendar styling: customer + occasion title, prominent due date plus relative label, one status badge, combined payment pill, item count, compact fulfillment chip, and no order number on cards.
+  - Added context-aware secondary actions: `Collect payment` for unpaid/balance-due orders and `Message` for paid orders with contact options.
+  - Added long-press / overflow quick actions for `Mark paid` and `Mark completed`, with confirmation toast and undo support.
+  - Replaced the flat active list with urgency sections (`Overdue`, `This week`, `Next week`, `Later`) and kept search results flat.
+  - Added debounced Orders search for customer name, occasion, and order number while preserving existing filters/queue tabs.
+  - Added regression tests for due-date grouping, relative due labels, search matching, and the combined payment pill.
+- **Manual QA data lifecycle**:
+  - Created QA order through `/admin/orders/new?mode=quick` with customer `QA TEST — delete me`, occasion `QA Birthday`, due date `2026-07-15`, item `QA chocolate cake backfill`, total `$100`, amount paid `$25`, pickup.
+  - Confirmed searched Orders list showed `QA TEST — delete me — QA Birthday`, `Jul 15, 2026 · in 12 days`, `$75 due of $100`, and no horizontal overflow at `390x844`.
+  - Exercised quick action `Mark paid`; card updated to `$100 paid`, secondary action changed to `Message`, and undo toast appeared.
+  - Verified database state before cleanup: reference `ORD-EAE1F867`, total `100`, balance `0`, payment status `paid`, payments `$25 deposit` + `$75 balance`.
+  - Deleted QA payments, order item, order, and customer; reloaded `?search=QA TEST` and confirmed `0 active` / no QA order remains.
+- **In-progress work**: None.
+- **Next exact task**: Review the diff and decide whether to stage/commit/push/open a PR. No staging has been performed.
+- **Commands run**:
+  - `curl -L --max-time 20 https://supabase.com/changelog.md | sed -n '1,140p'`
+  - `node --no-warnings --experimental-strip-types --test src/lib/admin/order-list-view.test.ts` (red before helper, then green)
+  - `npx eslint 'src/app/admin/(protected)/orders/**/*.{ts,tsx}' src/lib/admin/order-list-view.ts src/lib/admin/order-list-view.test.ts --max-warnings=0`: passed
+  - `npm run typecheck`: failed once for the new test import style, then passed
+  - `npm run lint`: passed
+  - `npm test`: passed, 113/113
+  - `npm run build`: passed
+  - `npm run dev -- --hostname 127.0.0.1 --port 3000`
+  - Browser QA via in-app browser at `http://127.0.0.1:3000` with viewport `390x844`
+  - Supabase cleanup/verification script using `.env.local` and `SUPABASE_SECRET_KEY`
+- **Commands still needed**:
+  - None for this scoped Orders task unless the user wants commit/push/PR work.
+- **Files changed recently for this scoped run**:
+  - `HANDOFF.md`
+  - `package.json`
+  - `src/app/admin/(protected)/orders/actions.ts`
+  - `src/app/admin/(protected)/orders/new/page.tsx`
+  - `src/app/admin/(protected)/orders/order-quick-actions.tsx`
+  - `src/app/admin/(protected)/orders/order-search-input.tsx`
+  - `src/app/admin/(protected)/orders/page.tsx`
+  - `src/lib/admin/order-list-view.ts`
+  - `src/lib/admin/order-list-view.test.ts`
+- **Files intentionally preserved / not touched in this run**:
+  - Dashboard, reports, settings, finance, and related previous-run changes were not edited except `package.json` already being modified and receiving the new test entry.
+  - Pre-existing untracked repo support/scratch files were left untouched.
+- **Known issues / notes**:
+  - Browser DOM snapshot API failed in this environment (`incrementalAriaSnapshot` unavailable), so QA used browser URL/title, read-only DOM evaluation, screenshots, console logs, and interactions.
+  - Console warnings observed were existing Next.js smooth-scroll warnings, not new Orders errors.
+  - Existing live/staging data still contains older `TEST — Delete Me` orders that predated this run; this run cleaned up only the `QA TEST — delete me` order it created.
+- **Assumptions made**:
+  - Manual backfill orders can use the first active product as the backing product record while storing the Quick add item description on `order_items.product_label`.
+  - `amountPaid` greater than the order total is invalid; equal to total records a `full` payment, partial amounts record a `deposit` payment, and list quick action records the remaining balance as a `balance` payment.
+  - `This week` means due in 0-6 days, `Next week` means due in 7-13 days, and `Later` means 14+ days from the current date.
+  - The details screen remains the place where full order numbers are surfaced; list cards intentionally hide them.
+- **Open decisions**:
+  - Whether Quick add should eventually support selecting a specific product/type instead of using the first active product as the backing product record.
+
+## Admin Dashboard Finance + Reports — 2026-07-03
+
+- **Current branch**: `codex/admin-dashboard-finance`.
+- **Current objective**: Improve the mobile-first admin dashboard with booked-ahead stats, compact empty states, cleaner quick actions, a dashboard finance visibility setting, a manual order creation flow, and a lightweight Reports screen.
+- **Last completed work**:
+  - Added tested finance helpers for dashboard stats, finance visibility fallback, greeting summary, and reports aggregation.
+  - Dashboard now shows current date, dynamic weekly/inquiry summary, optional Booked ahead / Pending value cards, gold section links, compact empty-state copy, and quick actions for Add manual order, Gallery & content, and Update pricing.
+  - Added private Settings item `dashboard.finance` / "Show finance on dashboard", default ON.
+  - Added `/admin/reports` under More > Operations with this-month revenue, same-month-last-year comparison, trailing 12-month revenue, average order value, and monthly order count/value rows.
+  - Added `/admin/orders/new` manual order form that creates a customer, confirmed order, and one order item using the existing `orders.total_amount` field.
+  - Fixed `/admin/orders/new` shell metadata so it reads "Add manual order" instead of "Order detail".
+- **In-progress work**: None.
+- **Next exact task**: Review the final diff and decide whether to commit/push/open a PR. No staging has been performed.
+- **Commands run**:
+  - `git switch -c codex/admin-dashboard-finance`
+  - `curl -L --max-time 20 https://supabase.com/changelog.md | sed -n '1,180p'`
+  - `node --no-warnings --experimental-strip-types --test src/lib/admin/finance.test.ts` (red, then green)
+  - `npm run lint` (passed before route-title fix)
+  - `npm run typecheck` (passed before route-title fix)
+  - `npm test` (passed before route-title fix, 106/106)
+  - `npm run build` (passed before route-title fix)
+  - `npm run dev -- --hostname 127.0.0.1 --port 3000`
+  - Browser QA via in-app browser at `http://127.0.0.1:3000`
+  - `node --no-warnings --experimental-strip-types --test src/lib/admin/navigation.test.ts` (red, then green)
+  - Final `npm run lint`: passed
+  - Final `npm run typecheck`: passed
+  - Final `npm test`: passed, 107/107
+  - Final `npm run build`: passed
+  - Final `git diff --check`: passed
+- **Commands still needed**:
+  - None for this task unless the user wants commit/push/PR work.
+- **Files changed recently**:
+  - `package.json`
+  - `DECISIONS.md`
+  - `HANDOFF.md`
+  - `src/app/admin/(protected)/page.tsx`
+  - `src/app/admin/(protected)/orders/actions.ts`
+  - `src/app/admin/(protected)/orders/[id]/page.tsx`
+  - `src/app/admin/(protected)/orders/new/page.tsx`
+  - `src/app/admin/(protected)/reports/page.tsx`
+  - `src/app/admin/(protected)/settings/actions.ts`
+  - `src/lib/admin/finance.ts`
+  - `src/lib/admin/finance-data.ts`
+  - `src/lib/admin/finance.test.ts`
+  - `src/lib/admin/inquiries.ts`
+  - `src/lib/admin/navigation.ts`
+  - `src/lib/admin/navigation.test.ts`
+  - `src/lib/admin/orders.ts`
+  - `src/lib/admin/settings.ts`
+- **Known issues / notes**:
+  - Browser DOM snapshot API failed in this environment (`incrementalAriaSnapshot` unavailable), so QA used browser URL/title, read-only DOM evaluation, screenshots, console logs, and interactions instead.
+  - Console warnings observed were existing Next.js smooth-scroll warnings, not new app errors.
+  - Live QA data had active inquiries/orders, so compact empty dashboard states were verified by code review and zero-value helper tests rather than by mutating live data.
+  - More > Reports navigation was verified from the open More menu via coordinate click because duplicate desktop/mobile Reports anchors made a generic role locator ambiguous.
+  - Reports currently use booked order totals, not collected-payment accounting.
+- **Open decisions**:
+  - Whether future Reports should become accounting-grade by switching from `orders.total_amount` to paid `payments` once payment reconciliation is operationally complete.
+
 ## Phase CAL-8.5 Capacity Settings Panel & Legend Explainer — 2026-07-03
 
 - **Current branch**: `main` (Merged and pushed).

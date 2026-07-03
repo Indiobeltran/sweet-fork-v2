@@ -44,6 +44,28 @@ type OrderCreationRollbackContext = {
   orderId: string;
 };
 
+type OrderQuickActionResult =
+  | {
+      ok: true;
+      message: string;
+      undo?:
+        | {
+            orderId: string;
+            paymentId: string;
+            type: "payment";
+          }
+        | {
+            completedAt: string | null;
+            orderId: string;
+            previousStatus: Enums<"order_status">;
+            type: "status";
+          };
+    }
+  | {
+      ok: false;
+      message: string;
+    };
+
 function redirectWithNotice(path: string, notice: string): never {
   const url = new URL(path, "http://localhost");
   url.searchParams.set("notice", notice);
@@ -206,6 +228,345 @@ async function rollbackCreatedOrder(
       })
       .eq("id", context.customerId);
   }
+}
+
+export async function createManualOrder(formData: FormData) {
+  await requireAdmin();
+
+  const variant = parseRequiredString(formData.get("variant"));
+  const isQuickAdd = variant === "quick";
+  const customerName = parseRequiredString(formData.get("customerName"));
+  const customerEmail = parseOptionalString(formData.get("customerEmail"));
+  const customerPhone = parseOptionalString(formData.get("customerPhone"));
+  const eventType = parseRequiredString(formData.get("eventType"));
+  const eventDate = parseRequiredString(formData.get("eventDate"));
+  const fulfillmentMethod = parseRequiredString(formData.get("fulfillmentMethod"));
+  const productId = parseOptionalString(formData.get("productId"));
+  const fallbackProductType = parseRequiredString(formData.get("fallbackProductType"));
+  const itemDescription = parseOptionalString(formData.get("itemDescription"));
+  const totalAmount = parseAmount(formData.get("totalAmount"));
+  const amountPaid = parseAmount(formData.get("amountPaid")) ?? 0;
+  const depositDueAmount = parseAmount(formData.get("depositDueAmount")) ?? 0;
+  const internalSummary = parseOptionalString(formData.get("internalSummary"));
+  const errorPath = isQuickAdd ? "/admin/orders/new?mode=quick" : "/admin/orders/new";
+
+  if (
+    !customerName ||
+    !eventType ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(eventDate) ||
+    totalAmount === null ||
+    amountPaid > totalAmount ||
+    (isQuickAdd && !itemDescription) ||
+    (!isQuickAdd && !productId)
+  ) {
+    redirectWithNotice(errorPath, "manual-order-error");
+  }
+
+  if (
+    !Constants.public.Enums.fulfillment_method.includes(
+      fulfillmentMethod as Enums<"fulfillment_method">,
+    )
+  ) {
+    redirectWithNotice(errorPath, "manual-order-error");
+  }
+
+  if (
+    isQuickAdd &&
+    !Constants.public.Enums.product_type.includes(fallbackProductType as Enums<"product_type">)
+  ) {
+    redirectWithNotice(errorPath, "manual-order-error");
+  }
+
+  const supabase = createAdminClient();
+  const { data: product, error: productError } = isQuickAdd
+    ? { data: null, error: null }
+    : await supabase
+        .from("products")
+        .select("id, name, product_type")
+        .eq("id", productId ?? "")
+        .maybeSingle();
+
+  if (!isQuickAdd && (productError || !product)) {
+    redirectWithNotice(errorPath, "manual-order-error");
+  }
+
+  const { data: customer, error: customerError } = await supabase
+    .from("customers")
+    .insert({
+      email: customerEmail,
+      full_name: customerName,
+      last_order_at: new Date().toISOString(),
+      phone: customerPhone,
+      preferred_contact: customerPhone ? "text" : "email",
+    } satisfies TablesInsert<"customers">)
+    .select("id")
+    .single();
+
+  if (customerError || !customer) {
+    redirectWithNotice(errorPath, "manual-order-error");
+  }
+
+  const statusTimestamps = getStatusTransitionPatch("confirmed", {
+    cancelled_at: null,
+    completed_at: null,
+    confirmed_at: null,
+    fulfilled_at: null,
+    quoted_at: null,
+  });
+
+  const orderInsert: TablesInsert<"orders"> = {
+    balance_due_amount: totalAmount,
+    customer_id: customer.id,
+    deposit_due_amount: depositDueAmount,
+    event_date: eventDate,
+    event_type: eventType,
+    fulfillment_method: fulfillmentMethod as Enums<"fulfillment_method">,
+    internal_summary: internalSummary,
+    payment_status: "unpaid",
+    status: "confirmed",
+    subtotal_amount: totalAmount,
+    total_amount: totalAmount,
+    ...statusTimestamps,
+  };
+
+  const { data: order, error: orderError } = await supabase
+    .from("orders")
+    .insert(orderInsert)
+    .select("id, customer_id")
+    .single();
+
+  if (orderError || !order) {
+    await supabase.from("customers").delete().eq("id", customer.id);
+    redirectWithNotice(errorPath, "manual-order-error");
+  }
+
+  const { error: itemError } = await supabase.from("order_items").insert({
+    line_total: totalAmount,
+    order_id: order.id,
+    product_id: isQuickAdd ? null : product?.id,
+    product_label: itemDescription ?? product?.name ?? "Custom item",
+    product_type: (isQuickAdd ? fallbackProductType : product?.product_type) as Enums<"product_type">,
+    quantity: 1,
+    sort_order: 10,
+    unit_price: totalAmount,
+  } satisfies TablesInsert<"order_items">);
+
+  if (itemError) {
+    await supabase.from("orders").delete().eq("id", order.id);
+    await supabase.from("customers").delete().eq("id", customer.id);
+    redirectWithNotice(errorPath, "manual-order-error");
+  }
+
+  if (amountPaid > 0) {
+    const paymentInsert: TablesInsert<"payments"> = {
+      amount: amountPaid,
+      customer_id: customer.id,
+      method: "other",
+      notes: isQuickAdd ? "Recorded during quick add." : "Recorded during manual order creation.",
+      order_id: order.id,
+      paid_at: new Date().toISOString(),
+      payment_type: amountPaid >= totalAmount ? "full" : "deposit",
+      status: "paid",
+    };
+
+    const { error: paymentError } = await supabase.from("payments").insert(paymentInsert);
+
+    if (paymentError) {
+      await supabase.from("order_items").delete().eq("order_id", order.id);
+      await supabase.from("orders").delete().eq("id", order.id);
+      await supabase.from("customers").delete().eq("id", customer.id);
+      redirectWithNotice(errorPath, "manual-order-error");
+    }
+  }
+
+  await syncOrderPaymentState(order.id);
+  revalidateOrderWorkflow(order.id, order.customer_id, null);
+  redirectWithNotice(`/admin/orders/${order.id}`, "manual-order-created");
+}
+
+export async function markOrderPaidQuickAction(input: {
+  orderId: string;
+}): Promise<OrderQuickActionResult> {
+  await requireAdmin();
+
+  const orderId = input.orderId;
+
+  if (!orderId) {
+    return { ok: false, message: "Order could not be found." };
+  }
+
+  const supabase = createAdminClient();
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select("id, customer_id, inquiry_id, total_amount, deposit_due_amount, payments(amount, payment_type, status)")
+    .eq("id", orderId)
+    .maybeSingle();
+
+  if (error || !order) {
+    return { ok: false, message: "Order could not be found." };
+  }
+
+  const snapshot = calculateOrderPaymentSnapshot(order, order.payments ?? []);
+
+  if (snapshot.balanceDue <= 0) {
+    return { ok: true, message: "Order is already marked paid." };
+  }
+
+  const { data: payment, error: paymentError } = await supabase
+    .from("payments")
+    .insert({
+      amount: snapshot.balanceDue,
+      customer_id: order.customer_id,
+      method: "other",
+      notes: "Marked paid from the orders list.",
+      order_id: order.id,
+      paid_at: new Date().toISOString(),
+      payment_type: snapshot.totalPaid > 0 ? "balance" : "full",
+      status: "paid",
+    } satisfies TablesInsert<"payments">)
+    .select("id")
+    .single();
+
+  if (paymentError || !payment) {
+    return { ok: false, message: "Payment could not be recorded." };
+  }
+
+  await syncOrderPaymentState(order.id);
+  revalidateOrderWorkflow(order.id, order.customer_id, order.inquiry_id);
+
+  return {
+    ok: true,
+    message: "Order marked paid.",
+    undo: {
+      orderId: order.id,
+      paymentId: payment.id,
+      type: "payment",
+    },
+  };
+}
+
+export async function undoMarkOrderPaidQuickAction(input: {
+  orderId: string;
+  paymentId: string;
+}): Promise<OrderQuickActionResult> {
+  await requireAdmin();
+
+  const supabase = createAdminClient();
+  const { data: order, error: orderError } = await supabase
+    .from("orders")
+    .select("id, customer_id, inquiry_id")
+    .eq("id", input.orderId)
+    .maybeSingle();
+
+  if (orderError || !order) {
+    return { ok: false, message: "Order could not be found." };
+  }
+
+  const { error } = await supabase
+    .from("payments")
+    .delete()
+    .eq("id", input.paymentId)
+    .eq("order_id", input.orderId);
+
+  if (error) {
+    return { ok: false, message: "Undo could not be completed." };
+  }
+
+  await syncOrderPaymentState(order.id);
+  revalidateOrderWorkflow(order.id, order.customer_id, order.inquiry_id);
+
+  return { ok: true, message: "Payment mark undone." };
+}
+
+export async function markOrderCompletedQuickAction(input: {
+  orderId: string;
+}): Promise<OrderQuickActionResult> {
+  await requireAdmin();
+
+  const supabase = createAdminClient();
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select("id, customer_id, inquiry_id, status, completed_at")
+    .eq("id", input.orderId)
+    .maybeSingle();
+
+  if (error || !order) {
+    return { ok: false, message: "Order could not be found." };
+  }
+
+  if (order.status === "completed") {
+    return { ok: true, message: "Order is already completed." };
+  }
+
+  if (order.status === "cancelled") {
+    return { ok: false, message: "Cancelled orders cannot be completed from the list." };
+  }
+
+  const previousStatus = order.status;
+  const completedAt = order.completed_at;
+  const { error: updateError } = await supabase
+    .from("orders")
+    .update({
+      completed_at: completedAt ?? new Date().toISOString(),
+      status: "completed",
+    } satisfies TablesUpdate<"orders">)
+    .eq("id", order.id);
+
+  if (updateError) {
+    return { ok: false, message: "Order could not be completed." };
+  }
+
+  revalidateOrderWorkflow(order.id, order.customer_id, order.inquiry_id);
+
+  return {
+    ok: true,
+    message: "Order marked completed.",
+    undo: {
+      completedAt,
+      orderId: order.id,
+      previousStatus,
+      type: "status",
+    },
+  };
+}
+
+export async function undoMarkOrderCompletedQuickAction(input: {
+  completedAt: string | null;
+  orderId: string;
+  previousStatus: Enums<"order_status">;
+}): Promise<OrderQuickActionResult> {
+  await requireAdmin();
+
+  if (!Constants.public.Enums.order_status.includes(input.previousStatus)) {
+    return { ok: false, message: "Undo could not be completed." };
+  }
+
+  const supabase = createAdminClient();
+  const { data: order, error: orderError } = await supabase
+    .from("orders")
+    .select("id, customer_id, inquiry_id")
+    .eq("id", input.orderId)
+    .maybeSingle();
+
+  if (orderError || !order) {
+    return { ok: false, message: "Order could not be found." };
+  }
+
+  const { error } = await supabase
+    .from("orders")
+    .update({
+      completed_at: input.completedAt,
+      status: input.previousStatus,
+    } satisfies TablesUpdate<"orders">)
+    .eq("id", input.orderId);
+
+  if (error) {
+    return { ok: false, message: "Undo could not be completed." };
+  }
+
+  revalidateOrderWorkflow(order.id, order.customer_id, order.inquiry_id);
+
+  return { ok: true, message: "Completion mark undone." };
 }
 
 export async function createOrderFromInquiry(formData: FormData) {

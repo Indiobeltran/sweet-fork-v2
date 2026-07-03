@@ -155,7 +155,9 @@ export type InquiryListEntry = {
   customerEmail: string;
   customerName: string;
   customerPhone: string;
+  estimatedMax: number | null;
   estimatedLabel: string | null;
+  estimatedMin: number | null;
   eventDate: string;
   eventType: string;
   fulfillmentMethod: Enums<"fulfillment_method">;
@@ -893,10 +895,12 @@ function mapListEntry(row: InquiryListQueryRow, productsMap: Map<string, { produ
     customerEmail: row.customer_email,
     customerName: row.customer_name,
     customerPhone: row.customer_phone,
+    estimatedMax: operationalEstimate.maximum,
     estimatedLabel: formatEstimateRange(
       operationalEstimate.minimum,
       operationalEstimate.maximum,
     ),
+    estimatedMin: operationalEstimate.minimum,
     eventDate: row.event_date,
     eventType: row.event_type,
     fulfillmentMethod: row.fulfillment_method,

@@ -95,7 +95,7 @@ export async function saveAdminSetting(formData: FormData) {
     redirectWithNotice(redirectTarget, "settings-error");
   }
 
-  revalidatePaths(["/admin/settings"]);
+  revalidatePaths(["/admin/settings", "/admin"]);
   revalidateMarketingSite();
   redirectWithNotice(redirectTarget, "settings-updated");
 }

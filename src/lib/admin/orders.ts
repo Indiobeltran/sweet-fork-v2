@@ -209,6 +209,7 @@ export type OrderListEntry = {
   paymentStateLabel: string;
   referenceCode: string;
   status: Enums<"order_status">;
+  totalAmount: number;
   totalLabel: string;
 };
 
@@ -221,6 +222,16 @@ export type OrderListData = {
     value: string;
   }>;
   totalCount: number;
+};
+
+export type ManualOrderProductOption = {
+  id: string;
+  label: string;
+  productType: Enums<"product_type">;
+};
+
+export type ManualOrderFormData = {
+  productOptions: ManualOrderProductOption[];
 };
 
 export type InquiryConversionCustomerOption = {
@@ -622,6 +633,32 @@ export async function getInquiryConversionData(
   };
 }
 
+export async function getManualOrderFormData(): Promise<ManualOrderFormData> {
+  const supabase = await createSessionClient();
+
+  if (!supabase) {
+    throw new Error("Supabase is not configured for admin orders.");
+  }
+
+  const { data, error } = await supabase
+    .from("products")
+    .select("id, name, product_type")
+    .eq("is_active", true)
+    .order("display_order", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return {
+    productOptions: ((data ?? []) as Array<Pick<Tables<"products">, "id" | "name" | "product_type">>).map((product) => ({
+      id: product.id,
+      label: product.name,
+      productType: product.product_type,
+    })),
+  };
+}
+
 export async function getOrderListData(filters: OrderListFilters): Promise<OrderListData> {
   const supabase = await createSessionClient();
 
@@ -664,6 +701,7 @@ export async function getOrderListData(filters: OrderListFilters): Promise<Order
           ? getInquiryReferenceCode(row.inquiries)
           : `ORD-${row.id.slice(0, 8).toUpperCase()}`,
         status: row.status,
+        totalAmount: row.total_amount,
         totalLabel: formatOrderMoneySummary(row.total_amount),
       } satisfies OrderListEntry;
     })

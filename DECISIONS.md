@@ -2,6 +2,63 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
+## 2026-07-03 - Quick Add Custom Order Items Use Nullable Product References
+
+### Status
+
+Accepted
+
+### Context
+
+The admin Orders quick-add flow is for backfilling existing orders with a minimal item description. The first implementation attached every quick-add item to the first active product as a workaround, which made custom backfill rows look related to a specific catalog product even when they were not. The existing `order_items` schema already allows `product_id` to be nullable while preserving required display and category fields (`product_label`, `product_type`).
+
+### Options Considered
+
+- Keep attaching quick-add items to the first active product.
+- Add a dedicated system-level `Custom item` product row.
+- Add a schema migration or enum change for a new custom item type.
+- Use the existing nullable `order_items.product_id` path for quick-add custom rows.
+
+### Decision
+
+Use `order_items.product_id = null` for Quick add custom items. Keep the entered item description as `order_items.product_label`, and keep the existing required `product_type` field as a category fallback for capacity/reporting compatibility. Full manual orders and inquiry conversions continue to use real product references when available.
+
+### Consequences
+
+- No migration is required.
+- Existing quick-add orders still display from `product_label`.
+- New quick-add rows no longer imply a catalog-product relationship.
+- If the owner later wants category selection in Quick add, the form can expose `product_type` without changing storage shape.
+
+## 2026-07-03 - Admin Dashboard Finance Visibility And Reports Scope
+
+### Status
+
+Accepted
+
+### Context
+
+The admin dashboard needed compact booked-ahead and pending-value visibility, plus a private owner preference to hide finance cards when the dashboard should focus on operations. The existing schema already stores order value as `orders.total_amount` and inquiry ranges as `inquiries.estimated_min` / `estimated_max`, so adding another order-value field would duplicate existing data.
+
+### Options Considered
+
+- Add a new confirmed-order value column and migrate existing orders.
+- Reuse `orders.total_amount` for booked/revenue reporting and expose it in the new manual-order form.
+- Derive pending inquiry value from the midpoint of stored estimate ranges.
+- Derive pending inquiry value from the high end of stored estimate ranges.
+
+### Decision
+
+Reuse `orders.total_amount` as the source of truth for booked-ahead stats, manual order value, and lightweight reports. Store the dashboard visibility preference as the private `site_settings` key `dashboard.finance` with fallback `{ "showFinance": true }`. Calculate pending inquiry value from active inquiry estimate maximums, falling back to minimums when no maximum is stored. Reports exclude cancelled/draft/quoted orders and count confirmed, in-production, fulfilled, and completed orders by `event_date`.
+
+### Consequences
+
+- No schema migration is required for this dashboard pass.
+- Manual orders now surface the existing `orders.total_amount` field directly at creation time.
+- Pending value is intentionally optimistic pipeline value rather than a conservative midpoint.
+- Trailing 12-month revenue is current month plus the previous eleven months; same month last year is shown separately for comparison.
+- If the owner later needs accounting-grade revenue, reports should switch from booked order totals to paid payment records after payment reconciliation is complete.
+
 ## 2026-07-02 - GA4 Initial Page View With Enhanced History Measurement
 
 ### Status

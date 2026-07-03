@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CalendarDays, PackageCheck, Plus, Truck } from "lucide-react";
 
 import {
   ActiveFilterPills,
@@ -20,9 +21,23 @@ import {
 } from "@/lib/admin/orders";
 import {
   getOrderStatusClasses,
-  getPaymentStatusClasses,
+  getOrderStatusLabel,
 } from "@/lib/admin/order-workflow";
+import {
+  buildCombinedPaymentPill,
+  filterOrdersBySearch,
+  filterOrdersByQueue,
+  getOrderRelativeDateLabel,
+  groupOrdersByDueDate,
+  isActiveOrder,
+  isAwaitingPaymentOrder,
+  isCompletedOrder,
+  isUpcomingOrder,
+  type OrderListQueue,
+} from "@/lib/admin/order-list-view";
 import { formatDate, toTitleCase } from "@/lib/utils";
+import { OrderQuickActions } from "./order-quick-actions";
+import { OrderSearchInput } from "./order-search-input";
 
 export const metadata = {
   title: "Admin Orders",
@@ -32,8 +47,6 @@ type AdminOrdersPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-type OrderQueue = "active" | "awaiting-payment" | "completed" | "upcoming";
-
 const DEFAULT_ORDER_FILTERS: OrderListFilters = {
   eventDateFrom: "",
   eventDateTo: "",
@@ -42,7 +55,7 @@ const DEFAULT_ORDER_FILTERS: OrderListFilters = {
   search: "",
   status: "all",
 };
-const DEFAULT_QUEUE: OrderQueue = "active";
+const DEFAULT_QUEUE: OrderListQueue = "active";
 const fulfillmentLabels: Record<string, string> = {
   delivery: "Delivery",
   pickup: "Pickup",
@@ -53,7 +66,7 @@ const paymentLabels: Record<string, string> = {
   refunded: "Refunded",
   unpaid: "Unpaid",
 };
-const queueLabels: Record<OrderQueue, string> = {
+const queueLabels: Record<OrderListQueue, string> = {
   active: "Active",
   "awaiting-payment": "Awaiting payment",
   completed: "Completed",
@@ -66,7 +79,7 @@ function getSearchValue(value: string | string[] | undefined) {
 
 function getOrderQueue(
   rawSearchParams: Record<string, string | string[] | undefined>,
-): OrderQueue {
+): OrderListQueue {
   const rawQueue = getSearchValue(rawSearchParams.queue);
 
   if (
@@ -118,9 +131,21 @@ function LinkButton({
   );
 }
 
+function NewOrderLink() {
+  return (
+    <Link
+      href="/admin/orders/new"
+      className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-charcoal px-4 text-sm font-semibold text-ivory shadow-soft transition hover:bg-charcoal/92 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50"
+    >
+      <Plus aria-hidden="true" className="h-4 w-4" />
+      New order
+    </Link>
+  );
+}
+
 function buildOrdersHref(
   filters: OrderListFilters,
-  queue: OrderQueue = DEFAULT_QUEUE,
+  queue: OrderListQueue = DEFAULT_QUEUE,
   overrides: Partial<OrderListFilters> = {},
 ) {
   const nextFilters: OrderListFilters = {
@@ -163,46 +188,9 @@ function buildOrdersHref(
   return queryString ? `/admin/orders?${queryString}` : "/admin/orders";
 }
 
-function isActiveOrder(entry: OrderListEntry) {
-  return entry.status !== "completed" && entry.status !== "cancelled";
-}
-
-function isAwaitingPaymentOrder(entry: OrderListEntry) {
-  return (
-    entry.status !== "cancelled" &&
-    entry.paymentState !== "paid" &&
-    entry.paymentState !== "refunded"
-  );
-}
-
-function isUpcomingOrder(entry: OrderListEntry, today: string) {
-  return entry.status !== "cancelled" && entry.eventDate >= today;
-}
-
-function isCompletedOrder(entry: OrderListEntry) {
-  return entry.status === "completed";
-}
-
-function filterOrdersByQueue(
-  entries: OrderListEntry[],
-  queue: OrderQueue,
-  today: string,
-) {
-  switch (queue) {
-    case "awaiting-payment":
-      return entries.filter(isAwaitingPaymentOrder);
-    case "upcoming":
-      return entries.filter((entry) => isUpcomingOrder(entry, today));
-    case "completed":
-      return entries.filter(isCompletedOrder);
-    default:
-      return entries.filter(isActiveOrder);
-  }
-}
-
 function getActiveFilterPills(
   filters: OrderListFilters,
-  queue: OrderQueue,
+  queue: OrderListQueue,
 ): ActiveFilterPill[] {
   const pills: ActiveFilterPill[] = [];
 
@@ -267,97 +255,141 @@ function getActiveFilterPills(
   return pills;
 }
 
-function OrderCard({ entry }: Readonly<{ entry: OrderListEntry }>) {
-  return (
-    <article className="rounded-2xl border border-charcoal/10 bg-white/88 p-4 shadow-sm transition hover:border-charcoal/20">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        {/* Left Col: Core Identity & Event */}
-        <div className="flex flex-col gap-1.5 lg:w-[40%]">
-          <div className="flex flex-wrap items-center gap-2">
-            <span
-              className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${getOrderStatusClasses(entry.status)}`}
-            >
-              {toTitleCase(entry.status)}
-            </span>
-            <span
-              className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${getPaymentStatusClasses(entry.paymentState)}`}
-            >
-              {entry.paymentStateLabel}
-            </span>
-            <span className="text-xs font-mono text-charcoal/50">
-              {entry.referenceCode}
-            </span>
-          </div>
-          <h2 className="font-serif text-xl font-medium tracking-tight text-charcoal mt-1">
-            {entry.customerLabel}
-          </h2>
-          <p className="text-[13px] text-charcoal/70">
-            {entry.eventType} on {formatDate(entry.eventDate)} via{" "}
-            {entry.fulfillmentMethod === "delivery" ? "delivery" : "pickup"}
-          </p>
-          <div className="flex flex-wrap items-center gap-2 mt-0.5">
-            {entry.customerEmail && (
-              <a
-                href={`mailto:${entry.customerEmail}`}
-                className="text-xs text-charcoal/60 hover:text-charcoal underline underline-offset-2"
-              >
-                Email
-              </a>
-            )}
-            {entry.customerEmail && entry.customerPhone && (
-              <span className="text-charcoal/30">•</span>
-            )}
-            {entry.customerPhone && (
-              <a
-                href={`tel:${entry.customerPhone.replace(/\D/g, "")}`}
-                className="text-xs text-charcoal/60 hover:text-charcoal underline underline-offset-2"
-              >
-                Phone
-              </a>
-            )}
-          </div>
-        </div>
+function getPhoneHref(value: string | null | undefined) {
+  const digits = value?.replace(/\D/g, "") ?? "";
 
-        {/* Middle Col: Financials & Fulfillment */}
-        <div className="flex flex-col gap-2.5 lg:flex-1 lg:border-l lg:border-charcoal/8 lg:pl-5">
-          <div className="flex flex-wrap gap-1.5">
-            <span className="rounded-full border border-charcoal/8 bg-ivory/80 px-2.5 py-0.5 text-xs font-medium text-charcoal/72">
-              {entry.itemCount} item{entry.itemCount === 1 ? "" : "s"}
-            </span>
-            <span className="rounded-full border border-charcoal/8 bg-ivory/80 px-2.5 py-0.5 text-xs font-medium text-charcoal/72">
-              Total {entry.totalLabel}
-            </span>
-            {entry.balanceDue > 0 ? (
-              <span className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-xs font-medium text-rose-800">
-                Bal: {entry.balanceDueLabel}
+  if (digits.length < 10) {
+    return null;
+  }
+
+  return `tel:${digits.length === 10 ? `+1${digits}` : `+${digits}`}`;
+}
+
+function getMessageHref(entry: OrderListEntry) {
+  if (entry.customerEmail) {
+    const subject = encodeURIComponent(`${entry.referenceCode} order follow-up`);
+    return `mailto:${encodeURIComponent(entry.customerEmail)}?subject=${subject}`;
+  }
+
+  return getPhoneHref(entry.customerPhone);
+}
+
+function getPaymentPillClasses(tone: "attention" | "paid") {
+  return tone === "attention"
+    ? "border-rose/28 bg-rose/10 text-charcoal"
+    : "border-emerald-200 bg-emerald-50 text-emerald-900";
+}
+
+function FulfillmentChip({
+  method,
+}: Readonly<{
+  method: OrderListEntry["fulfillmentMethod"];
+}>) {
+  const Icon = method === "delivery" ? Truck : PackageCheck;
+  const label = method === "delivery" ? "Delivery" : "Pickup";
+
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-charcoal/8 bg-ivory/80 px-2.5 py-1 text-xs font-medium text-charcoal/68">
+      <Icon aria-hidden="true" className="h-3.5 w-3.5 text-charcoal/48" />
+      {label}
+    </span>
+  );
+}
+
+function OrderCard({ entry }: Readonly<{ entry: OrderListEntry }>) {
+  const paymentPill = buildCombinedPaymentPill(entry);
+  const secondaryHref =
+    entry.balanceDue > 0 ? `/admin/orders/${entry.id}#payments` : getMessageHref(entry);
+
+  return (
+    <article className="rounded-[1.45rem] border border-charcoal/10 bg-white/88 p-4 shadow-sm transition hover:border-charcoal/20">
+      <div className="space-y-3.5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="break-words font-serif text-[1.35rem] leading-tight tracking-[-0.035em] text-charcoal">
+              {entry.customerLabel} — {entry.eventType}
+            </h2>
+            <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-charcoal">
+              <CalendarDays aria-hidden="true" className="h-4 w-4 text-gold" />
+              <span>
+                {formatDate(entry.eventDate)} · {getOrderRelativeDateLabel(entry.eventDate, new Date().toISOString().slice(0, 10))}
               </span>
-            ) : (
-              <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-800">
-                Paid
-              </span>
-            )}
-          </div>
-          <div className="grid gap-x-4 gap-y-1 sm:grid-cols-2 text-xs text-charcoal/66">
-            <div>
-              <span className="font-medium text-charcoal/45">Fulfillment:</span>{" "}
-              {entry.fulfillmentMethod === "delivery" ? "Delivery" : "Pickup"}
             </div>
           </div>
+          <span
+            className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${getOrderStatusClasses(entry.status)}`}
+          >
+            {getOrderStatusLabel(entry.status)}
+          </span>
         </div>
 
-        {/* Right Col: Actions */}
-        <div className="mt-1 lg:mt-0 lg:ml-4 lg:shrink-0 flex items-center justify-end gap-3 border-t border-charcoal/8 pt-4 lg:border-t-0 lg:pt-0 lg:flex-col lg:gap-2">
-          {entry.customerId && (
-            <LinkButton
-              href={`/admin/customers/${entry.customerId}`}
-              label="Customer"
-              variant="secondary"
-            />
-          )}
-          <LinkButton href={`/admin/orders/${entry.id}`} label="View details" />
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full border border-charcoal/8 bg-ivory/80 px-2.5 py-1 text-xs font-medium text-charcoal/68">
+            {entry.itemCount} item{entry.itemCount === 1 ? "" : "s"}
+          </span>
+          <span
+            className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${getPaymentPillClasses(paymentPill.tone)}`}
+          >
+            {paymentPill.label}
+          </span>
+          <FulfillmentChip method={entry.fulfillmentMethod} />
+        </div>
+
+        <div className="grid grid-cols-[1fr_auto] gap-2 border-t border-charcoal/8 pt-3">
+          <div className="grid grid-cols-2 gap-2">
+            <LinkButton href={`/admin/orders/${entry.id}`} label="View details" />
+            {secondaryHref ? (
+              <LinkButton
+                href={secondaryHref}
+                label={entry.balanceDue > 0 ? "Collect payment" : "Message"}
+                variant="secondary"
+              />
+            ) : (
+              <LinkButton href={`/admin/orders/${entry.id}`} label="Message" variant="secondary" />
+            )}
+          </div>
+          <OrderQuickActions
+            balanceDue={entry.balanceDue}
+            orderId={entry.id}
+            status={entry.status}
+          />
         </div>
       </div>
     </article>
+  );
+}
+
+function OrderSection({
+  entries,
+  title,
+  tone = "neutral",
+}: Readonly<{
+  entries: OrderListEntry[];
+  title: string;
+  tone?: "attention" | "neutral";
+}>) {
+  return (
+    <section
+      className={
+        tone === "attention"
+          ? "rounded-[1.7rem] border border-rose/24 bg-rose/10 p-3 shadow-soft sm:p-4"
+          : "rounded-[1.7rem] border border-charcoal/10 bg-white/88 p-3 shadow-soft sm:p-4"
+      }
+    >
+      <div className="mb-3 flex items-center justify-between gap-3 px-1">
+        <h2 className="font-serif text-[1.7rem] tracking-[-0.04em] text-charcoal">
+          {title}
+        </h2>
+        <span className="rounded-full border border-charcoal/8 bg-white/70 px-3 py-1 text-xs font-semibold text-charcoal/56">
+          {entries.length}
+        </span>
+      </div>
+      <div className="space-y-3">
+        {entries.map((entry) => (
+          <OrderCard key={entry.id} entry={entry} />
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -370,6 +402,10 @@ export default async function AdminOrdersPage({
   const data = await getOrderListData(filters);
   const today = new Date().toISOString().slice(0, 10);
   const queueEntries = filterOrdersByQueue(data.entries, queue, today);
+  const visibleEntries = filters.search
+    ? filterOrdersBySearch(queueEntries, filters.search)
+    : queueEntries;
+  const groupedEntries = filters.search ? [] : groupOrdersByDueDate(visibleEntries, today);
   const activeFilterPills = getActiveFilterPills(filters, queue);
   const queueCounts = {
     active: data.entries.filter(isActiveOrder).length,
@@ -377,7 +413,7 @@ export default async function AdminOrdersPage({
     completed: data.entries.filter(isCompletedOrder).length,
     upcoming: data.entries.filter((entry) => isUpcomingOrder(entry, today))
       .length,
-  } satisfies Record<OrderQueue, number>;
+  } satisfies Record<OrderListQueue, number>;
 
   return (
     <div className="space-y-4 pb-24 sm:pb-8">
@@ -388,96 +424,97 @@ export default async function AdminOrdersPage({
         meta={
           <span>
             <span className="font-semibold text-charcoal">
-              {queueEntries.length}
+              {visibleEntries.length}
             </span>{" "}
             {queueLabels[queue].toLowerCase()}
           </span>
         }
         actions={
-          <FilterSheet
-            title="Order filters"
-            description="Search, payment, fulfillment, and date filters live here so the working list stays visible."
-          >
-            <form method="get" className="grid gap-4 lg:grid-cols-2">
-              {queue !== DEFAULT_QUEUE ? (
-                <input type="hidden" name="queue" value={queue} />
-              ) : null}
+          <>
+            <NewOrderLink />
+            <FilterSheet
+              title="Order filters"
+              description="Payment, fulfillment, and date filters live here so the working list stays visible."
+            >
+              <form method="get" className="grid gap-4 lg:grid-cols-2">
+                {queue !== DEFAULT_QUEUE ? (
+                  <input type="hidden" name="queue" value={queue} />
+                ) : null}
 
-              <FilterCard label="Search">
-                <Input
-                  name="search"
-                  defaultValue={filters.search}
-                  placeholder="Customer, event, or reference code"
-                />
-              </FilterCard>
+                {filters.search ? (
+                  <input type="hidden" name="search" value={filters.search} />
+                ) : null}
 
-              <FilterCard label="Status">
-                <Select name="status" defaultValue={filters.status}>
-                  <option value="all">All statuses</option>
-                  <option value="draft">Draft</option>
-                  <option value="quoted">Quoted</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="in-production">In production</option>
-                  <option value="fulfilled">Fulfilled</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </Select>
-              </FilterCard>
+                <FilterCard label="Status">
+                  <Select name="status" defaultValue={filters.status}>
+                    <option value="all">All statuses</option>
+                    <option value="draft">Draft</option>
+                    <option value="quoted">Quoted</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="in-production">In production</option>
+                    <option value="fulfilled">Fulfilled</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </Select>
+                </FilterCard>
 
-              <FilterCard label="Payment state">
-                <Select name="paymentState" defaultValue={filters.paymentState}>
-                  <option value="all">All payment states</option>
-                  <option value="unpaid">Unpaid</option>
-                  <option value="deposit-paid">Deposit paid</option>
-                  <option value="paid">Paid</option>
-                  <option value="refunded">Refunded</option>
-                </Select>
-              </FilterCard>
+                <FilterCard label="Payment state">
+                  <Select name="paymentState" defaultValue={filters.paymentState}>
+                    <option value="all">All payment states</option>
+                    <option value="unpaid">Unpaid</option>
+                    <option value="deposit-paid">Deposit paid</option>
+                    <option value="paid">Paid</option>
+                    <option value="refunded">Refunded</option>
+                  </Select>
+                </FilterCard>
 
-              <FilterCard label="Fulfillment">
-                <Select
-                  name="fulfillmentMethod"
-                  defaultValue={filters.fulfillmentMethod}
-                >
-                  <option value="all">Pickup and delivery</option>
-                  <option value="pickup">Pickup</option>
-                  <option value="delivery">Delivery</option>
-                </Select>
-              </FilterCard>
+                <FilterCard label="Fulfillment">
+                  <Select
+                    name="fulfillmentMethod"
+                    defaultValue={filters.fulfillmentMethod}
+                  >
+                    <option value="all">Pickup and delivery</option>
+                    <option value="pickup">Pickup</option>
+                    <option value="delivery">Delivery</option>
+                  </Select>
+                </FilterCard>
 
-              <FilterCard label="Event date from">
-                <Input
-                  name="eventDateFrom"
-                  type="date"
-                  defaultValue={filters.eventDateFrom}
-                />
-              </FilterCard>
-
-              <FilterCard label="Event date to">
-                <Input
-                  name="eventDateTo"
-                  type="date"
-                  defaultValue={filters.eventDateTo}
-                />
-              </FilterCard>
-
-              <div className="flex flex-col gap-3 rounded-[1.35rem] border border-charcoal/8 bg-white/85 p-4 sm:flex-row sm:items-end sm:justify-between lg:col-span-2">
-                <p className="text-sm text-charcoal/62">
-                  {data.totalCount} total orders in the system
-                </p>
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <LinkButton
-                    href={buildOrdersHref(DEFAULT_ORDER_FILTERS, queue)}
-                    label="Clear"
-                    variant="secondary"
+                <FilterCard label="Event date from">
+                  <Input
+                    name="eventDateFrom"
+                    type="date"
+                    defaultValue={filters.eventDateFrom}
                   />
-                  <Button type="submit">Apply filters</Button>
+                </FilterCard>
+
+                <FilterCard label="Event date to">
+                  <Input
+                    name="eventDateTo"
+                    type="date"
+                    defaultValue={filters.eventDateTo}
+                  />
+                </FilterCard>
+
+                <div className="flex flex-col gap-3 rounded-[1.35rem] border border-charcoal/8 bg-white/85 p-4 sm:flex-row sm:items-end sm:justify-between lg:col-span-2">
+                  <p className="text-sm text-charcoal/62">
+                    {data.totalCount} total orders in the system
+                  </p>
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <LinkButton
+                      href={buildOrdersHref(DEFAULT_ORDER_FILTERS, queue)}
+                      label="Clear"
+                      variant="secondary"
+                    />
+                    <Button type="submit">Apply filters</Button>
+                  </div>
                 </div>
-              </div>
-            </form>
-          </FilterSheet>
+              </form>
+            </FilterSheet>
+          </>
         }
       >
+        <OrderSearchInput defaultValue={filters.search} />
+
         <StatusChipRow
           ariaLabel="Order queue filters"
           items={[
@@ -517,10 +554,21 @@ export default async function AdminOrdersPage({
       </AdminPageHeader>
 
       <section className="space-y-3">
-        {queueEntries.length > 0 ? (
-          queueEntries.map((entry) => (
-            <OrderCard key={entry.id} entry={entry} />
-          ))
+        {visibleEntries.length > 0 ? (
+          filters.search ? (
+            <OrderSection title="Search results" entries={visibleEntries} />
+          ) : queue === "completed" ? (
+            <OrderSection title="Completed orders" entries={visibleEntries} />
+          ) : (
+            groupedEntries.map((section) => (
+              <OrderSection
+                key={section.key}
+                title={section.label}
+                entries={section.entries}
+                tone={section.key === "overdue" ? "attention" : "neutral"}
+              />
+            ))
+          )
         ) : (
           <CompactEmptyState
             title="No orders match this view"
