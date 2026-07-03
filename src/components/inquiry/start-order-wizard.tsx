@@ -78,6 +78,18 @@ import {
   type ErrorMap,
 } from "@/components/inquiry/wizard-helpers";
 import {
+  colorPaletteOptions,
+  createWizardDraft,
+  getPaletteState,
+  hasMeaningfulWizardValues,
+  parseWizardDraft,
+  serializePaletteSelection,
+  wizardDraftStorageKey,
+  type ColorPaletteValue,
+  type PaletteState,
+  type WizardDraft,
+} from "@/components/inquiry/wizard-state";
+import {
   FieldLabel,
   InlineError,
   SelectionButton,
@@ -94,6 +106,144 @@ type StartOrderWizardProps = {
   submissionUnavailableMessage?: string;
 };
 
+function readInitialWizardDraft(): WizardDraft | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    return parseWizardDraft(window.sessionStorage.getItem(wizardDraftStorageKey));
+  } catch {
+    return null;
+  }
+}
+
+function clearStoredWizardDraft() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.sessionStorage.removeItem(wizardDraftStorageKey);
+  } catch {
+    // Session storage can be unavailable in private or restricted browser modes.
+  }
+}
+
+function getNextPaletteSelection(
+  state: PaletteState,
+  optionValue: ColorPaletteValue,
+): ColorPaletteValue[] {
+  if (optionValue === "no-preference") {
+    return state.selectedValues.includes("no-preference") ? [] : ["no-preference"];
+  }
+
+  const withoutNoPreference = state.selectedValues.filter(
+    (value) => value !== "no-preference",
+  );
+
+  if (withoutNoPreference.includes(optionValue)) {
+    return withoutNoPreference.filter((value) => value !== optionValue);
+  }
+
+  return [...withoutNoPreference, optionValue];
+}
+
+function ColorPaletteSelector({
+  idPrefix,
+  value,
+  onChange,
+  fieldRef,
+  error,
+}: {
+  idPrefix: string;
+  value?: string;
+  onChange: (value: string | undefined) => void;
+  fieldRef?: (element: HTMLElement | null) => void;
+  error?: string;
+}) {
+  const state = getPaletteState(value);
+  const helpId = `${idPrefix}-palette-help`;
+  const errorId = getErrorDescriptionId(`${idPrefix}-palette`);
+  const detailsId = `${idPrefix}-palette-details`;
+  const selectedNoPreference = state.selectedValues.includes("no-preference");
+
+  const updatePalette = (
+    selectedValues: ColorPaletteValue[],
+    customDetails: string,
+  ) => {
+    onChange(serializePaletteSelection(selectedValues, customDetails));
+  };
+
+  return (
+    <div className="space-y-3">
+      <Label id={`${idPrefix}-palette-label`}>Color Palette</Label>
+      <p id={helpId} className="text-sm leading-7 text-charcoal/60">
+        Choose any that fit, or add specific colors below.
+      </p>
+      <div
+        role="group"
+        aria-labelledby={`${idPrefix}-palette-label`}
+        aria-describedby={getDescribedBy(helpId, error && errorId)}
+        className={cn(
+          "flex flex-wrap gap-2 rounded-[1.35rem] border border-charcoal/8 bg-cream/40 p-2",
+          error && "border-rose-300 bg-rose-50/70",
+        )}
+      >
+        {colorPaletteOptions.map((option, index) => {
+          const selected = state.selectedValues.includes(option.value);
+
+          return (
+            <button
+              key={option.value}
+              type="button"
+              ref={index === 0 ? fieldRef : undefined}
+              aria-pressed={selected}
+              className={cn(
+                "min-h-11 rounded-full border px-4 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50",
+                selected
+                  ? "border-charcoal bg-charcoal text-ivory"
+                  : "border-charcoal/10 bg-white text-charcoal hover:border-charcoal/30",
+              )}
+              onClick={() => {
+                const nextSelection = getNextPaletteSelection(state, option.value);
+                updatePalette(
+                  nextSelection,
+                  option.value === "no-preference" ? "" : state.customDetails,
+                );
+              }}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+      <InlineError id={errorId} message={error} />
+      <div>
+        <Label htmlFor={detailsId}>Specific colors or palette details</Label>
+        <Textarea
+          id={detailsId}
+          value={selectedNoPreference ? "" : state.customDetails}
+          onChange={(event) => {
+            const details = event.target.value;
+            const nextSelection = state.selectedValues.filter(
+              (optionValue) => optionValue !== "no-preference",
+            );
+
+            updatePalette(
+              nextSelection.length > 0 || !details ? nextSelection : ["custom"],
+              details,
+            );
+          }}
+          placeholder="Specific tones, venue colors, invitation palette, or anything to avoid"
+          className="min-h-[104px]"
+          disabled={selectedNoPreference}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function StartOrderWizard({
   catalog,
   catalogSource,
@@ -101,11 +251,18 @@ export function StartOrderWizard({
   submissionAvailable,
   submissionUnavailableMessage,
 }: StartOrderWizardProps) {
+  const [initialDraft] = useState(readInitialWizardDraft);
   const [startedAt] = useState(() => Date.now());
-  const [currentStep, setCurrentStep] = useState(0);
-  const [hasStarted, setHasStarted] = useState(false);
-  const [activeItemType, setActiveItemType] = useState<ProductType | null>(null);
-  const [values, setValues] = useState<InquiryFormValues>(() => createEmptyInquiryValues());
+  const [currentStep, setCurrentStep] = useState(() => initialDraft?.currentStep ?? 0);
+  const [hasStarted, setHasStarted] = useState(() =>
+    Boolean(initialDraft && initialDraft.currentStep > 0),
+  );
+  const [activeItemType, setActiveItemType] = useState<ProductType | null>(
+    () => initialDraft?.activeItemType ?? null,
+  );
+  const [values, setValues] = useState<InquiryFormValues>(
+    () => initialDraft?.values ?? createEmptyInquiryValues(),
+  );
   const [errors, setErrors] = useState<ErrorMap>({});
   const [honeypotValue, setHoneypotValue] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -130,7 +287,7 @@ export function StartOrderWizard({
   const progressPercentage = Math.round(
     ((currentStep + 1) / inquiryStepTitles.length) * 100,
   );
-  const selectedItems = normalizedValues.orderItems;
+  const selectedItems = values.orderItems;
   const catalogMap = catalog.reduce(
     (accumulator, item) => {
       accumulator[item.productType] = item;
@@ -155,6 +312,29 @@ export function StartOrderWizard({
       setHasStarted(true);
     }
   }, [currentStep]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      if (!hasMeaningfulWizardValues(values)) {
+        window.sessionStorage.removeItem(wizardDraftStorageKey);
+        return;
+      }
+
+      const draft = createWizardDraft({
+        activeItemType,
+        currentStep,
+        values,
+      });
+
+      window.sessionStorage.setItem(wizardDraftStorageKey, JSON.stringify(draft));
+    } catch {
+      // Draft persistence is a browser convenience; the live controlled state remains canonical.
+    }
+  }, [activeItemType, currentStep, values]);
 
   useEffect(() => {
     if (viewedStepsRef.current.has(currentStep)) {
@@ -252,7 +432,7 @@ export function StartOrderWizard({
     };
 
   const itemPath = (productType: ProductType, field: keyof InquiryProductItem) => {
-    const index = normalizedValues.orderItems.findIndex(
+    const index = values.orderItems.findIndex(
       (item) => item.productType === productType,
     );
 
@@ -729,6 +909,7 @@ export function StartOrderWizard({
           step_number: 5,
         });
       }
+      clearStoredWizardDraft();
       setSubmissionResult(payload as InquirySubmissionResponse);
     } catch (error) {
       trackAnalyticsEvent("inquiry_submission_error", {
@@ -1772,25 +1953,21 @@ export function StartOrderWizard({
                       </div>
                     )}
 
-                    <div className="grid gap-6 md:grid-cols-2">
-                      <div>
-                        <Label htmlFor={`${activeItem.productType}-palette`}>Item color palette</Label>
-                        <Input
-                          id={`${activeItem.productType}-palette`}
-                          ref={registerFieldRef(itemPath(activeItem.productType, "colorPalette"))}
-                          value={activeItem.colorPalette ?? ""}
-                          onChange={(event) =>
-                            updateOrderItem(activeItem.productType, {
-                              colorPalette: event.target.value,
-                            })
-                          }
-                          placeholder="Ivory, sage, soft gold, blush..."
-                          className={getFieldErrorClass(errors[itemPath(activeItem.productType, "colorPalette")])}
-                        />
-                      </div>
+                    <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+                      <ColorPaletteSelector
+                        idPrefix={`${activeItem.productType}-item`}
+                        value={activeItem.colorPalette}
+                        onChange={(nextValue) =>
+                          updateOrderItem(activeItem.productType, {
+                            colorPalette: nextValue,
+                          })
+                        }
+                        fieldRef={registerFieldRef(itemPath(activeItem.productType, "colorPalette"))}
+                        error={errors[itemPath(activeItem.productType, "colorPalette")]}
+                      />
                       <div>
                         <Label htmlFor={`${activeItem.productType}-topper`}>Topper or wording</Label>
-                        <Input
+                        <Textarea
                           id={`${activeItem.productType}-topper`}
                           ref={registerFieldRef(itemPath(activeItem.productType, "topperText"))}
                           value={activeItem.topperText ?? ""}
@@ -1799,8 +1976,12 @@ export function StartOrderWizard({
                               topperText: event.target.value,
                             })
                           }
-                          placeholder="Optional wording or topper notes"
-                          className={getFieldErrorClass(errors[itemPath(activeItem.productType, "topperText")])}
+                          placeholder="Optional wording, topper notes, or line breaks exactly as you want them considered"
+                          className={cn(
+                            "min-h-[120px]",
+                            getFieldErrorClass(errors[itemPath(activeItem.productType, "topperText")]),
+                          )}
+                          aria-invalid={Boolean(errors[itemPath(activeItem.productType, "topperText")])}
                         />
                       </div>
                     </div>
@@ -1886,17 +2067,13 @@ export function StartOrderWizard({
                   <ImagePlus className="h-6 w-6 text-charcoal/45" />
                 </div>
 
-                <div>
-                  <Label htmlFor="overall-palette">Overall palette or mood</Label>
-                  <Input
-                    id="overall-palette"
-                    ref={registerFieldRef("colorPalette")}
-                    value={values.colorPalette ?? ""}
-                    onChange={(event) => setFieldValue("colorPalette", event.target.value)}
-                    placeholder="Romantic neutrals, polished black and ivory, cheerful pastels..."
-                    className={getFieldErrorClass(errors.colorPalette)}
-                  />
-                </div>
+                <ColorPaletteSelector
+                  idPrefix="overall"
+                  value={values.colorPalette}
+                  onChange={(nextValue) => setFieldValue("colorPalette", nextValue)}
+                  fieldRef={registerFieldRef("colorPalette")}
+                  error={errors.colorPalette}
+                />
 
                 <div className="grid gap-6 lg:grid-cols-2">
                   <div className="space-y-6">

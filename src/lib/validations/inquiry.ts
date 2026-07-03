@@ -189,7 +189,7 @@ export const inquiryItemSchema = z
     macaronCount: z.coerce.number().int().min(12).max(500).optional(),
     kitCount: z.coerce.number().int().min(1).max(40).optional(),
     weddingServings: z.coerce.number().int().min(20).max(600).optional(),
-    topperText: trimmedOptionalString(80),
+    topperText: trimmedOptionalString(240),
     colorPalette: trimmedOptionalString(150),
   })
   .superRefine((value, ctx) => {
@@ -445,7 +445,7 @@ export function normalizeInquiryFormValues(values: unknown): InquiryFormValues {
       weddingServings: toFiniteNumber(item.weddingServings),
       topperText:
         typeof item.topperText === "string"
-          ? sanitizeOptionalTextValue(item.topperText)
+          ? sanitizeOptionalTextValue(item.topperText, { multiline: true })
           : undefined,
       colorPalette:
         typeof item.colorPalette === "string"

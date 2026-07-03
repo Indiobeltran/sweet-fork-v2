@@ -1,3 +1,83 @@
+## Customer Inquiry Wizard Usability Repair — 2026-07-02 MDT / 2026-07-03 UTC
+
+- **Branch and starting state**:
+  - Started on `main` at `556820c fix: avoid duplicate GA4 history page views`.
+  - Created scoped branch `codex/inquiry-wizard-persistence` because repo rules prohibit committing directly to `main`.
+  - Pre-existing dirty worktree before this task: modified `.gitignore`, `HANDOFF.md`, and `README.md`; untracked `.agents/`, `.claude/`, `.superpowers/`, `scratch/gbp-audit/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `scratch/verification.mjs`, and `skills-lock.json`.
+  - `scratch/qa/orders-prod-qa.mjs` was preserved under the untracked `scratch/qa/` tree and was not modified, staged, or committed.
+- **Objective**: Focused repair of `/start-order` customer inquiry wizard text entry, palette selection, and state persistence after real-user feedback. This was not a redesign and did not touch Supabase schemas, migrations, admin compatibility, Netlify submission behavior, or GA4 event naming.
+- **Root causes found**:
+  - Space/Enter defect: controlled item fields were rendered from `normalizedValues.orderItems`. `normalizeInquiryFormValues` trims/sanitizes on every render, so a trailing space after a word and a trailing newline after a line were removed before the next typed character. Real effect: `Blue` + Space + `Ribbon` became `BlueRibbon`; `Line one` + Enter + `Line two` became `Line oneLine two`.
+  - `Topper or wording` was a single-line `<Input>`, so it could never accept multiline wording even if the rest of the flow did.
+  - State loss: normal wizard Back/Continue already preserved data in top-level React state. Browser Back left `/start-order` because the wizard does not own browser history; returning remounted the page and reset the in-memory draft. This affected browser navigation, not internal wizard Back.
+- **Fields/components affected**:
+  - `Topper or wording` converted to shared `Textarea`.
+  - Existing `Flavor notes`, `Design notes`, `Item-specific inspiration notes`, `Style notes`, and `Additional notes` continue using shared `Textarea`; they now render from raw `values` instead of per-render sanitized values.
+  - `Color Palette` added through a shared in-wizard selector for both item-level palette and overall style palette.
+- **Color Palette interaction selected**:
+  - Accessible multi-select toggle chips with large tap targets and selected states.
+  - Options: No preference, Neutrals, Pastels, Pink / Red, Orange / Yellow, Green, Blue, Purple, Black / White, Metallics, Seasonal, Custom.
+  - Added optional `Specific colors or palette details` textarea.
+  - Preserves existing backend string payload shape by serializing selections like `Pastels, Blue - dusty blue and blush`.
+  - Existing/legacy free-text palette strings parse back as `Custom` details safely.
+  - `No preference` is exclusive and clears details/conflicting selected colors.
+- **Wizard-state repair implemented**:
+  - `selectedItems` and active item fields now come from raw `values.orderItems`; normalization remains used for validation, review summaries, and submission.
+  - Added `src/components/inquiry/wizard-state.ts` for palette serialization, editable-target helper, and serializable session draft parsing/creation.
+  - Added same-tab `sessionStorage` draft persistence for serializable wizard values, active step, and active item type.
+  - Draft is cleared after successful submission or when the wizard is empty.
+  - Internal Back/Continue preserves values through React state; browser Back/Forward now restores the serializable draft on return.
+- **Uploaded-file persistence behavior**:
+  - Current branch has no customer-facing file input or uploaded-image preview in `/start-order`.
+  - Current API route still rejects `inspirationFiles` with `Image uploads are no longer supported. Please use links or notes instead.`
+  - No upload UI, temporary storage, Supabase storage behavior, `inquiry_assets` upload rows, or admin upload compatibility was changed.
+  - Because no active File objects exist in the current wizard UI, no file object restoration or beforeunload file warning was added. If uploads are intentionally reintroduced later, File objects must remain in top-level in-memory state for step navigation and need a separate non-localStorage persistence strategy for page exits.
+- **Image-preview repair**:
+  - Not applicable in the current source because `/start-order` renders no image upload controls or preview containers. Verified locally that checked `/start-order` viewports have `0` file inputs and no upload copy.
+- **Tests added/updated**:
+  - Added `src/components/inquiry/wizard-state.test.ts`.
+  - Updated `package.json` test command to include the new test.
+  - Tests cover palette serialization and legacy parse behavior, `No preference` exclusivity, editable form targets for Space/Enter ownership, serializable draft round-trip with per-item details, active item cleanup, non-default preference draft detection, multiline source contracts, and single `inquiry_submitted` tracking code path.
+- **Manual browser QA completed**:
+  - Reproduced pre-fix defect locally on `http://localhost:3008/start-order`: trailing space and trailing newline were removed during typing because fields used normalized values.
+  - Verified after fix on dev server: `Topper or wording` is `TEXTAREA`; typing `Happy` + Space + `Birthday` yields `Happy Birthday`; typing `Blue Ribbon` + newline + `Gold edge` yields `Blue Ribbon\nGold edge`.
+  - Verified multi-product flow with Custom Cakes + Cupcakes: Step 1 details, Step 2 selections, Step 3 per-item details, Step 4 palette/style notes, internal Back/Continue, Step 5 review.
+  - Verified browser Back/Forward restores review-step draft with selected products, item details, palette, and style notes.
+  - Responsive checks at 320, 375, 390, 430, 768, and 1280 widths showed no horizontal overflow in the checked wizard states.
+  - Production-mode smoke on `http://localhost:3009/start-order` verified page identity, no framework overlay, no console warnings/errors, text entry, palette selection, internal Back, and browser Back/Forward restoration.
+  - No production inquiry was submitted and no production customer/admin data was created or cleaned up in this task.
+- **Verification commands run**:
+  - `git branch --show-current`
+  - `git status --short`
+  - `git log --oneline -n 10`
+  - `node --no-warnings --experimental-strip-types --test src/components/inquiry/wizard-state.test.ts` red first for missing module, then red for current source contract, then passed after implementation.
+  - `npm run lint` passed.
+  - `npm run typecheck` passed.
+  - `npm test` passed: 84/84 tests; expected Netlify Forms bridge fail-soft warnings printed.
+  - `npm run build` passed.
+  - `git diff --check` passed.
+- **Compatibility preserved**:
+  - Inquiry field names, state keys, payload field names, API path, Netlify bridge, admin inquiry data shape, and GA4 `inquiry_submitted` event path were preserved.
+  - `topperText` remains the same string field; validation now permits multiline wording up to 240 characters.
+  - `colorPalette` remains the same string field; structured selections serialize into a readable string.
+- **Files changed by this task**:
+  - `package.json`
+  - `src/components/inquiry/start-order-wizard.tsx`
+  - `src/components/inquiry/wizard-state.ts`
+  - `src/components/inquiry/wizard-state.test.ts`
+  - `src/lib/validations/inquiry.ts`
+  - `HANDOFF.md` (this entry)
+- **Files intentionally preserved / not staged for this task**:
+  - Pre-existing `.gitignore` and `README.md` modifications.
+  - Untracked `.agents/`, `.claude/`, `.superpowers/`, `scratch/*`, and `skills-lock.json`.
+  - Ongoing gallery/media import scratch work.
+  - Supabase schemas, migrations, generated types, production storage, admin media tools, and Netlify configuration.
+- **Known limitations / follow-ups**:
+  - Browser draft persistence uses same-tab `sessionStorage`; it restores serializable inquiry fields for browser Back/Forward and same-tab reloads, but it is not intended as durable cross-device or after-tab-close persistence.
+  - Uploaded images cannot be restored because the current customer wizard does not support image uploads and no File objects are present. Reintroducing uploads should be a separate scoped task that restores server-side upload handling intentionally.
+  - Review Step 5 still summarizes selected products primarily through counts and design notes; it does not display every optional field such as topper text unless the user edits Step 3.
+- **Next exact task**: Stage only task-owned files, commit with `fix: preserve inquiry details and improve form inputs`, push `codex/inquiry-wizard-persistence`, and leave unrelated files unstaged.
+
 ## GA4 Page View Defect Fix — 2026-07-02
 
 - **Branch**: `main`.
