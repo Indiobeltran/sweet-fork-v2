@@ -17,7 +17,6 @@ export function StepMarker({
   canSelect,
   complete,
   index,
-  markerRef,
   onSelect,
   description,
   title,
@@ -26,14 +25,12 @@ export function StepMarker({
   canSelect: boolean;
   complete: boolean;
   index: number;
-  markerRef?: (element: HTMLDivElement | null) => void;
   onSelect: () => void;
   description: string;
   title: string;
 }) {
   return (
     <div
-      ref={markerRef}
       role="listitem"
       className="min-w-0 lg:flex-1"
     >

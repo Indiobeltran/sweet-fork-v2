@@ -27,7 +27,7 @@ import {
   getOrderStatusClasses,
   getPaymentStatusClasses,
 } from "@/lib/admin/order-workflow";
-import { formatDate, toTitleCase } from "@/lib/utils";
+import { cn, formatDate, toTitleCase } from "@/lib/utils";
 import type { Enums } from "@/types/supabase.generated";
 
 export const metadata = {
@@ -40,6 +40,9 @@ type AdminInquiryDetailPageProps = {
   }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
+
+const userTextClass = "min-w-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere]";
+const compactTextClass = "min-w-0 break-words [overflow-wrap:anywhere]";
 
 function formatDateTime(value: string | null) {
   if (!value) {
@@ -97,11 +100,11 @@ function SectionCard({
   title: string;
 }>) {
   return (
-    <section className="rounded-[1.75rem] border border-charcoal/10 bg-white/88 p-4 shadow-soft sm:p-5">
-      <h2 className="font-serif text-[2rem] tracking-[-0.04em] text-charcoal sm:text-[2.1rem]">
+    <section className="min-w-0 max-w-full rounded-[1.75rem] border border-charcoal/10 bg-white/88 p-4 shadow-soft sm:p-5">
+      <h2 className="min-w-0 break-words font-serif text-[2rem] tracking-[-0.04em] text-charcoal sm:text-[2.1rem]">
         {title}
       </h2>
-      <div className="mt-4">{children}</div>
+      <div className="mt-4 min-w-0">{children}</div>
     </section>
   );
 }
@@ -114,9 +117,11 @@ function DetailRow({
   value: React.ReactNode;
 }>) {
   return (
-    <div className="flex items-start justify-between gap-5 border-b border-charcoal/8 py-3 last:border-none last:pb-0">
-      <p className="text-sm text-charcoal/55">{label}</p>
-      <div className="max-w-[70%] text-right text-sm font-medium text-charcoal">{value}</div>
+    <div className="flex min-w-0 flex-col gap-1 border-b border-charcoal/8 py-3 last:border-none last:pb-0 sm:flex-row sm:items-start sm:justify-between sm:gap-5">
+      <p className="shrink-0 text-sm text-charcoal/55">{label}</p>
+      <div className={cn("max-w-full text-left text-sm font-medium text-charcoal sm:max-w-[70%] sm:text-right", userTextClass)}>
+        {value}
+      </div>
     </div>
   );
 }
@@ -168,7 +173,7 @@ function NoticeBanner({ notice }: { notice: string | undefined }) {
 
 function AssetCard({ asset }: { asset: InquiryAssetDisplay }) {
   return (
-    <div className="overflow-hidden rounded-[1.6rem] border border-charcoal/10 bg-ivory/70">
+    <div className="min-w-0 max-w-full overflow-hidden rounded-[1.6rem] border border-charcoal/10 bg-ivory/70">
       {asset.signedUrl ? (
         <a href={asset.signedUrl} target="_blank" rel="noreferrer" className="block">
           <Image
@@ -187,21 +192,21 @@ function AssetCard({ asset }: { asset: InquiryAssetDisplay }) {
       )}
 
       <div className="space-y-2 p-4">
-        <p className="text-sm font-medium text-charcoal">{asset.label}</p>
+        <p className={cn("text-sm font-medium text-charcoal", compactTextClass)}>{asset.label}</p>
         {asset.originalFilename ? (
-          <p className="text-xs uppercase tracking-[0.16em] text-charcoal/45">
+          <p className={cn("text-xs uppercase tracking-[0.16em] text-charcoal/45", compactTextClass)}>
             {asset.originalFilename}
           </p>
         ) : null}
         {asset.textContent ? (
-          <p className="text-sm leading-7 text-charcoal/70">{asset.textContent}</p>
+          <p className={cn("text-sm leading-7 text-charcoal/70", userTextClass)}>{asset.textContent}</p>
         ) : null}
         {asset.url ? (
           <a
             href={asset.url}
             target="_blank"
             rel="noreferrer"
-            className="text-sm font-medium text-charcoal underline decoration-gold/60 underline-offset-4"
+            className={cn("text-sm font-medium text-charcoal underline decoration-gold/60 underline-offset-4", compactTextClass)}
           >
             Open reference
           </a>
@@ -230,16 +235,16 @@ export default async function AdminInquiryDetailPage({
   const redirectTo = `/admin/inquiries/${detail.id}`;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-3">
+    <div className="min-w-0 max-w-full space-y-6">
+      <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 space-y-3">
           <Link
             href="/admin/inquiries"
             className="inline-flex items-center gap-2 text-sm font-medium text-charcoal/70 transition hover:text-charcoal"
           >
             ← Back to inquiries
           </Link>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <Badge className="border-charcoal/10 bg-charcoal/5 text-charcoal/75">
               {detail.referenceCode}
             </Badge>
@@ -249,11 +254,11 @@ export default async function AdminInquiryDetailPage({
               {toTitleCase(detail.status)}
             </span>
           </div>
-          <div>
-            <h1 className="font-serif text-[2.3rem] tracking-[-0.04em] text-charcoal sm:text-[2.8rem]">
+          <div className="min-w-0">
+            <h1 className={cn("font-serif text-[2.3rem] tracking-[-0.04em] text-charcoal sm:text-[2.8rem]", compactTextClass)}>
               {detail.contact.customerName}
             </h1>
-            <p className="mt-2 text-sm leading-7 text-charcoal/66">
+            <p className={cn("mt-2 text-sm leading-7 text-charcoal/66", compactTextClass)}>
               {detail.event.eventType} on {formatDate(detail.event.eventDate)} via{" "}
               {detail.event.fulfillmentMethod === "delivery" ? "delivery" : "pickup"}
             </p>
@@ -263,14 +268,14 @@ export default async function AdminInquiryDetailPage({
           </div>
         </div>
 
-        <div className="shrink-0 rounded-[1.55rem] border border-charcoal/10 bg-white/88 px-4 py-3 shadow-soft">
+        <div className="min-w-0 max-w-full rounded-[1.55rem] border border-charcoal/10 bg-white/88 px-4 py-3 shadow-soft sm:shrink-0">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
             Submitted
           </p>
-          <p className="mt-2 text-sm font-medium text-charcoal">
+          <p className={cn("mt-2 text-sm font-medium text-charcoal", compactTextClass)}>
             {formatDateTime(detail.submittedAt)}
           </p>
-          <p className="mt-2 text-sm text-charcoal/60">
+          <p className={cn("mt-2 text-sm text-charcoal/60", compactTextClass)}>
             Estimate: {detail.estimatedLabel ?? "Still to be set"}
           </p>
         </div>
@@ -279,11 +284,11 @@ export default async function AdminInquiryDetailPage({
       <NoticeBanner notice={notice} />
 
       <SectionCard title="Triage actions">
-        <div className="mb-5 flex flex-wrap items-center gap-3">
+        <div className="mb-5 flex min-w-0 flex-wrap items-center gap-3">
           {detail.contact.customerPhone ? (
             <a
               href={`tel:${detail.contact.customerPhone.replace(/\D/g, "")}`}
-              className="inline-flex h-11 items-center justify-center rounded-full border border-charcoal/15 bg-white px-5 text-sm font-medium text-charcoal transition hover:bg-charcoal/5"
+              className="inline-flex min-h-11 min-w-0 max-w-full items-center justify-center rounded-full border border-charcoal/15 bg-white px-5 py-2 text-center text-sm font-medium text-charcoal transition hover:bg-charcoal/5"
             >
               Call
             </a>
@@ -291,14 +296,14 @@ export default async function AdminInquiryDetailPage({
           {detail.contact.customerEmail ? (
             <a
               href={`mailto:${detail.contact.customerEmail}`}
-              className="inline-flex h-11 items-center justify-center rounded-full border border-charcoal/15 bg-white px-5 text-sm font-medium text-charcoal transition hover:bg-charcoal/5"
+              className="inline-flex min-h-11 min-w-0 max-w-full items-center justify-center rounded-full border border-charcoal/15 bg-white px-5 py-2 text-center text-sm font-medium text-charcoal transition hover:bg-charcoal/5"
             >
               Email
             </a>
           ) : null}
           <a
             href="#convert-to-order"
-            className="inline-flex h-11 items-center justify-center rounded-full bg-charcoal px-5 text-sm font-medium text-ivory transition hover:bg-charcoal/90"
+            className="inline-flex min-h-11 min-w-0 max-w-full items-center justify-center rounded-full bg-charcoal px-5 py-2 text-center text-sm font-medium text-ivory transition hover:bg-charcoal/90"
           >
             Convert to order ↓
           </a>
@@ -306,12 +311,12 @@ export default async function AdminInquiryDetailPage({
 
         <form
           action={updateInquiryStatus}
-          className="flex flex-col gap-3 rounded-[1.4rem] border border-charcoal/8 bg-ivory/70 p-4 sm:flex-row sm:items-end"
+          className="flex min-w-0 flex-col gap-3 rounded-[1.4rem] border border-charcoal/8 bg-ivory/70 p-4 sm:flex-row sm:items-end"
         >
           <input type="hidden" name="inquiryId" value={detail.id} />
           <input type="hidden" name="redirectTo" value={redirectTo} />
 
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <Label htmlFor="status">Inquiry status</Label>
             <Select id="status" name="status" defaultValue={detail.status}>
               <option value="new">New</option>
@@ -350,8 +355,8 @@ export default async function AdminInquiryDetailPage({
             />
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <label className="flex items-center gap-3 rounded-[1.4rem] border border-charcoal/10 bg-ivory/70 px-4 py-3 text-sm text-charcoal/72">
+          <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <label className="flex min-w-0 items-center gap-3 rounded-[1.4rem] border border-charcoal/10 bg-ivory/70 px-4 py-3 text-sm text-charcoal/72">
               <input
                 type="checkbox"
                 name="isPinned"
@@ -370,7 +375,7 @@ export default async function AdminInquiryDetailPage({
             detail.notes.map((note) => (
               <article
                 key={note.id}
-                className="rounded-[1.5rem] border border-charcoal/10 bg-white/82 p-4"
+                className="min-w-0 max-w-full rounded-[1.5rem] border border-charcoal/10 bg-white/82 p-4"
               >
                 <div className="flex flex-wrap items-center gap-2">
                   {note.isPinned ? (
@@ -383,7 +388,7 @@ export default async function AdminInquiryDetailPage({
                     {formatDateTime(note.createdAt)}
                   </span>
                 </div>
-                <p className="mt-3 text-sm leading-8 text-charcoal/72">{note.noteBody}</p>
+                <p className={cn("mt-3 text-sm leading-8 text-charcoal/72", userTextClass)}>{note.noteBody}</p>
               </article>
             ))
           ) : (
@@ -394,11 +399,11 @@ export default async function AdminInquiryDetailPage({
         </div>
       </SectionCard>
 
-      <div className="grid gap-6 xl:grid-cols-[1.18fr_0.82fr]">
-        <div className="space-y-6">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1.18fr)_minmax(0,0.82fr)]">
+        <div className="min-w-0 space-y-6">
           <SectionCard title="Event details">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+              <div className="min-w-0 max-w-full rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
                   Event snapshot
                 </p>
@@ -421,7 +426,7 @@ export default async function AdminInquiryDetailPage({
                 </div>
               </div>
 
-              <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
+              <div className="min-w-0 max-w-full rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
                   Venue and planning
                 </p>
@@ -446,8 +451,8 @@ export default async function AdminInquiryDetailPage({
           </SectionCard>
 
           <SectionCard title="Customer and signals">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+              <div className="min-w-0 max-w-full rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
                   Contact details
                 </p>
@@ -465,11 +470,11 @@ export default async function AdminInquiryDetailPage({
                 </div>
               </div>
 
-              <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
+              <div className="min-w-0 max-w-full rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
                   Review signals
                 </p>
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="mt-4 flex min-w-0 flex-wrap gap-2">
                   <span
                     className={`rounded-full border px-3 py-1 text-xs font-medium ${getSignalClasses(detail.clarityValue)}`}
                   >
@@ -486,11 +491,11 @@ export default async function AdminInquiryDetailPage({
                     Timing: {detail.urgencyLabel}
                   </span>
                 </div>
-                <div className="mt-4 space-y-2 text-sm leading-7 text-charcoal/68">
-                  {detail.colorPalette ? <p>Palette: {detail.colorPalette}</p> : null}
-                  {detail.howDidYouHear ? <p>Lead source: {detail.howDidYouHear}</p> : null}
-                  {detail.dietaryNotes ? <p>Dietary notes: {detail.dietaryNotes}</p> : null}
-                  {detail.additionalNotes ? <p>Extra notes: {detail.additionalNotes}</p> : null}
+                <div className="mt-4 min-w-0 space-y-2 text-sm leading-7 text-charcoal/68">
+                  {detail.colorPalette ? <p className={userTextClass}>Palette: {detail.colorPalette}</p> : null}
+                  {detail.howDidYouHear ? <p className={userTextClass}>Lead source: {detail.howDidYouHear}</p> : null}
+                  {detail.dietaryNotes ? <p className={userTextClass}>Dietary notes: {detail.dietaryNotes}</p> : null}
+                  {detail.additionalNotes ? <p className={userTextClass}>Extra notes: {detail.additionalNotes}</p> : null}
                 </div>
               </div>
             </div>
@@ -501,32 +506,32 @@ export default async function AdminInquiryDetailPage({
               {detail.items.map((item) => (
                 <article
                   key={item.id}
-                  className="rounded-[1.6rem] border border-charcoal/10 bg-ivory/70 p-5"
+                  className="min-w-0 max-w-full rounded-[1.6rem] border border-charcoal/10 bg-ivory/70 p-5"
                 >
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-charcoal">{item.productLabel}</h3>
-                      <p className="mt-1 text-sm text-charcoal/62">{item.requestedQuantityLabel}</p>
+                  <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <h3 className={cn("text-lg font-semibold text-charcoal", compactTextClass)}>{item.productLabel}</h3>
+                      <p className={cn("mt-1 text-sm text-charcoal/62", compactTextClass)}>{item.requestedQuantityLabel}</p>
                     </div>
-                    <div className="text-sm text-charcoal/62">
+                    <div className={cn("text-sm text-charcoal/62", compactTextClass)}>
                       {item.estimatedLabel ?? "Estimate still open"}
                     </div>
                   </div>
-                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2 text-sm leading-7 text-charcoal/68">
-                      {item.sizeLabel ? <p>Size: {item.sizeLabel}</p> : null}
-                      {item.shapeLabel ? <p>Shape: {item.shapeLabel}</p> : null}
-                      {item.icingStyleLabel ? <p>Icing style: {item.icingStyleLabel}</p> : null}
-                      {item.flavorNotes ? <p>Flavor notes: {item.flavorNotes}</p> : null}
-                      {item.colorPalette ? <p>Palette: {item.colorPalette}</p> : null}
+                  <div className="mt-4 grid min-w-0 gap-4 sm:grid-cols-2">
+                    <div className="min-w-0 space-y-2 text-sm leading-7 text-charcoal/68">
+                      {item.sizeLabel ? <p className={userTextClass}>Size: {item.sizeLabel}</p> : null}
+                      {item.shapeLabel ? <p className={userTextClass}>Shape: {item.shapeLabel}</p> : null}
+                      {item.icingStyleLabel ? <p className={userTextClass}>Icing style: {item.icingStyleLabel}</p> : null}
+                      {item.flavorNotes ? <p className={userTextClass}>Flavor notes: {item.flavorNotes}</p> : null}
+                      {item.colorPalette ? <p className={userTextClass}>Palette: {item.colorPalette}</p> : null}
                     </div>
-                    <div className="space-y-2 text-sm leading-7 text-charcoal/68">
-                      {item.designNotes ? <p>Design notes: {item.designNotes}</p> : null}
+                    <div className="min-w-0 space-y-2 text-sm leading-7 text-charcoal/68">
+                      {item.designNotes ? <p className={userTextClass}>Design notes: {item.designNotes}</p> : null}
                       {item.inspirationNotes ? (
-                        <p>Inspiration notes: {item.inspirationNotes}</p>
+                        <p className={userTextClass}>Inspiration notes: {item.inspirationNotes}</p>
                       ) : null}
-                      {item.detailSummary ? <p>Summary: {item.detailSummary}</p> : null}
-                      {item.topperText ? <p>Topper text: {item.topperText}</p> : null}
+                      {item.detailSummary ? <p className={userTextClass}>Summary: {item.detailSummary}</p> : null}
+                      {item.topperText ? <p className={userTextClass}>Topper text: {item.topperText}</p> : null}
                     </div>
                   </div>
                 </article>
@@ -534,10 +539,10 @@ export default async function AdminInquiryDetailPage({
             </div>
           </SectionCard>
         </div>
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {detail.assets.length > 0 ? (
             <SectionCard title="Inspiration and uploads">
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid min-w-0 gap-4 md:grid-cols-2">
                 {detail.assets.map((asset) => (
                   <AssetCard key={asset.id} asset={asset} />
                 ))}
@@ -547,25 +552,25 @@ export default async function AdminInquiryDetailPage({
 
           <SectionCard title="Estimate insight">
             <div className="space-y-4">
-              <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
+              <div className="min-w-0 max-w-full rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
                   Internal pricing view
                 </p>
-                <p className="mt-3 font-serif text-3xl tracking-[-0.04em] text-charcoal">
+                <p className={cn("mt-3 font-serif text-3xl tracking-[-0.04em] text-charcoal", compactTextClass)}>
                   {detail.estimateInsight.totalLabel ?? "Still to be set"}
                 </p>
-                <p className="mt-3 text-sm leading-7 text-charcoal/68">
+                <p className={cn("mt-3 text-sm leading-7 text-charcoal/68", userTextClass)}>
                   {detail.estimateInsight.summary}
                 </p>
                 {detail.estimateInsight.deliveryLabel ? (
-                  <p className="mt-3 text-sm leading-7 text-charcoal/68">
+                  <p className={cn("mt-3 text-sm leading-7 text-charcoal/68", userTextClass)}>
                     Delivery contribution:{" "}
                     <span className="font-medium text-charcoal">
                       {detail.estimateInsight.deliveryLabel}
                     </span>
                   </p>
                 ) : null}
-                <p className="mt-4 rounded-[1.1rem] border border-gold/20 bg-gold/6 px-3.5 py-2.5 text-[13px] leading-6 text-charcoal/70">
+                <p className={cn("mt-4 rounded-[1.1rem] border border-gold/20 bg-gold/6 px-3.5 py-2.5 text-[13px] leading-6 text-charcoal/70", userTextClass)}>
                   {detail.estimateInsight.rationaleNote}
                 </p>
               </div>
@@ -574,24 +579,24 @@ export default async function AdminInquiryDetailPage({
                 {detail.estimateInsight.lineItems.map((item) => (
                   <article
                     key={item.id}
-                    className="rounded-[1.4rem] border border-charcoal/8 bg-white/82 p-4"
+                    className="min-w-0 max-w-full rounded-[1.4rem] border border-charcoal/8 bg-white/82 p-4"
                   >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-medium text-charcoal">{item.productLabel}</p>
-                        <p className="mt-1 text-sm text-charcoal/60">
+                    <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className={cn("text-sm font-medium text-charcoal", compactTextClass)}>{item.productLabel}</p>
+                        <p className={cn("mt-1 text-sm text-charcoal/60", compactTextClass)}>
                           {item.requestedQuantityLabel}
                         </p>
                       </div>
-                      <p className="text-sm font-medium text-charcoal">
+                      <p className={cn("text-sm font-medium text-charcoal", compactTextClass)}>
                         {item.estimatedLabel ?? "Estimate pending"}
                       </p>
                     </div>
-                    <div className="mt-3 space-y-2 text-sm leading-7 text-charcoal/66">
+                    <div className="mt-3 min-w-0 space-y-2 text-sm leading-7 text-charcoal/66">
                       {item.drivers.map((driver) => (
-                        <p key={driver}>{driver}</p>
+                        <p key={driver} className={userTextClass}>{driver}</p>
                       ))}
-                      {item.detailSummary ? <p>Stored summary: {item.detailSummary}</p> : null}
+                      {item.detailSummary ? <p className={userTextClass}>Stored summary: {item.detailSummary}</p> : null}
                     </div>
                   </article>
                 ))}
@@ -602,8 +607,8 @@ export default async function AdminInquiryDetailPage({
           <div id="convert-to-order" className="scroll-mt-6">
             <SectionCard title="Convert to order">
             {conversion?.existingOrder ? (
-              <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
-                <div className="flex flex-wrap items-center gap-2">
+              <div className="min-w-0 max-w-full rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <span
                     className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${getOrderStatusClasses(conversion.existingOrder.status)}`}
                   >
@@ -615,21 +620,21 @@ export default async function AdminInquiryDetailPage({
                     {toTitleCase(conversion.existingOrder.paymentStatus)}
                   </span>
                 </div>
-                <p className="mt-4 text-sm leading-8 text-charcoal/70">
+                <p className={cn("mt-4 text-sm leading-8 text-charcoal/70", userTextClass)}>
                   This inquiry has already been converted into an order. Continue the workflow from
                   the linked order and customer records below.
                 </p>
-                <div className="mt-4 flex flex-wrap gap-3">
+                <div className="mt-4 flex min-w-0 flex-wrap gap-3">
                   <Link
                     href={`/admin/orders/${conversion.existingOrder.id}`}
-                    className="inline-flex h-12 items-center justify-center rounded-full bg-charcoal px-5 text-sm font-medium tracking-[0.02em] text-ivory shadow-soft transition hover:bg-charcoal/90"
+                    className="inline-flex min-h-12 min-w-0 max-w-full items-center justify-center rounded-full bg-charcoal px-5 py-2 text-center text-sm font-medium tracking-[0.02em] text-ivory shadow-soft transition hover:bg-charcoal/90"
                   >
                     Open linked order
                   </Link>
                   {conversion.linkedCustomer ? (
                     <Link
                       href={`/admin/customers/${conversion.linkedCustomer.id}`}
-                      className="inline-flex h-12 items-center justify-center rounded-full border border-charcoal/15 bg-ivory/80 px-5 text-sm font-medium tracking-[0.02em] text-charcoal transition hover:border-charcoal/40 hover:bg-white"
+                      className="inline-flex min-h-12 min-w-0 max-w-full items-center justify-center rounded-full border border-charcoal/15 bg-ivory/80 px-5 py-2 text-center text-sm font-medium tracking-[0.02em] text-charcoal transition hover:border-charcoal/40 hover:bg-white"
                     >
                       Open linked customer
                     </Link>
@@ -637,22 +642,22 @@ export default async function AdminInquiryDetailPage({
                 </div>
               </div>
             ) : (
-              <form action={createOrderFromInquiry} className="space-y-5">
+              <form action={createOrderFromInquiry} className="min-w-0 max-w-full space-y-5">
                 <input type="hidden" name="inquiryId" value={detail.id} />
                 <input type="hidden" name="redirectTo" value={redirectTo} />
 
-                <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5 text-sm leading-8 text-charcoal/70">
+                <div className={cn("min-w-0 max-w-full rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5 text-sm leading-8 text-charcoal/70", userTextClass)}>
                   This creates a manual-first order from the inquiry’s event details and requested
                   items. You can finish pricing, payment records, Square references, and bakery
                   notes after conversion on the order detail page.
                 </div>
 
-                <div className="rounded-[1.6rem] border border-charcoal/8 bg-white/82 p-5">
+                <div className="min-w-0 max-w-full rounded-[1.6rem] border border-charcoal/8 bg-white/82 p-5">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
                     Customer handling
                   </p>
-                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                    <div>
+                  <div className="mt-4 grid min-w-0 gap-4 sm:grid-cols-2">
+                    <div className="min-w-0">
                       <Label htmlFor="customerAction">Create or link customer</Label>
                       <Select
                         id="customerAction"
@@ -664,7 +669,7 @@ export default async function AdminInquiryDetailPage({
                       </Select>
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <Label htmlFor="existingCustomerId">Existing customer</Label>
                       <Select
                         id="existingCustomerId"
@@ -686,9 +691,9 @@ export default async function AdminInquiryDetailPage({
                     </div>
                   </div>
 
-                  <div className="mt-4 space-y-2 text-sm leading-7 text-charcoal/66">
+                  <div className="mt-4 min-w-0 space-y-2 text-sm leading-7 text-charcoal/66">
                     {conversion?.linkedCustomer ? (
-                      <p>
+                      <p className={userTextClass}>
                         Current linked customer:{" "}
                         <span className="font-medium text-charcoal">
                           {conversion.linkedCustomer.label}
@@ -696,9 +701,9 @@ export default async function AdminInquiryDetailPage({
                       </p>
                     ) : null}
                     {conversion?.matchedCustomerIds.length ? (
-                      <p>Suggested matches were found using the inquiry name, email, or phone.</p>
+                      <p className={userTextClass}>Suggested matches were found using the inquiry name, email, or phone.</p>
                     ) : (
-                      <p>
+                      <p className={userTextClass}>
                         No likely matches were found yet, so creating a fresh customer is usually
                         the cleanest choice.
                       </p>
@@ -706,8 +711,8 @@ export default async function AdminInquiryDetailPage({
                   </div>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <div>
+                <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="min-w-0">
                     <Label htmlFor="orderStatus">Starting order status</Label>
                     <Select
                       id="orderStatus"
@@ -720,7 +725,7 @@ export default async function AdminInquiryDetailPage({
                     </Select>
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <Label htmlFor="estimatedTotalAmount">Estimate total</Label>
                     <Input
                       id="estimatedTotalAmount"
@@ -730,7 +735,7 @@ export default async function AdminInquiryDetailPage({
                     />
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <Label htmlFor="totalAmount">Final total</Label>
                     <Input
                       id="totalAmount"
@@ -740,7 +745,7 @@ export default async function AdminInquiryDetailPage({
                     />
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <Label htmlFor="depositDueAmount">Deposit required</Label>
                     <Input
                       id="depositDueAmount"
@@ -750,19 +755,19 @@ export default async function AdminInquiryDetailPage({
                     />
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <Label htmlFor="depositDueAt">Deposit due date</Label>
                     <Input id="depositDueAt" name="depositDueAt" type="date" />
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <Label htmlFor="finalDueAt">Final due date</Label>
                     <Input id="finalDueAt" name="finalDueAt" type="date" />
                   </div>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
+                <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+                  <div className="min-w-0">
                     <Label htmlFor="fulfillmentNotes">Pickup or delivery notes</Label>
                     <Textarea
                       id="fulfillmentNotes"
@@ -771,7 +776,7 @@ export default async function AdminInquiryDetailPage({
                     />
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <Label htmlFor="internalSummary">Internal summary</Label>
                     <Textarea
                       id="internalSummary"
@@ -781,7 +786,7 @@ export default async function AdminInquiryDetailPage({
                   </div>
                 </div>
 
-                <Button type="submit">
+                <Button type="submit" className="max-w-full text-center">
                   Create order from inquiry
                 </Button>
               </form>
@@ -790,7 +795,7 @@ export default async function AdminInquiryDetailPage({
           </div>
 
           <SectionCard title="Archive and reference">
-            <div className="rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
+            <div className="min-w-0 max-w-full rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5">
               {detail.timestamps.map((item) => (
                 <DetailRow
                   key={item.label}
@@ -802,11 +807,11 @@ export default async function AdminInquiryDetailPage({
               <DetailRow label="Source" value={toTitleCase(detail.sourceChannel)} />
             </div>
 
-            <div className="mt-5 rounded-[1.6rem] border border-rose/20 bg-rose/5 p-5">
+            <div className="mt-5 min-w-0 max-w-full rounded-[1.6rem] border border-rose/20 bg-rose/5 p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
                 Delete inquiry
               </p>
-              <p className="mt-3 text-sm leading-7 text-charcoal/68">
+              <p className={cn("mt-3 text-sm leading-7 text-charcoal/68", userTextClass)}>
                 This permanently removes the inquiry, notes, uploads, and request details from the
                 desk. Any linked order record stays intact but becomes unlinked from this inquiry.
               </p>

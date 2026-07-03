@@ -379,7 +379,7 @@ export function normalizeInquiryFormValues(values: unknown): InquiryFormValues {
         : ("" as InquiryFormValues["budgetFlexibility"]),
     colorPalette:
       typeof source.colorPalette === "string"
-        ? sanitizeOptionalTextValue(source.colorPalette)
+        ? sanitizeOptionalTextValue(source.colorPalette, { multiline: true })
         : undefined,
     inspirationLinks: inspirationLinks
       .map((link) => link.trim())
@@ -449,7 +449,7 @@ export function normalizeInquiryFormValues(values: unknown): InquiryFormValues {
           : undefined,
       colorPalette:
         typeof item.colorPalette === "string"
-          ? sanitizeOptionalTextValue(item.colorPalette)
+          ? sanitizeOptionalTextValue(item.colorPalette, { multiline: true })
           : undefined,
     })),
   };

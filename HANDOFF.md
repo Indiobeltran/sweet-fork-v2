@@ -1,3 +1,81 @@
+## Forensic Inquiry Whitespace and Admin Mobile Overflow Repair — 2026-07-02 MDT / 2026-07-03 UTC
+
+- **Initial branch and production SITREP**:
+  - Started on `codex/inquiry-wizard-persistence`.
+  - Pre-existing working tree before this task still contained unrelated modified `.gitignore`, `HANDOFF.md`, and `README.md`; untracked `.agents/`, `.claude/`, `.superpowers/`, `scratch/gbp-audit/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `scratch/verification.mjs`, and `skills-lock.json`.
+  - `scratch/qa/orders-prod-qa.mjs` was preserved and was not modified, staged, or committed.
+  - Prior attempted fix commit `19c9de5 fix: preserve inquiry details and improve form inputs` exists locally and on `origin/codex/inquiry-wizard-persistence`.
+  - `19c9de5` was not merged into `origin/main`; `git merge-base --is-ancestor 19c9de5 origin/main` returned non-zero.
+  - Netlify production before this repair was deploy `6a46bf968e61fd0008a2211e`, branch `main`, commit `556820c4bbadad4c9bb1d993058dba98d8b87766`, state `ready`, published `2026-07-02T19:45:47.506Z`.
+  - No working Netlify branch deploy URL for `codex/inquiry-wizard-persistence` was found by probing likely branch deploy URLs.
+  - The failed real-user inquiry most likely came from production `https://thesweetfork.com` at `556820c4bbadad4c9bb1d993058dba98d8b87766`, or a cached copy of that production deploy, not from `19c9de5`.
+- **Exact whitespace root cause found in this pass**:
+  - General item note fields on `19c9de5` were already controlled from raw `values.orderItems`, and browser typing preserved spaces/newlines in `Topper or wording`, `Flavor notes`, `Design notes`, and `Item-specific inspiration notes`.
+  - The remaining live raw-state defect was the structured Color Palette details path: `ColorPaletteSelector` re-parsed its serialized string on every render through `getPaletteState(value)`.
+  - `getPaletteState` and `serializePaletteSelection` used `cleanPaletteDetails`, which did `.replace(/\s+/g, " ").trim()`. A trailing space or newline typed in `Specific colors or palette details` was immediately removed before the next character rendered.
+  - The write-back path was: textarea `event.target.value` -> `serializePaletteSelection(selectedValues, event.target.value)` -> `cleanPaletteDetails` trims/collapses -> `setFieldValue`/`updateOrderItem` stores the normalized string -> controlled `getPaletteState(value).customDetails` renders the trimmed value back into the textarea.
+- **Repair implemented**:
+  - Removed palette-detail whitespace cleanup from the live editing path in `src/components/inquiry/wizard-state.ts`.
+  - `serializePaletteSelection` now preserves `customDetails` exactly while typing, including trailing spaces and newlines.
+  - `getPaletteState` now preserves details from the new `" - "` delimiter exactly; only legacy em-dash palette details are trimmed for old saved strings.
+  - `normalizeInquiryFormValues` now treats overall and item `colorPalette` as multiline-compatible text on copied submission/review values, preserving meaningful internal line breaks without mutating raw draft state.
+  - Added regression tests for palette in-progress whitespace, serialized draft whitespace, source contracts that active fields do not use normalized item state, and the single `inquiry_submitted` code path.
+- **Step 5 offset root cause and fix**:
+  - Reproduced local Step 5 offset with long malformed item text. The document/body `scrollWidth` stayed within viewport, but the outer wizard card had `scrollLeft: 126.5`, `clientWidth: 348`, `scrollWidth: 702`.
+  - Exact source: the step-change effect called `stepMarkerRefs.current[currentStep]?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" })`. Because the step markers lived inside the same `overflow-hidden` wizard card, the browser horizontally scrolled the card itself and clipped/offset the entire Step 5 panel.
+  - Removed `stepMarkerRefs` and the `scrollIntoView(... inline: "center")` call.
+  - Added `wizardCardRef` and reset `wizardCardRef.current.scrollLeft = 0` on step changes.
+  - Fixed Step 5 review cards at the source with `min-w-0`, wrapping headers, `whitespace-pre-wrap`, `break-words`, and `[overflow-wrap:anywhere]` on customer/item review text.
+- **Admin inquiry detail overflow root causes and fix**:
+  - Admin detail route is `src/app/admin/(protected)/inquiries/[id]/page.tsx`.
+  - Root causes were unsafe flex/grid min-content sizing and unwrapped user/customer strings in `SectionCard`, `DetailRow`, requested-item cards, review signal text, asset cards, estimate insight, convert-to-order controls, archive/delete copy, and action rows.
+  - Added shared `userTextClass` / `compactTextClass` using `min-w-0`, `whitespace-pre-wrap`, `break-words`, and `[overflow-wrap:anywhere]`.
+  - Added `min-w-0`, `max-w-full`, `flex-wrap`, and `grid-cols-[minmax(...)]` constraints throughout the admin detail page.
+  - Added `min-w-0 max-w-full` to shared `Select` so native select controls cannot expand their parent.
+  - Did not truncate customer text; long malformed strings remain fully readable and wrap.
+- **Character-by-character browser QA**:
+  - Local dev server: `http://localhost:3010`.
+  - Browser typing used real locator `.type(...)` key events in small segments, with immediate DOM-value assertions after each typed space and immediately after Enter.
+  - Tested all six active product types: Custom Cakes, Wedding Cakes, Cupcakes, Sugar Cookies, Macarons, DIY Kits.
+  - Tested fields for each product: `Topper or wording`, `Flavor notes`, `Design notes`, `Item-specific inspiration notes`.
+  - Strings tested: `White cake Bavarian Creme Filling.\nSecond line of notes.` and `Chocolate cupcakes with ivory frosting.\nI don't know how you do this. You're amazing.`
+  - Item-level palette details tested: `Dusty blue and ivory.\nSoft gold ` with trailing space preserved.
+  - Overall palette details tested: `Overall palette details.\nLine two ` with trailing space preserved.
+  - Final/additional notes tested: `Extra notes with spaces.\nSecond line.`
+  - Internal Back/Continue and same-tab reload restored exact raw text including newline and trailing palette detail space.
+  - Browser automation could not verify ArrowLeft cursor movement because both locator-level and lower-level browser keypress paths kept inserting at the end; middle insertion was not claimed as passed.
+- **Local mobile overflow measurements**:
+  - Inquiry widths tested: 320x700, 360x800, 375x812, 390x844, 393x852, 430x932, 768x1024, 1280x900.
+  - Steps 1, 2, 3, 4, and 5 all measured `document.documentElement.scrollWidth === clientWidth`, `document.body.scrollWidth === clientWidth`, and `window.scrollX === 0` at those widths.
+  - Step 5 measured `320/320`, `360/360`, `375/375`, `390/390`, `393/393`, `430/430`, `768/768`, `1280/1280` for both document and body widths; `scrollX` was `0` throughout.
+  - Admin detail QA inquiry `SF-A14D1FA5` (`a14d1fa5-016c-4196-9756-113040c06e57`) was created locally through `/api/inquiries` with malformed legacy strings and long URL/email content.
+  - Authenticated local admin detail showed the malformed strings and measured no document/body overflow at 320, 360, 375, 390, 393, 430, 768, or 1280 widths. At 390px, sampled scroll positions around triage, event/customer details, requested items, estimate insight, convert-to-order, and archive/delete all stayed `390/390` with `scrollX: 0`.
+  - The only internal 320px admin scroller was native select option text inside the convert-to-order form; the select stayed inside the viewport and did not expand document/body width.
+- **Verification commands passed**:
+  - `node --no-warnings --experimental-strip-types --test src/components/inquiry/wizard-state.test.ts`: 16/16 passed.
+  - `npm run lint`: passed.
+  - `npm run typecheck`: passed.
+  - `npm test`: passed, 90/90; expected Netlify Forms bridge fail-soft warnings printed.
+  - `npm run build`: passed.
+  - `git diff --check`: passed.
+- **Compatibility confirmations**:
+  - No Supabase schemas, migrations, generated types, storage buckets, or database payload schema were changed.
+  - No customer-facing upload input was reintroduced; the existing API rejection of `inspirationFiles` remains unchanged.
+  - Inquiry API path, Netlify bridge behavior, admin inquiry compatibility, and GA4 `inquiry_submitted` source path were preserved.
+  - Structured Color Palette still serializes into the existing `colorPalette` string field; `No preference` remains exclusive.
+  - Unrelated `.gitignore`, `README.md`, gallery/media scratch work, and `scratch/qa/orders-prod-qa.mjs` were preserved.
+- **Files changed for this repair**:
+  - `src/components/inquiry/start-order-wizard.tsx`
+  - `src/components/inquiry/wizard-state.ts`
+  - `src/components/inquiry/wizard-state.test.ts`
+  - `src/components/inquiry/wizard-ui.tsx`
+  - `src/components/ui/select.tsx`
+  - `src/lib/validations/inquiry.ts`
+  - `src/app/admin/(protected)/inquiries/[id]/page.tsx`
+  - `HANDOFF.md` (this entry; final production deploy details to be appended after deploy)
+- **Deployment status**:
+  - Commit, merge to `main`, Netlify production deploy, production inquiry QA, production admin QA, and GA4 verification are pending at the time of this entry.
+
 ## Customer Inquiry Wizard Usability Repair — 2026-07-02 MDT / 2026-07-03 UTC
 
 - **Branch and starting state**:

@@ -51,6 +51,19 @@ describe("palette serialization", () => {
     );
   });
 
+  it("preserves in-progress palette details exactly while typing", () => {
+    const serialized = serializePaletteSelection(
+      ["pastels"],
+      "dusty blue \nsecond line ",
+    );
+
+    assert.equal(serialized, "Pastels - dusty blue \nsecond line ");
+    assert.deepEqual(getPaletteState(serialized), {
+      selectedValues: ["pastels"],
+      customDetails: "dusty blue \nsecond line ",
+    });
+  });
+
   it("makes no preference exclusive", () => {
     assert.equal(
       serializePaletteSelection(["pastels", "no-preference", "blue"], "ignored"),
@@ -123,6 +136,38 @@ describe("wizard draft state", () => {
     assert.equal(parsed?.values.colorPalette, "Neutrals - ivory and champagne");
   });
 
+  it("preserves raw in-progress item and palette whitespace in the serialized draft", () => {
+    const draft = createWizardDraft({
+      activeItemType: "custom-cake",
+      currentStep: 2,
+      values: {
+        ...baseValues,
+        colorPalette: "Pastels - dusty blue \nsecond line ",
+        orderItems: [
+          {
+            ...baseValues.orderItems[0],
+            flavorNotes: "White cake Bavarian Creme Filling. \nSecond line of notes. ",
+            designNotes: "Chocolate cupcakes with ivory frosting. \nI don't know how you do this. ",
+            colorPalette: "Blue - soft blue \nline two ",
+          },
+        ],
+      },
+    });
+
+    const serialized = JSON.stringify(draft);
+    const parsed = parseWizardDraft(serialized);
+
+    assert.ok(
+      serialized.includes("White cake Bavarian Creme Filling. \\nSecond line of notes. "),
+    );
+    assert.equal(
+      parsed?.values.orderItems[0].flavorNotes,
+      "White cake Bavarian Creme Filling. \nSecond line of notes. ",
+    );
+    assert.equal(parsed?.values.orderItems[0].colorPalette, "Blue - soft blue \nline two ");
+    assert.equal(parsed?.values.colorPalette, "Pastels - dusty blue \nsecond line ");
+  });
+
   it("drops an active item that is no longer selected", () => {
     const draft = createWizardDraft({
       activeItemType: "macarons",
@@ -158,5 +203,56 @@ describe("start-order wizard source contracts", () => {
     const matches = source.match(/trackAnalyticsEvent\("inquiry_submitted"/g) ?? [];
 
     assert.equal(matches.length, 1);
+  });
+
+  it("does not horizontally scroll the wizard card to center step markers", async () => {
+    const source = await readFile(
+      new URL("./start-order-wizard.tsx", import.meta.url),
+      "utf8",
+    );
+
+    assert.doesNotMatch(source, /stepMarkerRefs/);
+    assert.doesNotMatch(source, /scrollIntoView\(\{[\s\S]*inline:\s*["']center["']/);
+    assert.match(source, /wizardCardRef\.current\.scrollLeft = 0/);
+  });
+
+  it("keeps palette normalization multiline for final payload compatibility", async () => {
+    const source = await readFile(
+      new URL("../../lib/validations/inquiry.ts", import.meta.url),
+      "utf8",
+    );
+
+    assert.match(
+      source,
+      /source\.colorPalette[\s\S]+sanitizeOptionalTextValue\(source\.colorPalette, \{ multiline: true \}\)/,
+    );
+    assert.match(
+      source,
+      /item\.colorPalette[\s\S]+sanitizeOptionalTextValue\(item\.colorPalette, \{ multiline: true \}\)/,
+    );
+  });
+
+  it("derives normalized values without writing them back into live draft state", async () => {
+    const source = await readFile(
+      new URL("./start-order-wizard.tsx", import.meta.url),
+      "utf8",
+    );
+
+    assert.match(source, /const normalizedValues = normalizeInquiryFormValues\(values\)/);
+    assert.doesNotMatch(source, /setValues\(normalizedValues\)/);
+    assert.doesNotMatch(source, /setValues\(normalizeInquiryFormValues/);
+    assert.doesNotMatch(source, /const selectedItems = normalizedValues\.orderItems/);
+  });
+
+  it("keeps admin inquiry detail wrappers constrained for long customer text", async () => {
+    const source = await readFile(
+      new URL("../../app/admin/(protected)/inquiries/[id]/page.tsx", import.meta.url),
+      "utf8",
+    );
+
+    assert.match(source, /const userTextClass = "min-w-0 whitespace-pre-wrap break-words \[overflow-wrap:anywhere\]"/);
+    assert.match(source, /function DetailRow[\s\S]+sm:flex-row[\s\S]+userTextClass/);
+    assert.match(source, /detail\.items\.map[\s\S]+className="min-w-0 max-w-full rounded-\[1\.6rem\]/);
+    assert.match(source, /xl:grid-cols-\[minmax\(0,1\.18fr\)_minmax\(0,0\.82fr\)\]/);
   });
 });

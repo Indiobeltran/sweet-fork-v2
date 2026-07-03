@@ -77,8 +77,8 @@ const budgetFlexibilitySet = new Set<string>(["firm", "moderate", "open"]);
 const fulfillmentMethodSet = new Set<string>(["pickup", "delivery"]);
 const preferredContactSet = new Set<string>(["email", "text", "phone"]);
 
-function cleanPaletteDetails(value: string | undefined) {
-  return (value ?? "").replace(/\s+/g, " ").trim();
+function hasVisibleText(value: string | undefined) {
+  return /\S/.test(value ?? "");
 }
 
 function isColorPaletteValue(value: string): value is ColorPaletteValue {
@@ -263,7 +263,7 @@ export function serializePaletteSelection(
   customDetails?: string,
 ) {
   const normalizedSelection = normalizePaletteSelection(selectedValues);
-  const details = cleanPaletteDetails(customDetails);
+  const details = customDetails ?? "";
 
   if (normalizedSelection.includes("no-preference")) {
     return "No preference";
@@ -278,13 +278,15 @@ export function serializePaletteSelection(
   }
 
   const labelText = labels.join(", ");
-  return details ? `${labelText}${paletteDetailsDelimiter}${details}` : labelText;
+  return details.length > 0
+    ? `${labelText}${paletteDetailsDelimiter}${details}`
+    : labelText;
 }
 
 export function getPaletteState(value: string | null | undefined): PaletteState {
-  const text = cleanPaletteDetails(value ?? undefined);
+  const text = value ?? "";
 
-  if (!text) {
+  if (!hasVisibleText(text)) {
     return {
       selectedValues: [],
       customDetails: "",
@@ -299,12 +301,15 @@ export function getPaletteState(value: string | null | undefined): PaletteState 
   const [labelText, ...detailParts] = delimiter ? text.split(delimiter) : [text];
   const knownValues = getKnownPaletteValues(labelText);
   const normalizedSelection = normalizePaletteSelection(knownValues);
-  const details = detailParts.join(delimiter).trim();
+  const details =
+    delimiter === legacyPaletteDetailsDelimiter
+      ? detailParts.join(delimiter).trim()
+      : detailParts.join(delimiter);
 
   if (normalizedSelection.length > 0) {
     return {
       selectedValues: normalizedSelection,
-      customDetails: details,
+      customDetails: detailParts.length > 0 ? details : "",
     };
   }
 

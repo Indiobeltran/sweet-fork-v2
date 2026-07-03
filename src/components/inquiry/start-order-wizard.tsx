@@ -272,8 +272,8 @@ export function StartOrderWizard({
   );
   const successTopRef = useRef<HTMLElement | null>(null);
   const wizardTopRef = useRef<HTMLElement | null>(null);
+  const wizardCardRef = useRef<HTMLDivElement | null>(null);
   const stepViewportRef = useRef<HTMLDivElement | null>(null);
-  const stepMarkerRefs = useRef<Array<HTMLDivElement | null>>([]);
   const stepHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const hasMountedRef = useRef(false);
   const fieldRefs = useRef<Record<string, HTMLElement | null>>({});
@@ -355,11 +355,9 @@ export function StartOrderWizard({
       return;
     }
 
-    stepMarkerRefs.current[currentStep]?.scrollIntoView({
-      block: "nearest",
-      inline: "center",
-      behavior: "smooth",
-    });
+    if (wizardCardRef.current) {
+      wizardCardRef.current.scrollLeft = 0;
+    }
 
     const timeoutId = window.setTimeout(() => {
       const target = wizardTopRef.current ?? stepViewportRef.current;
@@ -1083,7 +1081,10 @@ export function StartOrderWizard({
   return (
     <section ref={wizardTopRef} className="section-shell pb-20">
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
-        <div className="grain-surface overflow-hidden rounded-[2.4rem] border border-charcoal/10 bg-white shadow-soft">
+        <div
+          ref={wizardCardRef}
+          className="grain-surface overflow-hidden rounded-[2.4rem] border border-charcoal/10 bg-white shadow-soft"
+        >
           <div
             className={cn(
               "border-b border-charcoal/8 px-5 py-5 transition-[padding,background-color] duration-300 sm:px-8",
@@ -1178,9 +1179,6 @@ export function StartOrderWizard({
                     complete={index < currentStep}
                     description={inquiryStepDescriptions[index]}
                     index={index}
-                    markerRef={(element) => {
-                      stepMarkerRefs.current[index] = element;
-                    }}
                     onSelect={() => goToStep(index)}
                     title={title}
                   />
@@ -2344,14 +2342,14 @@ export function StartOrderWizard({
                   />
                 </div>
 
-                <div className="rounded-[2rem] border border-charcoal/10 bg-charcoal px-5 py-5 text-ivory sm:px-6 sm:py-6">
-                  <div className="flex items-center gap-3">
+                <div className="min-w-0 rounded-[2rem] border border-charcoal/10 bg-charcoal px-5 py-5 text-ivory sm:px-6 sm:py-6">
+                  <div className="flex min-w-0 items-center gap-3">
                     <CheckCircle2 className="h-5 w-5 text-gold" />
                     <p className="text-sm font-medium">Final review before submit</p>
                   </div>
-                  <div className="mt-6 grid gap-4">
-                    <div className="rounded-[1.6rem] border border-white/12 bg-white/6 p-5">
-                      <div className="flex items-center justify-between gap-4">
+                  <div className="mt-6 grid min-w-0 gap-4">
+                    <div className="min-w-0 rounded-[1.6rem] border border-white/12 bg-white/6 p-5">
+                      <div className="flex min-w-0 flex-wrap items-center justify-between gap-4">
                         <p className="text-sm font-medium text-ivory">Event details</p>
                         <button
                           type="button"
@@ -2361,14 +2359,14 @@ export function StartOrderWizard({
                           Edit
                         </button>
                       </div>
-                      <div className="mt-4 space-y-3 text-sm leading-7 text-ivory/72">
-                        <p>{normalizedValues.eventType}</p>
-                        <p>{normalizedValues.eventDate ? formatDate(normalizedValues.eventDate) : "Date pending"}</p>
-                        <p className="capitalize">
+                      <div className="mt-4 min-w-0 space-y-3 text-sm leading-7 text-ivory/72">
+                        <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{normalizedValues.eventType}</p>
+                        <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{normalizedValues.eventDate ? formatDate(normalizedValues.eventDate) : "Date pending"}</p>
+                        <p className="whitespace-pre-wrap break-words capitalize [overflow-wrap:anywhere]">
                           {normalizedValues.fulfillmentMethod}
                           {normalizedValues.deliveryZip ? ` • ZIP ${normalizedValues.deliveryZip}` : ""}
                         </p>
-                        <p>
+                        <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
                           {getBudgetRangeLabel(normalizedValues.budgetRange)}
                           {" • "}
                           {getBudgetFlexibilityLabel(normalizedValues.budgetFlexibility)}
@@ -2376,8 +2374,8 @@ export function StartOrderWizard({
                       </div>
                     </div>
 
-                    <div className="rounded-[1.6rem] border border-white/12 bg-white/6 p-5">
-                      <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0 rounded-[1.6rem] border border-white/12 bg-white/6 p-5">
+                      <div className="flex min-w-0 flex-wrap items-center justify-between gap-4">
                         <p className="text-sm font-medium text-ivory">Product selections</p>
                         <button
                           type="button"
@@ -2387,26 +2385,26 @@ export function StartOrderWizard({
                           Edit
                         </button>
                       </div>
-                      <div className="mt-4 space-y-3">
+                      <div className="mt-4 min-w-0 space-y-3">
                         {selectedItems.map((item) => (
                           <div
                             key={item.productType}
-                            className="rounded-[1.35rem] border border-white/10 bg-white/6 px-4 py-4 text-sm text-ivory/72"
+                            className="min-w-0 rounded-[1.35rem] border border-white/10 bg-white/6 px-4 py-4 text-sm text-ivory/72"
                           >
-                            <p className="font-medium text-ivory">
+                            <p className="whitespace-pre-wrap break-words font-medium text-ivory [overflow-wrap:anywhere]">
                               {catalogMap[item.productType]?.name ?? getProductDisplayLabel(item.productType)}
                             </p>
-                            <p className="mt-1">{formatSelectedItemSummary(item)}</p>
+                            <p className="mt-1 whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{formatSelectedItemSummary(item)}</p>
                             {item.designNotes ? (
-                              <p className="mt-2 text-ivory/56">Design: {item.designNotes}</p>
+                              <p className="mt-2 whitespace-pre-wrap break-words text-ivory/56 [overflow-wrap:anywhere]">Design: {item.designNotes}</p>
                             ) : null}
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    <div className="rounded-[1.6rem] border border-white/12 bg-white/6 p-5">
-                      <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0 rounded-[1.6rem] border border-white/12 bg-white/6 p-5">
+                      <div className="flex min-w-0 flex-wrap items-center justify-between gap-4">
                         <p className="text-sm font-medium text-ivory">Design inputs</p>
                         <button
                           type="button"
@@ -2416,18 +2414,18 @@ export function StartOrderWizard({
                           Edit
                         </button>
                       </div>
-                      <div className="mt-4 space-y-3 text-sm leading-7 text-ivory/72">
-                        <p>Overall palette: {normalizedValues.colorPalette ?? "Not shared yet"}</p>
-                        <p>
+                      <div className="mt-4 min-w-0 space-y-3 text-sm leading-7 text-ivory/72">
+                        <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">Overall palette: {normalizedValues.colorPalette ?? "Not shared yet"}</p>
+                        <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
                           Inspiration links: {normalizedValues.inspirationLinks.length} link
                           {normalizedValues.inspirationLinks.length === 1 ? "" : "s"}
                         </p>
-                        <p>{normalizedValues.inspirationText ?? "No additional written inspiration notes yet."}</p>
+                        <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{normalizedValues.inspirationText ?? "No additional written inspiration notes yet."}</p>
                       </div>
                     </div>
 
-                    <div className="rounded-[1.6rem] border border-white/12 bg-white/6 p-5">
-                      <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0 rounded-[1.6rem] border border-white/12 bg-white/6 p-5">
+                      <div className="flex min-w-0 flex-wrap items-center justify-between gap-4">
                         <p className="text-sm font-medium text-ivory">Contact info</p>
                         <button
                           type="button"
@@ -2437,11 +2435,11 @@ export function StartOrderWizard({
                           Edit
                         </button>
                       </div>
-                      <div className="mt-4 space-y-3 text-sm leading-7 text-ivory/72">
-                        <p>{normalizedValues.customerName}</p>
-                        <p>{normalizedValues.customerEmail}</p>
-                        <p>{normalizedValues.customerPhone}</p>
-                        <p>
+                      <div className="mt-4 min-w-0 space-y-3 text-sm leading-7 text-ivory/72">
+                        <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{normalizedValues.customerName}</p>
+                        <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{normalizedValues.customerEmail}</p>
+                        <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{normalizedValues.customerPhone}</p>
+                        <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
                           Preferred contact:{" "}
                           {normalizedValues.preferredContact === "email"
                             ? "Email"
@@ -2449,7 +2447,7 @@ export function StartOrderWizard({
                               ? "Text"
                               : "Phone"}
                         </p>
-                        {normalizedValues.instagramHandle ? <p>{normalizedValues.instagramHandle}</p> : null}
+                        {normalizedValues.instagramHandle ? <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{normalizedValues.instagramHandle}</p> : null}
                       </div>
                     </div>
                   </div>
