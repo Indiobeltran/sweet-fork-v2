@@ -1,12 +1,13 @@
 ## Phase 7 Prep Shadows & Lead-Time Rules — 2026-07-03
 
-- **Current branch**: `codex/prep-shadows`.
-- **Current objective**: Orders don't just occupy their due date — they consume prep days before it. This phase makes the calendar reflect that, and flags inquiries that arrive inside a product's minimum lead time.
+- **Current branch**: `main`.
+- **Current objective**: Orders don't just occupy their due date — they consume prep days before it. This phase makes the calendar reflect that, and flags inquiries that arrive inside a product's minimum lead time. [Phase 7 is Closed and Merged].
 - **Production backup and verification close-out — 2026-07-03**:
   - **Secret-handling correction**: Initially, `pg_dump` was executed with direct connection credentials. The password was successfully rotated by the owner. Going forward, the connection string is loaded via `"$DB_URL"` from `.env.local` to maintain secret hygiene.
   - Sourced `DB_URL` from `.env.local` pointing to pooler host `aws-1-us-west-2.pooler.supabase.com:5432` and ran `pg_dump "$DB_URL" -f scratch/pre-phase7-backup.sql`.
   - Verified `scratch/pre-phase7-backup.sql` is non-empty (~240KB) and contains standard `CREATE TABLE` definitions for all application tables (such as `products`, `orders`, `inquiries`, `blackout_dates`, etc.).
   - Applied `supabase/migrations/20260703180414_prep_shadows.sql` to linked production project `renjsmdsrzjnppqpaoaa` using `supabase db push --linked`.
+  - Merged `codex/prep-shadows` branch into `main` and pushed to `origin`. Verified production build and deployment succeeded on Netlify.
 - **Schema added**:
   - `supabase/migrations/20260703180414_prep_shadows.sql`
     - Adds `prep_days` (`integer not null default 0`)
@@ -50,7 +51,7 @@
   - `npm run typecheck`: passed.
   - `npm test`: passed, 100/100 tests.
   - `npm run build`: passed.
-- **How to remove Phase 7 test data**:
+- **How to remove Phase 7 test data (PENDING OWNER REVIEW - Left in Database)**:
   - **DO NOT RUN DESTRUCTIVE STATEMENTS UNLESS DIRECTED.** The following records exist in production and should be removed after manual verification:
     - Table `blackout_dates`:
       - `DELETE FROM blackout_dates WHERE id = '00000000-0000-0000-0000-000000000004';`
@@ -67,7 +68,7 @@
     - Table `products` restoration:
       - `UPDATE products SET prep_days = 0, min_lead_time_days = 3 WHERE product_type = 'custom-cake';`
 - **Next exact task**:
-  - Final human visual calendar confirmation, then clean up test rows using the statements above.
+  - Wait for owner review on live site to confirm capacity features. Once approved, clean up the pending test data using the SQL statements above.
 
 ## Phase 6 Capacity Foundation — 2026-07-03
 
