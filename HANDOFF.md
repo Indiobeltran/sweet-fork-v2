@@ -1,6 +1,6 @@
 ## Phase 8.5 Capacity Settings Panel & Legend Explainer — 2026-07-03
 
-- **Current branch**: `codex/capacity-settings`.
+- **Current branch**: `main` (Merged and pushed).
 - **Initial working-tree state**: Clean branch `codex/capacity-settings` cut from `main`.
 - **Files changed**:
   - `src/lib/admin/capacity.ts` (validator, workload estimator)
