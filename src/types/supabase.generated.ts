@@ -890,6 +890,7 @@ export type Database = {
       }
       order_items: {
         Row: {
+          capacity_points_override: number | null
           color_palette: string | null
           cookie_count: number | null
           created_at: string
@@ -920,6 +921,7 @@ export type Database = {
           wedding_servings: number | null
         }
         Insert: {
+          capacity_points_override?: number | null
           color_palette?: string | null
           cookie_count?: number | null
           created_at?: string
@@ -950,6 +952,7 @@ export type Database = {
           wedding_servings?: number | null
         }
         Update: {
+          capacity_points_override?: number | null
           color_palette?: string | null
           cookie_count?: number | null
           created_at?: string
@@ -1372,6 +1375,7 @@ export type Database = {
       }
       products: {
         Row: {
+          capacity_points: number
           created_at: string
           display_order: number
           id: string
@@ -1385,6 +1389,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          capacity_points?: number
           created_at?: string
           display_order?: number
           id?: string
@@ -1398,6 +1403,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          capacity_points?: number
           created_at?: string
           display_order?: number
           id?: string

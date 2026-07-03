@@ -1,3 +1,98 @@
+## Phase 6 Capacity Foundation — 2026-07-03
+
+- **Current branch**: `codex/capacity-foundation`.
+- **Current objective**: Add workload-based capacity scoring to the admin operational calendar for confirmed-order day/week load.
+- **Pre-existing working tree preserved**:
+  - Before this task, `.gitignore`, `HANDOFF.md`, and `README.md` were already modified.
+  - Pre-existing untracked paths were preserved: `.agents/`, `.claude/`, `.superpowers/`, `scratch/gbp-audit/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `scratch/verification.mjs`, and `skills-lock.json`.
+- **Schema added**:
+  - `supabase/migrations/20260703163114_capacity_foundation.sql`
+    - Adds `products.capacity_points integer not null default 2` with a positive check.
+    - Adds `order_items.capacity_points_override integer null` with a positive-or-null check for one-off/manual item load adjustment.
+    - Seeds/upserts `site_settings.setting_key = 'capacity.settings'` with `weekly_capacity_ceiling: 12` and `week_start_day: 0`.
+    - Follow-up review confirmed the migration is additive and idempotent: `add column if not exists`, constraint-existence checks via `pg_constraint`, safe product backfill to `2`, and `on conflict (setting_key)` for settings. Existing settings values win over defaults because `excluded.value_json || public.site_settings.value_json` preserves existing keys.
+  - `src/types/supabase.generated.ts` was updated for the new `products` and `order_items` columns.
+- **Capacity model documented for next agent**:
+  - Unit is points, not hours.
+  - Default product/order-type capacity is `2` points.
+  - Weekly capacity ceiling default is `12`, stored in `site_settings` under `capacity.settings.value_json.weekly_capacity_ceiling`.
+  - Week start is `0` (Sunday) in `capacity.settings.value_json.week_start_day`.
+  - Day states use the configured weekly ceiling:
+    - `none`: 0 day points.
+    - `light`: > 0 and <= 25% of ceiling.
+    - `moderate`: > 25% and <= 50%.
+    - `full`: > 50% and <= 100%, or the containing week has reached the ceiling.
+    - `overbooked`: day load or week load exceeds the ceiling.
+  - Only orders with `status === 'confirmed'` add capacity points in this phase. Inquiries remain pressure only via `inquiryCount`.
+- **Utility and tests added**:
+  - `src/lib/admin/capacity.ts`
+    - Pure load computation for date ranges, daily state, weekly totals, active inquiry pressure, product point defaults, and item overrides.
+    - Deliberate Phase 7 seam: `getOrderLoadDateKeys(order)` is the single function that maps an order to loaded date keys. It currently returns only the order due/event date; prep shadows should extend this function later.
+  - `src/lib/admin/capacity.test.ts`
+    - Covers confirmed-only load, cancelled/declined exclusion, override scoring, a light day in an over-ceiling week, and week totals across a month boundary.
+  - `package.json` now includes the capacity test in `npm test`.
+- **Calendar data/UI added**:
+  - `src/lib/admin/calendar.ts`
+    - Fetches products, order items, capacity settings, orders, inquiries, calendar entries, and blackouts.
+    - Returns `capacity` per day, `weeks`, and `weeklyCapacityCeiling`.
+    - Includes a rollout fallback for unmigrated databases: if `order_items.capacity_points_override` is missing, calendar reads fall back to default product points instead of rendering a runtime error.
+    - Follow-up review narrowed that fallback so it only catches Postgres `42703` errors whose message names `capacity_points_override`; unrelated query failures still throw and are not silently masked.
+  - `src/app/admin/(protected)/calendar/page.tsx`
+    - Adds week capacity bars (`X / ceiling pts`) above each calendar week row.
+    - Adds day heat states for none/light/moderate/full/overbooked while preserving blackout precedence.
+    - Adds hover/focus lightweight day detail with points, confirmed order count, and active inquiry count.
+    - Extends legend chips with capacity states.
+    - Adds a small weekly capacity ceiling editor on the calendar page.
+    - Applies similar load treatment to the existing Week focus view.
+  - `src/app/admin/(protected)/calendar/actions.ts`
+    - Adds `updateWeeklyCapacityCeiling` server action, storing the ceiling in `site_settings`.
+- **Product admin added**:
+  - `src/app/admin/(protected)/products/page.tsx`
+    - Adds a `Capacity points` input for each product.
+    - Displays fallback `2` if the connected database has not yet been migrated.
+  - `src/app/admin/(protected)/products/actions.ts`
+    - Saves `capacity_points` through the existing product update action.
+- **Spec deviations / notes**:
+  - The repo already has `products` as the order-type table, so `capacity_points` was added there.
+  - One-off/custom load adjustment was added to `order_items.capacity_points_override`, not the parent `orders` table, because confirmed orders can contain multiple product lines.
+  - The settings mechanism reuses existing `site_settings` instead of creating a new singleton table.
+  - Per-order-item override editing is not surfaced in this phase because no existing order-item editor exists; product-level points are editable now.
+  - The connected browser QA database had not applied the migration, so persisted capacity-column reads could not be fully verified in admin. Calendar rendering was smoke-tested through the fallback path; product fields displayed default `2`.
+- **Verification commands run**:
+  - `node --no-warnings --experimental-strip-types --test src/lib/admin/capacity.test.ts`: first failed for missing `capacity.ts`, then passed after implementation.
+  - `npm run lint`: passed.
+  - `npm run typecheck`: passed.
+  - `npm test`: passed, 94/94 tests; expected Netlify Forms bridge fail-soft warnings printed.
+  - `npm run build`: passed.
+  - `git diff --check`: passed.
+  - `npx --no-install supabase --help`, `npx --no-install supabase migration --help`, `npx --no-install supabase db --help`, `npx --no-install supabase db lint --help`: run to inspect current CLI commands.
+  - `npx --no-install supabase migration new capacity_foundation`: created the migration file.
+  - `npx --no-install supabase migration list --local`: failed because local Postgres was not running.
+  - `docker info --format '{{.ServerVersion}}'`: failed because `docker` is not installed on PATH.
+  - `npx --no-install supabase status`: failed because the Docker daemon is unavailable.
+- **Rendered QA run**:
+  - Dev server: `http://localhost:3011` via `npm run dev -- --port 3011`.
+  - Browser plugin was used for admin smoke checks.
+  - `/admin/calendar` initially showed a runtime overlay because the connected database lacked the new capacity columns. After adding the read fallback, reload rendered without overlay.
+  - Calendar desktop check: capacity legend, weekly ceiling editor, week load bars, and day tooltip/focus detail rendered; capacity input accepted `12` without submitting.
+  - `/admin/products` desktop check: rendered without overlay; six `Capacity points` fields displayed fallback `2` values.
+  - Calendar mobile check at 390x844: capacity legend/settings and week load appeared; document/body width stayed `390/390`, `scrollX: 0`.
+  - Console log caveat: browser logs still contained the earlier pre-fallback Next runtime error and Fast Refresh warning; no overlay remained after reload.
+- **Migration verification gap**:
+  - The migration was not applied locally because Docker/local Supabase Postgres is unavailable in this environment.
+  - Follow-up apply attempt was blocked before mutation: the checkout is linked to `renjsmdsrzjnppqpaoaa`, which prior handoff identifies as the live `Sweet-Fork-V2` project; `.env.local` exposes only the live Supabase URL/key variable names and no dev/staging target; shell environment has no `SUPABASE_ACCESS_TOKEN`; `npx --no-install supabase projects list -o json` failed with `Access token not provided`.
+  - The migration was not pushed/applied to the linked remote Supabase project because the available target appears to be production and no dashboard backup/snapshot was confirmed from this shell.
+  - Next step before production deploy: apply `supabase/migrations/20260703163114_capacity_foundation.sql` to the intended dev/staging database, regenerate types from that database if required by workflow, and re-smoke `/admin/calendar` and `/admin/products` without fallback-column warnings.
+- **Known issues**:
+  - Week/load correctness is unit-tested in pure utility code; seeded database fixture coverage was not added because there is no runnable local database.
+  - No full day drawer or prep-shadow logic was implemented; those remain later phases.
+  - No public wizard availability feedback was implemented.
+- **Open decisions**:
+  - Whether to add a dedicated order-item editor for `capacity_points_override` in a later admin order-detail phase.
+  - Whether future phases should count `in-production` orders as capacity load; Phase 6 intentionally follows the prompt literally and counts only `confirmed`.
+- **Next exact task**:
+  - Apply the migration to the intended database environment, then verify real persisted product capacity values, weekly ceiling persistence, and seeded load examples across an actual month.
+
 ## Forensic Inquiry Whitespace and Admin Mobile Overflow Repair — 2026-07-02 MDT / 2026-07-03 UTC
 
 - **Initial branch and production SITREP**:

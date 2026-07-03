@@ -29,15 +29,17 @@ export async function updateProduct(formData: FormData) {
   const shortDescription = parseOptionalString(formData.get("shortDescription"));
   const longDescription = parseOptionalString(formData.get("longDescription"));
   const displayOrder = parseInteger(formData.get("displayOrder"));
+  const capacityPoints = parseInteger(formData.get("capacityPoints"), 2);
   const requiresConsultation = parseBoolean(formData.get("requiresConsultation"));
   const isActive = parseBoolean(formData.get("isActive"));
 
-  if (!productId || name.length < 2) {
+  if (!productId || name.length < 2 || capacityPoints < 1) {
     redirectWithNotice(redirectTarget, "product-error");
   }
 
   const supabase = createAdminClient();
   const payload: TablesUpdate<"products"> = {
+    capacity_points: capacityPoints,
     display_order: displayOrder,
     is_active: isActive,
     long_description: longDescription,

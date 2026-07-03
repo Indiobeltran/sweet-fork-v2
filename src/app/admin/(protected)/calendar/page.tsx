@@ -5,6 +5,7 @@ import {
   createBlackoutDate,
   createCalendarEntry,
   toggleBlackoutDateState,
+  updateWeeklyCapacityCeiling,
 } from "@/app/admin/(protected)/calendar/actions";
 import { ActiveFilterPills } from "@/components/admin/active-filter-pills";
 import { AdminNoticeBanner } from "@/components/admin/admin-notice-banner";
@@ -24,7 +25,9 @@ import {
   type CalendarAgendaItem,
   type CalendarDay,
   type CalendarDayItem,
+  type CalendarPageData,
 } from "@/lib/admin/calendar";
+import type { CapacityLoadState, CapacityWeekLoad } from "@/lib/admin/capacity";
 import { cn, toTitleCase } from "@/lib/utils";
 
 export const metadata = {
@@ -125,6 +128,16 @@ function getActiveWeekDays(days: CalendarDay[]) {
   return days.slice(weekStart, weekStart + 7);
 }
 
+function chunkCalendarWeeks(days: CalendarDay[]) {
+  const weeks: CalendarDay[][] = [];
+
+  for (let index = 0; index < days.length; index += 7) {
+    weeks.push(days.slice(index, index + 7));
+  }
+
+  return weeks;
+}
+
 function getToneDotClasses(tone: CalendarDayItem["tone"]) {
   switch (tone) {
     case "emerald":
@@ -136,6 +149,107 @@ function getToneDotClasses(tone: CalendarDayItem["tone"]) {
     default:
       return "bg-charcoal/60";
   }
+}
+
+function getLoadStateLabel(state: CapacityLoadState) {
+  switch (state) {
+    case "light":
+      return "Light";
+    case "moderate":
+      return "Moderate";
+    case "full":
+      return "Full";
+    case "overbooked":
+      return "Overbooked";
+    default:
+      return "No load";
+  }
+}
+
+function getLoadBarClasses(state: CapacityLoadState) {
+  switch (state) {
+    case "light":
+      return "bg-emerald-400";
+    case "moderate":
+      return "bg-gold";
+    case "full":
+      return "bg-rose/55";
+    case "overbooked":
+      return "bg-rose";
+    default:
+      return "bg-charcoal/12";
+  }
+}
+
+function getLoadCellClasses(state: CapacityLoadState) {
+  switch (state) {
+    case "light":
+      return "border-emerald-200/80 bg-emerald-50/55";
+    case "moderate":
+      return "border-gold/28 bg-gold/10";
+    case "full":
+      return "border-rose/24 bg-rose/8";
+    case "overbooked":
+      return "border-rose/42 bg-rose/14";
+    default:
+      return "border-charcoal/10 bg-white/88";
+  }
+}
+
+function getWeekByStartKey(weeks: CapacityWeekLoad[]) {
+  return new Map(weeks.map((week) => [week.weekStartKey, week]));
+}
+
+function getCapacityPercent(points: number, ceiling: number) {
+  if (ceiling <= 0) {
+    return 0;
+  }
+
+  return Math.min(Math.round((points / ceiling) * 100), 100);
+}
+
+function getDayCapacityLabel(day: CalendarDay) {
+  return `${day.dateKey}: ${day.capacity.orderPoints} points, ${day.capacity.orderCount} confirmed order${day.capacity.orderCount === 1 ? "" : "s"}, ${day.capacity.inquiryCount} active inquir${day.capacity.inquiryCount === 1 ? "y" : "ies"}`;
+}
+
+function WeekCapacityBar({
+  ceiling,
+  week,
+}: Readonly<{
+  ceiling: number;
+  week: CapacityWeekLoad | null;
+}>) {
+  const points = week?.orderPoints ?? 0;
+  const state = week?.loadState ?? "none";
+  const percent = getCapacityPercent(points, ceiling);
+
+  return (
+    <div
+      className={cn(
+        "rounded-[1rem] border px-3 py-2",
+        state === "overbooked"
+          ? "border-rose/35 bg-rose/10"
+          : state === "full"
+            ? "border-gold/28 bg-gold/10"
+            : "border-charcoal/8 bg-white/76",
+      )}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-charcoal/52">
+          Week load
+        </span>
+        <span className="text-xs font-medium text-charcoal">
+          {points} / {ceiling} pts
+        </span>
+      </div>
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-charcoal/8">
+        <div
+          className={cn("h-full rounded-full", getLoadBarClasses(state))}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+    </div>
+  );
 }
 
 function getItemClasses(item: Pick<CalendarDayItem, "kind" | "tone">) {
@@ -202,7 +316,29 @@ function AgendaRow({ item }: Readonly<{ item: CalendarAgendaItem }>) {
   );
 }
 
-function CalendarGrid({ days }: Readonly<{ days: CalendarDay[] }>) {
+function DayCapacityTooltip({ day }: Readonly<{ day: CalendarDay }>) {
+  return (
+    <div className="pointer-events-none absolute left-2 right-2 top-10 z-20 hidden rounded-2xl border border-charcoal/10 bg-white/96 p-3 text-left text-xs leading-5 text-charcoal shadow-soft group-hover:block group-focus:block">
+      <div className="font-semibold">{getLoadStateLabel(day.capacity.loadState)}</div>
+      <div>{day.capacity.orderPoints} capacity points</div>
+      <div>{day.capacity.orderCount} confirmed orders</div>
+      <div>{day.capacity.inquiryCount} active inquiries</div>
+    </div>
+  );
+}
+
+function CalendarGrid({
+  days,
+  weeklyCapacityCeiling,
+  weeks,
+}: Readonly<{
+  days: CalendarDay[];
+  weeklyCapacityCeiling: number;
+  weeks: CapacityWeekLoad[];
+}>) {
+  const weekByStartKey = getWeekByStartKey(weeks);
+  const calendarWeeks = chunkCalendarWeeks(days);
+
   return (
     <>
       <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
@@ -216,84 +352,150 @@ function CalendarGrid({ days }: Readonly<{ days: CalendarDay[] }>) {
         ))}
       </div>
 
-      <div className="mt-2 grid grid-cols-7 gap-1.5 sm:gap-2 md:hidden">
-        {days.map((day) => (
-          <article
-            key={`mobile-${day.dateKey}`}
-            aria-label={`${day.dateKey}, ${day.items.length} item${day.items.length === 1 ? "" : "s"}`}
-            className={cn(
-              "flex aspect-[0.82] min-w-0 flex-col rounded-[0.95rem] border px-1.5 py-2 sm:px-2",
-              day.isCurrentMonth
-                ? "border-charcoal/10 bg-white/88"
-                : "border-charcoal/6 bg-paper/70 text-charcoal/45",
-              day.isToday ? "ring-2 ring-gold/30" : "",
-            )}
-          >
-            <div className="flex items-start justify-between gap-1">
-              <span className="text-sm font-semibold text-current">{day.dayOfMonth}</span>
-              {day.items.length > 0 ? (
-                <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-current/58">
-                  {day.items.length}
-                </span>
-              ) : null}
-            </div>
+      <div className="mt-2 space-y-2 md:hidden">
+        {calendarWeeks.map((weekDays) => {
+          const week = weekByStartKey.get(weekDays[0]?.capacity.weekStartKey ?? "") ?? null;
 
-            <div className="mt-auto flex flex-wrap gap-1">
-              {day.items.slice(0, 3).map((item, index) => (
-                <span
-                  key={`${day.dateKey}-${item.id}-${index}`}
-                  className={cn("h-2 w-2 rounded-full", getToneDotClasses(item.tone))}
-                />
-              ))}
-              {day.items.length > 3 ? (
-                <span className="text-[10px] text-charcoal/52">+{day.items.length - 3}</span>
-              ) : null}
+          return (
+            <div key={`mobile-week-${weekDays[0]?.dateKey ?? "empty"}`} className="space-y-1.5">
+              <WeekCapacityBar ceiling={weeklyCapacityCeiling} week={week} />
+
+              <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+                {weekDays.map((day) => {
+                  const hasBlackout = day.items.some((item) => item.kind === "blackout");
+
+                  return (
+                    <article
+                      key={`mobile-${day.dateKey}`}
+                      aria-label={getDayCapacityLabel(day)}
+                      className={cn(
+                        "group relative flex aspect-[0.82] min-w-0 flex-col rounded-[0.95rem] border px-1.5 py-2 outline-none transition focus-visible:ring-2 focus-visible:ring-gold/35 sm:px-2",
+                        day.isCurrentMonth
+                          ? hasBlackout
+                            ? "border-charcoal/18 bg-charcoal/[0.04]"
+                            : getLoadCellClasses(day.capacity.loadState)
+                          : "border-charcoal/6 bg-paper/70 text-charcoal/45",
+                        day.isToday ? "ring-2 ring-gold/30" : "",
+                      )}
+                      tabIndex={0}
+                      title={getDayCapacityLabel(day)}
+                    >
+                      <div className="flex items-start justify-between gap-1">
+                        <span className="text-sm font-semibold text-current">{day.dayOfMonth}</span>
+                        {day.capacity.orderPoints > 0 ? (
+                          <span className="text-[10px] font-semibold text-current/70">
+                            {day.capacity.orderPoints}
+                          </span>
+                        ) : day.items.length > 0 ? (
+                          <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-current/58">
+                            {day.items.length}
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <div className="mt-auto flex flex-wrap gap-1">
+                        {day.items.slice(0, 3).map((item, index) => (
+                          <span
+                            key={`${day.dateKey}-${item.id}-${index}`}
+                            className={cn("h-2 w-2 rounded-full", getToneDotClasses(item.tone))}
+                          />
+                        ))}
+                        {day.items.length > 3 ? (
+                          <span className="text-[10px] text-charcoal/52">+{day.items.length - 3}</span>
+                        ) : null}
+                      </div>
+
+                      {!hasBlackout && day.capacity.loadState !== "none" ? (
+                        <div className={cn("mt-1 h-1 rounded-full", getLoadBarClasses(day.capacity.loadState))} />
+                      ) : null}
+
+                      <DayCapacityTooltip day={day} />
+                    </article>
+                  );
+                })}
+              </div>
             </div>
-          </article>
-        ))}
+          );
+        })}
       </div>
 
       <div className="mt-3 hidden overflow-x-auto md:block">
         <div className="min-w-[70rem]">
-          <div className="grid grid-cols-7 gap-3">
-            {days.map((day) => (
-              <article
-                key={day.dateKey}
-                className={cn(
-                  "min-h-[11rem] rounded-[1.45rem] border p-3 shadow-soft",
-                  day.isCurrentMonth
-                    ? "border-charcoal/10 bg-white/88"
-                    : "border-charcoal/6 bg-paper/70 text-charcoal/50",
-                  day.isToday ? "ring-2 ring-gold/30" : "",
-                )}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-charcoal/74">{day.dayOfMonth}</span>
-                  <span className="text-[11px] uppercase tracking-[0.16em] text-charcoal/42">
-                    {day.items.length} item{day.items.length === 1 ? "" : "s"}
-                  </span>
-                </div>
+          <div className="space-y-4">
+            {calendarWeeks.map((weekDays) => {
+              const week = weekByStartKey.get(weekDays[0]?.capacity.weekStartKey ?? "") ?? null;
 
-                <div className="mt-3 space-y-2">
-                  {day.items.slice(0, 4).map((item) => (
-                    <div
-                      key={`${day.dateKey}-${item.kind}-${item.id}`}
-                      className={`rounded-2xl border px-3 py-2 text-xs leading-5 ${getItemClasses(item)}`}
-                    >
-                      <div className="font-medium">{item.title}</div>
-                      <div className="text-[11px] text-current/80">
-                        {item.timeLabel ? `${item.timeLabel} • ` : ""}
-                        {item.subtitle}
-                      </div>
-                    </div>
-                  ))}
+              return (
+                <div key={`desktop-week-${weekDays[0]?.dateKey ?? "empty"}`} className="space-y-2">
+                  <WeekCapacityBar ceiling={weeklyCapacityCeiling} week={week} />
 
-                  {day.items.length > 4 ? (
-                    <p className="text-xs text-charcoal/55">+{day.items.length - 4} more items</p>
-                  ) : null}
+                  <div className="grid grid-cols-7 gap-3">
+                    {weekDays.map((day) => {
+                      const hasBlackout = day.items.some((item) => item.kind === "blackout");
+
+                      return (
+                        <article
+                          key={day.dateKey}
+                          aria-label={getDayCapacityLabel(day)}
+                          className={cn(
+                            "group relative min-h-[11rem] rounded-[1.45rem] border p-3 shadow-soft outline-none transition focus-visible:ring-2 focus-visible:ring-gold/35",
+                            day.isCurrentMonth
+                              ? hasBlackout
+                                ? "border-charcoal/18 bg-charcoal/[0.04]"
+                                : getLoadCellClasses(day.capacity.loadState)
+                              : "border-charcoal/6 bg-paper/70 text-charcoal/50",
+                            day.isToday ? "ring-2 ring-gold/30" : "",
+                          )}
+                          tabIndex={0}
+                          title={getDayCapacityLabel(day)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-semibold text-charcoal/74">{day.dayOfMonth}</span>
+                            <span className="text-[11px] uppercase tracking-[0.16em] text-charcoal/42">
+                              {day.capacity.orderPoints > 0
+                                ? `${day.capacity.orderPoints} pts`
+                                : `${day.items.length} item${day.items.length === 1 ? "" : "s"}`}
+                            </span>
+                          </div>
+
+                          {!hasBlackout && day.capacity.loadState !== "none" ? (
+                            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-charcoal/8">
+                              <div
+                                className={cn("h-full rounded-full", getLoadBarClasses(day.capacity.loadState))}
+                                style={{
+                                  width: `${getCapacityPercent(day.capacity.orderPoints, weeklyCapacityCeiling)}%`,
+                                }}
+                              />
+                            </div>
+                          ) : null}
+
+                          <div className="mt-3 space-y-2">
+                            {day.items.slice(0, 4).map((item) => (
+                              <div
+                                key={`${day.dateKey}-${item.kind}-${item.id}`}
+                                className={`rounded-2xl border px-3 py-2 text-xs leading-5 ${getItemClasses(item)}`}
+                              >
+                                <div className="font-medium">{item.title}</div>
+                                <div className="text-[11px] text-current/80">
+                                  {item.timeLabel ? `${item.timeLabel} • ` : ""}
+                                  {item.subtitle}
+                                </div>
+                              </div>
+                            ))}
+
+                            {day.items.length > 4 ? (
+                              <p className="text-xs text-charcoal/55">+{day.items.length - 4} more items</p>
+                            ) : null}
+                          </div>
+
+                          <DayCapacityTooltip day={day} />
+                        </article>
+                      );
+                    })}
+                  </div>
                 </div>
-              </article>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -304,9 +506,11 @@ function CalendarGrid({ days }: Readonly<{ days: CalendarDay[] }>) {
 function WeekFocusSection({
   agendaCount,
   days,
+  weeklyCapacityCeiling,
 }: Readonly<{
   agendaCount: number;
   days: CalendarDay[];
+  weeklyCapacityCeiling: number;
 }>) {
   return (
     <AdminSectionCard
@@ -317,13 +521,18 @@ function WeekFocusSection({
         {days.map((day) => (
           <article
             key={`week-${day.dateKey}`}
+            aria-label={getDayCapacityLabel(day)}
             className={cn(
-              "rounded-[1.35rem] border p-4",
+              "group relative rounded-[1.35rem] border p-4 outline-none transition focus-visible:ring-2 focus-visible:ring-gold/35",
               day.isCurrentMonth
-                ? "border-charcoal/10 bg-paper/76"
+                ? day.items.some((item) => item.kind === "blackout")
+                  ? "border-charcoal/18 bg-charcoal/[0.04]"
+                  : getLoadCellClasses(day.capacity.loadState)
                 : "border-charcoal/8 bg-paper/55 text-charcoal/52",
               day.isToday ? "ring-2 ring-gold/30" : "",
             )}
+            tabIndex={0}
+            title={getDayCapacityLabel(day)}
           >
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -336,6 +545,15 @@ function WeekFocusSection({
                 {formatShortDateLabel(day.dateKey)}
               </span>
             </div>
+
+            {!day.items.some((item) => item.kind === "blackout") && day.capacity.loadState !== "none" ? (
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-charcoal/8">
+                <div
+                  className={cn("h-full rounded-full", getLoadBarClasses(day.capacity.loadState))}
+                  style={{ width: `${getCapacityPercent(day.capacity.orderPoints, weeklyCapacityCeiling)}%` }}
+                />
+              </div>
+            ) : null}
 
             <div className="mt-3 space-y-2">
               {day.items.length > 0 ? (
@@ -359,10 +577,47 @@ function WeekFocusSection({
                 <p className="text-xs text-charcoal/55">+{day.items.length - 3} more items</p>
               ) : null}
             </div>
+
+            <DayCapacityTooltip day={day} />
           </article>
         ))}
       </div>
     </AdminSectionCard>
+  );
+}
+
+function CapacitySettingsForm({
+  data,
+  redirectTo,
+}: Readonly<{
+  data: CalendarPageData;
+  redirectTo: string;
+}>) {
+  return (
+    <form
+      action={updateWeeklyCapacityCeiling}
+      className="flex flex-col gap-3 rounded-[1.25rem] border border-charcoal/8 bg-white/76 p-3 sm:flex-row sm:items-end"
+    >
+      <input type="hidden" name="redirectTo" value={redirectTo} />
+      <div className="min-w-0 flex-1">
+        <Label htmlFor="weekly-capacity-ceiling">Weekly capacity ceiling</Label>
+        <p className="mt-1 text-xs leading-5 text-charcoal/56">Calendar load is scored in owner-tuned points.</p>
+      </div>
+      <div className="w-full sm:w-36">
+        <Input
+          id="weekly-capacity-ceiling"
+          name="weeklyCapacityCeiling"
+          type="number"
+          min="1"
+          max="100"
+          defaultValue={data.weeklyCapacityCeiling}
+          required
+        />
+      </div>
+      <Button type="submit" variant="secondary">
+        Save capacity
+      </Button>
+    </form>
   );
 }
 
@@ -611,6 +866,18 @@ export default async function AdminCalendarPage({ searchParams }: AdminCalendarP
             <span className="rounded-full border border-charcoal/10 bg-white px-3 py-1 text-xs text-charcoal/74">
               Manual note
             </span>
+            <span className="rounded-full border border-emerald-200/80 bg-emerald-50/55 px-3 py-1 text-xs text-charcoal/74">
+              Light load
+            </span>
+            <span className="rounded-full border border-gold/28 bg-gold/10 px-3 py-1 text-xs text-charcoal/74">
+              Moderate
+            </span>
+            <span className="rounded-full border border-rose/24 bg-rose/8 px-3 py-1 text-xs text-charcoal/74">
+              Full
+            </span>
+            <span className="rounded-full border border-rose/42 bg-rose/14 px-3 py-1 text-xs font-medium text-charcoal">
+              Overbooked
+            </span>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -624,13 +891,25 @@ export default async function AdminCalendarPage({ searchParams }: AdminCalendarP
             ))}
           </div>
         </div>
+
+        <CapacitySettingsForm data={data} redirectTo={redirectTo} />
       </AdminPageHeader>
 
       <section className="rounded-[1.7rem] border border-charcoal/10 bg-white/88 p-3 shadow-soft sm:p-4">
-        <CalendarGrid days={data.days} />
+        <CalendarGrid
+          days={data.days}
+          weeklyCapacityCeiling={data.weeklyCapacityCeiling}
+          weeks={data.weeks}
+        />
       </section>
 
-      {view === "week" ? <WeekFocusSection agendaCount={weekAgenda.length} days={weekDays} /> : null}
+      {view === "week" ? (
+        <WeekFocusSection
+          agendaCount={weekAgenda.length}
+          days={weekDays}
+          weeklyCapacityCeiling={data.weeklyCapacityCeiling}
+        />
+      ) : null}
 
       {view === "blackouts" ? (
         <AdminSectionCard

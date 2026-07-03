@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import {
   getSafeRedirectTarget,
   parseBoolean,
+  parseInteger,
   parseOptionalString,
   parseRequiredString,
   redirectWithNotice,
@@ -142,5 +143,44 @@ export async function createCalendarEntry(formData: FormData) {
   }
 
   revalidatePaths(["/admin/calendar"]);
+  redirectWithNotice(redirectTarget, "calendar-updated");
+}
+
+export async function updateWeeklyCapacityCeiling(formData: FormData) {
+  await requireAdmin();
+
+  const redirectTarget = getSafeRedirectTarget(
+    formData.get("redirectTo"),
+    "/admin/calendar",
+    "/admin/calendar",
+  );
+  const weeklyCapacityCeiling = parseInteger(formData.get("weeklyCapacityCeiling"), 12);
+
+  if (weeklyCapacityCeiling < 1 || weeklyCapacityCeiling > 100) {
+    redirectWithNotice(redirectTarget, "calendar-error");
+  }
+
+  const payload: TablesInsert<"site_settings"> = {
+    category_key: "capacity",
+    description: "Operational workload capacity settings for the admin calendar.",
+    is_public: false,
+    label: "Capacity settings",
+    setting_key: "capacity.settings",
+    value_json: {
+      week_start_day: 0,
+      weekly_capacity_ceiling: weeklyCapacityCeiling,
+    },
+  };
+
+  const { error } = await createAdminClient()
+    .from("site_settings")
+    .upsert(payload, { onConflict: "setting_key" });
+
+  if (error) {
+    console.error("Unable to update weekly capacity ceiling.", error);
+    redirectWithNotice(redirectTarget, "calendar-error");
+  }
+
+  revalidatePaths(["/admin/calendar", "/admin/settings"]);
   redirectWithNotice(redirectTarget, "calendar-updated");
 }

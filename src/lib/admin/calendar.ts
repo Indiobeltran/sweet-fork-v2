@@ -1,14 +1,22 @@
 import "server-only";
 
+import {
+  buildCapacityLoad,
+  type CapacityDayLoad,
+  type CapacityWeekLoad,
+} from "@/lib/admin/capacity";
 import { getInquiryReferenceCode } from "@/lib/admin/order-workflow";
 import { createClient as createSessionClient } from "@/lib/supabase/server";
-import { type Enums, type Tables } from "@/types/supabase.generated";
+import { type Enums, type Json, type Tables } from "@/types/supabase.generated";
 
 type BlackoutDateRow = Tables<"blackout_dates">;
 type CalendarEntryRow = Tables<"calendar_entries">;
 type CustomerRow = Tables<"customers">;
 type InquiryRow = Tables<"inquiries">;
+type OrderItemRow = Tables<"order_items">;
 type OrderRow = Tables<"orders">;
+type ProductRow = Tables<"products">;
+type SiteSettingRow = Tables<"site_settings">;
 
 type CalendarItemKind = "blackout" | "entry" | "inquiry" | "order";
 
@@ -28,6 +36,7 @@ export type CalendarDayItem = {
 };
 
 export type CalendarDay = {
+  capacity: CapacityDayLoad;
   dateKey: string;
   dayOfMonth: string;
   isCurrentMonth: boolean;
@@ -61,6 +70,27 @@ export type CalendarPageData = {
     label: string;
     value: string;
   }>;
+  weeklyCapacityCeiling: number;
+  weeks: CapacityWeekLoad[];
+};
+
+type CalendarOrderItemRow = Pick<
+  OrderItemRow,
+  "capacity_points_override" | "id" | "product_id" | "product_type" | "quantity"
+>;
+
+type CalendarOrderRow = Pick<
+  OrderRow,
+  "customer_id" | "event_date" | "event_type" | "fulfillment_method" | "id" | "inquiry_id" | "status"
+> & {
+  order_items: CalendarOrderItemRow[] | null;
+};
+
+type CalendarOrderRowWithoutCapacityOverride = Pick<
+  OrderRow,
+  "customer_id" | "event_date" | "event_type" | "fulfillment_method" | "id" | "inquiry_id" | "status"
+> & {
+  order_items: Array<Omit<CalendarOrderItemRow, "capacity_points_override">> | null;
 };
 
 function getSearchValue(value: string | string[] | undefined) {
@@ -197,6 +227,110 @@ function getCustomerLabel(
   return fallback ?? "Sweet Fork client";
 }
 
+function isRecord(value: Json | null): value is Record<string, Json> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function getNumberSetting(record: Record<string, Json> | null, key: string, fallback: number) {
+  if (!record) {
+    return fallback;
+  }
+
+  const value = record[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function parseCapacitySettings(row: Pick<SiteSettingRow, "value_json"> | null) {
+  const record = isRecord(row?.value_json ?? null) ? (row?.value_json as Record<string, Json>) : null;
+  const weeklyCapacityCeiling = Math.max(
+    1,
+    Math.trunc(
+      getNumberSetting(
+        record,
+        "weekly_capacity_ceiling",
+        getNumberSetting(record, "weeklyCapacityCeiling", 12),
+      ),
+    ),
+  );
+  const weekStartDay = Math.min(
+    Math.max(
+      Math.trunc(
+        getNumberSetting(record, "week_start_day", getNumberSetting(record, "weekStartDay", 0)),
+      ),
+      0,
+    ),
+    6,
+  );
+
+  return {
+    weekStartDay,
+    weeklyCapacityCeiling,
+  };
+}
+
+function isUndefinedColumnError(error: unknown) {
+  const message =
+    error !== null &&
+    error !== undefined &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string"
+      ? (error as { message: string }).message
+      : "";
+
+  return (
+    error !== null &&
+    error !== undefined &&
+    typeof error === "object" &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "42703" &&
+    message.includes("capacity_points_override")
+  );
+}
+
+async function getCalendarOrderRows(
+  supabase: Awaited<ReturnType<typeof createSessionClient>>,
+  gridStartKey: string,
+  gridEndKey: string,
+) {
+  if (!supabase) {
+    return { data: [], error: null };
+  }
+
+  const withCapacityOverride = await supabase
+    .from("orders")
+    .select("id, customer_id, inquiry_id, event_date, event_type, fulfillment_method, status, order_items(id, product_id, product_type, quantity, capacity_points_override)")
+    .gte("event_date", gridStartKey)
+    .lte("event_date", gridEndKey)
+    .order("event_date", { ascending: true });
+
+  if (!isUndefinedColumnError(withCapacityOverride.error)) {
+    return withCapacityOverride;
+  }
+
+  const fallback = await supabase
+    .from("orders")
+    .select("id, customer_id, inquiry_id, event_date, event_type, fulfillment_method, status, order_items(id, product_id, product_type, quantity)")
+    .gte("event_date", gridStartKey)
+    .lte("event_date", gridEndKey)
+    .order("event_date", { ascending: true });
+
+  if (fallback.error) {
+    return fallback;
+  }
+
+  return {
+    data: ((fallback.data ?? []) as CalendarOrderRowWithoutCapacityOverride[]).map((order) => ({
+      ...order,
+      order_items: (order.order_items ?? []).map((item) => ({
+        ...item,
+        capacity_points_override: null,
+      })),
+    })),
+    error: null,
+  };
+}
+
 export function parseCalendarFilters(
   rawSearchParams: Record<string, string | string[] | undefined>,
 ): CalendarFilters {
@@ -223,14 +357,9 @@ export async function getCalendarPageData(filters: CalendarFilters): Promise<Cal
   const previousMonthKey = getMonthKey(createUtcDate(monthStart.getUTCFullYear(), monthStart.getUTCMonth() - 1, 1));
   const nextMonthKey = getMonthKey(createUtcDate(monthStart.getUTCFullYear(), monthStart.getUTCMonth() + 1, 1));
 
-  const [{ data: orderData, error: orderError }, { data: inquiryData, error: inquiryError }, { data: calendarData, error: calendarError }, { data: blackoutData, error: blackoutError }] =
+  const [{ data: orderData, error: orderError }, { data: inquiryData, error: inquiryError }, { data: calendarData, error: calendarError }, { data: blackoutData, error: blackoutError }, { data: productData, error: productError }, { data: capacitySettingData, error: capacitySettingError }] =
     await Promise.all([
-      supabase
-        .from("orders")
-        .select("id, customer_id, inquiry_id, event_date, event_type, fulfillment_method, status")
-        .gte("event_date", gridStartKey)
-        .lte("event_date", gridEndKey)
-        .order("event_date", { ascending: true }),
+      getCalendarOrderRows(supabase, gridStartKey, gridEndKey),
       supabase
         .from("inquiries")
         .select("id, customer_id, customer_name, event_date, event_type, fulfillment_method, metadata, status")
@@ -250,6 +379,15 @@ export async function getCalendarPageData(filters: CalendarFilters): Promise<Cal
         .lte("starts_on", gridEndKey)
         .gte("ends_on", gridStartKey)
         .order("starts_on", { ascending: true }),
+      supabase
+        .from("products")
+        .select("*")
+        .order("display_order", { ascending: true }),
+      supabase
+        .from("site_settings")
+        .select("value_json")
+        .eq("setting_key", "capacity.settings")
+        .maybeSingle(),
     ]);
 
   if (orderError) {
@@ -268,12 +406,15 @@ export async function getCalendarPageData(filters: CalendarFilters): Promise<Cal
     throw blackoutError;
   }
 
-  const orders = (orderData ?? []) as Array<
-    Pick<
-      OrderRow,
-      "customer_id" | "event_date" | "event_type" | "fulfillment_method" | "id" | "inquiry_id" | "status"
-    >
-  >;
+  if (productError) {
+    throw productError;
+  }
+
+  if (capacitySettingError) {
+    throw capacitySettingError;
+  }
+
+  const orders = (orderData ?? []) as CalendarOrderRow[];
   const inquiries = (inquiryData ?? []) as Array<
     Pick<
       InquiryRow,
@@ -298,6 +439,36 @@ export async function getCalendarPageData(filters: CalendarFilters): Promise<Cal
     >
   >;
   const blackoutDates = (blackoutData ?? []) as BlackoutDateRow[];
+  const products = (productData ?? []) as ProductRow[];
+  const capacitySettings = parseCapacitySettings((capacitySettingData ?? null) as Pick<SiteSettingRow, "value_json"> | null);
+  const capacity = buildCapacityLoad({
+    endDateKey: gridEndKey,
+    inquiries: inquiries.map((inquiry) => ({
+      eventDate: inquiry.event_date,
+      id: inquiry.id,
+      status: inquiry.status,
+    })),
+    orders: orders.map((order) => ({
+      eventDate: order.event_date,
+      id: order.id,
+      items: (order.order_items ?? []).map((item) => ({
+        capacityPointsOverride: item.capacity_points_override,
+        productId: item.product_id,
+        productType: item.product_type,
+        quantity: item.quantity,
+      })),
+      status: order.status,
+    })),
+    products: products.map((product) => ({
+      capacityPoints: product.capacity_points ?? null,
+      id: product.id,
+      productType: product.product_type,
+    })),
+    startDateKey: gridStartKey,
+    weeklyCapacityCeiling: capacitySettings.weeklyCapacityCeiling,
+    weekStartDay: capacitySettings.weekStartDay,
+  });
+  const capacityByDateKey = new Map(capacity.days.map((day) => [day.dateKey, day]));
 
   const customerIds = Array.from(
     new Set(
@@ -465,6 +636,14 @@ export async function getCalendarPageData(filters: CalendarFilters): Promise<Cal
     });
 
     return {
+      capacity: capacityByDateKey.get(dateKey) ?? {
+        dateKey,
+        inquiryCount: 0,
+        loadState: "none",
+        orderCount: 0,
+        orderPoints: 0,
+        weekStartKey: getDateKey(gridStart),
+      },
       dateKey,
       dayOfMonth: String(cellDate.getUTCDate()),
       isCurrentMonth: dateKey >= monthStartKey && dateKey <= monthEndKey,
@@ -550,5 +729,7 @@ export async function getCalendarPageData(filters: CalendarFilters): Promise<Cal
         detail: "All-day reminders, tastings, and operational notes stored in `calendar_entries`.",
       },
     ],
+    weeklyCapacityCeiling: capacitySettings.weeklyCapacityCeiling,
+    weeks: capacity.weeks,
   };
 }

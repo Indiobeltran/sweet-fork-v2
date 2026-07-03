@@ -86,7 +86,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
                 <input type="hidden" name="productId" value={product.id} />
                 <input type="hidden" name="redirectTo" value="/admin/products" />
 
-                <div className="grid gap-4 lg:grid-cols-[1fr_220px]">
+                <div className="grid gap-4 lg:grid-cols-[1fr_180px_180px]">
                   <div>
                     <Label htmlFor={`product-name-${product.id}`}>Name</Label>
                     <Input
@@ -104,6 +104,17 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
                       name="displayOrder"
                       type="number"
                       defaultValue={product.display_order}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`product-capacity-${product.id}`}>Capacity points</Label>
+                    <Input
+                      id={`product-capacity-${product.id}`}
+                      name="capacityPoints"
+                      type="number"
+                      min="1"
+                      defaultValue={product.capacity_points ?? 2}
                     />
                   </div>
                 </div>
