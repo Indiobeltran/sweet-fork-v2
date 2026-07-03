@@ -11,7 +11,9 @@ import {
   revalidatePaths,
 } from "@/lib/admin/action-helpers";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Constants, type Enums, type TablesInsert } from "@/types/supabase.generated";
+import { Constants, type Enums, type TablesInsert, type Json } from "@/types/supabase.generated";
+import { buildProductPointLookup, isShortLeadTime } from "@/lib/admin/capacity";
+import { getInquiryReferenceCode } from "@/lib/admin/order-workflow";
 
 function parseDateInput(value: FormDataEntryValue | null) {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
@@ -183,4 +185,170 @@ export async function updateWeeklyCapacityCeiling(formData: FormData) {
 
   revalidatePaths(["/admin/calendar", "/admin/settings"]);
   redirectWithNotice(redirectTarget, "calendar-updated");
+}
+
+export async function deleteBlackoutDate(formData: FormData) {
+  await requireAdmin();
+
+  const redirectTarget = getSafeRedirectTarget(
+    formData.get("redirectTo"),
+    "/admin/calendar",
+    "/admin/calendar",
+  );
+  const blackoutId = parseRequiredString(formData.get("blackoutId"));
+
+  if (!blackoutId) {
+    redirectWithNotice(redirectTarget, "calendar-error");
+  }
+
+  const { error } = await createAdminClient()
+    .from("blackout_dates")
+    .delete()
+    .eq("id", blackoutId);
+
+  if (error) {
+    console.error("Unable to delete blackout date.", error);
+    redirectWithNotice(redirectTarget, "calendar-error");
+  }
+
+  revalidatePaths(["/admin/calendar"]);
+  redirectWithNotice(redirectTarget, "calendar-updated");
+}
+
+export async function getCalendarDayDetails(dateKey: string, contributingOrderIds: string[]) {
+  await requireAdmin();
+
+  const supabase = createAdminClient();
+
+  // 1. Fetch products
+  const { data: productsData } = await supabase
+    .from("products")
+    .select("id, capacity_points, product_type, prep_days, min_lead_time_days");
+  
+  const productLookup = buildProductPointLookup(
+    (productsData ?? []).map((product) => ({
+      capacityPoints: product.capacity_points ?? null,
+      id: product.id,
+      productType: product.product_type,
+      prepDays: product.prep_days,
+      minLeadTimeDays: product.min_lead_time_days,
+    }))
+  );
+
+  // 2. Fetch orders due/prep contributing
+  let orders: Array<{
+    id: string;
+    event_date: string;
+    event_type: string;
+    status: Enums<"order_status">;
+    fulfillment_method: Enums<"fulfillment_method">;
+    inquiry_id: string | null;
+    customer: { id: string; full_name: string | null } | null;
+    inquiry: { id: string; metadata: Json } | null;
+  }> = [];
+  if (contributingOrderIds.length > 0) {
+    const { data } = await supabase
+      .from("orders")
+      .select(`
+        id,
+        event_date,
+        event_type,
+        status,
+        fulfillment_method,
+        inquiry_id,
+        customer:customers(id, full_name),
+        inquiry:inquiries(id, metadata)
+      `)
+      .in("id", contributingOrderIds);
+    orders = (data ?? []) as unknown as typeof orders; // Cast from Supabase select output type
+  }
+
+  // 3. Fetch active inquiries on dateKey
+  const { data: inquiriesData } = await supabase
+    .from("inquiries")
+    .select(`
+      id,
+      customer_name,
+      event_date,
+      status,
+      fulfillment_method,
+      metadata,
+      submitted_at,
+      inquiry_items(id, product_type)
+    `)
+    .eq("event_date", dateKey)
+    .in("status", ["new", "reviewing", "quoted", "approved"])
+    .order("submitted_at", { ascending: true });
+
+  const inquiries = (inquiriesData ?? []).map((inq) => {
+    const todayKey = inq.submitted_at ? inq.submitted_at.slice(0, 10) : "";
+    const isShortLead = isShortLeadTime(
+      inq.event_date,
+      (inq.inquiry_items ?? []).map((item) => ({
+        productId: null,
+        productType: item.product_type,
+      })),
+      productLookup,
+      todayKey
+    );
+
+    // Format reference code
+    const reference = getInquiryReferenceCode({
+      id: inq.id,
+      metadata: inq.metadata,
+    });
+
+    return {
+      id: inq.id,
+      customerName: inq.customer_name,
+      eventDate: inq.event_date,
+      status: inq.status,
+      fulfillmentMethod: inq.fulfillment_method,
+      reference,
+      isShortLead,
+    };
+  });
+
+  // 4. Fetch blackout dates
+  const { data: blackouts } = await supabase
+    .from("blackout_dates")
+    .select("id, starts_on, ends_on, reason, scope, notes, is_active")
+    .lte("starts_on", dateKey)
+    .gte("ends_on", dateKey);
+
+  // 5. Fetch notes (calendar entries)
+  const startOfDay = `${dateKey}T00:00:00.000Z`;
+  const endOfDay = `${dateKey}T23:59:59.999Z`;
+  const { data: notes } = await supabase
+    .from("calendar_entries")
+    .select("id, entry_type, title, starts_at, ends_at, all_day, notes, is_private, location_text")
+    .lte("starts_at", endOfDay)
+    .or(`ends_at.gte.${startOfDay},ends_at.is.null`)
+    .order("starts_at", { ascending: true });
+
+  const filteredNotes = (notes ?? []).filter((note) => {
+    const startKey = note.starts_at.slice(0, 10);
+    const endKey = note.ends_at ? note.ends_at.slice(0, 10) : startKey;
+    return dateKey >= startKey && dateKey <= endKey;
+  });
+
+  return {
+    orders: orders.map((order) => {
+      const reference = order.inquiry
+        ? getInquiryReferenceCode(order.inquiry)
+        : `ORD-${order.id.slice(0, 8).toUpperCase()}`;
+      return {
+        id: order.id,
+        eventDate: order.event_date,
+        eventType: order.event_type,
+        status: order.status,
+        fulfillmentMethod: order.fulfillment_method,
+        customerName: order.customer?.full_name ?? "Sweet Fork client",
+        reference,
+      };
+    }),
+    inquiries,
+    blackouts: blackouts ?? [],
+    notes: filteredNotes,
+  };
 }

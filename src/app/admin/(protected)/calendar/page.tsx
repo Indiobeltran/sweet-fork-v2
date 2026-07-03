@@ -27,8 +27,9 @@ import {
   type CalendarDayItem,
   type CalendarPageData,
 } from "@/lib/admin/calendar";
-import type { CapacityLoadState, CapacityWeekLoad } from "@/lib/admin/capacity";
+import type { CapacityLoadState } from "@/lib/admin/capacity";
 import { cn, toTitleCase } from "@/lib/utils";
+import { InteractiveCalendar } from "@/components/admin/interactive-calendar";
 
 export const metadata = {
   title: "Admin Calendar",
@@ -40,7 +41,6 @@ type AdminCalendarPageProps = {
 
 type CalendarView = "blackouts" | "month" | "notes" | "week";
 
-const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const calendarEntryTypeOptions = [
   "consultation",
   "tasting",
@@ -128,28 +128,7 @@ function getActiveWeekDays(days: CalendarDay[]) {
   return days.slice(weekStart, weekStart + 7);
 }
 
-function chunkCalendarWeeks(days: CalendarDay[]) {
-  const weeks: CalendarDay[][] = [];
 
-  for (let index = 0; index < days.length; index += 7) {
-    weeks.push(days.slice(index, index + 7));
-  }
-
-  return weeks;
-}
-
-function getToneDotClasses(tone: CalendarDayItem["tone"]) {
-  switch (tone) {
-    case "emerald":
-      return "bg-emerald-500";
-    case "gold":
-      return "bg-gold";
-    case "rose":
-      return "bg-rose";
-    default:
-      return "bg-charcoal/60";
-  }
-}
 
 function getLoadStateLabel(state: CapacityLoadState) {
   switch (state) {
@@ -196,10 +175,6 @@ function getLoadCellClasses(state: CapacityLoadState) {
   }
 }
 
-function getWeekByStartKey(weeks: CapacityWeekLoad[]) {
-  return new Map(weeks.map((week) => [week.weekStartKey, week]));
-}
-
 function getCapacityPercent(points: number, ceiling: number) {
   if (ceiling <= 0) {
     return 0;
@@ -210,46 +185,6 @@ function getCapacityPercent(points: number, ceiling: number) {
 
 function getDayCapacityLabel(day: CalendarDay) {
   return `${day.dateKey}: ${day.capacity.orderPoints} points (${day.capacity.duePoints} due, ${day.capacity.prepPoints} prep), ${day.capacity.orderCount} confirmed order${day.capacity.orderCount === 1 ? "" : "s"} due, ${day.capacity.inquiryCount} active inquir${day.capacity.inquiryCount === 1 ? "y" : "ies"}`;
-}
-
-function WeekCapacityBar({
-  ceiling,
-  week,
-}: Readonly<{
-  ceiling: number;
-  week: CapacityWeekLoad | null;
-}>) {
-  const points = week?.orderPoints ?? 0;
-  const state = week?.loadState ?? "none";
-  const percent = getCapacityPercent(points, ceiling);
-
-  return (
-    <div
-      className={cn(
-        "rounded-[1rem] border px-3 py-2",
-        state === "overbooked"
-          ? "border-rose/35 bg-rose/10"
-          : state === "full"
-            ? "border-gold/28 bg-gold/10"
-            : "border-charcoal/8 bg-white/76",
-      )}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-charcoal/52">
-          Week load
-        </span>
-        <span className="text-xs font-medium text-charcoal">
-          {points} / {ceiling} pts
-        </span>
-      </div>
-      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-charcoal/8">
-        <div
-          className={cn("h-full rounded-full", getLoadBarClasses(state))}
-          style={{ width: `${percent}%` }}
-        />
-      </div>
-    </div>
-  );
 }
 
 function getItemClasses(item: Pick<CalendarDayItem, "kind" | "tone">) {
@@ -338,181 +273,7 @@ function DayCapacityTooltip({ day }: Readonly<{ day: CalendarDay }>) {
   );
 }
 
-function CalendarGrid({
-  days,
-  weeklyCapacityCeiling,
-  weeks,
-}: Readonly<{
-  days: CalendarDay[];
-  weeklyCapacityCeiling: number;
-  weeks: CapacityWeekLoad[];
-}>) {
-  const weekByStartKey = getWeekByStartKey(weeks);
-  const calendarWeeks = chunkCalendarWeeks(days);
 
-  return (
-    <>
-      <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-        {weekdayLabels.map((label) => (
-          <div
-            key={`weekday-${label}`}
-            className="text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-charcoal/42 sm:rounded-[1rem] sm:border sm:border-charcoal/8 sm:bg-white/72 sm:px-3 sm:py-2 sm:text-xs"
-          >
-            {label}
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-2 space-y-2 md:hidden">
-        {calendarWeeks.map((weekDays) => {
-          const week = weekByStartKey.get(weekDays[0]?.capacity.weekStartKey ?? "") ?? null;
-
-          return (
-            <div key={`mobile-week-${weekDays[0]?.dateKey ?? "empty"}`} className="space-y-1.5">
-              <WeekCapacityBar ceiling={weeklyCapacityCeiling} week={week} />
-
-              <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-                {weekDays.map((day) => {
-                  const hasBlackout = day.items.some((item) => item.kind === "blackout");
-
-                  return (
-                    <article
-                      key={`mobile-${day.dateKey}`}
-                      aria-label={getDayCapacityLabel(day)}
-                      className={cn(
-                        "group relative flex aspect-[0.82] min-w-0 flex-col rounded-[0.95rem] border px-1.5 py-2 outline-none transition focus-visible:ring-2 focus-visible:ring-gold/35 sm:px-2",
-                        day.isCurrentMonth
-                          ? hasBlackout
-                            ? "border-charcoal/18 bg-charcoal/[0.04]"
-                            : getLoadCellClasses(day.capacity.loadState)
-                          : "border-charcoal/6 bg-paper/70 text-charcoal/45",
-                        day.isToday ? "ring-2 ring-gold/30" : "",
-                      )}
-                      tabIndex={0}
-                      title={getDayCapacityLabel(day)}
-                    >
-                      <div className="flex items-start justify-between gap-1">
-                        <span className="text-sm font-semibold text-current">{day.dayOfMonth}</span>
-                        {day.capacity.orderPoints > 0 ? (
-                          <span className="text-[10px] font-semibold text-current/70">
-                            {day.capacity.orderPoints}
-                          </span>
-                        ) : day.items.length > 0 ? (
-                          <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-current/58">
-                            {day.items.length}
-                          </span>
-                        ) : null}
-                      </div>
-
-                      <div className="mt-auto flex flex-wrap gap-1">
-                        {day.items.slice(0, 3).map((item, index) => (
-                          <span
-                            key={`${day.dateKey}-${item.id}-${index}`}
-                            className={cn("h-2 w-2 rounded-full", getToneDotClasses(item.tone))}
-                          />
-                        ))}
-                        {day.items.length > 3 ? (
-                          <span className="text-[10px] text-charcoal/52">+{day.items.length - 3}</span>
-                        ) : null}
-                      </div>
-
-                      {!hasBlackout && day.capacity.loadState !== "none" ? (
-                        <div className={cn("mt-1 h-1 rounded-full", getLoadBarClasses(day.capacity.loadState))} />
-                      ) : null}
-
-                      <DayCapacityTooltip day={day} />
-                    </article>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="mt-3 hidden overflow-x-auto md:block">
-        <div className="min-w-[70rem]">
-          <div className="space-y-4">
-            {calendarWeeks.map((weekDays) => {
-              const week = weekByStartKey.get(weekDays[0]?.capacity.weekStartKey ?? "") ?? null;
-
-              return (
-                <div key={`desktop-week-${weekDays[0]?.dateKey ?? "empty"}`} className="space-y-2">
-                  <WeekCapacityBar ceiling={weeklyCapacityCeiling} week={week} />
-
-                  <div className="grid grid-cols-7 gap-3">
-                    {weekDays.map((day) => {
-                      const hasBlackout = day.items.some((item) => item.kind === "blackout");
-
-                      return (
-                        <article
-                          key={day.dateKey}
-                          aria-label={getDayCapacityLabel(day)}
-                          className={cn(
-                            "group relative min-h-[11rem] rounded-[1.45rem] border p-3 shadow-soft outline-none transition focus-visible:ring-2 focus-visible:ring-gold/35",
-                            day.isCurrentMonth
-                              ? hasBlackout
-                                ? "border-charcoal/18 bg-charcoal/[0.04]"
-                                : getLoadCellClasses(day.capacity.loadState)
-                              : "border-charcoal/6 bg-paper/70 text-charcoal/50",
-                            day.isToday ? "ring-2 ring-gold/30" : "",
-                          )}
-                          tabIndex={0}
-                          title={getDayCapacityLabel(day)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-semibold text-charcoal/74">{day.dayOfMonth}</span>
-                            <span className="text-[11px] uppercase tracking-[0.16em] text-charcoal/42">
-                              {day.capacity.orderPoints > 0
-                                ? `${day.capacity.orderPoints} pts`
-                                : `${day.items.length} item${day.items.length === 1 ? "" : "s"}`}
-                            </span>
-                          </div>
-
-                          {!hasBlackout && day.capacity.loadState !== "none" ? (
-                            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-charcoal/8">
-                              <div
-                                className={cn("h-full rounded-full", getLoadBarClasses(day.capacity.loadState))}
-                                style={{
-                                  width: `${getCapacityPercent(day.capacity.orderPoints, weeklyCapacityCeiling)}%`,
-                                }}
-                              />
-                            </div>
-                          ) : null}
-
-                          <div className="mt-3 space-y-2">
-                            {day.items.slice(0, 4).map((item) => (
-                              <div
-                                key={`${day.dateKey}-${item.kind}-${item.id}`}
-                                className={`rounded-2xl border px-3 py-2 text-xs leading-5 ${getItemClasses(item)}`}
-                              >
-                                <div className="font-medium">{item.title}</div>
-                                <div className="text-[11px] text-current/80">
-                                  {item.timeLabel ? `${item.timeLabel} • ` : ""}
-                                  {item.subtitle}
-                                </div>
-                              </div>
-                            ))}
-
-                            {day.items.length > 4 ? (
-                              <p className="text-xs text-charcoal/55">+{day.items.length - 4} more items</p>
-                            ) : null}
-                          </div>
-
-                          <DayCapacityTooltip day={day} />
-                        </article>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
 
 function WeekFocusSection({
   agendaCount,
@@ -960,10 +721,11 @@ export default async function AdminCalendarPage({ searchParams }: AdminCalendarP
       </AdminPageHeader>
 
       <section className="rounded-[1.7rem] border border-charcoal/10 bg-white/88 p-3 shadow-soft sm:p-4">
-        <CalendarGrid
+        <InteractiveCalendar
           days={data.days}
           weeklyCapacityCeiling={data.weeklyCapacityCeiling}
           weeks={data.weeks}
+          redirectTo={redirectTo}
         />
       </section>
 

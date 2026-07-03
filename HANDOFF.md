@@ -1,3 +1,24 @@
+## Phase 8 Calendar Day Drawer — 2026-07-03
+
+- **Current branch**: `codex/day-drawer`.
+- **Current objective**: Replace the hover tooltips on click/tap with an interactive day drawer panel showing detailed daily bookings, capacity details, inquiries (including short-lead flags calculated via the shared `isShortLeadTime` utility), blackout details, and quick actions (pre-filled note and blackout forms, and confirm-to-remove blackouts).
+- **Status**: Closed and ready for verification.
+- **Architectural & Data Plumbing Decisions**:
+  - We implemented a lightweight Server Action `getCalendarDayDetails(dateKey, contributingOrderIds)` to fetch details on drawer open rather than loading all detailed records upfront, minimizing initial month-view grid payload size.
+  - Enforced strict admin authorization on both new actions using `await requireAdmin()`.
+  - Reused the shared `isShortLeadTime` from `capacity.ts` directly for short-lead warnings inside `getCalendarDayDetails`.
+- **Files touched**:
+  - `src/app/admin/(protected)/calendar/actions.ts` (added `getCalendarDayDetails` and `deleteBlackoutDate` server actions)
+  - `src/app/admin/(protected)/calendar/page.tsx` (extracted grid elements, cleaned up unused imports/methods, called client component)
+  - `src/components/admin/interactive-calendar.tsx` (created new interactive calendar grid and responsive day drawer component)
+- **Quality Gates Run**:
+  - `npm run lint`: Passed
+  - `npm run typecheck`: Passed
+  - `npm test`: Passed (100/100 tests passing)
+  - `npm run build`: Passed
+- **Next exact task**:
+  - Run the application locally and perform the manual visual checks (July 15 order, July 14 prep shadow, July 10 short-lead inquiry, July 29 blackout creation/deletion verification, mobile view/gestures, and visual regression checks).
+
 ## Phase 7 Prep Shadows & Lead-Time Rules — 2026-07-03
 
 - **Current branch**: `main`.
