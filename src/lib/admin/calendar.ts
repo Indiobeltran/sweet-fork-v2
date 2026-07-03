@@ -463,12 +463,13 @@ export async function getCalendarPageData(filters: CalendarFilters): Promise<Cal
       capacityPoints: product.capacity_points ?? null,
       id: product.id,
       productType: product.product_type,
+      prepDays: product.prep_days,
+      minLeadTimeDays: product.min_lead_time_days,
     })),
     startDateKey: gridStartKey,
     weeklyCapacityCeiling: capacitySettings.weeklyCapacityCeiling,
     weekStartDay: capacitySettings.weekStartDay,
   });
-  const capacityByDateKey = new Map(capacity.days.map((day) => [day.dateKey, day]));
 
   const customerIds = Array.from(
     new Set(
@@ -507,6 +508,19 @@ export async function getCalendarPageData(filters: CalendarFilters): Promise<Cal
   const inquiryReferenceMap = new Map(
     ((linkedInquiryData ?? []) as Array<Pick<InquiryRow, "id" | "metadata">>).map((row) => [row.id, row]),
   );
+
+  const capacityByDateKey = new Map(capacity.days.map((day) => {
+    const enrichedOrders = day.contributingOrders.map(co => {
+      const order = orders.find(o => o.id === co.id);
+      const reference = order 
+        ? (order.inquiry_id && inquiryReferenceMap.has(order.inquiry_id)
+           ? getInquiryReferenceCode(inquiryReferenceMap.get(order.inquiry_id)!)
+           : `ORD-${order.id.slice(0, 8).toUpperCase()}`)
+        : `ORD-${co.id.slice(0, 8).toUpperCase()}`;
+      return { ...co, reference };
+    });
+    return [day.dateKey, { ...day, contributingOrders: enrichedOrders }];
+  }));
 
   const itemsByDate = new Map<string, CalendarDayItem[]>();
   const agendaItems: CalendarAgendaItem[] = [];
@@ -642,6 +656,9 @@ export async function getCalendarPageData(filters: CalendarFilters): Promise<Cal
         loadState: "none",
         orderCount: 0,
         orderPoints: 0,
+        duePoints: 0,
+        prepPoints: 0,
+        contributingOrders: [],
         weekStartKey: getDateKey(gridStart),
       },
       dateKey,

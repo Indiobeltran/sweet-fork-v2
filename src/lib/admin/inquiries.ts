@@ -160,6 +160,7 @@ export type InquiryListEntry = {
   eventType: string;
   fulfillmentMethod: Enums<"fulfillment_method">;
   id: string;
+  isShortLead: boolean;
   items: InquiryListItemSummary[];
   priorityLabel: string;
   priorityValue: InquirySignalPriority;
@@ -870,10 +871,22 @@ function matchesFilters(row: InquiryListQueryRow, filters: InquiryListFilters) {
   return true;
 }
 
-function mapListEntry(row: InquiryListQueryRow): InquiryListEntry {
+function mapListEntry(row: InquiryListQueryRow, productsMap: Map<string, { product_type: string, min_lead_time_days: number }>): InquiryListEntry {
   const items = [...(row.inquiry_items ?? [])].sort((left, right) => left.sort_order - right.sort_order);
   const signals = getInquirySignals(row.metadata);
   const operationalEstimate = getOperationalInquiryEstimate(row, items);
+  
+  const todayKey = row.submitted_at.slice(0, 10);
+  const isShortLead = items.some(item => {
+    const product = productsMap.get(item.product_type);
+    if (!product) return false;
+    
+    const event = new Date(`${row.event_date}T12:00:00.000Z`);
+    const today = new Date(`${todayKey}T12:00:00.000Z`);
+    const diffDays = (event.getTime() - today.getTime()) / (1000 * 3600 * 24);
+    
+    return diffDays < product.min_lead_time_days;
+  });
 
   return {
     budgetRangeLabel: getBudgetRangeLabelForInquiry(row),
@@ -888,6 +901,7 @@ function mapListEntry(row: InquiryListQueryRow): InquiryListEntry {
     eventType: row.event_type,
     fulfillmentMethod: row.fulfillment_method,
     id: row.id,
+    isShortLead,
     items: items.map((item) => ({
       id: item.id,
       productLabel: item.product_label || getProductDisplayLabel(item.product_type),
@@ -914,18 +928,29 @@ export async function getInquiryListData(filters: InquiryListFilters): Promise<I
     throw new Error("Supabase is not configured for admin inquiries.");
   }
 
-  const { data, error } = await supabase
-    .from("inquiries")
-    .select(
-      "id, status, source_channel, customer_name, customer_email, customer_phone, event_type, event_date, fulfillment_method, budget_min, budget_max, estimated_min, estimated_max, submitted_at, reviewed_at, archived_at, created_at, updated_at, metadata, inquiry_items(id, product_type, product_label, quantity, servings, cupcake_count, cookie_count, macaron_count, kit_count, wedding_servings, tiers, shape, icing_style, topper_text, color_palette, design_notes, inspiration_notes, estimated_min, estimated_max, sort_order)",
-    )
-    .order("submitted_at", { ascending: false });
+  const [inquiriesResult, productsResult] = await Promise.all([
+    supabase
+      .from("inquiries")
+      .select(
+        "id, status, source_channel, customer_name, customer_email, customer_phone, event_type, event_date, fulfillment_method, budget_min, budget_max, estimated_min, estimated_max, submitted_at, reviewed_at, archived_at, created_at, updated_at, metadata, inquiry_items(id, product_type, product_label, quantity, servings, cupcake_count, cookie_count, macaron_count, kit_count, wedding_servings, tiers, shape, icing_style, topper_text, color_palette, design_notes, inspiration_notes, estimated_min, estimated_max, sort_order)",
+      )
+      .order("submitted_at", { ascending: false }),
+    supabase.from("products").select("product_type, min_lead_time_days"),
+  ]);
 
-  if (error) {
-    throw error;
+  if (inquiriesResult.error) {
+    throw inquiriesResult.error;
+  }
+  
+  if (productsResult.error) {
+    throw productsResult.error;
   }
 
-  const rows = (data ?? []) as InquiryListQueryRow[];
+  const productsMap = new Map(
+    ((productsResult.data ?? []) as Array<{ product_type: string; min_lead_time_days: number }>).map((p) => [p.product_type, p])
+  );
+
+  const rows = (inquiriesResult.data ?? []) as InquiryListQueryRow[];
   const statusCounts = {
     approved: 0,
     archived: 0,
@@ -940,7 +965,7 @@ export async function getInquiryListData(filters: InquiryListFilters): Promise<I
   });
 
   const filteredRows = rows.filter((row) => matchesFilters(row, filters));
-  const entries = filteredRows.map(mapListEntry);
+  const entries = filteredRows.map(row => mapListEntry(row, productsMap));
   const rushCount = filteredRows.filter((row) => getInquirySignals(row.metadata).urgency === "rush").length;
   const newCount = filteredRows.filter((row) => row.status === "new").length;
   const deliveryCount = filteredRows.filter((row) => row.fulfillment_method === "delivery").length;

@@ -117,6 +117,28 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
                       defaultValue={product.capacity_points ?? 2}
                     />
                   </div>
+
+                  <div>
+                    <Label htmlFor={`product-prep-${product.id}`}>Prep days (before due date)</Label>
+                    <Input
+                      id={`product-prep-${product.id}`}
+                      name="prepDays"
+                      type="number"
+                      min="0"
+                      defaultValue={product.prep_days ?? 0}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`product-lead-time-${product.id}`}>Min lead time (days)</Label>
+                    <Input
+                      id={`product-lead-time-${product.id}`}
+                      name="minLeadTimeDays"
+                      type="number"
+                      min="0"
+                      defaultValue={product.min_lead_time_days ?? 3}
+                    />
+                  </div>
                 </div>
 
                 <div>

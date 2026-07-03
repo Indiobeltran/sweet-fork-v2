@@ -30,6 +30,8 @@ export async function updateProduct(formData: FormData) {
   const longDescription = parseOptionalString(formData.get("longDescription"));
   const displayOrder = parseInteger(formData.get("displayOrder"));
   const capacityPoints = parseInteger(formData.get("capacityPoints"), 2);
+  const prepDays = Math.max(0, parseInteger(formData.get("prepDays"), 0));
+  const minLeadTimeDays = Math.max(0, parseInteger(formData.get("minLeadTimeDays"), 3));
   const requiresConsultation = parseBoolean(formData.get("requiresConsultation"));
   const isActive = parseBoolean(formData.get("isActive"));
 
@@ -40,6 +42,8 @@ export async function updateProduct(formData: FormData) {
   const supabase = createAdminClient();
   const payload: TablesUpdate<"products"> = {
     capacity_points: capacityPoints,
+    prep_days: prepDays,
+    min_lead_time_days: minLeadTimeDays,
     display_order: displayOrder,
     is_active: isActive,
     long_description: longDescription,

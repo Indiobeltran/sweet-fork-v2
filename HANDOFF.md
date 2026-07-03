@@ -1,3 +1,71 @@
+## Phase 7 Prep Shadows & Lead-Time Rules — 2026-07-03
+
+- **Current branch**: `codex/prep-shadows`.
+- **Current objective**: Orders don't just occupy their due date — they consume prep days before it. This phase makes the calendar reflect that, and flags inquiries that arrive inside a product's minimum lead time.
+- **Production backup and verification close-out — 2026-07-03**:
+  - **Secret-handling correction**: Initially, `pg_dump` was executed with direct connection credentials. The password was successfully rotated by the owner. Going forward, the connection string is loaded via `"$DB_URL"` from `.env.local` to maintain secret hygiene.
+  - Sourced `DB_URL` from `.env.local` pointing to pooler host `aws-1-us-west-2.pooler.supabase.com:5432` and ran `pg_dump "$DB_URL" -f scratch/pre-phase7-backup.sql`.
+  - Verified `scratch/pre-phase7-backup.sql` is non-empty (~240KB) and contains standard `CREATE TABLE` definitions for all application tables (such as `products`, `orders`, `inquiries`, `blackout_dates`, etc.).
+  - Applied `supabase/migrations/20260703180414_prep_shadows.sql` to linked production project `renjsmdsrzjnppqpaoaa` using `supabase db push --linked`.
+- **Schema added**:
+  - `supabase/migrations/20260703180414_prep_shadows.sql`
+    - Adds `prep_days` (`integer not null default 0`)
+    - Adds `min_lead_time_days` (`integer not null default 3`)
+- **Restored tests**:
+  - Reverted test modifications to `src/lib/admin/capacity.test.ts` to restore Phase 6 tests:
+    - `"marks a light day overbooked when its week exceeds the ceiling (restored from Phase 6)"`
+    - `"includes outside-month days in week totals (restored from Phase 6)"`
+  - Added new unit test verifying that quantity multiplication behaves as expected and spreads properly:
+    - `"multiplies base points by quantity and spreads properly"`
+  - Verify total test suite count is now 100/100 passing (up from 97).
+- **Quantity-handling determination**:
+  - Phase 6 indeed multiplied the base points by item quantity (`basePoints * quantity`). This behavior was verified and preserved deliberately in Phase 7 logic (`totalPoints += basePoints * quantity`), and is now covered by an explicit unit test.
+- **Capacity logic updated**:
+  - `src/lib/admin/capacity.ts`: `buildCapacityLoad` now splits load across a window (`due date - max(prep_days)` to `due date`).
+  - Added `isShortLeadTime` logic to check if inquiries arrive within `min_lead_time_days`.
+- **Calendar data/UI updated**:
+  - `src/lib/admin/calendar.ts`: Integrated product prep data and order references into calendar rendering.
+  - `src/app/admin/(protected)/calendar/page.tsx`: Added prep/due details to tooltips (`duePoints` vs `prepPoints` and order references).
+- **Product admin updated**:
+  - `src/app/admin/(protected)/products/page.tsx` and `actions.ts`: Added support for editing `prep_days` and `min_lead_time_days`.
+- **Inquiries admin updated**:
+  - `src/app/admin/(protected)/inquiries/page.tsx` and `src/lib/admin/inquiries.ts`: Added "Short lead" warning pill for inquiries falling inside `min_lead_time_days`.
+- **Visual Verification Results**:
+  - **Product settings**: Set `custom-cake` to `prep_days = 2` and `min_lead_time_days = 14`. Left `cupcakes` at `prep_days = 0` and `min_lead_time_days = 3`.
+  - **Capacity window**: Created order `00000000-0000-0000-0000-000000000002` due on `2026-07-15` containing one `custom-cake` (2 points). Verified load spreads backward:
+    - `2026-07-13`: 0 points (no load)
+    - `2026-07-14`: 1 point (rendered as prep-only load with heat tint, no order marker dot)
+    - `2026-07-15`: 1 point (rendered as due load with order marker dot)
+  - **Blackout day overlap**: Created blackout date `00000000-0000-0000-0000-000000000004` on `2026-07-22`. Created order `00000000-0000-0000-0000-000000000005` due on `2026-07-24` with one `custom-cake` overridden to 3 points. Verified points spread:
+    - `2026-07-22`: 1 point (carries prep load and shows blackout styling normally)
+    - `2026-07-23`: 1 point (carries prep load)
+    - `2026-07-24`: 1 point (carries due load with order marker dot)
+  - **Short lead warning chip**: Created inquiry `00000000-0000-0000-0000-000000000007` (event date `2026-07-10`, submitted `2026-07-03` -> 7 days delta < 14 days min lead time). Verified "Short lead" pill renders with rose border/background.
+  - **No warning chip**: Created inquiry `00000000-0000-0000-0000-000000000009` (event date `2026-07-20`, submitted `2026-07-03` -> 17 days delta > 14 days min lead time). Verified no chip renders.
+- **Verification commands run**:
+  - `npm run lint`: passed.
+  - `npm run typecheck`: passed.
+  - `npm test`: passed, 100/100 tests.
+  - `npm run build`: passed.
+- **How to remove Phase 7 test data**:
+  - **DO NOT RUN DESTRUCTIVE STATEMENTS UNLESS DIRECTED.** The following records exist in production and should be removed after manual verification:
+    - Table `blackout_dates`:
+      - `DELETE FROM blackout_dates WHERE id = '00000000-0000-0000-0000-000000000004';`
+    - Table `order_items`:
+      - `DELETE FROM order_items WHERE id IN ('00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000006');`
+    - Table `orders`:
+      - `DELETE FROM orders WHERE id IN ('00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000005');`
+    - Table `inquiry_items`:
+      - `DELETE FROM inquiry_items WHERE id IN ('00000000-0000-0000-0000-000000000008', '00000000-0000-0000-0000-000000000010');`
+    - Table `inquiries`:
+      - `DELETE FROM inquiries WHERE id IN ('00000000-0000-0000-0000-000000000007', '00000000-0000-0000-0000-000000000009');`
+    - Table `customers`:
+      - `DELETE FROM customers WHERE id = '00000000-0000-0000-0000-000000000001';`
+    - Table `products` restoration:
+      - `UPDATE products SET prep_days = 0, min_lead_time_days = 3 WHERE product_type = 'custom-cake';`
+- **Next exact task**:
+  - Final human visual calendar confirmation, then clean up test rows using the statements above.
+
 ## Phase 6 Capacity Foundation — 2026-07-03
 
 - **Current branch**: `codex/capacity-foundation`.
@@ -299,6 +367,109 @@
   - Uploaded images cannot be restored because the current customer wizard does not support image uploads and no File objects are present. Reintroducing uploads should be a separate scoped task that restores server-side upload handling intentionally.
   - Review Step 5 still summarizes selected products primarily through counts and design notes; it does not display every optional field such as topper text unless the user edits Step 3.
 - **Next exact task**: Stage only task-owned files, commit with `fix: preserve inquiry details and improve form inputs`, push `codex/inquiry-wizard-persistence`, and leave unrelated files unstaged.
+
+## Production Supabase and Netlify Configuration Audit — 2026-07-02 MDT / 2026-07-03 UTC
+
+- **Branch and starting commit**:
+  - Branch: `main`.
+  - Starting/local HEAD: `556820c4bbadad4c9bb1d993058dba98d8b87766` (`fix: avoid duplicate GA4 history page views`).
+  - Netlify current production deploy: `6a46bf968e61fd0008a2211e`, production context, branch `main`, commit `556820c4bbadad4c9bb1d993058dba98d8b87766`, state `ready`, published `2026-07-02T19:45:47.506Z`.
+- **Objective**: Audit and safely clean up production configuration for `https://thesweetfork.com`, confirming it uses existing Supabase project `Sweet-Fork-V2` / ref `renjsmdsrzjnppqpaoaa` without migrating, resetting, replacing, rotating, or recreating the database.
+- **Pre-existing working-tree state**:
+  - Before this task, `git status --short` already showed modified `.gitignore` and untracked `.agents/`, `.claude/`, `.superpowers/`, `scratch/gbp-audit/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `scratch/verification.mjs`, and `skills-lock.json`.
+  - The Supabase CLI touched `supabase/.temp/cli-latest`; that generated change was restored to its tracked content before stopping.
+- **Files changed by this task**:
+  - `README.md`: changed stale stack wording from Vercel-ready deployment target to Netlify production deployment target.
+  - `HANDOFF.md`: this audit entry.
+- **Files intentionally preserved**:
+  - Pre-existing `.gitignore` modification and untracked agent/scratch files.
+  - Application/source files, Supabase migrations, generated Supabase types, Netlify config, media architecture, storage objects, users, policies, production customer records, and production media assignments.
+- **Supabase project verification**:
+  - Supabase CLI version available through project dependency: `2.84.10`; CLI reported latest available `2.109.0`.
+  - Local Supabase link file `supabase/.temp/project-ref` points to `renjsmdsrzjnppqpaoaa`.
+  - `npx --no-install supabase projects list -o json` is authenticated and lists `Sweet-Fork-V2`, ref `renjsmdsrzjnppqpaoaa`, status `ACTIVE_HEALTHY`, region `us-west-2`, linked `true`.
+  - Supabase MCP `_get_project` and `_get_project_url` confirmed project URL `https://renjsmdsrzjnppqpaoaa.supabase.co`.
+  - Direct Supabase gateway check returned `sb-project-ref: renjsmdsrzjnppqpaoaa` for the expected API host.
+  - No Supabase project, branch, migration, key rotation, schema reset, storage deletion, user deletion, policy change, or data migration was performed.
+- **How the app obtains Supabase config**:
+  - `src/lib/env.ts` reads `NEXT_PUBLIC_SUPABASE_URL`.
+  - Browser/public reads use `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` first, with `NEXT_PUBLIC_SUPABASE_ANON_KEY` as legacy fallback.
+  - Server/admin writes use `SUPABASE_SECRET_KEY` first, with `SUPABASE_SERVICE_ROLE_KEY` as legacy fallback, but only after `src/lib/env.ts` verifies the candidate is privileged.
+  - Supabase access methods are `@supabase/ssr` browser/server/middleware clients and `@supabase/supabase-js` public/admin clients. No direct Postgres connection or Supabase Edge Function usage was found in the app runtime.
+- **Environment variable names inspected**:
+  - Code/config names: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SITE_URL`, `SITE_URL`, `URL`, `DEPLOY_URL`, `DEPLOY_PRIME_URL`, `SITE_NAME`, `NEXT_PUBLIC_GA_MEASUREMENT_ID`, `INQUIRY_UPLOAD_ENABLED`, `INQUIRY_LINK_FALLBACK_ENABLED`, `SUPABASE_STORAGE_BUCKET`.
+  - Local `.env.local` was inspected by variable name and redacted fingerprint only. It points to project ref `renjsmdsrzjnppqpaoaa`; local publishable fingerprint matched the project default publishable key fingerprint (`len=46`, `fp=sb_p...sbHF`). Local secret/admin and QA credential values were not recorded.
+  - Browser-delivered production JS scan across `/`, `/gallery`, `/start-order`, and `/admin/login` found one public publishable key fingerprint (`len=46`, `fp=sb_p...sbHF`), no `sb_secret_` keys, and no service-role JWTs.
+- **Netlify verification**:
+  - Netlify CLI is not installed on PATH (`netlify` command not found), and no `NETLIFY_AUTH_TOKEN`, `NETLIFY_API_TOKEN`, or `NETLIFY_SITE_ID` is present in the shell environment.
+  - No local `.netlify/state.json` link was present in this checkout; local Netlify CLI linkage could not be verified.
+  - Netlify connector read-only project metadata confirmed site `sweet-fork-v2`, site id `9b4f4bcc-418a-4e39-ba79-4b71b445b5f4`, primary site URL `https://thesweetfork.com`, team `Sweet Fork`, current user role `Owner`, forms enabled, and current deploy ready.
+  - Exact Netlify environment variable values/scopes for Production, Deploy Preview, and branch deploy were not inspected because the installed CLI is unavailable and local Netlify API token variables are absent. Manual dashboard review remains required for those scopes.
+- **Netlify scopes inspected**:
+  - Production deploy context was inspected through Netlify connector deploy metadata.
+  - Deploy Preview and branch-deploy environment scopes were not directly inspectable from available CLI/token state.
+- **Vercel references found and classification**:
+  - Active production dependency: none confirmed.
+  - Development/compatibility-only source references:
+    - `src/lib/env.ts` normalizes configured `.vercel.app` or `.netlify.app` production site URLs back to the canonical production URL.
+    - `src/middleware.ts` marks `.vercel.app`, `.netlify.app`, and `--` temporary hosts `noindex`.
+    - `src/app/api/inquiries/route.ts` still accepts `x-vercel-forwarded-for` as an IP fallback after the Netlify IP header.
+  - Legacy/dead configuration: no `vercel.json`, no tracked `.vercel` config, no `VERCEL_URL`, `NEXT_PUBLIC_VERCEL_URL`, `VERCEL_ENV`, `VERCEL_PROJECT`, `supabase-pooler.vercel`, or `workaround=supabase-pooler.vercel` found outside historical docs.
+  - Dependency package still legitimately required: no checked-in `@vercel/*` package dependency found. Netlify deploy runtime uses `@netlify/plugin-nextjs@5.15.12`.
+  - Documentation-only/historical: old Vercel deployment notes remain in `HANDOFF.md`, `DECISIONS.md`, and `docs/superpowers/plans/...`; README's current stack wording was updated to Netlify.
+- **Supabase Auth URL configuration**:
+  - No `src/app/auth/callback` route, no `src/app/reset-password` route, and no `emailRedirectTo`/magic-link flow were found in the current app.
+  - Current admin auth is password-based via `/admin/login`, `signInWithPassword`, Supabase SSR cookies, `getUser()`, `profiles`, and `user_roles`.
+  - Supabase CLI `config` exposes `push` only; no documented safe CLI read/update path for hosted Auth URL settings was available. No undocumented management API call was used.
+  - Manual owner/dashboard action remains: Supabase -> `Sweet-Fork-V2` -> Authentication -> URL Configuration. Desired Site URL is `https://thesweetfork.com`. Preserve valid local and Netlify preview URLs. Do not add nonexistent callback/reset routes unless the app adds those routes later.
+- **Vercel Marketplace / billing ownership**:
+  - Supabase project `Sweet-Fork-V2` belongs to organization id/slug `jfojdcjgybgrqsdywpss`, shown by CLI/MCP as the normal Supabase organization.
+  - CLI also lists a separate Vercel-prefixed Supabase organization (`vercel_icfg_...`), but `Sweet-Fork-V2` is not under that organization.
+  - Billing appears to be managed directly in Supabase for this project, not by Vercel Marketplace, based on project organization metadata.
+  - Owner-only final verification still recommended in Supabase billing/organization settings before disconnecting or uninstalling any Vercel Marketplace integration elsewhere.
+- **Production tests and results**:
+  - Static production fetches returned `200` for `/`, `/gallery`, `/custom-cakes`, `/start-order`, `/admin/login`, `/robots.txt`, and `/sitemap.xml`.
+  - Selected security headers present on checked routes: CSP, HSTS, Referrer-Policy, X-Content-Type-Options, and X-Frame-Options.
+  - Production HTML for homepage/gallery/product pages references `renjsmdsrzjnppqpaoaa` Supabase media and did not contain `vercel.app`.
+  - Production JS scan found no `sb_secret_` key, no service-role JWT, and no `vercel.app` request/reference in fetched app chunks.
+  - Submitted one production QA inquiry through `https://thesweetfork.com/api/inquiries`; API returned `201`, reference `SF-59118F5C`. Supabase verification found the record in project `renjsmdsrzjnppqpaoaa`, status `new`, source `web`, and matching reference metadata.
+  - Headless Chrome production admin smoke passed: `/admin/login` login succeeded, `/admin/inquiries` rendered, `/admin/media` rendered, sign-out returned to `/admin/login`, and second login succeeded. Console message count was `0`; network loading failures were only `net::ERR_ABORTED` route navigations (`/admin/inquiries`, `/admin/orders`). Supabase network requests pointed to `renjsmdsrzjnppqpaoaa`; Vercel request count was `0`.
+  - Disposable Supabase media QA passed directly against the existing `marketing` bucket and `media_assets` table: upload, edit, delete row, remove storage object, confirm row absent, confirm no storage matches remained. QA asset fingerprint `8aadd8f4...5440`; no real media assignments or customer assets were touched.
+- **Production tests not completed**:
+  - Exact Netlify Production/Deploy Preview/branch env scopes were not verified due unavailable installed CLI/token state.
+  - Supabase Auth dashboard URL settings were not read or updated due no documented safe CLI path.
+  - Password reset/magic-link redirect was not tested because the current app has no reset/magic-link route.
+  - GA4 Realtime/DebugView and owner email inbox receipt were not verified.
+- **Supabase advisors**:
+  - Security advisor ran through Supabase MCP. Existing warnings include mutable function search path on `public.set_updated_at`, `citext` in public schema, public/signed-in executable SECURITY DEFINER functions (`current_admin_role`, `is_admin`, `is_owner`, `rls_auto_enable`), and leaked password protection disabled.
+  - Performance advisor ran through Supabase MCP. Existing findings include unindexed foreign keys, RLS init-plan warnings, unused indexes, and multiple permissive policies.
+  - No advisor findings were remediated in this task because they are unrelated to the production Netlify/Supabase linkage audit.
+- **Validation commands and results**:
+  - `npm ci`: passed; emitted expected engine warning because the shell uses Node `v25.6.1` while `package.json` requires Node `24.x`; audit found 0 vulnerabilities.
+  - `npm run lint`: passed.
+  - `npm run typecheck`: passed.
+  - `npm test`: passed, 74/74 tests; expected Netlify bridge fail-soft fixture warnings printed.
+  - `npm run build`: passed.
+  - `git diff --check`: passed.
+- **Netlify configuration changes made**: none.
+- **Supabase Auth configuration changes made**: none.
+- **Repository changes made**: documentation only (`README.md`, `HANDOFF.md`).
+- **Final commit hash and deploy identifier**:
+  - No commit was created because there were no application/source changes and the user rules prohibit meaningless commits.
+  - Existing production deploy remains `6a46bf968e61fd0008a2211e` for commit `556820c4bbadad4c9bb1d993058dba98d8b87766`.
+- **Commands still needed / manual owner actions**:
+  - Netlify dashboard: `https://app.netlify.com/projects/sweet-fork-v2` -> Site configuration -> Environment variables. Review `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` or `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SITE_URL`, `SITE_URL`, `URL`, `DEPLOY_URL`, and `DEPLOY_PRIME_URL` separately for Production, Deploy Preview, and branch deploy scopes. Expected public Supabase URL is `https://renjsmdsrzjnppqpaoaa.supabase.co`; canonical production site URL is `https://thesweetfork.com`; no secret may use a `NEXT_PUBLIC_` prefix.
+  - Supabase dashboard: Supabase -> `Sweet-Fork-V2` -> Authentication -> URL Configuration. Confirm Site URL `https://thesweetfork.com`; preserve local development and Netlify preview redirect URLs; do not add nonexistent `/auth/callback` or `/reset-password` routes unless the app adds them.
+  - Supabase dashboard/billing: confirm project ownership and billing are direct Supabase for org `jfojdcjgybgrqsdywpss` before disconnecting any Vercel Marketplace integration elsewhere.
+  - Owner/admin can archive or delete production QA inquiry `SF-59118F5C` after review.
+- **Known issues / open questions**:
+  - Netlify env metadata still needs dashboard-level scope review because CLI access was unavailable.
+  - Supabase Auth URL configuration remains manual/unverified by tooling.
+  - Existing Supabase advisor warnings should be triaged in a separate security/performance task.
+  - README is updated, but historical Vercel references remain in old handoff/decision/planning records intentionally as history.
+- **Explicit secret handling confirmation**:
+  - No secret values, service-role keys, database passwords, access tokens, full connection strings, or full env values were recorded in this handoff.
+  - No key rotation was performed.
 
 ## GA4 Page View Defect Fix — 2026-07-02
 

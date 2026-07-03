@@ -19,3 +19,6 @@ scratch/gallery-import/**/originals/*
 scratch/gallery-import/**/processed/*
 !scratch/gallery-import/**/processed/.gitkeep
 .vercel
+
+# Local Netlify folder
+.netlify

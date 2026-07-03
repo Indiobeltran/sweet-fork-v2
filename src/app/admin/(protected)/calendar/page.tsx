@@ -209,7 +209,7 @@ function getCapacityPercent(points: number, ceiling: number) {
 }
 
 function getDayCapacityLabel(day: CalendarDay) {
-  return `${day.dateKey}: ${day.capacity.orderPoints} points, ${day.capacity.orderCount} confirmed order${day.capacity.orderCount === 1 ? "" : "s"}, ${day.capacity.inquiryCount} active inquir${day.capacity.inquiryCount === 1 ? "y" : "ies"}`;
+  return `${day.dateKey}: ${day.capacity.orderPoints} points (${day.capacity.duePoints} due, ${day.capacity.prepPoints} prep), ${day.capacity.orderCount} confirmed order${day.capacity.orderCount === 1 ? "" : "s"} due, ${day.capacity.inquiryCount} active inquir${day.capacity.inquiryCount === 1 ? "y" : "ies"}`;
 }
 
 function WeekCapacityBar({
@@ -320,9 +320,20 @@ function DayCapacityTooltip({ day }: Readonly<{ day: CalendarDay }>) {
   return (
     <div className="pointer-events-none absolute left-2 right-2 top-10 z-20 hidden rounded-2xl border border-charcoal/10 bg-white/96 p-3 text-left text-xs leading-5 text-charcoal shadow-soft group-hover:block group-focus:block">
       <div className="font-semibold">{getLoadStateLabel(day.capacity.loadState)}</div>
-      <div>{day.capacity.orderPoints} capacity points</div>
-      <div>{day.capacity.orderCount} confirmed orders</div>
+      <div>{day.capacity.orderPoints} capacity points ({day.capacity.duePoints} due, {day.capacity.prepPoints} prep)</div>
+      <div>{day.capacity.orderCount} confirmed orders due</div>
       <div>{day.capacity.inquiryCount} active inquiries</div>
+      {day.capacity.contributingOrders && day.capacity.contributingOrders.length > 0 && (
+        <div className="mt-2 pt-2 border-t border-charcoal/10">
+          <div className="font-semibold text-[10px] uppercase tracking-wider text-charcoal/60 mb-1">Load Contributors</div>
+          {day.capacity.contributingOrders.map((order, i) => (
+            <div key={`${order.id}-${order.type}-${i}`} className="flex justify-between items-center text-[11px]">
+              <span>{order.reference ?? `ORD-${order.id.slice(0, 8).toUpperCase()}`}</span>
+              <span className="text-charcoal/70">{order.points}pt {order.type}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -8,7 +8,7 @@ Production-readiness workspace for a Next.js + Supabase rebuild of The Sweet For
 - TypeScript
 - Tailwind CSS
 - Supabase for auth, database, and storage helpers
-- Vercel-ready deployment target
+- Netlify production deployment target
 
 ## Folder Structure
 

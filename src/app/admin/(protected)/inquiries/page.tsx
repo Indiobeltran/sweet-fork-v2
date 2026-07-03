@@ -411,6 +411,11 @@ function InquiryCard({ entry }: Readonly<{ entry: InquiryListEntry }>) {
             >
               Time: {entry.urgencyLabel}
             </span>
+            {entry.isShortLead && (
+              <span className="rounded-full border border-rose/30 bg-rose/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-charcoal">
+                Short lead
+              </span>
+            )}
           </div>
         </div>
 

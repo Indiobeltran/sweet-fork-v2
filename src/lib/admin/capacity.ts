@@ -4,6 +4,8 @@ export type CapacityProduct = {
   capacityPoints: number | null;
   id: string;
   productType: string;
+  prepDays: number | null;
+  minLeadTimeDays: number | null;
 };
 
 export type CapacityOrderItem = {
@@ -32,6 +34,9 @@ export type CapacityDayLoad = {
   loadState: CapacityLoadState;
   orderCount: number;
   orderPoints: number;
+  duePoints: number;
+  prepPoints: number;
+  contributingOrders: Array<{ id: string; type: "due" | "prep"; points: number; reference?: string }>;
   weekStartKey: string;
 };
 
@@ -88,10 +93,6 @@ function normalizePositiveInteger(value: number | null | undefined, fallback: nu
   return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : fallback;
 }
 
-export function getOrderLoadDateKeys(order: Pick<CapacityOrder, "eventDate" | "id" | "items" | "status">) {
-  return [order.eventDate];
-}
-
 export function getWeekStartKey(dateKey: string, weekStartDay = 0) {
   const date = new Date(`${dateKey}T12:00:00.000Z`);
   const normalizedWeekStartDay = Math.min(Math.max(Math.trunc(weekStartDay), 0), 6);
@@ -126,43 +127,105 @@ export function getCapacityLoadState(
   return "light";
 }
 
-function buildProductPointLookup(products: CapacityProduct[]) {
-  const byProductId = new Map<string, number>();
-  const byProductType = new Map<string, number>();
+export function buildProductPointLookup(products: CapacityProduct[]) {
+  const byProductId = new Map<string, { points: number; prepDays: number; minLeadTimeDays: number }>();
+  const byProductType = new Map<string, { points: number; prepDays: number; minLeadTimeDays: number }>();
 
   products.forEach((product) => {
     const points = normalizePositiveInteger(product.capacityPoints, defaultProductCapacityPoints);
-    byProductId.set(product.id, points);
-    byProductType.set(product.productType, points);
+    const prepDays = Math.max(0, Math.trunc(product.prepDays ?? 0));
+    const minLeadTimeDays = Math.max(0, Math.trunc(product.minLeadTimeDays ?? 3));
+    byProductId.set(product.id, { points, prepDays, minLeadTimeDays });
+    byProductType.set(product.productType, { points, prepDays, minLeadTimeDays });
   });
 
   return { byProductId, byProductType };
 }
 
-function getOrderItemPoints(
-  item: CapacityOrderItem,
-  productPoints: ReturnType<typeof buildProductPointLookup>,
-) {
-  const basePoints =
-    normalizePositiveInteger(item.capacityPointsOverride, 0) ||
-    (item.productId ? productPoints.byProductId.get(item.productId) : undefined) ||
-    productPoints.byProductType.get(item.productType) ||
-    defaultProductCapacityPoints;
-  const quantity = normalizePositiveInteger(item.quantity, 1);
-
-  return basePoints * quantity;
-}
-
-function getOrderPoints(order: CapacityOrder, productPoints: ReturnType<typeof buildProductPointLookup>) {
+export function getOrderLoadDistribution(
+  order: Pick<CapacityOrder, "eventDate" | "id" | "items" | "status">,
+  productLookup: ReturnType<typeof buildProductPointLookup>
+): Array<{ dateKey: string; points: number; isDue: boolean }> {
   if (order.status !== "confirmed") {
-    return 0;
+    return [];
   }
+
+  let totalPoints = 0;
+  let maxPrepDays = 0;
 
   if (order.items.length === 0) {
-    return defaultProductCapacityPoints;
+    totalPoints = defaultProductCapacityPoints;
+    maxPrepDays = 0;
+  } else {
+    order.items.forEach((item) => {
+      const lookup = (item.productId ? productLookup.byProductId.get(item.productId) : undefined) ||
+                     productLookup.byProductType.get(item.productType) ||
+                     { points: defaultProductCapacityPoints, prepDays: 0, minLeadTimeDays: 3 };
+      const basePoints = normalizePositiveInteger(item.capacityPointsOverride, 0) || lookup.points;
+      const quantity = normalizePositiveInteger(item.quantity, 1);
+      totalPoints += basePoints * quantity;
+      if (lookup.prepDays > maxPrepDays) {
+        maxPrepDays = lookup.prepDays;
+      }
+    });
   }
 
-  return order.items.reduce((total, item) => total + getOrderItemPoints(item, productPoints), 0);
+  if (totalPoints <= 0) {
+    return [];
+  }
+
+  const windowDays = Math.max(1, maxPrepDays + 1);
+  const basePoints = Math.floor(totalPoints / windowDays);
+  let remainder = totalPoints % windowDays;
+
+  const spread = Array(windowDays).fill(basePoints);
+  for (let i = windowDays - 1; i >= 0 && remainder > 0; i--) {
+    spread[i] += 1;
+    remainder -= 1;
+  }
+
+  const distribution: Array<{ dateKey: string; points: number; isDue: boolean }> = [];
+  const cursor = new Date(`${order.eventDate}T12:00:00.000Z`);
+  cursor.setUTCDate(cursor.getUTCDate() - maxPrepDays);
+
+  for (let i = 0; i < windowDays; i++) {
+    distribution.push({
+      dateKey: getDateKey(cursor),
+      points: spread[i],
+      isDue: i === windowDays - 1
+    });
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+
+  return distribution;
+}
+
+export function isShortLeadTime(
+  eventDate: string,
+  items: Pick<CapacityOrderItem, "productId" | "productType">[],
+  productLookup: ReturnType<typeof buildProductPointLookup>,
+  todayKey: string
+): boolean {
+  let minLeadTime = 3;
+  if (items.length > 0) {
+    minLeadTime = 0;
+    items.forEach(item => {
+      const lookup = (item.productId ? productLookup.byProductId.get(item.productId) : undefined) ||
+                     productLookup.byProductType.get(item.productType) ||
+                     { points: defaultProductCapacityPoints, prepDays: 0, minLeadTimeDays: 3 };
+      if (lookup.minLeadTimeDays > minLeadTime) {
+        minLeadTime = lookup.minLeadTimeDays;
+      }
+    });
+  }
+  
+  const event = new Date(`${eventDate}T12:00:00.000Z`);
+  const today = new Date(`${todayKey}T12:00:00.000Z`);
+  
+  const diffTime = event.getTime() - today.getTime();
+  const diffDays = diffTime / (1000 * 3600 * 24);
+  
+  return diffDays < minLeadTime;
 }
 
 function createWeekEndKey(weekStartKey: string) {
@@ -190,27 +253,40 @@ export function buildCapacityLoad({
         inquiryCount: 0,
         orderCount: 0,
         orderPoints: 0,
+        duePoints: 0,
+        prepPoints: 0,
+        contributingOrders: [] as CapacityDayLoad["contributingOrders"],
         weekStartKey: getWeekStartKey(dateKey, weekStartDay),
       },
     ]),
   );
 
   orders.forEach((order) => {
-    const orderPoints = getOrderPoints(order, productPoints);
+    const distribution = getOrderLoadDistribution(order, productPoints);
 
-    if (orderPoints <= 0) {
-      return;
-    }
-
-    getOrderLoadDateKeys(order).forEach((dateKey) => {
+    distribution.forEach(({ dateKey, points, isDue }) => {
       const day = dayLoads.get(dateKey);
 
       if (!day) {
         return;
       }
 
-      day.orderCount += 1;
-      day.orderPoints += orderPoints;
+      if (isDue) {
+        day.orderCount += 1;
+        day.duePoints += points;
+      } else {
+        day.prepPoints += points;
+      }
+      
+      day.orderPoints += points;
+
+      if (points > 0) {
+        day.contributingOrders.push({
+          id: order.id,
+          type: isDue ? "due" : "prep",
+          points
+        });
+      }
     });
   });
 

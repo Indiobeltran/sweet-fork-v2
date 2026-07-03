@@ -1381,7 +1381,9 @@ export type Database = {
           id: string
           is_active: boolean
           long_description: string | null
+          min_lead_time_days: number
           name: string
+          prep_days: number
           product_type: Database["public"]["Enums"]["product_type"]
           requires_consultation: boolean
           short_description: string | null
@@ -1395,7 +1397,9 @@ export type Database = {
           id?: string
           is_active?: boolean
           long_description?: string | null
+          min_lead_time_days?: number
           name: string
+          prep_days?: number
           product_type: Database["public"]["Enums"]["product_type"]
           requires_consultation?: boolean
           short_description?: string | null
@@ -1409,7 +1413,9 @@ export type Database = {
           id?: string
           is_active?: boolean
           long_description?: string | null
+          min_lead_time_days?: number
           name?: string
+          prep_days?: number
           product_type?: Database["public"]["Enums"]["product_type"]
           requires_consultation?: boolean
           short_description?: string | null
