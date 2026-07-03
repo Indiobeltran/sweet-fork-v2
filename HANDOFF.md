@@ -1,8 +1,8 @@
 ## Phase 8 Calendar Day Drawer — 2026-07-03
 
-- **Current branch**: `codex/day-drawer`.
+- **Current branch**: `main`.
 - **Current objective**: Replace the hover tooltips on click/tap with an interactive day drawer panel showing detailed daily bookings, capacity details, inquiries (including short-lead flags calculated via the shared `isShortLeadTime` utility), blackout details, and quick actions (pre-filled note and blackout forms, and confirm-to-remove blackouts).
-- **Status**: Closed and ready for verification.
+- **Status**: Closed, merged, and deployed.
 - **Architectural & Data Plumbing Decisions**:
   - We implemented a lightweight Server Action `getCalendarDayDetails(dateKey, contributingOrderIds)` to fetch details on drawer open rather than loading all detailed records upfront, minimizing initial month-view grid payload size.
   - Enforced strict admin authorization on both new actions using `await requireAdmin()`.
