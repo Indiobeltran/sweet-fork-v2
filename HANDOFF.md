@@ -25,7 +25,10 @@
   - Added `isShortLeadTime` logic to check if inquiries arrive within `min_lead_time_days`.
 - **Calendar data/UI updated**:
   - `src/lib/admin/calendar.ts`: Integrated product prep data and order references into calendar rendering.
-  - `src/app/admin/(protected)/calendar/page.tsx`: Added prep/due details to tooltips (`duePoints` vs `prepPoints` and order references).
+  - `src/app/admin/(protected)/calendar/page.tsx`:
+    - Added prep/due details to tooltips (`duePoints` vs `prepPoints` and order references).
+    - Extended and replaced the simple legend chips with a detailed, collapsible `<details>` legend documenting dot markers, capacity heat tint scale, prep-only loads, and corner labels.
+    - Nudged capacity heat tints to higher opacities (e.g., `light` to `bg-emerald-50/75`, `moderate` to `bg-gold/16`, `full` to `bg-rose/12`, `overbooked` to `bg-rose/20`) to make prep shadow load backgrounds clearly visible on standard screens.
 - **Product admin updated**:
   - `src/app/admin/(protected)/products/page.tsx` and `actions.ts`: Added support for editing `prep_days` and `min_lead_time_days`.
 - **Inquiries admin updated**:

@@ -184,13 +184,13 @@ function getLoadBarClasses(state: CapacityLoadState) {
 function getLoadCellClasses(state: CapacityLoadState) {
   switch (state) {
     case "light":
-      return "border-emerald-200/80 bg-emerald-50/55";
+      return "border-emerald-200 bg-emerald-50/75";
     case "moderate":
-      return "border-gold/28 bg-gold/10";
+      return "border-gold/35 bg-gold/16";
     case "full":
-      return "border-rose/24 bg-rose/8";
+      return "border-rose/30 bg-rose/12";
     case "overbooked":
-      return "border-rose/42 bg-rose/14";
+      return "border-rose/55 bg-rose/20";
     default:
       return "border-charcoal/10 bg-white/88";
   }
@@ -863,35 +863,88 @@ export default async function AdminCalendarPage({ searchParams }: AdminCalendarP
           />
         ) : null}
 
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap gap-2">
-            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-900">
-              Confirmed order
-            </span>
-            <span className="rounded-full border border-gold/24 bg-gold/12 px-3 py-1 text-xs text-charcoal">
-              Active inquiry
-            </span>
-            <span className="rounded-full border border-rose/24 bg-rose/10 px-3 py-1 text-xs text-charcoal">
-              Blackout
-            </span>
-            <span className="rounded-full border border-charcoal/10 bg-white px-3 py-1 text-xs text-charcoal/74">
-              Manual note
-            </span>
-            <span className="rounded-full border border-emerald-200/80 bg-emerald-50/55 px-3 py-1 text-xs text-charcoal/74">
-              Light load
-            </span>
-            <span className="rounded-full border border-gold/28 bg-gold/10 px-3 py-1 text-xs text-charcoal/74">
-              Moderate
-            </span>
-            <span className="rounded-full border border-rose/24 bg-rose/8 px-3 py-1 text-xs text-charcoal/74">
-              Full
-            </span>
-            <span className="rounded-full border border-rose/42 bg-rose/14 px-3 py-1 text-xs font-medium text-charcoal">
-              Overbooked
-            </span>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="w-full lg:max-w-2xl">
+            <details className="group rounded-[1.25rem] border border-charcoal/8 bg-white/60 p-3 transition-all [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer items-center justify-between gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-charcoal/60 outline-none select-none">
+                <span>View Calendar Legend</span>
+                <span className="text-[10px] lowercase text-charcoal/40 group-open:hidden">(click to expand)</span>
+                <span className="hidden text-[10px] lowercase text-charcoal/40 group-open:inline">(click to collapse)</span>
+              </summary>
+              <div className="mt-3 grid gap-4 border-t border-charcoal/6 pt-3 text-xs leading-5 text-charcoal/74 sm:grid-cols-2">
+                <div>
+                  <h4 className="font-semibold text-charcoal mb-1.5 uppercase tracking-wider text-[10px] text-charcoal/50">Capacity Heat Scale</h4>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block h-3 w-5 rounded border border-emerald-200 bg-emerald-50/75" />
+                      <span>Light Load (≤ 25%)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block h-3 w-5 rounded border border-gold/35 bg-gold/16" />
+                      <span>Moderate Load (26% - 50%)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block h-3 w-5 rounded border border-rose/30 bg-rose/12" />
+                      <span>Full Load (51% - 100%)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block h-3 w-5 rounded border border-rose/55 bg-rose/20" />
+                      <span>Overbooked (&gt; 100%)</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-charcoal mb-1.5 uppercase tracking-wider text-[10px] text-charcoal/50">Day Item Markers (Dots)</h4>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
+                      <span>Confirmed Order / Approved Inquiry</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block h-2 w-2 rounded-full bg-gold" />
+                      <span>Quoted Order / New Inquiry</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block h-2 w-2 rounded-full bg-rose" />
+                      <span>In-Production / Quoted / Holiday</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block h-2 w-2 rounded-full bg-charcoal/60" />
+                      <span>Manual Note / Other status</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="sm:col-span-2 border-t border-charcoal/6 pt-3 grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <h4 className="font-semibold text-charcoal mb-1.5 uppercase tracking-wider text-[10px] text-charcoal/50">Capacity &amp; Prep Shadow</h4>
+                    <div className="space-y-1">
+                      <div className="flex items-start gap-2">
+                        <span className="inline-block h-4 w-6 rounded border border-emerald-200 bg-emerald-50/75 flex-shrink-0" />
+                        <span><strong>Prep-only Load:</strong> Heat tint from orders due on later dates, rendered without dot markers.</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="inline-block h-4 w-6 rounded border border-charcoal/18 bg-charcoal/[0.04] flex-shrink-0" />
+                        <span><strong>Blackout Day:</strong> Diagonal pattern; still carries prep load normally if overlapping.</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-charcoal mb-1.5 uppercase tracking-wider text-[10px] text-charcoal/50">Corner Labels</h4>
+                    <div className="space-y-1 text-[11px] leading-relaxed">
+                      <div><strong>Superscript (mobile) / right text (desktop):</strong></div>
+                      <div className="pl-1 text-charcoal/80">• <em>X pts / X:</em> Total capacity load (due + prep points) from confirmed orders.</div>
+                      <div className="pl-1 text-charcoal/80">• <em>X items / X:</em> Scheduled items count (only if 0 order points).</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </details>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 lg:mt-1">
             {data.summary.map((item) => (
               <span
                 key={item.label}
