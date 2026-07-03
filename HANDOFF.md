@@ -74,7 +74,42 @@
   - `src/app/admin/(protected)/inquiries/[id]/page.tsx`
   - `HANDOFF.md` (this entry; final production deploy details to be appended after deploy)
 - **Deployment status**:
-  - Commit, merge to `main`, Netlify production deploy, production inquiry QA, production admin QA, and GA4 verification are pending at the time of this entry.
+  - Repair commit: `d6155285097061810ab8ecd0abd90da383a2d3ef` (`fix: preserve inquiry whitespace and prevent mobile overflow`).
+  - Branch `codex/inquiry-wizard-persistence` was pushed to origin and `main` was fast-forwarded from `556820c4bbadad4c9bb1d993058dba98d8b87766` to `d6155285097061810ab8ecd0abd90da383a2d3ef`.
+  - Netlify production deploy `6a47356df3d300000853c3fd` reached `ready` and was published at `2026-07-03T04:08:19.029Z`.
+  - Deploy details: branch `main`, commit ref `d6155285097061810ab8ecd0abd90da383a2d3ef`, title `fix: preserve inquiry whitespace and prevent mobile overflow`, context `production`, plugin state `success`, no secret-scan matches.
+  - A separate failed Netlify MCP upload deploy `6a4735c34a25a722a8fc97d5` did not publish; it failed while extracting an uploaded zip that included `.git`. Production remained on the GitHub-connected ready deploy.
+- **Production inquiry QA**:
+  - Production URL tested: `https://thesweetfork.com/start-order?forensic-prod-qa=1783051794450`.
+  - Viewport used for typing: 390x844; Step 5 width checks also ran at 320x700 and 430x932.
+  - Selected products: Custom Cakes, Cupcakes, Sugar Cookies.
+  - Typed character-by-character into item fields and asserted DOM value after typed spaces and after Enter.
+  - Persisted inquiry reference: `SF-E696E6CC`; id `e696e6cc-9c53-4ea8-96d1-3b6bccbb9f7d`.
+  - Persisted values verified in production admin:
+    - Custom Cakes flavor: `White cake with Bavarian Creme Filling.`
+    - Custom Cakes design: `I don't know what to choose. Please use your judgment.`
+    - Custom Cakes topper preserved multiline text: `Happy Anniversary` and `QA Test`.
+    - Cupcakes flavor: `Chocolate cupcakes with ivory frosting.`
+    - Cupcakes design: `Love on top! Keep the design elegant.`
+    - Sugar Cookies flavor: `Best frosting ever!`
+    - Sugar Cookies design: `You can decide. This is for an anniversary.`
+  - Internal production Back/Continue spot check preserved `Production final inspiration notes.\nLine two.` and `Production extra notes.\nSecond line.`
+  - Production submit succeeded once and returned `SF-E696E6CC`; browser console logs after submit were empty.
+  - QA inquiry `SF-E696E6CC` was archived after verification so it does not remain in the active inquiry desk.
+- **Production overflow QA**:
+  - Production inquiry Step 1 at 390: document/body `390/390`, `scrollX: 0`.
+  - Production inquiry Step 2 at 390: document/body `390/390`, `scrollX: 0`.
+  - Production inquiry Step 3 at 390: document/body `390/390`, `scrollX: 0`.
+  - Production inquiry Step 4 at 390: document/body `390/390`, `scrollX: 0`.
+  - Production inquiry Step 5: `320/320`, `390/390`, `430/430` for document/body widths; `scrollX: 0` at each width.
+  - Step 5 320px internal flags were only the hidden honeypot input and intrinsic text scrolling inside long email/lead-source inputs; neither expanded document/body width.
+  - Production admin detail for `SF-E696E6CC`: `320/320`, `390/390`, `430/430` for document/body widths; `scrollX: 0`.
+  - Production admin detail sampled at 390px around top, requested-item cards, estimate/convert sections, and archive/delete area; every sample stayed `390/390` with `scrollX: 0`.
+  - The only 320px admin internal scroller was native select option text in `customerAction`; the select stayed inside the viewport and did not create page overflow.
+- **GA4 verification**:
+  - Source/unit regression still confirms `trackAnalyticsEvent("inquiry_submitted", ...)` exists in one code path only.
+  - Production browser dev logs after successful submit were empty.
+  - GA4 exact delivery/count was not verified because this browser surface did not expose GA4 network resources or GA4 DebugView access (`performance` and `window.gtag` were unavailable in the automation sandbox). Do not treat GA4 DebugView as verified from this pass.
 
 ## Customer Inquiry Wizard Usability Repair — 2026-07-02 MDT / 2026-07-03 UTC
 
