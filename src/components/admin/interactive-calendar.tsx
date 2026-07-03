@@ -547,6 +547,20 @@ export function InteractiveCalendar({
   const [ceilingError, setCeilingError] = useState("");
   const router = useRouter();
 
+  // Capacity settings disclosure panel state
+  const [settingsExpanded, setSettingsExpanded] = useState(false);
+
+  useEffect(() => {
+    const handleHash = () => {
+      if (window.location.hash === "#capacity-settings-panel") {
+        setSettingsExpanded(true);
+      }
+    };
+    window.addEventListener("hashchange", handleHash);
+    handleHash(); // Run on mount in case the page loaded with the hash
+    return () => window.removeEventListener("hashchange", handleHash);
+  }, []);
+
   const handleCeilingSave = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setCeilingPending(true);
@@ -720,6 +734,8 @@ export function InteractiveCalendar({
       {/* Capacity Settings Panel */}
       <details
         id="capacity-settings-panel"
+        open={settingsExpanded}
+        onToggle={(e) => setSettingsExpanded(e.currentTarget.open)}
         className="group rounded-[1.25rem] border border-charcoal/8 bg-white/60 p-3 transition-all [&_summary::-webkit-details-marker]:hidden"
       >
         <summary className="flex cursor-pointer items-center justify-between gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-charcoal/60 outline-none select-none">

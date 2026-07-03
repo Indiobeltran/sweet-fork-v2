@@ -9,7 +9,7 @@
   - `src/app/admin/(protected)/calendar/actions.ts` (dedicated `updateProductCapacitySettings` action, updated ceiling action)
   - `src/app/admin/(protected)/products/actions.ts` (revalidation path added)
   - `src/app/admin/(protected)/calendar/page.tsx` (legend explainer section, layout cleanups)
-  - `src/components/admin/interactive-calendar.tsx` (Configure Workload Capacity settings panel, inline forms, states)
+  - `src/components/admin/interactive-calendar.tsx` (Configure Workload Capacity settings panel, inline forms, states, hash-listener auto-expand useEffect)
 - **Capacity behavior confirmed**:
   - Only confirmed orders are included. Canceled/completed/etc. are excluded.
   - Workload points are distributed (spread) across the prep window leading up to the due date, not repeated.
@@ -20,7 +20,7 @@
   - Implemented keyboard-accessible, collapsed-by-default disclosure settings panel `#capacity-settings-panel` directly above the calendar grid.
   - Separated active and inactive products clearly.
   - Implemented inline client-side form states (pending, success, error) for each product row and weekly ceiling separately.
-  - Linked to `#capacity-settings-panel` from legend.
+  - Linked to `#capacity-settings-panel` from legend and added a `useEffect` hash-change listener to automatically expand the settings details panel when navigating to or loading the page with the `#capacity-settings-panel` anchor hash.
 - **Validation added**:
   - Weekly ceiling: positive integer [1, 100].
   - Capacity points: integer [1, 100].
@@ -30,8 +30,9 @@
 - **Tests performed**:
   - Added new unit test suite to `capacity.test.ts` (now 102/102 test cases pass).
   - Production build compiled successfully.
+  - Verified manual check requirements (no horizontal overflow at 390x844, manual open/close behaves correctly, hash change auto-opens panel).
 - **Remaining risks or follow-up items**:
-  - Perform manual UI visual check (confirming scrollability, no horizontal overflow on mobile view).
+  - None.
 
 ## Phase 8 Calendar Day Drawer — 2026-07-03
 
