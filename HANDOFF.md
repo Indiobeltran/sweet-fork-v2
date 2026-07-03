@@ -2,6 +2,20 @@
 
 - **Current branch**: `codex/capacity-foundation`.
 - **Current objective**: Add workload-based capacity scoring to the admin operational calendar for confirmed-order day/week load.
+- **Production apply and verification close-out — 2026-07-03**:
+  - Backup/snapshot was confirmed by the owner before production apply.
+  - Applied only `supabase/migrations/20260703163114_capacity_foundation.sql` to linked production project `renjsmdsrzjnppqpaoaa` / `Sweet-Fork-V2` with `npx --no-install supabase db push --linked --password "$SUPABASE_DATABASE_PASSWORD" --yes`.
+  - Preflight confirmed `supabase projects list` showed the linked project and `supabase db push --linked --dry-run` would push only `20260703163114_capacity_foundation.sql`.
+  - Production migration history now shows `20260703163114` present on both local and remote.
+  - Read-only schema verification confirmed `products.capacity_points integer not null default 2`, `order_items.capacity_points_override integer null`, and `site_settings.setting_key = 'capacity.settings'` with `weekly_capacity_ceiling: 12` and `week_start_day: 0`.
+  - `npm run db:typegen` was rerun against the linked project; `src/types/supabase.generated.ts` had no diff.
+  - Temporary server instrumentation on `src/lib/admin/calendar.ts` showed `/admin/calendar` used the primary order query path: `[phase6-capacity-smoke] calendar order query primary path { rowCount: 0 }`. The temporary log was removed before close-out.
+  - Browser smoke against local app pointed at production Supabase:
+    - `/admin/products`: saved Custom Cakes `capacity_points = 8` and Cupcakes `capacity_points = 2`; reload and read-only product query confirmed persistence.
+    - `/admin/calendar`: weekly ceiling editor read `12`, saved `13`, reload showed `/ 13 pts`, then restored `12` and reload showed `/ 12 pts`.
+    - Capacity legend states and week bars rendered from persisted data.
+  - Demo week seeding was skipped. Production has no `is_test`/demo/QA convention on `orders`, `order_items`, `customers`, or `inquiries`, and read-only status counts showed no confirmed orders to use for load-state examples. No fake customer/order data was inserted.
+  - Phase 6 production verification is closed. Phase 7 prep-shadow work should be developed against a dev/staging Supabase project once one exists, not directly against production.
 - **Pre-existing working tree preserved**:
   - Before this task, `.gitignore`, `HANDOFF.md`, and `README.md` were already modified.
   - Pre-existing untracked paths were preserved: `.agents/`, `.claude/`, `.superpowers/`, `scratch/gbp-audit/`, `scratch/live-qa-runner.mjs`, `scratch/process-import-batch-04.mjs`, `scratch/qa/`, `scratch/submit-live-qa.mjs`, `scratch/testimonials-import/update_testimonials.sql`, `scratch/verification.mjs`, and `skills-lock.json`.
