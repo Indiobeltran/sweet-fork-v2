@@ -39,4 +39,19 @@ describe("validateMediaUploadFile", () => {
       "File type .txt is not allowed. Allowed: .avif, .gif, .jpeg, .jpg, .png, .webp.",
     );
   });
+
+  it("rejects text uploads by extension before falling back to generic MIME validation", () => {
+    const result = validateMediaUploadFile({
+      name: "notes.txt",
+      size: 1024,
+      type: "text/plain",
+    });
+
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "extension");
+    assert.equal(
+      result.message,
+      "File type .txt is not allowed. Allowed: .avif, .gif, .jpeg, .jpg, .png, .webp.",
+    );
+  });
 });

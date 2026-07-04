@@ -53,20 +53,20 @@ export function validateMediaUploadFile(file: MediaUploadFileLike): MediaUploadV
     };
   }
 
-  if (!file.type.startsWith("image/")) {
-    return {
-      code: "mime",
-      message: "Please choose an image file.",
-      ok: false,
-    };
-  }
-
   const extension = getMediaUploadFileExtension(file.name);
   if (!allowedExtensionSet.has(extension)) {
     return {
       code: "extension",
       extension,
       message: getMediaUploadExtensionMessage(extension),
+      ok: false,
+    };
+  }
+
+  if (!file.type.startsWith("image/")) {
+    return {
+      code: "mime",
+      message: "Please choose an image file.",
       ok: false,
     };
   }

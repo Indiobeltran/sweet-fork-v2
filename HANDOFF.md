@@ -7,7 +7,7 @@
 ## Admin Smoke-Test Fixes: Pagination, Manual Totals, Upload Errors — 2026-07-03
 
 - **Current branch**: `claude/admin-code-review-tn667l`.
-- **Current objective**: Fix three admin smoke-test regressions found against live data and commit them as one focused fix commit.
+- **Current objective**: Fix admin smoke-test regressions found against live data, including the residual `.txt` upload notice bug.
 - **Last completed work**:
   - Fixed `/admin/inquiries?page=N` out-of-range crashes by counting the filtered inquiry result first, clamping the requested page to the valid range, then querying the clamped range.
   - Added tested pagination helpers for page-count calculation and clamping.
@@ -16,7 +16,7 @@
   - Added a specific manual-order amount error notice for invalid totals or paid amounts.
   - Centralized admin media upload validation, added client-side file-size/type checks, added specific `.txt`-style extension rejection copy, and raised Next upload body limits above the 10 MB app cap so app validation can return friendly errors for normal oversized attempts.
 - **In-progress work**: None.
-- **Next exact task**: Push or open a PR only if explicitly requested; no push was performed in this run.
+- **Next exact task**: Push to `main` was explicitly requested if live verification passed; no further code work remains for this scoped upload fix.
 - **Commands run**:
   - `sed -n '1,220p' AGENTS.md`
   - `sed -n '1,220p' ROADMAP.md`
@@ -34,8 +34,20 @@
   - `git diff --check`: passed
   - `git add ...`
   - `git commit -m "fix: harden admin smoke test regressions"` (later amended to keep this handoff current)
+  - `npm run dev -- --hostname 127.0.0.1 --port 3000`: started cleanly and was stopped after live re-verification.
+  - Browser live QA against `http://127.0.0.1:3000/admin/inquiries?page=2`, `page=99`, `status=new`, and `status=declined`: passed, no 500.
+  - Live DB count check via Supabase service client: active inquiries `2`, orders baseline/final `3`.
+  - Browser live QA against `/admin/orders/new?mode=quick`: invalid manual-order totals/payments showed the amount notice and did not change the `orders` count.
+  - Authenticated multipart upload posts against `/admin/media`: oversized upload passed with `media-too-large`; `.txt` upload failed by redirecting to generic `media-error`.
+  - `node --no-warnings --experimental-strip-types --test src/lib/admin/media-upload-validation.test.ts`: failed before the fix with `actual: 'mime'`, `expected: 'extension'`; passed after the fix.
+  - `npm run lint`: passed after the residual upload fix.
+  - `npm run typecheck`: passed after the residual upload fix.
+  - `npm test`: passed after the residual upload fix, 141/141.
+  - `npm run build`: passed after the residual upload fix.
+  - `npm run dev -- --hostname 127.0.0.1 --port 3000`: started cleanly and was stopped after live upload verification.
+  - Authenticated direct multipart `.txt` POST against `/admin/media`: passed with redirect `/admin/media?notice=media-extension-error&fileType=.txt` and rendered `File type .txt is not allowed. Allowed: .avif, .gif, .jpeg, .jpg, .png, .webp.`
 - **Commands still needed**:
-  - None for the requested smoke-test fix task.
+  - Commit the residual upload fix and push to `main` as requested.
 - **Files changed recently for this scoped run**:
   - `HANDOFF.md`
   - `next.config.ts`
@@ -58,7 +70,7 @@
   - Existing untracked agent/scratch/Supabase temp files were preserved.
 - **Known issues / notes**:
   - The upload body limit is now 16 MB, above the 10 MB app-level cap. Extremely large requests above 16 MB can still be rejected by framework/proxy limits before app validation, but normal >10 MB smoke-test files should now receive the friendly app message.
-  - No live-data mutation QA was repeated after the code fix; verification was static gates plus targeted regression tests and production build.
+  - The residual `.txt` upload bug was caused by validation checking MIME type before extension, so `text/plain` returned the generic `mime` code. Extension validation now runs before MIME fallback.
 - **Assumptions made**:
   - `New` and `Declined` inquiry chips should be visible because the URL filters already worked and the smoke-test note asked to add them if not intentional.
   - A zero manual-order total is invalid for confirmed manual order creation.
