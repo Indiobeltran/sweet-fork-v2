@@ -4,6 +4,58 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## Admin Business Timezone Merge + Deployment — 2026-07-03 MDT
+
+- **Current branch**: `main`.
+- **Current objective**: Complete authenticated visual QA for the admin business-timezone fix, merge `codex/admin-business-timezone` into `main`, push `main`, and verify production.
+- **Last completed work**:
+  - Authenticated local visual QA passed on `codex/admin-business-timezone` using the existing authenticated browser session at `http://localhost:3020/admin`.
+  - Verified desktop and mobile admin dashboard, inquiries, orders, and calendar screens render with the current Salt Lake City date from `America/Denver`.
+  - Verified the dashboard displayed `FRIDAY, JULY 3, 2026`, matching the browser-computed `America/Denver` business date during QA.
+  - Verified dashboard cards, active inquiry dates, order due dates, calendar current-day highlight, calendar detail drawer, and month navigation without visible date shifting, `Invalid Date`, hydration overlays, or timezone exceptions.
+  - Merged branch commit `378ba16` (`fix: use bakery timezone for admin dates`) into `main` with merge commit `5c28c52` (`merge: apply admin business timezone fix`).
+  - Added follow-up commit `df02415` to remove the stale environment-local dashboard date label left by the merge conflict resolution.
+  - Confirmed `America/Denver` remains the business-timezone source of truth in `src/lib/business-time.ts`, and database timestamps remain stored as UTC with conversion only for display and business-day calculations.
+- **In-progress work**: Push and production Netlify/admin verification are next.
+- **Next exact task**: Push `main` to `origin`, wait for Netlify production deploy, then verify `https://thesweetfork.com/admin` dashboard, inquiries, orders, and calendar.
+- **Commands run**:
+  - Pre-merge SITREP: `git branch --show-current`, `git status --short`, `git log --oneline -n 10`, `git show --stat --oneline 378ba16`, `git diff main...codex/admin-business-timezone --stat`.
+  - Local authenticated visual QA with `npm run dev -- --port 3020` and Browser runtime screenshots/evaluation/interactions.
+  - Branch verification on `codex/admin-business-timezone`: `npm run lint`, `npm run typecheck`, `npm test` (108/108), `npm run build`, `git diff --check`, `git status --short`.
+  - Merge flow: `git checkout main`, `git status --short`, `git pull --ff-only origin main`, `git merge --no-ff codex/admin-business-timezone -m "merge: apply admin business timezone fix"`.
+  - Conflict resolution kept newer `main` admin smoke-test/order changes and integrated the business-timezone helpers.
+  - Post-merge verification on `main`: `npm run lint` passed, `npm run typecheck` passed, `npm test` initially failed due a merge-resolution import issue, then passed at 147/147 after cleanup, `npm run build` passed, `git diff --check` passed.
+- **Commands still needed**:
+  - `git push origin main`
+  - Netlify production deploy status check.
+  - Authenticated production admin visual verification.
+- **Files changed recently**:
+  - `DECISIONS.md`
+  - `HANDOFF.md`
+  - `package.json`
+  - `src/app/admin/(protected)/page.tsx`
+  - `src/app/admin/(protected)/calendar/actions.ts`
+  - `src/app/admin/(protected)/calendar/page.tsx`
+  - `src/app/admin/(protected)/inquiries/[id]/page.tsx`
+  - `src/app/admin/(protected)/notifications/page.tsx`
+  - `src/app/admin/(protected)/orders/[id]/page.tsx`
+  - `src/app/admin/(protected)/orders/page.tsx`
+  - `src/components/admin/interactive-calendar.tsx`
+  - `src/lib/admin/calendar.ts`
+  - `src/lib/admin/inquiries.ts`
+  - `src/lib/admin/order-workflow.ts`
+  - `src/lib/admin/orders.ts`
+  - `src/lib/business-time.ts`
+  - `src/lib/business-time.test.ts`
+  - `src/lib/validations/inquiry.ts`
+- **Files intentionally preserved / not touched**:
+  - Pre-existing untracked paths remain unstaged and untouched, including `.agents/`, `.claude/`, `.superpowers/`, `scratch/`, `skills-lock.json`, and `supabase/.temp/linked-project.json`.
+- **Known issues / verification caveats**:
+  - Browser DOM snapshot API failed in this environment with `incrementalAriaSnapshot` unavailable, and local Playwright was not installed; visual QA used Browser runtime URL/title, screenshots, console logs, read-only DOM evaluation, and interactions.
+  - One non-timezone Next.js development warning appeared on mobile QA about `scroll-behavior: smooth`; no timezone, hydration, invalid-date, or React errors were observed.
+  - Production verification is pending until after push and Netlify deploy.
+- **Open decisions**: None.
+
 ## Admin Smoke-Test Fixes: Pagination, Manual Totals, Upload Errors — 2026-07-03
 
 - **Current branch**: `claude/admin-code-review-tn667l`.
