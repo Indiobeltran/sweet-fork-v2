@@ -4,6 +4,71 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## Admin Business Timezone Fix — 2026-07-03 MDT
+
+- **Current branch**: `codex/admin-business-timezone`.
+- **Current objective**: Fix admin dashboard/current-date and today-boundary logic so The Sweet Fork uses the bakery business timezone, `America/Denver`, for Mountain Time with automatic MST/MDT handling. Keep database timestamps stored in UTC.
+- **Initial state**:
+  - Started on `main`.
+  - `launch-readiness` branch did not exist locally.
+  - Created task branch `codex/admin-business-timezone` from `main` to avoid committing directly to production `main`.
+  - Pre-existing untracked paths were preserved and not staged: `.agents/`, `.claude/`, `.superpowers/`, `scratch/`, `skills-lock.json`, and `supabase/.temp/linked-project.json`.
+- **Last completed work**:
+  - Added shared `src/lib/business-time.ts` with `BUSINESS_TIME_ZONE = "America/Denver"`, business date/month keys, date-key day arithmetic, business-date formatting, and business-day UTC timestamp range conversion.
+  - Added `src/lib/business-time.test.ts` covering the reported July 3, 2026 11:03 PM MDT rollover case, Mountain midnight, MST midnight, date-key arithmetic, and UTC timestamp boundaries.
+  - Replaced UTC-derived admin dashboard today/next-week logic with business-date helpers and added the business date label above "Today at The Sweet Fork".
+  - Updated admin orders upcoming summaries/queues, calendar default month/date/today highlighting/week focus, calendar display labels, calendar day-detail timestamp boundaries, calendar note date mapping, and inquiry short-lead submitted-date logic to use business dates.
+  - Updated admin timestamp displays for inquiry detail, order/customer/user shared date-time display, notification logs, order payment date labels, and timestamp-backed date input defaults to render/use the bakery timezone.
+  - Replaced the existing hardcoded inquiry validation timezone constant with the shared `BUSINESS_TIME_ZONE`.
+  - Added the new timezone test file to `npm test`.
+  - Logged the durable timezone decision in `DECISIONS.md`.
+- **In-progress work**: None.
+- **Next exact task**: Commit the verified changes on `codex/admin-business-timezone`; do not push unless explicitly instructed.
+- **Commands run**:
+  - `git branch --show-current`
+  - `git status --short`
+  - `git log --oneline -n 10`
+  - `git branch --list`
+  - `git switch -c codex/admin-business-timezone`
+  - Required file inspections for `AGENTS.md`, `ROADMAP.md`, `GATES.md`, `HANDOFF.md`, `DECISIONS.md`, `BACKLOG.md`, `README.md`, admin dashboard/calendar/orders/inquiries files, date utilities, and `package.json`.
+  - `node --no-warnings --experimental-strip-types --test src/lib/business-time.test.ts` (failed before helper existed, then passed after implementation).
+  - `node --no-warnings --experimental-strip-types --test src/lib/business-time.test.ts src/lib/admin/capacity.test.ts src/lib/admin/order-status.test.ts` (passed).
+  - `git diff --check` (passed).
+  - `npm run lint` (passed).
+  - `npm run typecheck` (failed once due a test-only multiline `.ts` import `@ts-expect-error`, then passed after cleanup).
+  - `npm test` (passed, 108/108; expected Netlify Forms bridge fail-soft warnings printed).
+  - `npm run build` (passed).
+  - `date '+%Y-%m-%d %H:%M:%S %Z'`
+  - `git diff --stat`
+  - `git diff -- <task files>`
+- **Commands still needed**:
+  - `git status --short` before staging/commit.
+  - `git add` only task files.
+  - `git commit`.
+- **Files changed recently**:
+  - `DECISIONS.md`
+  - `HANDOFF.md`
+  - `package.json`
+  - `src/lib/business-time.ts`
+  - `src/lib/business-time.test.ts`
+  - `src/app/admin/(protected)/page.tsx`
+  - `src/app/admin/(protected)/calendar/page.tsx`
+  - `src/app/admin/(protected)/calendar/actions.ts`
+  - `src/components/admin/interactive-calendar.tsx`
+  - `src/lib/admin/calendar.ts`
+  - `src/lib/admin/orders.ts`
+  - `src/app/admin/(protected)/orders/page.tsx`
+  - `src/lib/admin/inquiries.ts`
+  - `src/lib/validations/inquiry.ts`
+  - `src/lib/admin/order-workflow.ts`
+  - `src/app/admin/(protected)/inquiries/[id]/page.tsx`
+  - `src/app/admin/(protected)/notifications/page.tsx`
+  - `src/app/admin/(protected)/orders/[id]/page.tsx`
+- **Known issues / verification caveats**:
+  - Authenticated browser visual QA was not run in this pass. Verification was automated via lint, typecheck, tests, production build, diff inspection, and targeted timezone regression tests.
+  - `src/app/admin/(protected)/media/actions.ts` still uses a UTC date in generated storage paths; this is a media object folder name, not admin dashboard business-day logic.
+- **Open decisions**: None.
+
 ## Phase CAL-8.5 Capacity Settings Panel & Legend Explainer — 2026-07-03
 
 - **Current branch**: `main` (Merged and pushed).

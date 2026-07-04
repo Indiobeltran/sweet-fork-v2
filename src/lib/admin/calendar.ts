@@ -6,6 +6,11 @@ import {
   type CapacityWeekLoad,
 } from "@/lib/admin/capacity";
 import { getInquiryReferenceCode } from "@/lib/admin/order-workflow";
+import {
+  formatBusinessDate,
+  getBusinessDateKey,
+  getBusinessMonthKey,
+} from "@/lib/business-time";
 import { createClient as createSessionClient } from "@/lib/supabase/server";
 import { type Enums, type Json, type Tables } from "@/types/supabase.generated";
 
@@ -111,18 +116,18 @@ function getMonthKey(date: Date) {
 }
 
 function formatMonthLabel(date: Date) {
-  return new Intl.DateTimeFormat("en-US", {
+  return formatBusinessDate(getDateKey(date), {
     month: "long",
     year: "numeric",
-  }).format(date);
+  });
 }
 
 function formatDateLabel(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
+  return formatBusinessDate(value, {
     month: "short",
     day: "numeric",
     weekday: "short",
-  }).format(new Date(`${value}T12:00:00.000Z`));
+  });
 }
 
 function formatTimeLabel(value: string | null) {
@@ -130,10 +135,10 @@ function formatTimeLabel(value: string | null) {
     return null;
   }
 
-  return new Intl.DateTimeFormat("en-US", {
+  return formatBusinessDate(value, {
     hour: "numeric",
     minute: "2-digit",
-  }).format(new Date(value));
+  });
 }
 
 function parseMonthKey(value: string) {
@@ -151,7 +156,7 @@ function parseMonthKey(value: string) {
 }
 
 function getMonthWindow(monthKey: string) {
-  const monthStart = parseMonthKey(monthKey) ?? createUtcDate(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1);
+  const monthStart = parseMonthKey(monthKey) ?? parseMonthKey(getBusinessMonthKey()) ?? createUtcDate(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1);
   const monthEnd = createUtcDate(monthStart.getUTCFullYear(), monthStart.getUTCMonth() + 1, 0);
   const gridStart = createUtcDate(
     monthStart.getUTCFullYear(),
@@ -339,7 +344,7 @@ export function parseCalendarFilters(
   const parsed = parseMonthKey(rawMonth);
 
   return {
-    month: parsed ? getMonthKey(parsed) : getMonthKey(createUtcDate(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)),
+    month: parsed ? getMonthKey(parsed) : getBusinessMonthKey(),
   };
 }
 
@@ -576,8 +581,8 @@ export async function getCalendarPageData(filters: CalendarFilters): Promise<Cal
   });
 
   calendarEntries.forEach((entry) => {
-    const startDateKey = entry.starts_at.slice(0, 10);
-    const endDateKey = entry.ends_at ? entry.ends_at.slice(0, 10) : startDateKey;
+    const startDateKey = getBusinessDateKey(new Date(entry.starts_at));
+    const endDateKey = entry.ends_at ? getBusinessDateKey(new Date(entry.ends_at)) : startDateKey;
     const dateKeys = createDateRangeKeys(startDateKey, endDateKey);
     const item: CalendarDayItem = {
       dateKey: startDateKey,
@@ -636,9 +641,9 @@ export async function getCalendarPageData(filters: CalendarFilters): Promise<Cal
     });
   });
 
-  const todayKey = getDateKey(createUtcDate(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate()));
+  const todayKey = getBusinessDateKey();
   const days = createDateRangeKeys(gridStartKey, gridEndKey).map((dateKey) => {
-    const cellDate = new Date(`${dateKey}T12:00:00.000Z`);
+    const dayOfMonth = String(Number(dateKey.slice(8, 10)));
     const items = (itemsByDate.get(dateKey) ?? []).sort((left, right) => {
       const leftPriority = ["blackout", "order", "entry", "inquiry"].indexOf(left.kind);
       const rightPriority = ["blackout", "order", "entry", "inquiry"].indexOf(right.kind);
@@ -663,7 +668,7 @@ export async function getCalendarPageData(filters: CalendarFilters): Promise<Cal
         weekStartKey: getDateKey(gridStart),
       },
       dateKey,
-      dayOfMonth: String(cellDate.getUTCDate()),
+      dayOfMonth,
       isCurrentMonth: dateKey >= monthStartKey && dateKey <= monthEndKey,
       isToday: dateKey === todayKey,
       items,
@@ -692,7 +697,7 @@ export async function getCalendarPageData(filters: CalendarFilters): Promise<Cal
     (inquiry) => inquiry.event_date >= monthStartKey && inquiry.event_date <= monthEndKey,
   ).length;
   const manualEntriesInMonth = calendarEntries.filter((entry) => {
-    const startDateKey = entry.starts_at.slice(0, 10);
+    const startDateKey = getBusinessDateKey(new Date(entry.starts_at));
     return startDateKey >= monthStartKey && startDateKey <= monthEndKey;
   }).length;
 

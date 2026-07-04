@@ -4,6 +4,7 @@ import { AlertCircle, ArrowRight, CalendarDays, CheckCircle2, Clock, FileText, I
 import { getInquiryListData } from "@/lib/admin/inquiries";
 import { getOrderListData } from "@/lib/admin/orders";
 import { getMediaLibraryData } from "@/lib/admin/site-management";
+import { addBusinessDateDays, formatBusinessDate, getBusinessDateKey } from "@/lib/business-time";
 import { formatDate, toTitleCase } from "@/lib/utils";
 
 export const metadata = {
@@ -38,8 +39,15 @@ export default async function AdminDashboardPage() {
   const reviewingInquiriesCount = inquiriesData.statusCounts.reviewing;
   const quotedInquiriesCount = inquiriesData.statusCounts.quoted;
 
-  const today = new Date().toISOString().slice(0, 10);
-  const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const now = new Date();
+  const today = getBusinessDateKey(now);
+  const nextWeek = addBusinessDateDays(today, 7);
+  const todayLabel = formatBusinessDate(now, {
+    day: "numeric",
+    month: "long",
+    weekday: "long",
+    year: "numeric",
+  }).toUpperCase();
 
   const upcomingOrders = ordersData.entries
     .filter(
@@ -74,6 +82,9 @@ export default async function AdminDashboardPage() {
   return (
     <div className="space-y-6 sm:space-y-8 px-2 sm:px-4 md:px-6">
       <header className="rounded-[1.65rem] border border-charcoal/10 bg-white/88 p-5 sm:p-6 shadow-soft">
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-charcoal/45">
+          {todayLabel}
+        </p>
         <h1 className="font-serif text-3xl tracking-[-0.03em] text-charcoal">Today at The Sweet Fork</h1>
         <p className="mt-2 text-charcoal/70 text-[0.95rem] sm:text-base leading-relaxed">
           Here&apos;s a quick look at what needs your attention right now.

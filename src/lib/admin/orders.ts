@@ -13,6 +13,7 @@ import {
   parseOrderWorkflowMetadata,
   type OrderPaymentSnapshot,
 } from "@/lib/admin/order-workflow";
+import { getBusinessDateKey } from "@/lib/business-time";
 import { toTitleCase } from "@/lib/utils";
 import type { Enums, Json, Tables } from "@/types/supabase.generated";
 
@@ -707,9 +708,9 @@ export async function getOrderListData(filters: OrderListFilters): Promise<Order
       return haystack.includes(filters.search.toLowerCase());
     });
 
+  const today = getBusinessDateKey();
   const awaitingPaymentCount = entries.filter((entry) => entry.paymentState !== "paid").length;
   const upcomingCount = entries.filter((entry) => {
-    const today = new Date().toISOString().slice(0, 10);
     return entry.eventDate >= today;
   }).length;
 

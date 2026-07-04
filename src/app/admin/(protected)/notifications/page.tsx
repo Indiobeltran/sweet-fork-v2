@@ -17,6 +17,7 @@ import {
   type NotificationEventEntry,
   type NotificationLogEntry,
 } from "@/lib/admin/notifications";
+import { BUSINESS_TIME_ZONE } from "@/lib/business-time";
 
 export const metadata = {
   title: "Admin Notifications",
@@ -131,6 +132,7 @@ function formatDateTime(value: string | null) {
   return new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: BUSINESS_TIME_ZONE,
   }).format(new Date(value));
 }
 

@@ -1,3 +1,4 @@
+import { BUSINESS_TIME_ZONE, getBusinessDateKey } from "@/lib/business-time";
 import { formatCurrency, toTitleCase } from "@/lib/utils";
 import type { Enums, Json, Tables } from "@/types/supabase.generated";
 
@@ -175,6 +176,7 @@ export function formatOptionalDateTime(value: string | null) {
   return new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: BUSINESS_TIME_ZONE,
   }).format(new Date(value));
 }
 
@@ -183,7 +185,7 @@ export function getDateInputValue(value: string | null) {
     return "";
   }
 
-  return value.slice(0, 10);
+  return getBusinessDateKey(new Date(value));
 }
 
 export function getOrderStatusClasses(status: Enums<"order_status">) {

@@ -4,6 +4,7 @@ import { createClient as createSessionClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getBudgetRangeLabel, budgetRangeOptions } from "@/lib/inquiries/config";
 import { estimateItemRange, getProductDisplayLabel } from "@/lib/pricing";
+import { getBusinessDateKey } from "@/lib/business-time";
 import { formatCurrency, toTitleCase } from "@/lib/utils";
 import type { BudgetRangeValue, InquiryProductItem } from "@/types/domain";
 import type { Enums, Json, Tables } from "@/types/supabase.generated";
@@ -876,7 +877,7 @@ function mapListEntry(row: InquiryListQueryRow, productsMap: Map<string, { produ
   const signals = getInquirySignals(row.metadata);
   const operationalEstimate = getOperationalInquiryEstimate(row, items);
   
-  const todayKey = row.submitted_at.slice(0, 10);
+  const todayKey = getBusinessDateKey(new Date(row.submitted_at));
   const isShortLead = items.some(item => {
     const product = productsMap.get(item.product_type);
     if (!product) return false;

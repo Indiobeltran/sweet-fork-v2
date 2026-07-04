@@ -22,6 +22,7 @@ import {
   getOrderStatusClasses,
   getPaymentStatusClasses,
 } from "@/lib/admin/order-workflow";
+import { getBusinessDateKey } from "@/lib/business-time";
 import { formatDate, toTitleCase } from "@/lib/utils";
 
 export const metadata = {
@@ -368,7 +369,7 @@ export default async function AdminOrdersPage({
   const filters = parseOrderListFilters(resolvedSearchParams);
   const queue = getOrderQueue(resolvedSearchParams);
   const data = await getOrderListData(filters);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getBusinessDateKey();
   const queueEntries = filterOrdersByQueue(data.entries, queue, today);
   const activeFilterPills = getActiveFilterPills(filters, queue);
   const queueCounts = {
