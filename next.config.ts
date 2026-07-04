@@ -61,10 +61,11 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   skipTrailingSlashRedirect: true,
   experimental: {
+    middlewareClientMaxBodySize: "16mb",
     serverActions: {
       // Media uploads go through server actions; keep this explicit and in
-      // sync with MAX_UPLOAD_BYTES in src/app/admin/(protected)/media/actions.ts.
-      bodySizeLimit: "12mb",
+      // sync with MAX_MEDIA_UPLOAD_BYTES in src/lib/admin/media-upload-validation.ts.
+      bodySizeLimit: "16mb",
     },
   },
   images: {

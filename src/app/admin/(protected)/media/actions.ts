@@ -12,26 +12,39 @@ import {
   revalidateMarketingSite,
   revalidatePaths,
 } from "@/lib/admin/action-helpers";
+import {
+  getMediaUploadFileExtension,
+  validateMediaUploadFile,
+} from "@/lib/admin/media-upload-validation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   marketingMediaBucket,
   mediaPlacementDefinitions,
   publicSitePaths,
 } from "@/lib/site/marketing";
+import { redirect } from "next/navigation";
 import type { Json, TablesInsert, TablesUpdate } from "@/types/supabase.generated";
 
 const mediaRedirectPath = "/admin/media";
 const mediaManagedPublicPaths = Array.from(new Set(["/", "/gallery", ...publicSitePaths]));
-// Keep in sync with experimental.serverActions.bodySizeLimit in next.config.ts.
-const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
-const ALLOWED_UPLOAD_EXTENSIONS = new Set([".avif", ".gif", ".jpeg", ".jpg", ".png", ".webp"]);
-
-function getFileExtension(fileName: string) {
-  return fileName.includes(".") ? fileName.slice(fileName.lastIndexOf(".")).toLowerCase() : "";
-}
 
 function getMediaRedirectTarget(value: FormDataEntryValue | null) {
   return getSafeRedirectTarget(value, mediaRedirectPath, mediaRedirectPath);
+}
+
+function redirectWithMediaNotice(
+  redirectTarget: string,
+  notice: string,
+  params: Record<string, string> = {},
+): never {
+  const url = new URL(redirectTarget, "http://localhost");
+  url.searchParams.set("notice", notice);
+
+  Object.entries(params).forEach(([key, value]) => {
+    url.searchParams.set(key, value);
+  });
+
+  redirect(`${url.pathname}${url.search}`);
 }
 
 function slugifySegment(value: string) {
@@ -163,14 +176,24 @@ export async function uploadMediaAsset(formData: FormData) {
   const featured = parseBoolean(formData.get("featured"));
   const fileValue = formData.get("image");
 
-  if (
-    !(fileValue instanceof File) ||
-    fileValue.size === 0 ||
-    fileValue.size > MAX_UPLOAD_BYTES ||
-    !fileValue.type.startsWith("image/") ||
-    !ALLOWED_UPLOAD_EXTENSIONS.has(getFileExtension(fileValue.name))
-  ) {
-    redirectWithNotice(redirectTarget, "media-error");
+  if (!(fileValue instanceof File)) {
+    redirectWithMediaNotice(redirectTarget, "media-error");
+  }
+
+  const fileValidation = validateMediaUploadFile(fileValue);
+
+  if (!fileValidation.ok) {
+    if (fileValidation.code === "size") {
+      redirectWithMediaNotice(redirectTarget, "media-too-large");
+    }
+
+    if (fileValidation.code === "extension") {
+      redirectWithMediaNotice(redirectTarget, "media-extension-error", {
+        fileType: getMediaUploadFileExtension(fileValue.name),
+      });
+    }
+
+    redirectWithMediaNotice(redirectTarget, "media-error");
   }
 
   const admin = createAdminClient();
@@ -454,4 +477,3 @@ export async function acknowledgeStalePlacement(formData: FormData) {
   revalidatePaths([mediaRedirectPath]);
   redirectWithNotice(redirectTarget, "media-updated");
 }
-

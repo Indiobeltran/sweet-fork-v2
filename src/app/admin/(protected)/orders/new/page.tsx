@@ -67,6 +67,10 @@ export default async function NewManualOrderPage({ searchParams }: NewManualOrde
             className: "border-rose/24 bg-rose/10 text-charcoal",
             text: "The manual order could not be created. Please review the fields and try again.",
           },
+          "manual-order-amount-error": {
+            className: "border-rose/24 bg-rose/10 text-charcoal",
+            text: "Order total must be greater than $0, and amount paid cannot be negative or exceed the total.",
+          },
         }}
       />
 

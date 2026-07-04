@@ -29,12 +29,20 @@ export function getPageRange(page: number, pageSize = ADMIN_PAGE_SIZE) {
   return { from, to: from + pageSize - 1 };
 }
 
+export function getPageCount(totalCount: number, pageSize = ADMIN_PAGE_SIZE) {
+  return Math.max(Math.ceil(totalCount / pageSize), 1);
+}
+
+export function clampPageToRange(page: number, totalCount: number, pageSize = ADMIN_PAGE_SIZE) {
+  return Math.min(Math.max(page, 1), getPageCount(totalCount, pageSize));
+}
+
 export function buildPaginationInfo(
   page: number,
   totalCount: number,
   pageSize = ADMIN_PAGE_SIZE,
 ): PaginationInfo {
-  const pageCount = Math.max(Math.ceil(totalCount / pageSize), 1);
+  const pageCount = getPageCount(totalCount, pageSize);
   const { from, to } = getPageRange(page, pageSize);
 
   return { from, page, pageCount, pageSize, to, totalCount };

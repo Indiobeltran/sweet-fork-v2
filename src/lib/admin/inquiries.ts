@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   ADMIN_PAGE_SIZE,
   buildPaginationInfo,
+  clampPageToRange,
   escapeIlikeTerm,
   getPageRange,
   type PaginationInfo,
@@ -894,48 +895,56 @@ export async function getInquiryListData(
     throw new Error("Supabase is not configured for admin inquiries.");
   }
 
-  const { from, to } = getPageRange(page, pageSize);
-  let listQuery = supabase
-    .from("inquiries")
-    .select(
-      "id, status, source_channel, customer_name, customer_email, customer_phone, event_type, event_date, fulfillment_method, budget_min, budget_max, estimated_min, estimated_max, submitted_at, reviewed_at, archived_at, created_at, updated_at, metadata, inquiry_items(id, product_type, product_label, quantity, servings, cupcake_count, cookie_count, macaron_count, kit_count, wedding_servings, tiers, shape, icing_style, topper_text, color_palette, design_notes, inspiration_notes, estimated_min, estimated_max, sort_order)",
-      { count: "exact" },
-    );
+  const buildListQuery = () =>
+    supabase
+      .from("inquiries")
+      .select(
+        "id, status, source_channel, customer_name, customer_email, customer_phone, event_type, event_date, fulfillment_method, budget_min, budget_max, estimated_min, estimated_max, submitted_at, reviewed_at, archived_at, created_at, updated_at, metadata, inquiry_items(id, product_type, product_label, quantity, servings, cupcake_count, cookie_count, macaron_count, kit_count, wedding_servings, tiers, shape, icing_style, topper_text, color_palette, design_notes, inspiration_notes, estimated_min, estimated_max, sort_order)",
+        { count: "exact" },
+      );
 
-  if (filters.status === "active") {
-    listQuery = listQuery.neq("status", "archived");
-  } else if (filters.status !== "all") {
-    listQuery = listQuery.eq("status", filters.status);
-  }
+  const applySqlFilters = (query: ReturnType<typeof buildListQuery>) => {
+    let nextQuery = query;
 
-  if (filters.eventDateFrom) {
-    listQuery = listQuery.gte("event_date", filters.eventDateFrom);
-  }
+    if (filters.status === "active") {
+      nextQuery = nextQuery.neq("status", "archived");
+    } else if (filters.status !== "all") {
+      nextQuery = nextQuery.eq("status", filters.status);
+    }
 
-  if (filters.eventDateTo) {
-    listQuery = listQuery.lte("event_date", filters.eventDateTo);
-  }
+    if (filters.eventDateFrom) {
+      nextQuery = nextQuery.gte("event_date", filters.eventDateFrom);
+    }
 
-  if (filters.fulfillmentMethod !== "all") {
-    listQuery = listQuery.eq("fulfillment_method", filters.fulfillmentMethod);
-  }
+    if (filters.eventDateTo) {
+      nextQuery = nextQuery.lte("event_date", filters.eventDateTo);
+    }
 
-  const searchTerm = escapeIlikeTerm(filters.search);
-  if (searchTerm) {
-    const pattern = `%${searchTerm}%`;
-    listQuery = listQuery.or(
-      `customer_name.ilike.${pattern},customer_email.ilike.${pattern},customer_phone.ilike.${pattern},metadata->>referenceCode.ilike.${pattern}`,
-    );
-  }
+    if (filters.fulfillmentMethod !== "all") {
+      nextQuery = nextQuery.eq("fulfillment_method", filters.fulfillmentMethod);
+    }
 
-  const [inquiriesResult, productsResult, statusResult] = await Promise.all([
-    listQuery.order("submitted_at", { ascending: false }).range(from, to),
+    const searchTerm = escapeIlikeTerm(filters.search);
+    if (searchTerm) {
+      const pattern = `%${searchTerm}%`;
+      nextQuery = nextQuery.or(
+        `customer_name.ilike.${pattern},customer_email.ilike.${pattern},customer_phone.ilike.${pattern},metadata->>referenceCode.ilike.${pattern}`,
+      );
+    }
+
+    return nextQuery;
+  };
+
+  const countQuery = applySqlFilters(buildListQuery()).limit(0);
+
+  const [countResult, productsResult, statusResult] = await Promise.all([
+    countQuery,
     supabase.from("products").select("product_type, min_lead_time_days"),
     supabase.from("inquiries").select("status"),
   ]);
 
-  if (inquiriesResult.error) {
-    throw inquiriesResult.error;
+  if (countResult.error) {
+    throw countResult.error;
   }
 
   if (productsResult.error) {
@@ -944,6 +953,17 @@ export async function getInquiryListData(
 
   if (statusResult.error) {
     throw statusResult.error;
+  }
+
+  const totalCount = countResult.count ?? 0;
+  const clampedPage = clampPageToRange(page, totalCount, pageSize);
+  const { from, to } = getPageRange(clampedPage, pageSize);
+  const inquiriesResult = await applySqlFilters(buildListQuery())
+    .order("submitted_at", { ascending: false })
+    .range(from, to);
+
+  if (inquiriesResult.error) {
+    throw inquiriesResult.error;
   }
 
   const productsMap = new Map(
@@ -964,7 +984,6 @@ export async function getInquiryListData(
   });
 
   const rows = (inquiriesResult.data ?? []) as InquiryListQueryRow[];
-  const totalCount = inquiriesResult.count ?? rows.length;
   const filteredRows = rows.filter((row) => matchesDerivedFilters(row, filters));
   const entries = filteredRows.map(row => mapListEntry(row, productsMap));
   const rushCount = filteredRows.filter((row) => getInquirySignals(row.metadata).urgency === "rush").length;
@@ -975,7 +994,7 @@ export async function getInquiryListData(
   return {
     entries,
     filters,
-    pagination: buildPaginationInfo(page, totalCount, pageSize),
+    pagination: buildPaginationInfo(clampedPage, totalCount, pageSize),
     statusCounts,
     summary: [
       {

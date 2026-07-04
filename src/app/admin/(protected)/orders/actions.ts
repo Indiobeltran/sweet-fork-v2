@@ -16,6 +16,7 @@ import {
   getStoredPaymentType,
   mergeOrderWorkflowMetadata,
 } from "@/lib/admin/order-workflow";
+import { validateManualOrderPaymentAmounts } from "@/lib/admin/order-payments";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   Constants,
@@ -235,9 +236,11 @@ export async function createManualOrder(formData: FormData) {
   const productId = parseOptionalString(formData.get("productId"));
   const fallbackProductType = parseRequiredString(formData.get("fallbackProductType"));
   const itemDescription = parseOptionalString(formData.get("itemDescription"));
-  const totalAmount = parseAmount(formData.get("totalAmount"));
-  const amountPaid = parseAmount(formData.get("amountPaid")) ?? 0;
-  const depositDueAmount = parseAmount(formData.get("depositDueAmount")) ?? 0;
+  const paymentAmounts = validateManualOrderPaymentAmounts({
+    amountPaid: formData.get("amountPaid"),
+    depositDueAmount: formData.get("depositDueAmount"),
+    totalAmount: formData.get("totalAmount"),
+  });
   const internalSummary = parseOptionalString(formData.get("internalSummary"));
   const errorPath = isQuickAdd ? "/admin/orders/new?mode=quick" : "/admin/orders/new";
 
@@ -245,13 +248,14 @@ export async function createManualOrder(formData: FormData) {
     !customerName ||
     !eventType ||
     !/^\d{4}-\d{2}-\d{2}$/.test(eventDate) ||
-    totalAmount === null ||
-    amountPaid > totalAmount ||
+    !paymentAmounts.ok ||
     (isQuickAdd && !itemDescription) ||
     (!isQuickAdd && !productId)
   ) {
-    redirectWithNotice(errorPath, "manual-order-error");
+    redirectWithNotice(errorPath, paymentAmounts.ok ? "manual-order-error" : "manual-order-amount-error");
   }
+
+  const { amountPaid, depositDueAmount, totalAmount } = paymentAmounts;
 
   if (
     !Constants.public.Enums.fulfillment_method.includes(

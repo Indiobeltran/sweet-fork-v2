@@ -595,6 +595,11 @@ export default async function AdminInquiriesPage({
               label: "Active",
             },
             {
+              href: buildInquiriesHref(filters, { status: "new" }),
+              isActive: filters.status === "new",
+              label: "New",
+            },
+            {
               href: buildInquiriesHref(filters, { status: "reviewing" }),
               isActive: filters.status === "reviewing",
               label: "Reviewing",
@@ -608,6 +613,11 @@ export default async function AdminInquiriesPage({
               href: buildInquiriesHref(filters, { status: "approved" }),
               isActive: filters.status === "approved",
               label: "Approved",
+            },
+            {
+              href: buildInquiriesHref(filters, { status: "declined" }),
+              isActive: filters.status === "declined",
+              label: "Declined",
             },
             {
               href: buildInquiriesHref(filters, { status: "archived" }),

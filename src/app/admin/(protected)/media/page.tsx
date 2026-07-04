@@ -14,10 +14,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { MediaUploadFormGuard } from "@/components/admin/media-upload-form-guard";
 import {
   getMediaLibraryData,
   type MediaLibraryAsset,
 } from "@/lib/admin/site-management";
+import {
+  getAllowedMediaUploadExtensionsLabel,
+  getMediaUploadExtensionMessage,
+  getMediaUploadTooLargeMessage,
+} from "@/lib/admin/media-upload-validation";
 import { mediaPlacementDefinitions } from "@/lib/site/marketing";
 import { formatDate } from "@/lib/utils";
 import { MediaLibraryManager } from "@/components/admin/media-library-manager";
@@ -41,6 +47,14 @@ type AssignmentOption = {
 function getNoticeValue(rawSearchParams: Record<string, string | string[] | undefined>) {
   const noticeValue = rawSearchParams.notice;
   return Array.isArray(noticeValue) ? noticeValue[0] : noticeValue;
+}
+
+function getSearchParamValue(
+  rawSearchParams: Record<string, string | string[] | undefined>,
+  key: string,
+) {
+  const value = rawSearchParams[key];
+  return Array.isArray(value) ? value[0] : value;
 }
 
 function ToggleField({
@@ -170,6 +184,7 @@ function DeleteMediaAssetForm({
 export default async function AdminMediaPage({ searchParams }: AdminMediaPageProps) {
   const [rawSearchParams, data] = await Promise.all([searchParams, getMediaLibraryData()]);
   const notice = getNoticeValue(rawSearchParams);
+  const fileType = getSearchParamValue(rawSearchParams, "fileType") ?? "";
 
   return (
     <div className="space-y-4">
@@ -191,6 +206,14 @@ export default async function AdminMediaPage({ searchParams }: AdminMediaPagePro
           "media-error": {
             className: "border-rose/24 bg-rose/10 text-charcoal",
             text: "The media change could not be completed.",
+          },
+          "media-extension-error": {
+            className: "border-rose/24 bg-rose/10 text-charcoal",
+            text: getMediaUploadExtensionMessage(fileType),
+          },
+          "media-too-large": {
+            className: "border-rose/24 bg-rose/10 text-charcoal",
+            text: getMediaUploadTooLargeMessage(),
           },
           "media-updated": {
             className: "border-emerald-200 bg-emerald-50 text-emerald-900",
@@ -236,8 +259,13 @@ export default async function AdminMediaPage({ searchParams }: AdminMediaPagePro
               type="file"
               accept="image/*"
               required
+              aria-describedby="media-image-help"
               className="block w-full rounded-3xl border border-charcoal/10 bg-white px-4 py-4 text-sm text-charcoal"
             />
+            <p id="media-image-help" className="mt-2 text-xs leading-5 text-charcoal/58">
+              Max 10 MB. Allowed: {getAllowedMediaUploadExtensionsLabel()}.
+            </p>
+            <MediaUploadFormGuard inputId="media-image" />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">

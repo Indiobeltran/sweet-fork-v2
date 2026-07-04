@@ -15,6 +15,65 @@ export type OrderPaymentSnapshot = {
   totalPaid: number;
 };
 
+type ManualOrderPaymentAmountInput = {
+  amountPaid: FormDataEntryValue | null;
+  depositDueAmount: FormDataEntryValue | null;
+  totalAmount: FormDataEntryValue | null;
+};
+
+type ManualOrderPaymentAmountResult =
+  | {
+      amountPaid: number;
+      depositDueAmount: number;
+      ok: true;
+      totalAmount: number;
+    }
+  | {
+      ok: false;
+    };
+
+function parseMoneyInput(value: FormDataEntryValue | null) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const cleaned = value.replace(/[$,\s]/g, "");
+
+  if (!cleaned) {
+    return null;
+  }
+
+  const parsed = Number(cleaned);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function validateManualOrderPaymentAmounts({
+  amountPaid,
+  depositDueAmount,
+  totalAmount,
+}: ManualOrderPaymentAmountInput): ManualOrderPaymentAmountResult {
+  const parsedTotalAmount = parseMoneyInput(totalAmount);
+  const parsedAmountPaid = parseMoneyInput(amountPaid) ?? 0;
+  const parsedDepositDueAmount = parseMoneyInput(depositDueAmount) ?? 0;
+
+  if (
+    parsedTotalAmount === null ||
+    parsedTotalAmount <= 0 ||
+    parsedAmountPaid < 0 ||
+    parsedDepositDueAmount < 0 ||
+    parsedAmountPaid > parsedTotalAmount
+  ) {
+    return { ok: false };
+  }
+
+  return {
+    amountPaid: parsedAmountPaid,
+    depositDueAmount: parsedDepositDueAmount,
+    ok: true,
+    totalAmount: parsedTotalAmount,
+  };
+}
+
 export function getPaymentUiType(value: Enums<"payment_type">): PaymentUiType {
   switch (value) {
     case "deposit":

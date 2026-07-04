@@ -4,6 +4,67 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## Admin Smoke-Test Fixes: Pagination, Manual Totals, Upload Errors — 2026-07-03
+
+- **Current branch**: `claude/admin-code-review-tn667l`.
+- **Current objective**: Fix three admin smoke-test regressions found against live data and commit them as one focused fix commit.
+- **Last completed work**:
+  - Fixed `/admin/inquiries?page=N` out-of-range crashes by counting the filtered inquiry result first, clamping the requested page to the valid range, then querying the clamped range.
+  - Added tested pagination helpers for page-count calculation and clamping.
+  - Added missing inquiry status chips for `New` and `Declined`; these URL filters already existed and now have visible chip controls.
+  - Moved manual-order amount validation into a server-side helper that rejects missing/non-positive totals, negative paid/deposit values, and overpayment before order creation.
+  - Added a specific manual-order amount error notice for invalid totals or paid amounts.
+  - Centralized admin media upload validation, added client-side file-size/type checks, added specific `.txt`-style extension rejection copy, and raised Next upload body limits above the 10 MB app cap so app validation can return friendly errors for normal oversized attempts.
+- **In-progress work**: None.
+- **Next exact task**: Push or open a PR only if explicitly requested; no push was performed in this run.
+- **Commands run**:
+  - `sed -n '1,220p' AGENTS.md`
+  - `sed -n '1,220p' ROADMAP.md`
+  - `sed -n '1,220p' GATES.md`
+  - `sed -n '1,220p' HANDOFF.md`
+  - `sed -n '1,220p' DECISIONS.md`
+  - `sed -n '1,220p' BACKLOG.md`
+  - `sed -n '1,220p' README.md`
+  - `curl -L --max-time 20 https://supabase.com/changelog.md | sed -n '1,160p'`
+  - `node --no-warnings --experimental-strip-types --test src/lib/admin/pagination.test.ts src/lib/admin/order-payments.test.ts src/lib/admin/media-upload-validation.test.ts` (red before implementation, then passed)
+  - `npm run typecheck`: passed
+  - `npm run lint`: passed
+  - `npm test`: passed, 140/140
+  - `npm run build`: passed
+  - `git diff --check`: passed
+  - `git add ...`
+  - `git commit -m "fix: harden admin smoke test regressions"` (later amended to keep this handoff current)
+- **Commands still needed**:
+  - None for the requested smoke-test fix task.
+- **Files changed recently for this scoped run**:
+  - `HANDOFF.md`
+  - `next.config.ts`
+  - `package.json`
+  - `src/app/admin/(protected)/inquiries/page.tsx`
+  - `src/app/admin/(protected)/media/actions.ts`
+  - `src/app/admin/(protected)/media/page.tsx`
+  - `src/app/admin/(protected)/orders/actions.ts`
+  - `src/app/admin/(protected)/orders/new/page.tsx`
+  - `src/components/admin/media-upload-form-guard.tsx`
+  - `src/lib/admin/inquiries.ts`
+  - `src/lib/admin/media-upload-validation.ts`
+  - `src/lib/admin/media-upload-validation.test.ts`
+  - `src/lib/admin/order-payments.ts`
+  - `src/lib/admin/order-payments.test.ts`
+  - `src/lib/admin/pagination.ts`
+  - `src/lib/admin/pagination.test.ts`
+- **Files intentionally preserved / not touched in this run**:
+  - Public marketing site and inquiry-flow files outside the admin smoke-test scope were left untouched.
+  - Existing untracked agent/scratch/Supabase temp files were preserved.
+- **Known issues / notes**:
+  - The upload body limit is now 16 MB, above the 10 MB app-level cap. Extremely large requests above 16 MB can still be rejected by framework/proxy limits before app validation, but normal >10 MB smoke-test files should now receive the friendly app message.
+  - No live-data mutation QA was repeated after the code fix; verification was static gates plus targeted regression tests and production build.
+- **Assumptions made**:
+  - `New` and `Declined` inquiry chips should be visible because the URL filters already worked and the smoke-test note asked to add them if not intentional.
+  - A zero manual-order total is invalid for confirmed manual order creation.
+- **Open decisions**:
+  - Whether the upload proxy/body limit should be raised further than 16 MB or handled with a dedicated route/API upload flow if owners routinely upload much larger media.
+
 ## Admin Orders Follow-Up: Overdue, Completed, Quick-Add Custom Items — 2026-07-03
 
 - **Current branch**: `codex/admin-dashboard-finance`.

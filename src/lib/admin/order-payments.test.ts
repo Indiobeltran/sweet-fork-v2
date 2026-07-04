@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 // @ts-expect-error Node's strip-types test runner needs the .ts extension.
-import { calculateOrderPaymentSnapshot, getPaymentUiType, getStoredPaymentType } from "./order-payments.ts";
+import { calculateOrderPaymentSnapshot, getPaymentUiType, getStoredPaymentType, validateManualOrderPaymentAmounts } from "./order-payments.ts";
 
 describe("calculateOrderPaymentSnapshot", () => {
   it("reports unpaid when no payments exist", () => {
@@ -132,5 +132,52 @@ describe("payment type mapping", () => {
     assert.equal(getPaymentUiType("full"), "final");
     assert.equal(getPaymentUiType("balance"), "final");
     assert.equal(getPaymentUiType("refund"), "other");
+  });
+});
+
+describe("validateManualOrderPaymentAmounts", () => {
+  it("rejects a negative manual-order total", () => {
+    assert.equal(
+      validateManualOrderPaymentAmounts({
+        amountPaid: "0",
+        depositDueAmount: "0",
+        totalAmount: "-10",
+      }).ok,
+      false,
+    );
+  });
+
+  it("rejects a zero manual-order total", () => {
+    assert.equal(
+      validateManualOrderPaymentAmounts({
+        amountPaid: "0",
+        depositDueAmount: "0",
+        totalAmount: "0",
+      }).ok,
+      false,
+    );
+  });
+
+  it("rejects a negative amount paid", () => {
+    assert.equal(
+      validateManualOrderPaymentAmounts({
+        amountPaid: "-1",
+        depositDueAmount: "0",
+        totalAmount: "120",
+      }).ok,
+      false,
+    );
+  });
+
+  it("accepts a partial payment below the order total", () => {
+    const result = validateManualOrderPaymentAmounts({
+      amountPaid: "40",
+      depositDueAmount: "0",
+      totalAmount: "120",
+    });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.amountPaid, 40);
+    assert.equal(result.totalAmount, 120);
   });
 });
