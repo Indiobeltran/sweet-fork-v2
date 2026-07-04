@@ -5,7 +5,8 @@ import { buildDashboardFinanceSummary, buildDashboardGreetingSummary, getCurrent
 import { getDashboardFinanceSetting } from "@/lib/admin/finance-data";
 import { getInquiryListData } from "@/lib/admin/inquiries";
 import { getOrderListData } from "@/lib/admin/orders";
-import { getMediaLibraryData } from "@/lib/admin/site-management";
+import { ADMIN_MAX_FETCH_LIMIT } from "@/lib/admin/pagination";
+import { getMediaPlacementWarningsData } from "@/lib/admin/site-management";
 import { formatDate, toTitleCase } from "@/lib/utils";
 
 export const metadata = {
@@ -13,36 +14,48 @@ export const metadata = {
 };
 
 export default async function AdminDashboardPage() {
-  const [inquiriesData, ordersData, mediaData, showFinanceOnDashboard] = await Promise.all([
-    getInquiryListData({
-      budgetRange: "all",
-      eventDateFrom: "",
-      eventDateTo: "",
-      fulfillmentMethod: "all",
-      priority: "all",
-      productType: "all",
-      search: "",
-      status: "active",
-      urgency: "all",
-    }),
-    getOrderListData({
-      eventDateFrom: "",
-      eventDateTo: "",
-      fulfillmentMethod: "all",
-      paymentState: "all",
-      search: "",
-      status: "all",
-    }),
-    getMediaLibraryData(),
+  const today = new Date().toISOString().slice(0, 10);
+  const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  // The dashboard aggregates over the full active/upcoming set (finance sums,
+  // due-soon counts), so it fetches with a high ceiling rather than one page.
+  // Orders are scoped to upcoming event dates — the only orders the dashboard
+  // reads — which is strictly narrower than the full order history.
+  const [inquiriesData, ordersData, mediaWarnings, showFinanceOnDashboard] = await Promise.all([
+    getInquiryListData(
+      {
+        budgetRange: "all",
+        eventDateFrom: "",
+        eventDateTo: "",
+        fulfillmentMethod: "all",
+        priority: "all",
+        productType: "all",
+        search: "",
+        status: "active",
+        urgency: "all",
+      },
+      1,
+      ADMIN_MAX_FETCH_LIMIT,
+    ),
+    getOrderListData(
+      {
+        eventDateFrom: today,
+        eventDateTo: "",
+        fulfillmentMethod: "all",
+        paymentState: "all",
+        search: "",
+        status: "all",
+      },
+      1,
+      ADMIN_MAX_FETCH_LIMIT,
+    ),
+    getMediaPlacementWarningsData(),
     getDashboardFinanceSetting(),
   ]);
 
   const newInquiriesCount = inquiriesData.statusCounts.new;
   const reviewingInquiriesCount = inquiriesData.statusCounts.reviewing;
   const quotedInquiriesCount = inquiriesData.statusCounts.quoted;
-
-  const today = new Date().toISOString().slice(0, 10);
-  const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
   const upcomingOrders = ordersData.entries
     .filter(
@@ -58,7 +71,7 @@ export default async function AdminDashboardPage() {
   const paymentAttentionCount = upcomingOrders.filter((entry) => entry.paymentState !== "paid").length;
   const waitingInquiriesCount = newInquiriesCount + reviewingInquiriesCount + quotedInquiriesCount;
 
-  const mediaWarningsCount = mediaData.placementWarnings.length;
+  const mediaWarningsCount = mediaWarnings.length;
 
   const hasNeedsAttention =
     newInquiriesCount > 0 ||

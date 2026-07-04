@@ -2,6 +2,13 @@ import "server-only";
 
 import { createClient as createSessionClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  ADMIN_PAGE_SIZE,
+  buildPaginationInfo,
+  escapeIlikeTerm,
+  getPageRange,
+  type PaginationInfo,
+} from "@/lib/admin/pagination";
 import { getBudgetRangeLabel, budgetRangeOptions } from "@/lib/inquiries/config";
 import { estimateItemRange, getProductDisplayLabel } from "@/lib/pricing";
 import { formatCurrency, toTitleCase } from "@/lib/utils";
@@ -298,6 +305,7 @@ export type InquiryDetail = {
 export type InquiryListData = {
   entries: InquiryListEntry[];
   filters: InquiryListFilters;
+  pagination: PaginationInfo;
   statusCounts: Record<Enums<"inquiry_status">, number>;
   summary: Array<{
     detail: string;
@@ -796,46 +804,19 @@ export function parseInquiryListFilters(
   return next;
 }
 
-function matchesFilters(row: InquiryListQueryRow, filters: InquiryListFilters) {
+// Status, event-date, fulfillment, and search filters are applied in SQL by
+// getInquiryListData. These remaining filters depend on metadata or child rows
+// and are applied to the fetched page, so a page can show fewer rows than the
+// SQL-level total when one of them is active.
+function matchesDerivedFilters(row: InquiryListQueryRow, filters: InquiryListFilters) {
   const signals = getInquirySignals(row.metadata);
-  const budgetRangeValue = getBudgetRangeValue(row);
   const items = row.inquiry_items ?? [];
-
-  if (filters.status === "active" && row.status === "archived") {
-    return false;
-  }
-
-  if (
-    filters.status !== "active" &&
-    filters.status !== "all" &&
-    row.status !== filters.status
-  ) {
-    return false;
-  }
 
   if (filters.productType !== "all" && !items.some((item) => item.product_type === filters.productType)) {
     return false;
   }
 
-  if (
-    filters.eventDateFrom &&
-    row.event_date.localeCompare(filters.eventDateFrom) < 0
-  ) {
-    return false;
-  }
-
-  if (filters.eventDateTo && row.event_date.localeCompare(filters.eventDateTo) > 0) {
-    return false;
-  }
-
-  if (
-    filters.fulfillmentMethod !== "all" &&
-    row.fulfillment_method !== filters.fulfillmentMethod
-  ) {
-    return false;
-  }
-
-  if (filters.budgetRange !== "all" && budgetRangeValue !== filters.budgetRange) {
+  if (filters.budgetRange !== "all" && getBudgetRangeValue(row) !== filters.budgetRange) {
     return false;
   }
 
@@ -845,19 +826,6 @@ function matchesFilters(row: InquiryListQueryRow, filters: InquiryListFilters) {
 
   if (filters.urgency !== "all" && signals.urgency !== filters.urgency) {
     return false;
-  }
-
-  if (filters.search) {
-    const term = filters.search.toLowerCase();
-    const refCode = getReferenceCode(row).toLowerCase();
-    if (
-      !row.customer_name.toLowerCase().includes(term) &&
-      !row.customer_email.toLowerCase().includes(term) &&
-      !row.customer_phone.toLowerCase().includes(term) &&
-      !refCode.includes(term)
-    ) {
-      return false;
-    }
   }
 
   return true;
@@ -915,36 +883,73 @@ function mapListEntry(row: InquiryListQueryRow, productsMap: Map<string, { produ
   };
 }
 
-export async function getInquiryListData(filters: InquiryListFilters): Promise<InquiryListData> {
+export async function getInquiryListData(
+  filters: InquiryListFilters,
+  page = 1,
+  pageSize = ADMIN_PAGE_SIZE,
+): Promise<InquiryListData> {
   const supabase = await createSessionClient();
 
   if (!supabase) {
     throw new Error("Supabase is not configured for admin inquiries.");
   }
 
-  const [inquiriesResult, productsResult] = await Promise.all([
-    supabase
-      .from("inquiries")
-      .select(
-        "id, status, source_channel, customer_name, customer_email, customer_phone, event_type, event_date, fulfillment_method, budget_min, budget_max, estimated_min, estimated_max, submitted_at, reviewed_at, archived_at, created_at, updated_at, metadata, inquiry_items(id, product_type, product_label, quantity, servings, cupcake_count, cookie_count, macaron_count, kit_count, wedding_servings, tiers, shape, icing_style, topper_text, color_palette, design_notes, inspiration_notes, estimated_min, estimated_max, sort_order)",
-      )
-      .order("submitted_at", { ascending: false }),
+  const { from, to } = getPageRange(page, pageSize);
+  let listQuery = supabase
+    .from("inquiries")
+    .select(
+      "id, status, source_channel, customer_name, customer_email, customer_phone, event_type, event_date, fulfillment_method, budget_min, budget_max, estimated_min, estimated_max, submitted_at, reviewed_at, archived_at, created_at, updated_at, metadata, inquiry_items(id, product_type, product_label, quantity, servings, cupcake_count, cookie_count, macaron_count, kit_count, wedding_servings, tiers, shape, icing_style, topper_text, color_palette, design_notes, inspiration_notes, estimated_min, estimated_max, sort_order)",
+      { count: "exact" },
+    );
+
+  if (filters.status === "active") {
+    listQuery = listQuery.neq("status", "archived");
+  } else if (filters.status !== "all") {
+    listQuery = listQuery.eq("status", filters.status);
+  }
+
+  if (filters.eventDateFrom) {
+    listQuery = listQuery.gte("event_date", filters.eventDateFrom);
+  }
+
+  if (filters.eventDateTo) {
+    listQuery = listQuery.lte("event_date", filters.eventDateTo);
+  }
+
+  if (filters.fulfillmentMethod !== "all") {
+    listQuery = listQuery.eq("fulfillment_method", filters.fulfillmentMethod);
+  }
+
+  const searchTerm = escapeIlikeTerm(filters.search);
+  if (searchTerm) {
+    const pattern = `%${searchTerm}%`;
+    listQuery = listQuery.or(
+      `customer_name.ilike.${pattern},customer_email.ilike.${pattern},customer_phone.ilike.${pattern},metadata->>referenceCode.ilike.${pattern}`,
+    );
+  }
+
+  const [inquiriesResult, productsResult, statusResult] = await Promise.all([
+    listQuery.order("submitted_at", { ascending: false }).range(from, to),
     supabase.from("products").select("product_type, min_lead_time_days"),
+    supabase.from("inquiries").select("status"),
   ]);
 
   if (inquiriesResult.error) {
     throw inquiriesResult.error;
   }
-  
+
   if (productsResult.error) {
     throw productsResult.error;
+  }
+
+  if (statusResult.error) {
+    throw statusResult.error;
   }
 
   const productsMap = new Map(
     ((productsResult.data ?? []) as Array<{ product_type: string; min_lead_time_days: number }>).map((p) => [p.product_type, p])
   );
 
-  const rows = (inquiriesResult.data ?? []) as InquiryListQueryRow[];
   const statusCounts = {
     approved: 0,
     archived: 0,
@@ -954,11 +959,13 @@ export async function getInquiryListData(filters: InquiryListFilters): Promise<I
     reviewing: 0,
   } satisfies Record<Enums<"inquiry_status">, number>;
 
-  rows.forEach((row) => {
+  ((statusResult.data ?? []) as Array<Pick<InquiryRow, "status">>).forEach((row) => {
     statusCounts[row.status] += 1;
   });
 
-  const filteredRows = rows.filter((row) => matchesFilters(row, filters));
+  const rows = (inquiriesResult.data ?? []) as InquiryListQueryRow[];
+  const totalCount = inquiriesResult.count ?? rows.length;
+  const filteredRows = rows.filter((row) => matchesDerivedFilters(row, filters));
   const entries = filteredRows.map(row => mapListEntry(row, productsMap));
   const rushCount = filteredRows.filter((row) => getInquirySignals(row.metadata).urgency === "rush").length;
   const newCount = filteredRows.filter((row) => row.status === "new").length;
@@ -968,6 +975,7 @@ export async function getInquiryListData(filters: InquiryListFilters): Promise<I
   return {
     entries,
     filters,
+    pagination: buildPaginationInfo(page, totalCount, pageSize),
     statusCounts,
     summary: [
       {
@@ -976,9 +984,9 @@ export async function getInquiryListData(filters: InquiryListFilters): Promise<I
             ? archivedCount === 0
               ? "Archived inquiries stay out of the default desk."
               : `${archivedCount} archived inquir${archivedCount === 1 ? "y is" : "ies are"} hidden by default.`
-            : rows.length === filteredRows.length
+            : totalCount === filteredRows.length
               ? "All inquiries currently shown"
-              : `${rows.length} total inquiries in the system`,
+              : `${totalCount} matching inquiries in the system`,
         label: "Visible inquiries",
         value: String(filteredRows.length),
       },
@@ -996,7 +1004,7 @@ export async function getInquiryListData(filters: InquiryListFilters): Promise<I
         value: String(rushCount === 0 ? deliveryCount : rushCount),
       },
     ],
-    totalCount: rows.length,
+    totalCount,
   };
 }
 

@@ -16,6 +16,7 @@ import {
   type CustomerListEntry,
   type CustomerListFilters,
 } from "@/lib/admin/customers";
+import { ADMIN_MAX_FETCH_LIMIT } from "@/lib/admin/pagination";
 import { formatOptionalDateTime } from "@/lib/admin/order-workflow";
 import { toTitleCase } from "@/lib/utils";
 
@@ -245,7 +246,10 @@ export default async function AdminCustomersPage({ searchParams }: AdminCustomer
   const resolvedSearchParams = await searchParams;
   const filters = parseCustomerListFilters(resolvedSearchParams);
   const segment = getCustomerSegment(resolvedSearchParams);
-  const data = await getCustomerListData(filters);
+  // The customers page segments the fetched set into client-side tabs with count
+  // badges (all/repeat/leads/email-preferred), so it needs the whole working set
+  // rather than a single page. Fetch it bounded by the shared ceiling.
+  const data = await getCustomerListData(filters, 1, ADMIN_MAX_FETCH_LIMIT);
   const visibleEntries = filterCustomersBySegment(data.entries, segment);
   const activeFilterPills = getActiveFilterPills(filters, segment);
   const segmentCounts = {

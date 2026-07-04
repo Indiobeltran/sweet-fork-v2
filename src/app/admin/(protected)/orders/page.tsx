@@ -19,6 +19,7 @@ import {
   type OrderListEntry,
   type OrderListFilters,
 } from "@/lib/admin/orders";
+import { ADMIN_MAX_FETCH_LIMIT } from "@/lib/admin/pagination";
 import {
   getOrderStatusClasses,
   getOrderStatusLabel,
@@ -399,7 +400,10 @@ export default async function AdminOrdersPage({
   const resolvedSearchParams = await searchParams;
   const filters = parseOrderListFilters(resolvedSearchParams);
   const queue = getOrderQueue(resolvedSearchParams);
-  const data = await getOrderListData(filters);
+  // The orders page segments the fetched set into client-side queue tabs with
+  // count badges and due-date groupings, so it needs the whole working set
+  // rather than a single page. Fetch it bounded by the shared ceiling.
+  const data = await getOrderListData(filters, 1, ADMIN_MAX_FETCH_LIMIT);
   const today = new Date().toISOString().slice(0, 10);
   const queueEntries = filterOrdersByQueue(data.entries, queue, today);
   const visibleEntries = filters.search

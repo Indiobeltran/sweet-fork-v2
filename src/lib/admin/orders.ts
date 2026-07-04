@@ -2,6 +2,13 @@ import "server-only";
 
 import { createClient as createSessionClient } from "@/lib/supabase/server";
 import {
+  ADMIN_PAGE_SIZE,
+  buildPaginationInfo,
+  escapeIlikeTerm,
+  getPageRange,
+  type PaginationInfo,
+} from "@/lib/admin/pagination";
+import {
   calculateOrderPaymentSnapshot,
   formatOrderMoneySummary,
   getInquiryReferenceCode,
@@ -216,6 +223,7 @@ export type OrderListEntry = {
 export type OrderListData = {
   entries: OrderListEntry[];
   filters: OrderListFilters;
+  pagination: PaginationInfo;
   summary: Array<{
     detail: string;
     label: string;
@@ -531,6 +539,8 @@ export async function getInquiryConversionData(
     throw new Error("Supabase is not configured for admin orders.");
   }
 
+  const customerSelect =
+    "id, full_name, email, phone, preferred_contact, last_order_at, last_inquiry_at";
   const inquiryPromise = supabase
     .from("inquiries")
     .select(
@@ -543,13 +553,14 @@ export async function getInquiryConversionData(
     .select("id, status, payment_status")
     .eq("inquiry_id", inquiryId)
     .maybeSingle();
+  // The picker shows the most recently active customers; suggested matches
+  // beyond this cap are merged in from a targeted lookup below.
   const customersPromise = supabase
     .from("customers")
-    .select(
-      "id, full_name, email, phone, preferred_contact, last_order_at, last_inquiry_at",
-    )
+    .select(customerSelect)
     .order("last_order_at", { ascending: false, nullsFirst: false })
-    .order("full_name", { ascending: true });
+    .order("full_name", { ascending: true })
+    .limit(100);
 
   const [
     { data: inquiryData, error: inquiryError },
@@ -576,6 +587,42 @@ export async function getInquiryConversionData(
   const inquiry = inquiryData as InquiryConversionInquiryRow;
   const existingOrder = orderData as InquiryConversionOrderRow | null;
   const customers = (customerData ?? []) as InquiryConversionCustomerRow[];
+
+  const matchConditions: string[] = [];
+  const matchEmail = escapeIlikeTerm(inquiry.customer_email ?? "");
+  const matchName = escapeIlikeTerm(inquiry.customer_name ?? "");
+
+  if (matchEmail) {
+    matchConditions.push(`email.ilike.${matchEmail}`);
+  }
+
+  if (matchName) {
+    matchConditions.push(`full_name.ilike.${matchName}`);
+  }
+
+  if (inquiry.customer_id) {
+    matchConditions.push(`id.eq.${inquiry.customer_id}`);
+  }
+
+  if (matchConditions.length > 0) {
+    const { data: matchData, error: matchError } = await supabase
+      .from("customers")
+      .select(customerSelect)
+      .or(matchConditions.join(","))
+      .limit(20);
+
+    if (matchError) {
+      throw matchError;
+    }
+
+    const knownIds = new Set(customers.map((customer) => customer.id));
+    ((matchData ?? []) as InquiryConversionCustomerRow[]).forEach((customer) => {
+      if (!knownIds.has(customer.id)) {
+        customers.push(customer);
+      }
+    });
+  }
+
   const normalizedName = inquiry.customer_name.trim().toLowerCase();
   const normalizedEmail = inquiry.customer_email.trim().toLowerCase();
   const normalizedPhone = normalizePhone(inquiry.customer_phone);
@@ -659,91 +706,99 @@ export async function getManualOrderFormData(): Promise<ManualOrderFormData> {
   };
 }
 
-export async function getOrderListData(filters: OrderListFilters): Promise<OrderListData> {
+export async function getOrderListData(
+  filters: OrderListFilters,
+  page = 1,
+  pageSize = ADMIN_PAGE_SIZE,
+): Promise<OrderListData> {
   const supabase = await createSessionClient();
 
   if (!supabase) {
     throw new Error("Supabase is not configured for admin orders.");
   }
 
-  const { data, error } = await supabase
+  const searchTerm = escapeIlikeTerm(filters.search);
+  const { from, to } = getPageRange(page, pageSize);
+
+  // Search matches customer contact fields, which requires an inner join so
+  // the ilike filter excludes non-matching orders instead of nulling the embed.
+  const customersEmbed = searchTerm
+    ? "customers!inner(id, full_name, email, phone)"
+    : "customers(id, full_name, email, phone)";
+
+  let listQuery = supabase
     .from("orders")
     .select(
-      "id, status, payment_status, fulfillment_method, event_type, event_date, total_amount, balance_due_amount, deposit_due_amount, created_at, updated_at, customers(id, full_name, email, phone), inquiries(id, metadata), order_items(id), payments(amount, payment_type, status)",
-    )
-    .order("event_date", { ascending: true });
+      `id, status, payment_status, fulfillment_method, event_type, event_date, total_amount, balance_due_amount, deposit_due_amount, created_at, updated_at, ${customersEmbed}, inquiries(id, metadata), order_items(id), payments(amount, payment_type, status)`,
+      { count: "exact" },
+    );
+
+  if (filters.status !== "all") {
+    listQuery = listQuery.eq("status", filters.status);
+  }
+
+  // payment_status is kept in sync by syncOrderPaymentState on every payment
+  // mutation, so the column is safe to filter on directly.
+  if (filters.paymentState !== "all") {
+    listQuery = listQuery.eq("payment_status", filters.paymentState);
+  }
+
+  if (filters.fulfillmentMethod !== "all") {
+    listQuery = listQuery.eq("fulfillment_method", filters.fulfillmentMethod);
+  }
+
+  if (filters.eventDateFrom) {
+    listQuery = listQuery.gte("event_date", filters.eventDateFrom);
+  }
+
+  if (filters.eventDateTo) {
+    listQuery = listQuery.lte("event_date", filters.eventDateTo);
+  }
+
+  if (searchTerm) {
+    const pattern = `%${searchTerm}%`;
+    listQuery = listQuery.or(
+      `full_name.ilike.${pattern},email.ilike.${pattern},phone.ilike.${pattern}`,
+      { referencedTable: "customers" },
+    );
+  }
+
+  const { count, data, error } = await listQuery
+    .order("event_date", { ascending: true })
+    .range(from, to);
 
   if (error) {
     throw error;
   }
 
   const rows = (data ?? []) as OrderListQueryRow[];
-  const entries = rows
-    .map((row) => {
-      const paymentSummary = calculateOrderPaymentSnapshot(row, row.payments ?? []);
-      const paymentState = paymentSummary.paymentStatus || row.payment_status;
+  const totalCount = count ?? rows.length;
+  const entries = rows.map((row) => {
+    const paymentSummary = calculateOrderPaymentSnapshot(row, row.payments ?? []);
+    const paymentState = paymentSummary.paymentStatus || row.payment_status;
 
-      return {
-        balanceDue: paymentSummary.balanceDue,
-        balanceDueLabel: formatOrderMoneySummary(paymentSummary.balanceDue),
-        customerId: row.customers?.id ?? null,
-        customerLabel: row.customers?.full_name ?? "Unknown customer",
-        customerPhone: row.customers?.phone ?? null,
-        customerEmail: row.customers?.email ?? null,
-        eventDate: row.event_date,
-        eventType: row.event_type,
-        fulfillmentMethod: row.fulfillment_method,
-        id: row.id,
-        itemCount: row.order_items?.length ?? 0,
-        paymentState,
-        paymentStateLabel: toTitleCase(paymentState),
-        referenceCode: row.inquiries
-          ? getInquiryReferenceCode(row.inquiries)
-          : `ORD-${row.id.slice(0, 8).toUpperCase()}`,
-        status: row.status,
-        totalAmount: row.total_amount,
-        totalLabel: formatOrderMoneySummary(row.total_amount),
-      } satisfies OrderListEntry;
-    })
-    .filter((entry) => {
-      if (filters.status !== "all" && entry.status !== filters.status) {
-        return false;
-      }
-
-      if (filters.paymentState !== "all" && entry.paymentState !== filters.paymentState) {
-        return false;
-      }
-
-      if (
-        filters.fulfillmentMethod !== "all" &&
-        entry.fulfillmentMethod !== filters.fulfillmentMethod
-      ) {
-        return false;
-      }
-
-      if (filters.eventDateFrom && entry.eventDate < filters.eventDateFrom) {
-        return false;
-      }
-
-      if (filters.eventDateTo && entry.eventDate > filters.eventDateTo) {
-        return false;
-      }
-
-      if (filters.search.length === 0) {
-        return true;
-      }
-
-      const haystack = [
-        entry.customerLabel,
-        entry.eventType,
-        entry.referenceCode,
-        entry.totalLabel,
-      ]
-        .join(" ")
-        .toLowerCase();
-
-      return haystack.includes(filters.search.toLowerCase());
-    });
+    return {
+      balanceDue: paymentSummary.balanceDue,
+      balanceDueLabel: formatOrderMoneySummary(paymentSummary.balanceDue),
+      customerId: row.customers?.id ?? null,
+      customerLabel: row.customers?.full_name ?? "Unknown customer",
+      customerPhone: row.customers?.phone ?? null,
+      customerEmail: row.customers?.email ?? null,
+      eventDate: row.event_date,
+      eventType: row.event_type,
+      fulfillmentMethod: row.fulfillment_method,
+      id: row.id,
+      itemCount: row.order_items?.length ?? 0,
+      paymentState,
+      paymentStateLabel: toTitleCase(paymentState),
+      referenceCode: row.inquiries
+        ? getInquiryReferenceCode(row.inquiries)
+        : `ORD-${row.id.slice(0, 8).toUpperCase()}`,
+      status: row.status,
+      totalAmount: row.total_amount,
+      totalLabel: formatOrderMoneySummary(row.total_amount),
+    } satisfies OrderListEntry;
+  });
 
   const awaitingPaymentCount = entries.filter((entry) => entry.paymentState !== "paid").length;
   const upcomingCount = entries.filter((entry) => {
@@ -754,9 +809,13 @@ export async function getOrderListData(filters: OrderListFilters): Promise<Order
   return {
     entries,
     filters,
+    pagination: buildPaginationInfo(page, totalCount, pageSize),
     summary: [
       {
-        detail: rows.length === entries.length ? "All active orders currently shown" : `${rows.length} total orders in the system`,
+        detail:
+          totalCount === entries.length
+            ? "All matching orders currently shown"
+            : `${totalCount} matching orders in the system`,
         label: "Visible orders",
         value: String(entries.length),
       },
@@ -777,7 +836,7 @@ export async function getOrderListData(filters: OrderListFilters): Promise<Order
         value: String(upcomingCount),
       },
     ],
-    totalCount: rows.length,
+    totalCount,
   };
 }
 

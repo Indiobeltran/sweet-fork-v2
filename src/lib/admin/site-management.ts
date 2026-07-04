@@ -377,6 +377,88 @@ export async function getMediaLibraryData(): Promise<MediaLibraryData> {
   };
 }
 
+// Lightweight variant of getMediaLibraryData for callers (e.g. the dashboard)
+// that only need placement warnings. Skips signed preview URL generation, which
+// otherwise issues one storage request per asset.
+export async function getMediaPlacementWarningsData(): Promise<MediaPlacementWarning[]> {
+  const supabase = await createSessionClient();
+
+  if (!supabase) {
+    throw new Error("Supabase is not configured for admin media.");
+  }
+
+  const { data: assetData, error: assetError } = await supabase
+    .from("media_assets")
+    .select("id")
+    .eq("asset_kind", "image");
+
+  if (assetError) {
+    throw assetError;
+  }
+
+  const assetIds = ((assetData ?? []) as Array<Pick<MediaAssetRow, "id">>).map((asset) => asset.id);
+
+  if (assetIds.length === 0) {
+    return getPlacementWarnings([], mediaPlacementDefinitions);
+  }
+
+  const { data: assignmentData, error: assignmentError } = await supabase
+    .from("media_assignments")
+    .select(
+      "id, assignment_type, display_order, media_asset_id, page_key, section_key, slot_key, created_at, updated_at, metadata",
+    )
+    .eq("assignment_type", "page")
+    .in("media_asset_id", assetIds);
+
+  if (assignmentError) {
+    throw assignmentError;
+  }
+
+  type WarningAssignmentRow = Pick<
+    MediaAssignmentRow,
+    | "id"
+    | "assignment_type"
+    | "display_order"
+    | "media_asset_id"
+    | "page_key"
+    | "section_key"
+    | "slot_key"
+    | "created_at"
+    | "updated_at"
+    | "metadata"
+  >;
+  const assignmentsByAssetId = ((assignmentData ?? []) as WarningAssignmentRow[]).reduce<
+    Map<string, WarningAssignmentRow[]>
+  >((accumulator, assignment) => {
+    const list = accumulator.get(assignment.media_asset_id) ?? [];
+    list.push(assignment);
+    accumulator.set(assignment.media_asset_id, list);
+    return accumulator;
+  }, new Map());
+
+  const assets = assetIds.map((id) => ({
+    id,
+    pageAssignments: (assignmentsByAssetId.get(id) ?? []).map((assignment) => ({
+      assignmentId: assignment.id,
+      displayOrder: assignment.display_order,
+      placementKey:
+        mediaPlacementDefinitions.find(
+          (definition) =>
+            definition.pageKey === assignment.page_key &&
+            definition.sectionKey === assignment.section_key &&
+            definition.slotKey === assignment.slot_key,
+        )?.key ?? `${assignment.page_key}.${assignment.section_key}`,
+      createdAt: assignment.created_at,
+      updatedAt: assignment.updated_at,
+      metadata: isRecord(assignment.metadata)
+        ? (assignment.metadata as Record<string, unknown>)
+        : undefined,
+    })),
+  }));
+
+  return getPlacementWarnings(assets, mediaPlacementDefinitions);
+}
+
 export async function getFaqAdminData() {
   const supabase = await createSessionClient();
 

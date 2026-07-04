@@ -2,6 +2,13 @@ import "server-only";
 
 import { createClient as createSessionClient } from "@/lib/supabase/server";
 import {
+  ADMIN_PAGE_SIZE,
+  buildPaginationInfo,
+  escapeIlikeTerm,
+  getPageRange,
+  type PaginationInfo,
+} from "@/lib/admin/pagination";
+import {
   formatOrderMoneySummary,
   getInquiryReferenceCode,
   getRepeatCustomerLabel,
@@ -27,8 +34,8 @@ type CustomerListQueryRow = Pick<
   | "preferred_contact"
   | "updated_at"
 > & {
-  inquiries: Array<Pick<InquiryRow, "id">> | null;
-  orders: Array<Pick<OrderRow, "event_date" | "id" | "payment_status" | "status">> | null;
+  inquiries: Array<{ count: number }> | null;
+  orders: Array<{ count: number }> | null;
 };
 
 type CustomerDetailQueryRow = CustomerRow & {
@@ -70,6 +77,7 @@ export type CustomerListEntry = {
 export type CustomerListData = {
   entries: CustomerListEntry[];
   filters: CustomerListFilters;
+  pagination: PaginationInfo;
   summary: Array<{
     detail: string;
     label: string;
@@ -157,6 +165,8 @@ export function parseCustomerListFilters(
 
 export async function getCustomerListData(
   filters: CustomerListFilters,
+  page = 1,
+  pageSize = ADMIN_PAGE_SIZE,
 ): Promise<CustomerListData> {
   const supabase = await createSessionClient();
 
@@ -164,23 +174,41 @@ export async function getCustomerListData(
     throw new Error("Supabase is not configured for admin customers.");
   }
 
-  const { data, error } = await supabase
+  const { from, to } = getPageRange(page, pageSize);
+  let listQuery = supabase
     .from("customers")
     .select(
-      "id, full_name, email, phone, preferred_contact, lead_source, last_inquiry_at, last_order_at, created_at, updated_at, orders(id, event_date, status, payment_status), inquiries(id)",
-    )
+      "id, full_name, email, phone, preferred_contact, lead_source, last_inquiry_at, last_order_at, created_at, updated_at, orders(count), inquiries(count)",
+      { count: "exact" },
+    );
+
+  if (filters.preferredContact !== "all") {
+    listQuery = listQuery.eq("preferred_contact", filters.preferredContact);
+  }
+
+  const searchTerm = escapeIlikeTerm(filters.search);
+  if (searchTerm) {
+    const pattern = `%${searchTerm}%`;
+    listQuery = listQuery.or(
+      `full_name.ilike.${pattern},email.ilike.${pattern},phone.ilike.${pattern},lead_source.ilike.${pattern}`,
+    );
+  }
+
+  const { count, data, error } = await listQuery
     .order("last_order_at", { ascending: false, nullsFirst: false })
-    .order("full_name", { ascending: true });
+    .order("full_name", { ascending: true })
+    .range(from, to);
 
   if (error) {
     throw error;
   }
 
   const rows = (data ?? []) as CustomerListQueryRow[];
+  const totalCount = count ?? rows.length;
   const entries = rows
     .map((row) => {
-      const orderCount = row.orders?.length ?? 0;
-      const inquiryCount = row.inquiries?.length ?? 0;
+      const orderCount = row.orders?.[0]?.count ?? 0;
+      const inquiryCount = row.inquiries?.[0]?.count ?? 0;
 
       return {
         email: row.email,
@@ -196,14 +224,9 @@ export async function getCustomerListData(
         repeatValue: getRepeatCustomerValue(orderCount, inquiryCount),
       } satisfies CustomerListEntry;
     })
+    // Repeat state is derived from order/inquiry counts, so it filters the
+    // fetched page; a page can show fewer rows than the SQL-level total.
     .filter((entry) => {
-      if (
-        filters.preferredContact !== "all" &&
-        entry.preferredContact !== filters.preferredContact
-      ) {
-        return false;
-      }
-
       if (filters.repeatState === "repeat" && !entry.repeatValue) {
         return false;
       }
@@ -212,16 +235,7 @@ export async function getCustomerListData(
         return false;
       }
 
-      if (filters.search.length === 0) {
-        return true;
-      }
-
-      const haystack = [entry.fullName, entry.email, entry.phone, entry.leadSource]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      return haystack.includes(filters.search.toLowerCase());
+      return true;
     });
 
   const repeatCount = entries.filter((entry) => entry.repeatValue).length;
@@ -230,9 +244,13 @@ export async function getCustomerListData(
   return {
     entries,
     filters,
+    pagination: buildPaginationInfo(page, totalCount, pageSize),
     summary: [
       {
-        detail: rows.length === entries.length ? "All customers currently shown" : `${rows.length} total customers in the system`,
+        detail:
+          totalCount === entries.length
+            ? "All customers currently shown"
+            : `${totalCount} matching customers in the system`,
         label: "Visible customers",
         value: String(entries.length),
       },

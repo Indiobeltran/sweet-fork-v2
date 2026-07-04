@@ -8,6 +8,7 @@ import { AdminNoticeBanner } from "@/components/admin/admin-notice-banner";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { CompactEmptyState } from "@/components/admin/compact-empty-state";
 import { FilterSheet } from "@/components/admin/filter-sheet";
+import { PaginationLinks } from "@/components/admin/pagination-links";
 import { StatusChipRow } from "@/components/admin/status-chip-row";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ import {
   type InquirySignalPriority,
   type InquirySignalUrgency,
 } from "@/lib/admin/inquiries";
+import { parsePageParam } from "@/lib/admin/pagination";
 import { budgetRangeOptions } from "@/lib/inquiries/config";
 import { formatDate, toTitleCase } from "@/lib/utils";
 import type { Enums } from "@/types/supabase.generated";
@@ -436,9 +438,11 @@ export default async function AdminInquiriesPage({
 }: AdminInquiryListPageProps) {
   const resolvedSearchParams = await searchParams;
   const filters = parseInquiryListFilters(resolvedSearchParams);
-  const data = await getInquiryListData(filters);
+  const page = parsePageParam(resolvedSearchParams.page);
+  const data = await getInquiryListData(filters, page);
   const notice = getSearchValue(resolvedSearchParams.notice);
   const activeFilterPills = getActiveFilterPills(filters);
+  const paginationFilterQuery = buildInquiriesHref(filters).split("?")[1] ?? "";
 
   return (
     <div className="space-y-4">
@@ -637,6 +641,12 @@ export default async function AdminInquiriesPage({
           />
         )}
       </section>
+
+      <PaginationLinks
+        basePath="/admin/inquiries"
+        filterQuery={paginationFilterQuery}
+        pagination={data.pagination}
+      />
     </div>
   );
 }
