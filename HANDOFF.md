@@ -53,8 +53,19 @@
   - `git diff --check`: passed.
 - **Local browser QA**: Blocked by the same browser automation issue. No local visual/browser QA is claimed. Build and source/component tests cover the new dialog markup and button-disabled contracts.
 - **Database/RLS changes**: None. No migration, archive system, or RLS change was added.
-- **Production deployment status**: Pending commit, merge to `main`, post-merge gates, push, Netlify deploy, and post-deploy verification.
-- **Next exact task**: Review diff, commit `fix: harden permanent order deletion`, merge into `main`, rerun gates, push, confirm Netlify deploy, then repeat read-only production verification. Complete authenticated browser smoke later once the browser extension UI blocker is cleared.
+- **Commit/merge/deploy**:
+  - Task branch commit: `360de77` (`fix: harden permanent order deletion`).
+  - Merged to `main` with merge commit `5de04f8` (`merge: harden permanent order deletion`).
+  - Pushed `main` to origin.
+  - Netlify production deploy `6a49874a88737400078f6a86` for commit `5de04f8284229ad681fdb074b5130994e99b8f56` reached `ready` in 75 seconds.
+- **Post-deploy production verification**:
+  - Netlify deploy is ready and tied to the expected merge commit.
+  - Production `orders` count is `0`.
+  - Production `cancelled` order count is `0`.
+  - Deleted legacy target IDs `00000000-0000-0000-0000-000000000002` and `00000000-0000-0000-0000-000000000005` remain absent.
+  - Unauthenticated `https://thesweetfork.com/admin/orders` still redirects to `/admin/login`.
+  - Authenticated production browser smoke remains blocked by browser automation availability and has not been claimed.
+- **Next exact task**: Clear the Chrome extension UI/browser automation blocker, then complete the authenticated read-only smoke check of `/admin/orders`, `/admin`, and `/admin/calendar`. No database cleanup is pending.
 
 ## Legacy Order Deletion Fix — 2026-07-04 MDT
 
