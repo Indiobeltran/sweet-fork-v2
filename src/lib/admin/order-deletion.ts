@@ -10,6 +10,15 @@ type OrderDeleteRow = {
   inquiry_id: string | null;
 };
 
+type DeleteOperation = "delete" | "load";
+
+type SafeDeleteDiagnostic = {
+  code?: string;
+  constraint?: string;
+  operation: DeleteOperation;
+  table?: string;
+};
+
 export type OrderDeleteClient = {
   from(table: "orders"): {
     delete(): {
@@ -30,12 +39,31 @@ export type DeleteOrderResult =
       ok: true;
     }
   | {
+      diagnostic?: SafeDeleteDiagnostic;
       ok: false;
-      reason: "delete-failed" | "invalid-id" | "not-found";
+      reason: "delete-failed" | "invalid-id" | "load-failed" | "not-found";
     };
 
-const uuidPattern =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const postgresUuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function readStringField(value: unknown, field: string) {
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+
+  const fieldValue = (value as Record<string, unknown>)[field];
+  return typeof fieldValue === "string" && fieldValue ? fieldValue : undefined;
+}
+
+function getSafeDeleteDiagnostic(error: unknown, operation: DeleteOperation): SafeDeleteDiagnostic {
+  return {
+    code: readStringField(error, "code"),
+    constraint: readStringField(error, "constraint"),
+    operation,
+    table: readStringField(error, "table"),
+  };
+}
 
 export function canDeleteOrder(actor: DeleteActor) {
   return actor?.role === "owner" || actor?.role === "manager";
@@ -45,7 +73,7 @@ export async function deleteOrderRecord(
   client: OrderDeleteClient,
   orderId: string,
 ): Promise<DeleteOrderResult> {
-  if (!uuidPattern.test(orderId)) {
+  if (!postgresUuidPattern.test(orderId)) {
     return { ok: false, reason: "invalid-id" };
   }
 
@@ -55,14 +83,26 @@ export async function deleteOrderRecord(
     .eq("id", orderId)
     .maybeSingle();
 
-  if (loadError || !order) {
+  if (loadError) {
+    return {
+      diagnostic: getSafeDeleteDiagnostic(loadError, "load"),
+      ok: false,
+      reason: "load-failed",
+    };
+  }
+
+  if (!order) {
     return { ok: false, reason: "not-found" };
   }
 
   const { error: deleteError } = await client.from("orders").delete().eq("id", orderId);
 
   if (deleteError) {
-    return { ok: false, reason: "delete-failed" };
+    return {
+      diagnostic: getSafeDeleteDiagnostic(deleteError, "delete"),
+      ok: false,
+      reason: "delete-failed",
+    };
   }
 
   return {

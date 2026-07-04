@@ -61,6 +61,31 @@ describe("order deletion authorization", () => {
 });
 
 describe("deleteOrderRecord", () => {
+  it("accepts valid PostgreSQL UUID values even when they are not RFC versioned UUIDs", async () => {
+    const legacyOrderId = "00000000-0000-0000-0000-000000000002";
+    const client = createDeleteClient({
+      order: { customer_id: "customer-1", id: legacyOrderId, inquiry_id: null },
+    });
+
+    const result = await deleteOrderRecord(client, legacyOrderId);
+
+    assert.deepEqual(result, {
+      customerId: "customer-1",
+      inquiryId: null,
+      ok: true,
+    });
+    assert.equal(client.calls.some((call) => call.type === "delete"), true);
+  });
+
+  it("rejects malformed UUID values before querying the database", async () => {
+    const client = createDeleteClient({});
+
+    const result = await deleteOrderRecord(client, "not-a-uuid");
+
+    assert.deepEqual(result, { ok: false, reason: "invalid-id" });
+    assert.deepEqual(client.calls, []);
+  });
+
   it("deletes only from the orders table by id", async () => {
     const client = createDeleteClient({});
 
@@ -89,10 +114,25 @@ describe("deleteOrderRecord", () => {
   });
 
   it("reports delete failure without returning success", async () => {
-    const client = createDeleteClient({ deleteError: new Error("delete failed") });
+    const client = createDeleteClient({
+      deleteError: {
+        code: "23503",
+        constraint: "example_order_id_fkey",
+        table: "example_table",
+      } as unknown as Error,
+    });
 
     const result = await deleteOrderRecord(client, orderId);
 
-    assert.deepEqual(result, { ok: false, reason: "delete-failed" });
+    assert.deepEqual(result, {
+      diagnostic: {
+        code: "23503",
+        constraint: "example_order_id_fkey",
+        operation: "delete",
+        table: "example_table",
+      },
+      ok: false,
+      reason: "delete-failed",
+    });
   });
 });

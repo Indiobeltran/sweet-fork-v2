@@ -1215,6 +1215,7 @@ export async function deleteOrder(formData: FormData) {
 
   if (!result.ok) {
     console.error("Unable to delete order.", {
+      diagnostic: result.diagnostic,
       orderId,
       reason: result.reason,
     });
