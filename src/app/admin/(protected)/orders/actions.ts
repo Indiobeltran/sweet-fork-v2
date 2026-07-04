@@ -16,6 +16,11 @@ import {
   getStoredPaymentType,
   mergeOrderWorkflowMetadata,
 } from "@/lib/admin/order-workflow";
+import {
+  canDeleteOrder,
+  deleteOrderRecord,
+  type OrderDeleteClient,
+} from "@/lib/admin/order-deletion";
 import { validateManualOrderPaymentAmounts } from "@/lib/admin/order-payments";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
@@ -1194,4 +1199,44 @@ export async function addOrderNote(formData: FormData) {
 
   revalidateOrderWorkflow(orderId, order.customer_id, order.inquiry_id);
   redirectWithNotice(redirectTarget, "note-added");
+}
+
+export async function deleteOrder(formData: FormData) {
+  const admin = await requireAdmin();
+
+  const orderId = parseRequiredString(formData.get("orderId"));
+  const redirectTarget = getSafeOrderRedirectTarget(formData.get("redirectTo"), orderId);
+
+  if (!canDeleteOrder(admin) || !orderId) {
+    redirectWithNotice(redirectTarget, "order-delete-error");
+  }
+
+  const result = await deleteOrderRecord(createAdminClient() as unknown as OrderDeleteClient, orderId);
+
+  if (!result.ok) {
+    console.error("Unable to delete order.", {
+      orderId,
+      reason: result.reason,
+    });
+    redirectWithNotice(redirectTarget, "order-delete-error");
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${orderId}`);
+  revalidatePath("/admin/calendar");
+  revalidatePath("/admin/reports");
+  revalidatePath("/admin/customers");
+
+  if (result.customerId) {
+    revalidatePath(`/admin/customers/${result.customerId}`);
+  }
+
+  revalidatePath("/admin/inquiries");
+
+  if (result.inquiryId) {
+    revalidatePath(`/admin/inquiries/${result.inquiryId}`);
+  }
+
+  redirectWithNotice("/admin/orders", "order-deleted");
 }

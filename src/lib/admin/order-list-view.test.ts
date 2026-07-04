@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 // @ts-expect-error Node's strip-types test runner needs the .ts extension.
-import { buildCombinedPaymentPill, filterOrdersByQueue, filterOrdersBySearch, getOrderRelativeDateLabel, groupOrdersByDueDate } from "./order-list-view.ts";
+import { buildCombinedPaymentPill, buildOrderQueueCounts, filterOrdersByQueue, filterOrdersBySearch, getOrderRelativeDateLabel, groupOrdersByDueDate } from "./order-list-view.ts";
 
 const baseOrder = {
   balanceDue: 0,
@@ -116,6 +116,46 @@ describe("order list queue filtering", () => {
       filterOrdersByQueue(orders, "completed", "2026-07-03").map((entry) => entry.id),
       ["fulfilled", "completed"],
     );
+  });
+
+  it("keeps cancelled orders reachable through the cancelled and all queues", () => {
+    assert.deepEqual(
+      filterOrdersByQueue(orders, "cancelled", "2026-07-03").map((entry) => entry.id),
+      ["cancelled"],
+    );
+    assert.deepEqual(filterOrdersByQueue(orders, "all", "2026-07-03").map((entry) => entry.id), [
+      "confirmed",
+      "fulfilled",
+      "completed",
+      "cancelled",
+    ]);
+  });
+
+  it("keeps unknown legacy statuses reachable through all", () => {
+    const legacyOrders = [
+      { ...baseOrder, id: "legacy", status: "converted" },
+      { ...baseOrder, id: "confirmed", status: "confirmed" },
+    ];
+
+    assert.deepEqual(
+      filterOrdersByQueue(legacyOrders, "active", "2026-07-03").map((entry) => entry.id),
+      ["confirmed"],
+    );
+    assert.deepEqual(
+      filterOrdersByQueue(legacyOrders, "all", "2026-07-03").map((entry) => entry.id),
+      ["legacy", "confirmed"],
+    );
+  });
+
+  it("builds queue counts with the same membership rules as the visible queues", () => {
+    assert.deepEqual(buildOrderQueueCounts(orders, "2026-07-03"), {
+      active: 1,
+      all: 4,
+      "awaiting-payment": 0,
+      cancelled: 1,
+      completed: 2,
+      upcoming: 1,
+    });
   });
 });
 

@@ -26,14 +26,11 @@ import {
 } from "@/lib/admin/order-workflow";
 import {
   buildCombinedPaymentPill,
+  buildOrderQueueCounts,
   filterOrdersBySearch,
   filterOrdersByQueue,
   getOrderRelativeDateLabel,
   groupOrdersByDueDate,
-  isActiveOrder,
-  isAwaitingPaymentOrder,
-  isCompletedOrder,
-  isUpcomingOrder,
   type OrderListQueue,
 } from "@/lib/admin/order-list-view";
 import { getBusinessDateKey } from "@/lib/business-time";
@@ -57,7 +54,7 @@ const DEFAULT_ORDER_FILTERS: OrderListFilters = {
   search: "",
   status: "all",
 };
-const DEFAULT_QUEUE: OrderListQueue = "active";
+const DEFAULT_QUEUE: OrderListQueue = "all";
 const fulfillmentLabels: Record<string, string> = {
   delivery: "Delivery",
   pickup: "Pickup",
@@ -70,7 +67,9 @@ const paymentLabels: Record<string, string> = {
 };
 const queueLabels: Record<OrderListQueue, string> = {
   active: "Active",
+  all: "All",
   "awaiting-payment": "Awaiting payment",
+  cancelled: "Cancelled",
   completed: "Completed",
   upcoming: "Upcoming",
 };
@@ -85,7 +84,10 @@ function getOrderQueue(
   const rawQueue = getSearchValue(rawSearchParams.queue);
 
   if (
+    rawQueue === "all" ||
+    rawQueue === "active" ||
     rawQueue === "awaiting-payment" ||
+    rawQueue === "cancelled" ||
     rawQueue === "upcoming" ||
     rawQueue === "completed"
   ) {
@@ -106,6 +108,34 @@ function FilterCard({
     <div className="rounded-[1.35rem] border border-charcoal/8 bg-white/85 p-4">
       <Label>{label}</Label>
       {children}
+    </div>
+  );
+}
+
+function NoticeBanner({ notice }: { notice: string | undefined }) {
+  if (!notice) {
+    return null;
+  }
+
+  const copyByNotice: Record<string, { className: string; text: string }> = {
+    "order-deleted": {
+      className: "border-emerald-200 bg-emerald-50 text-emerald-900",
+      text: "Order deleted.",
+    },
+    "order-delete-error": {
+      className: "border-rose/24 bg-rose/10 text-charcoal",
+      text: "The order could not be deleted. Please try again.",
+    },
+  };
+  const copy = copyByNotice[notice];
+
+  if (!copy) {
+    return null;
+  }
+
+  return (
+    <div className={`rounded-[1.6rem] border px-4 py-3 text-sm font-medium ${copy.className}`}>
+      {copy.text}
     </div>
   );
 }
@@ -401,6 +431,8 @@ export default async function AdminOrdersPage({
   const resolvedSearchParams = await searchParams;
   const filters = parseOrderListFilters(resolvedSearchParams);
   const queue = getOrderQueue(resolvedSearchParams);
+  const noticeValue = resolvedSearchParams.notice;
+  const notice = Array.isArray(noticeValue) ? noticeValue[0] : noticeValue;
   // The orders page segments the fetched set into client-side queue tabs with
   // count badges and due-date groupings, so it needs the whole working set
   // rather than a single page. Fetch it bounded by the shared ceiling.
@@ -412,16 +444,14 @@ export default async function AdminOrdersPage({
     : queueEntries;
   const groupedEntries = filters.search ? [] : groupOrdersByDueDate(visibleEntries, today);
   const activeFilterPills = getActiveFilterPills(filters, queue);
-  const queueCounts = {
-    active: data.entries.filter(isActiveOrder).length,
-    "awaiting-payment": data.entries.filter(isAwaitingPaymentOrder).length,
-    completed: data.entries.filter(isCompletedOrder).length,
-    upcoming: data.entries.filter((entry) => isUpcomingOrder(entry, today))
-      .length,
-  } satisfies Record<OrderListQueue, number>;
+  const queueCounts = buildOrderQueueCounts(data.entries, today);
+  const queueMetaLabel =
+    queue === "all" ? "total orders" : `${queueLabels[queue].toLowerCase()} orders`;
 
   return (
     <div className="space-y-4 pb-24 sm:pb-8">
+      <NoticeBanner notice={notice} />
+
       <AdminPageHeader
         className="!rounded-[1.65rem] !p-4 sm:!p-5"
         hideTitleOnMobile
@@ -431,7 +461,7 @@ export default async function AdminOrdersPage({
             <span className="font-semibold text-charcoal">
               {visibleEntries.length}
             </span>{" "}
-            {queueLabels[queue].toLowerCase()}
+            {queueMetaLabel}
           </span>
         }
         actions={
@@ -506,7 +536,7 @@ export default async function AdminOrdersPage({
                   </p>
                   <div className="flex flex-col gap-3 sm:flex-row">
                     <LinkButton
-                      href={buildOrdersHref(DEFAULT_ORDER_FILTERS, queue)}
+                      href="/admin/orders"
                       label="Clear"
                       variant="secondary"
                     />
@@ -527,6 +557,12 @@ export default async function AdminOrdersPage({
         <StatusChipRow
           ariaLabel="Order queue filters"
           items={[
+            {
+              count: queueCounts.all,
+              href: buildOrdersHref(filters, "all"),
+              isActive: queue === "all",
+              label: "All",
+            },
             {
               count: queueCounts.active,
               href: buildOrdersHref(filters, "active"),
@@ -551,12 +587,18 @@ export default async function AdminOrdersPage({
               isActive: queue === "completed",
               label: "Completed",
             },
+            {
+              count: queueCounts.cancelled,
+              href: buildOrdersHref(filters, "cancelled"),
+              isActive: queue === "cancelled",
+              label: "Cancelled",
+            },
           ]}
         />
 
         {activeFilterPills.length > 0 ? (
           <ActiveFilterPills
-            clearAllHref={buildOrdersHref(DEFAULT_ORDER_FILTERS, queue)}
+            clearAllHref="/admin/orders"
             items={activeFilterPills}
           />
         ) : null}
@@ -568,6 +610,10 @@ export default async function AdminOrdersPage({
             <OrderSection title="Search results" entries={visibleEntries} />
           ) : queue === "completed" ? (
             <OrderSection title="Completed orders" entries={visibleEntries} />
+          ) : queue === "cancelled" ? (
+            <OrderSection title="Cancelled orders" entries={visibleEntries} />
+          ) : queue === "all" ? (
+            <OrderSection title="All orders" entries={visibleEntries} />
           ) : (
             groupedEntries.map((section) => (
               <OrderSection
@@ -584,7 +630,7 @@ export default async function AdminOrdersPage({
             description="Try widening the payment, date, or search filters to bring more orders back into the working queue."
             action={
               <LinkButton
-                href={buildOrdersHref(DEFAULT_ORDER_FILTERS, queue)}
+                href="/admin/orders"
                 label="Reset filters"
                 variant="secondary"
               />

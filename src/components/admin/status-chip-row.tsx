@@ -51,7 +51,10 @@ export function StatusChipRow({
         className,
       )}
     >
-      <div ref={containerRef} className="flex w-max min-w-full gap-2 py-1">
+      <div
+        ref={containerRef}
+        className="flex w-max min-w-full scroll-px-4 gap-2 px-1 py-1 sm:px-0"
+      >
         {items.map((item) => (
           <Link
             key={`${item.href}-${item.label}`}

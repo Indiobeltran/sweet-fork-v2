@@ -4,6 +4,60 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## Admin Orders Visibility + Deletion — 2026-07-04 MDT
+
+- **Current branch**: `codex/order-visibility-delete`.
+- **Starting commit**: `374e74c`.
+- **Current objective**: Restore visibility for orders counted by `/admin/orders`, add safe admin order deletion, verify locally and in production, then merge/push if gates pass.
+- **Pre-existing dirty files preserved**: Untracked `.agents/`, `.claude/`, `.superpowers/`, `scratch/`, `skills-lock.json`, and `supabase/.temp/linked-project.json` were present before this task and remain unstaged/preserved.
+- **Production symptom**: `/admin/orders` showed `3 total orders in the system` while every visible queue tab showed zero.
+- **Root cause**: The Orders page counted all fetched orders but exposed only Active, Awaiting payment, Upcoming, and Completed queues. `cancelled` orders were treated as finished, excluded from Active/Awaiting/Upcoming, and not included in Completed, so valid cancelled rows were counted but unreachable.
+- **Three hidden records, non-PII**:
+  - `8399ee2c-dea3-4680-931e-8288ceba9282` / `ORD-8399EE2C`, status `cancelled`, payment `unpaid`, pickup, event date `2026-05-01`, linked customer present, no linked inquiry, item count 1, payment count 1. Test/delete marker detected in non-PII diagnostics.
+  - `00000000-0000-0000-0000-000000000002` / `ORD-00000000`, status `cancelled`, payment `unpaid`, pickup, event date `2026-07-15`, linked customer present, no linked inquiry, item count 1, payment count 0. All-zero UUID/test marker detected.
+  - `00000000-0000-0000-0000-000000000005` / `ORD-00000000`, status `cancelled`, payment `unpaid`, pickup, event date `2026-07-24`, linked customer present, no linked inquiry, item count 1, payment count 0. All-zero UUID/test marker detected.
+- **Status/filter architecture after fix**: `All` is the default Orders queue, `Cancelled` is a first-class queue, queue counts use the same shared membership helper as displayed rows, and unknown future/legacy statuses remain reachable in All with an explicit unmapped-status label.
+- **Deletion model selected**: Server-side hard delete through an authenticated admin action for Sweet Fork admin roles (`owner`/`manager`). Verified FK behavior cascades `order_items`, `payments`, and `order_notes`; `calendar_entries` and `notification_logs` set `order_id = null`; customers and inquiries are preserved. No service-role key is exposed to browser code.
+- **Database/RLS changes**: No migration. Existing RLS already has admin select/insert/update/delete policies for orders and dependent admin tables.
+- **Files changed**:
+  - `DECISIONS.md`
+  - `HANDOFF.md`
+  - `package.json`
+  - `src/app/admin/(protected)/orders/page.tsx`
+  - `src/app/admin/(protected)/orders/[id]/page.tsx`
+  - `src/app/admin/(protected)/orders/actions.ts`
+  - `src/components/admin/confirm-submit-button.tsx`
+  - `src/components/admin/status-chip-row.tsx`
+  - `src/lib/admin/orders.ts`
+  - `src/lib/admin/order-list-view.ts`
+  - `src/lib/admin/order-list-view.test.ts`
+  - `src/lib/admin/order-status.ts`
+  - `src/lib/admin/order-status.test.ts`
+  - `src/lib/admin/order-deletion.ts`
+  - `src/lib/admin/order-deletion.test.ts`
+- **Local test and quality-gate results**:
+  - Focused order tests: `node --no-warnings --experimental-strip-types --test src/lib/admin/order-deletion.test.ts src/lib/admin/order-list-view.test.ts src/lib/admin/order-status.test.ts` passed, 28/28.
+  - `npm run lint`: passed.
+  - `npm run typecheck`: passed.
+  - `npm test`: passed, 155/155. Existing fail-soft Netlify bridge tests intentionally log simulated network/404 failures while passing.
+  - `npm run build`: passed.
+  - `git diff --check`: passed.
+- **Local visual/functional QA**:
+  - Ran local dev server at `http://127.0.0.1:3020`.
+  - Authenticated admin session loaded `/admin/orders`.
+  - Verified the three hidden IDs were present as detail links in both All and Cancelled.
+  - Verified desktop queue counts after QA setup and after deletion.
+  - Verified mobile 390x844 queue row: active `All` and active `Cancelled` chips were fully visible, and the row remained intentionally scrollable with no clipping of the active chip.
+  - Verified search for a disposable QA token, payment filter, and exact date-only filter found the QA order; `Clear all` reset to `/admin/orders`.
+  - Created disposable QA order `0e321f24-f86b-44a0-a8be-8b1ba167ad8c` with child item/payment/note rows, cancelled the delete confirmation once, then accepted it. Browser verified `Order deleted.`, counts returned to `All3 / Active0 / Awaiting payment0 / Upcoming0 / Completed0 / Cancelled3`.
+  - DB verification after UI deletion: order/item/payment/note rows were 0; preserved QA customer row was then deleted as cleanup. No real customer order was deleted.
+  - Browser DOM snapshot API still fails in this environment with the known `incrementalAriaSnapshot` issue; QA used URL/title, read-only DOM evaluation, targeted interactions, console logs, and viewport metrics. Screenshots were not emitted to avoid exposing admin/customer data.
+- **Production verification status**: Pending merge, push, deploy, and authenticated read-only production verification.
+- **Known issues / limitations**:
+  - The two all-zero UUID records and one additional cancelled record look test/delete-marked by non-PII diagnostics, but no production data was changed.
+  - Hard delete is appropriate for current schema/ops; if audit/legal retention becomes required, replace with a soft-delete/archive model.
+- **Next exact task**: Review diff, stage only task files, commit `fix: restore order visibility and add admin deletion`, merge into `main`, rerun gates on `main`, push, verify Netlify production deploy, then perform authenticated read-only production verification.
+
 ## Admin Business Timezone Merge + Deployment — 2026-07-03 MDT
 
 - **Current branch**: `main`.
