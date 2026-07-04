@@ -26,6 +26,7 @@ import {
   type CalendarDayItem,
 } from "@/lib/admin/calendar";
 import type { CapacityLoadState } from "@/lib/admin/capacity";
+import { formatBusinessDate, getBusinessDateKey } from "@/lib/business-time";
 import { cn, toTitleCase } from "@/lib/utils";
 import { InteractiveCalendar } from "@/components/admin/interactive-calendar";
 
@@ -89,10 +90,10 @@ function buildCalendarHref(month: string, view: CalendarView = "month") {
 }
 
 function formatShortDateLabel(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
+  return formatBusinessDate(value, {
     day: "numeric",
     month: "short",
-  }).format(new Date(`${value}T12:00:00.000Z`));
+  });
 }
 
 function formatWeekRangeLabel(days: CalendarDay[]) {
@@ -111,13 +112,13 @@ function formatWeekRangeLabel(days: CalendarDay[]) {
 }
 
 function formatWeekdayLabel(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
+  return formatBusinessDate(value, {
     weekday: "short",
-  }).format(new Date(`${value}T12:00:00.000Z`));
+  });
 }
 
 function getActiveWeekDays(days: CalendarDay[]) {
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = getBusinessDateKey();
   const currentIndex = days.findIndex((day) => day.dateKey === todayKey && day.isCurrentMonth);
   const fallbackIndex = days.findIndex((day) => day.isCurrentMonth);
   const startIndex = currentIndex >= 0 ? currentIndex : fallbackIndex >= 0 ? fallbackIndex : 0;
@@ -476,7 +477,7 @@ export default async function AdminCalendarPage({ searchParams }: AdminCalendarP
     Promise.resolve(getNoticeValue(rawSearchParams)),
     getCalendarPageData(filters),
   ]);
-  const defaultDate = new Date().toISOString().slice(0, 10);
+  const defaultDate = getBusinessDateKey();
   const redirectTo = buildCalendarHref(filters.month, view);
   const weekDays = getActiveWeekDays(data.days);
   const weekDateKeys = new Set(weekDays.map((day) => day.dateKey));

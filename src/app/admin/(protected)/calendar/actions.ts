@@ -13,6 +13,7 @@ import {
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Constants, type Enums, type TablesInsert, type Json } from "@/types/supabase.generated";
 import { buildProductPointLookup, isShortLeadTime, validateProductCapacitySettings } from "@/lib/admin/capacity";
+import { getBusinessDateKey, getBusinessDayUtcRange } from "@/lib/business-time";
 import { getInquiryReferenceCode } from "@/lib/admin/order-workflow";
 
 function parseDateInput(value: FormDataEntryValue | null) {
@@ -290,7 +291,7 @@ export async function getCalendarDayDetails(dateKey: string, contributingOrderId
   }
 
   const inquiries = (inquiriesData ?? []).map((inq) => {
-    const todayKey = inq.submitted_at ? inq.submitted_at.slice(0, 10) : "";
+    const todayKey = inq.submitted_at ? getBusinessDateKey(new Date(inq.submitted_at)) : "";
     const isShortLead = isShortLeadTime(
       inq.event_date,
       (inq.inquiry_items ?? []).map((item) => ({
@@ -330,8 +331,7 @@ export async function getCalendarDayDetails(dateKey: string, contributingOrderId
   }
 
   // 5. Fetch notes (calendar entries)
-  const startOfDay = `${dateKey}T00:00:00.000Z`;
-  const endOfDay = `${dateKey}T23:59:59.999Z`;
+  const { endIso: endOfDay, startIso: startOfDay } = getBusinessDayUtcRange(dateKey);
   const { data: notes, error: notesError } = await supabase
     .from("calendar_entries")
     .select("id, entry_type, title, starts_at, ends_at, all_day, notes, is_private, location_text")
@@ -344,8 +344,8 @@ export async function getCalendarDayDetails(dateKey: string, contributingOrderId
   }
 
   const filteredNotes = (notes ?? []).filter((note) => {
-    const startKey = note.starts_at.slice(0, 10);
-    const endKey = note.ends_at ? note.ends_at.slice(0, 10) : startKey;
+    const startKey = getBusinessDateKey(new Date(note.starts_at));
+    const endKey = note.ends_at ? getBusinessDateKey(new Date(note.ends_at)) : startKey;
     return dateKey >= startKey && dateKey <= endKey;
   });
 

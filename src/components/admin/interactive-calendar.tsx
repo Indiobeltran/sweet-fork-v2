@@ -37,6 +37,7 @@ import {
   type CapacityLoadState,
   type CapacityWeekLoad,
 } from "@/lib/admin/capacity";
+import { formatBusinessDate } from "@/lib/business-time";
 import type { Tables } from "@/types/supabase.generated";
 
 const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -661,25 +662,23 @@ export function InteractiveCalendar({
   };
 
   const activeDateFormatted = activeDateKey
-    ? new Intl.DateTimeFormat("en-US", {
+    ? formatBusinessDate(activeDateKey, {
         weekday: "long",
         month: "long",
         day: "numeric",
         year: "numeric",
-      }).format(new Date(`${activeDateKey}T12:00:00.000Z`))
+      })
     : "";
 
   const activeDayOfWeek = activeDateKey
-    ? new Intl.DateTimeFormat("en-US", { weekday: "short" }).format(
-        new Date(`${activeDateKey}T12:00:00.000Z`),
-      )
+    ? formatBusinessDate(activeDateKey, { weekday: "short" })
     : "";
 
   const formatShortDateLabel = (value: string) => {
-    return new Intl.DateTimeFormat("en-US", {
+    return formatBusinessDate(value, {
       day: "numeric",
       month: "short",
-    }).format(new Date(`${value}T12:00:00.000Z`));
+    });
   };
 
   // Mobile touch gesture handlers for swipe dismissal

@@ -21,6 +21,7 @@ import {
   getPaymentStatusLabel,
   formatOrderMoneySummary,
 } from "@/lib/admin/order-workflow";
+import { formatBusinessDate } from "@/lib/business-time";
 import { formatDate, toTitleCase } from "@/lib/utils";
 
 export const metadata = {
@@ -304,7 +305,7 @@ function getPaymentRecordStatusHelp(status: OrderDetail["payments"][number]["sta
 }
 
 function formatPaymentDate(value: string | null) {
-  return value ? formatDate(value.slice(0, 10)) : "Not set";
+  return value ? formatBusinessDate(value) : "Not set";
 }
 
 function NoticeBanner({ notice }: { notice: string | undefined }) {

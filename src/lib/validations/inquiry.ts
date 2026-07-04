@@ -5,8 +5,8 @@ import {
   budgetRangeValues,
   productTypes,
 } from "@/types/domain";
+import { BUSINESS_TIME_ZONE } from "@/lib/business-time";
 
-const bakeryTimeZone = "America/Denver";
 const controlCharacterPattern = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
 const dateInputPattern = /^(\d{4})-(\d{2})-(\d{2})$/;
 const htmlTagPattern = /<[^>]*>/g;
@@ -37,7 +37,7 @@ function getDateParts(date: Date) {
   const parts = new Intl.DateTimeFormat("en-US", {
     day: "2-digit",
     month: "2-digit",
-    timeZone: bakeryTimeZone,
+    timeZone: BUSINESS_TIME_ZONE,
     year: "numeric",
   }).formatToParts(date);
 

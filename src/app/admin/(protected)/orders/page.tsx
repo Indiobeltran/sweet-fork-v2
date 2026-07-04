@@ -36,6 +36,7 @@ import {
   isUpcomingOrder,
   type OrderListQueue,
 } from "@/lib/admin/order-list-view";
+import { getBusinessDateKey } from "@/lib/business-time";
 import { formatDate, toTitleCase } from "@/lib/utils";
 import { AdminSearchInput } from "@/components/admin/admin-search-input";
 import { OrderQuickActions } from "./order-quick-actions";
@@ -404,7 +405,7 @@ export default async function AdminOrdersPage({
   // count badges and due-date groupings, so it needs the whole working set
   // rather than a single page. Fetch it bounded by the shared ceiling.
   const data = await getOrderListData(filters, 1, ADMIN_MAX_FETCH_LIMIT);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getBusinessDateKey();
   const queueEntries = filterOrdersByQueue(data.entries, queue, today);
   const visibleEntries = filters.search
     ? filterOrdersBySearch(queueEntries, filters.search)

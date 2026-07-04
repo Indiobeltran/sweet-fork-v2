@@ -30,6 +30,34 @@ Use `order_items.product_id = null` for Quick add custom items. Keep the entered
 - New quick-add rows no longer imply a catalog-product relationship.
 - If the owner later wants category selection in Quick add, the form can expose `product_type` without changing storage shape.
 
+## 2026-07-03 - Admin Business Timezone Source Of Truth
+
+### Status
+
+Accepted
+
+### Context
+
+At approximately 11:03 PM Mountain Time on Friday, July 3, 2026, the admin dashboard displayed Saturday, July 4, 2026. The admin code had multiple business-day calculations that derived `YYYY-MM-DD` keys from UTC via `toISOString().slice(0, 10)` or `getUTC*`, which rolls the bakery day forward before midnight in Utah.
+
+### Options Considered
+
+- Keep UTC-derived date keys and adjust the dashboard heading only.
+- Use a fixed UTC-7 offset for Mountain Time.
+- Add a date library for timezone handling.
+- Use the platform `Intl.DateTimeFormat` API with the IANA timezone `America/Denver`.
+
+### Decision
+
+Use a shared `BUSINESS_TIME_ZONE = "America/Denver"` utility for bakery business-date keys, business-month keys, date-key arithmetic, business-date formatting, and UTC timestamp ranges for a Mountain business day. Keep database timestamps stored as UTC ISO strings, and convert them to `America/Denver` only for display and business-day boundaries.
+
+### Consequences
+
+- The admin dashboard, order queues/summaries, calendar defaults, calendar today highlighting, calendar note boundaries, short-lead calculations, and admin timestamp displays no longer depend on UTC rollover or the administrator's browser/device timezone.
+- MST and MDT are handled by the runtime timezone database instead of a hardcoded offset.
+- No new date dependency was added.
+- Future admin code that needs "today" or current business date should import the shared business-time helper instead of using `new Date().toISOString().slice(0, 10)`.
+
 ## 2026-07-03 - Admin Dashboard Finance Visibility And Reports Scope
 
 ### Status
