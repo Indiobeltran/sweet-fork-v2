@@ -17,8 +17,9 @@ import {
   mergeOrderWorkflowMetadata,
 } from "@/lib/admin/order-workflow";
 import {
-  canDeleteOrder,
+  canPermanentlyDeleteOrder,
   deleteOrderRecord,
+  isOrderDeleteConfirmationValid,
   type OrderDeleteClient,
 } from "@/lib/admin/order-deletion";
 import { validateManualOrderPaymentAmounts } from "@/lib/admin/order-payments";
@@ -1205,9 +1206,18 @@ export async function deleteOrder(formData: FormData) {
   const admin = await requireAdmin();
 
   const orderId = parseRequiredString(formData.get("orderId"));
+  const deleteConfirmation = formData.get("deleteOrderConfirmation");
   const redirectTarget = getSafeOrderRedirectTarget(formData.get("redirectTo"), orderId);
 
-  if (!canDeleteOrder(admin) || !orderId) {
+  if (
+    !canPermanentlyDeleteOrder(admin) ||
+    !orderId ||
+    !isOrderDeleteConfirmationValid(deleteConfirmation)
+  ) {
+    console.error("Unable to delete order.", {
+      orderId,
+      reason: deleteConfirmation === null ? "missing-confirmation" : "invalid-confirmation",
+    });
     redirectWithNotice(redirectTarget, "order-delete-error");
   }
 

@@ -2,6 +2,36 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
+## 2026-07-04 - Permanent Order Deletion Is Owner-Only And Cancelled-Only
+
+### Status
+
+Accepted
+
+### Context
+
+Admin order deletion was implemented as a permanent hard delete after verifying existing FK behavior: order-owned rows cascade, optional calendar/notification references set null, and customers/inquiries are preserved. The first implementation allowed both `owner` and `manager` roles to permanently delete an order and did not restrict deletion by order lifecycle status. That was too broad for legitimate business and payment records, especially completed, fulfilled, active, upcoming, awaiting-payment, or unknown-status orders.
+
+### Options Considered
+
+- Keep owner/manager deletion for every order status.
+- Hide the delete button for non-cancelled orders while keeping the server action broad.
+- Add a new archive/soft-delete model.
+- Restrict permanent deletion to owner users and currently cancelled orders, enforced by both UI eligibility and the server mutation.
+
+### Decision
+
+Permanent order deletion is owner-only. Managers may continue normal order-management workflows but cannot permanently delete orders. Only orders whose current database status is `cancelled` may be permanently deleted. The server action re-authenticates the admin, requires the owner role, validates the PostgreSQL lexical UUID, requires exact typed confirmation, reloads the current order row, confirms the current database status is still `cancelled`, and only then deletes the fixed `orders` row. Completed, fulfilled, active, upcoming, awaiting-payment, draft/quoted/confirmed/in-production, and unknown-status orders are retained.
+
+The typed confirmation for an eligible deletion is exactly `DELETE`. The confirmation dialog identifies the record by order reference, full UUID, and a safe non-PII order label. Browser-facing failures remain generic while server diagnostics stay limited to safe reason, operation, order UUID, SQLSTATE, constraint, and table fields when available.
+
+### Consequences
+
+- Accidental permanent loss of legitimate business and payment records is less likely.
+- A status race from cancelled to any other status fails safely because the mutation uses the freshly loaded database status.
+- The hard-delete data model remains unchanged; no migration, archive system, or RLS change is required.
+- Customers and inquiries remain preserved when an eligible cancelled order is deleted.
+
 ## 2026-07-04 - Legacy Order Deletion Accepts PostgreSQL UUID Syntax
 
 ### Status

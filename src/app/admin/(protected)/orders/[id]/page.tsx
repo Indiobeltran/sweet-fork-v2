@@ -2,13 +2,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { addOrderNote, addOrderPayment, deleteOrder, updateOrderDetails, updateOrderPayment } from "@/app/admin/(protected)/orders/actions";
-import { ConfirmSubmitButton } from "@/components/admin/confirm-submit-button";
+import { OrderDeleteForm } from "@/components/admin/order-delete-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { requireAdmin } from "@/lib/auth";
+import { getOrderDeletionEligibility } from "@/lib/admin/order-deletion";
 import { getOrderDetail, type OrderDetail } from "@/lib/admin/orders";
 import {
   formatOptionalDateTime,
@@ -383,7 +385,7 @@ export default async function AdminOrderDetailPage({
   searchParams,
 }: AdminOrderDetailPageProps) {
   const [{ id }, rawSearchParams] = await Promise.all([params, searchParams]);
-  const detail = await getOrderDetail(id);
+  const [admin, detail] = await Promise.all([requireAdmin(), getOrderDetail(id)]);
 
   if (!detail) {
     notFound();
@@ -396,6 +398,16 @@ export default async function AdminOrderDetailPage({
   const phoneHref = getPhoneHref(detail.customer?.phone);
   const emailHref = getMailtoHref(detail.customer?.email, orderReference);
   const attentionText = getOrderAttentionText(detail);
+  const deleteEligibility = getOrderDeletionEligibility({
+    actor: admin,
+    status: detail.status,
+  });
+  const deleteUnavailableReason = deleteEligibility.ok
+    ? undefined
+    : deleteEligibility.reason === "owner-only"
+      ? "Permanent deletion is owner-only."
+      : "Only cancelled orders can be permanently deleted.";
+  const safeOrderLabel = `${getOrderStatusLabel(detail.status)} order for ${formatDate(detail.eventDate)}`;
   const nextAction = getOrderNextAction({
     balanceDueAmount: detail.balanceDueAmount,
     depositPaid: detail.paymentSummary.depositPaid,
@@ -1213,32 +1225,14 @@ export default async function AdminOrderDetailPage({
           </div>
         </details>
 
-        <section className="rounded-[1.75rem] border border-rose/20 bg-rose/5 p-4 shadow-soft sm:p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-            Delete order
-          </p>
-          <h2 className="mt-2 font-serif text-[1.6rem] tracking-[-0.04em] text-charcoal sm:text-[1.75rem]">
-            Permanently remove this order
-          </h2>
-          <p className="mt-3 text-sm leading-7 text-charcoal/68">
-            This permanently deletes the order, item rows, payment records, and internal order
-            notes. The customer and originating inquiry are preserved, and calendar or
-            notification references are unlinked.
-          </p>
-          <form action={deleteOrder} className="mt-4">
-            <input type="hidden" name="orderId" value={detail.id} />
-            <input type="hidden" name="redirectTo" value={redirectTo} />
-            <ConfirmSubmitButton
-              type="submit"
-              variant="secondary"
-              pendingLabel="Deleting..."
-              className="w-full border-rose/30 bg-white text-rose-700 hover:border-rose/45 hover:bg-rose/10 sm:w-auto"
-              confirmMessage={`Delete ${orderReference} for ${detail.customer?.fullName ?? "this customer"} permanently? This cannot be undone.`}
-            >
-              Delete order
-            </ConfirmSubmitButton>
-          </form>
-        </section>
+        <OrderDeleteForm
+          action={deleteOrder}
+          orderId={detail.id}
+          orderReference={orderReference}
+          redirectTo={redirectTo}
+          safeOrderLabel={safeOrderLabel}
+          unavailableReason={deleteUnavailableReason}
+        />
       </div>
     </div>
   );
