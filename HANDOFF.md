@@ -6,7 +6,7 @@
 
 ## Admin Orders Visibility + Deletion — 2026-07-04 MDT
 
-- **Current branch**: `codex/order-visibility-delete`.
+- **Current branch**: `main`.
 - **Starting commit**: `374e74c`.
 - **Current objective**: Restore visibility for orders counted by `/admin/orders`, add safe admin order deletion, verify locally and in production, then merge/push if gates pass.
 - **Pre-existing dirty files preserved**: Untracked `.agents/`, `.claude/`, `.superpowers/`, `scratch/`, `skills-lock.json`, and `supabase/.temp/linked-project.json` were present before this task and remain unstaged/preserved.
@@ -52,11 +52,24 @@
   - Created disposable QA order `0e321f24-f86b-44a0-a8be-8b1ba167ad8c` with child item/payment/note rows, cancelled the delete confirmation once, then accepted it. Browser verified `Order deleted.`, counts returned to `All3 / Active0 / Awaiting payment0 / Upcoming0 / Completed0 / Cancelled3`.
   - DB verification after UI deletion: order/item/payment/note rows were 0; preserved QA customer row was then deleted as cleanup. No real customer order was deleted.
   - Browser DOM snapshot API still fails in this environment with the known `incrementalAriaSnapshot` issue; QA used URL/title, read-only DOM evaluation, targeted interactions, console logs, and viewport metrics. Screenshots were not emitted to avoid exposing admin/customer data.
-- **Production verification status**: Pending merge, push, deploy, and authenticated read-only production verification.
+- **Merge/deploy**:
+  - Task branch commit: `d416d91` (`fix: restore order visibility and add admin deletion`).
+  - Merged to `main` with merge commit `8722f3e` (`merge: restore order visibility and admin deletion`).
+  - Pushed `main` to origin.
+  - Netlify production deploy `6a49187df3288800082b1d12` for commit `8722f3e` reached `ready`.
+- **Production verification status**: Passed authenticated, read-only production verification against `https://thesweetfork.com/admin/orders`.
+  - `/admin/orders` rendered `All3`, `Active0`, `Awaiting payment0`, `Upcoming0`, `Completed0`, `Cancelled3`.
+  - The three previously hidden IDs were present as detail links in both All and Cancelled.
+  - Search for `8399EE2C` returned the matching order; `paymentState=unpaid` retained all three; exact date filter `2026-07-24` returned the matching `00000000-0000-0000-0000-000000000005` order.
+  - Reset links returned to `/admin/orders`.
+  - Mobile 390x844 Cancelled view kept the active `Cancelled3` chip fully visible in the horizontal tab row.
+  - Delete control rendered on a production order detail page, opened a JavaScript confirmation, and the confirmation was dismissed. No production deletion was performed.
+  - Final production check still showed `All3 / Cancelled3` and all three IDs present.
+  - Browser console logs had no relevant warnings/errors during production verification.
 - **Known issues / limitations**:
   - The two all-zero UUID records and one additional cancelled record look test/delete-marked by non-PII diagnostics, but no production data was changed.
   - Hard delete is appropriate for current schema/ops; if audit/legal retention becomes required, replace with a soft-delete/archive model.
-- **Next exact task**: Review diff, stage only task files, commit `fix: restore order visibility and add admin deletion`, merge into `main`, rerun gates on `main`, push, verify Netlify production deploy, then perform authenticated read-only production verification.
+- **Next exact task**: No further action required for this task. Owner can review the three now-visible cancelled/test-marked records and decide whether to delete them from the admin UI.
 
 ## Admin Business Timezone Merge + Deployment — 2026-07-03 MDT
 
