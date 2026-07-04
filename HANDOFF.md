@@ -16,8 +16,10 @@
   - Merged branch commit `378ba16` (`fix: use bakery timezone for admin dates`) into `main` with merge commit `5c28c52` (`merge: apply admin business timezone fix`).
   - Added follow-up commit `df02415` to remove the stale environment-local dashboard date label left by the merge conflict resolution.
   - Confirmed `America/Denver` remains the business-timezone source of truth in `src/lib/business-time.ts`, and database timestamps remain stored as UTC with conversion only for display and business-day calculations.
-- **In-progress work**: Push and production Netlify/admin verification are next.
-- **Next exact task**: Push `main` to `origin`, wait for Netlify production deploy, then verify `https://thesweetfork.com/admin` dashboard, inquiries, orders, and calendar.
+- **Production deployment**: Netlify production deploy `6a489ba09ccb410008d66470` for commit `47126cb` completed successfully with state `ready` in 75 seconds.
+- **Production verification**: Passed against `https://thesweetfork.com/admin` after authenticated sign-in. Dashboard, inquiries, orders, and calendar loaded successfully; the dashboard date matched the current Salt Lake City business date; no visible date regressions, `Invalid Date` text, hydration overlays, or timezone-related console errors were observed.
+- **In-progress work**: None.
+- **Next exact task**: Monitor normal production traffic/admin use; no further timezone deployment work is pending from this task.
 - **Commands run**:
   - Pre-merge SITREP: `git branch --show-current`, `git status --short`, `git log --oneline -n 10`, `git show --stat --oneline 378ba16`, `git diff main...codex/admin-business-timezone --stat`.
   - Local authenticated visual QA with `npm run dev -- --port 3020` and Browser runtime screenshots/evaluation/interactions.
@@ -25,10 +27,10 @@
   - Merge flow: `git checkout main`, `git status --short`, `git pull --ff-only origin main`, `git merge --no-ff codex/admin-business-timezone -m "merge: apply admin business timezone fix"`.
   - Conflict resolution kept newer `main` admin smoke-test/order changes and integrated the business-timezone helpers.
   - Post-merge verification on `main`: `npm run lint` passed, `npm run typecheck` passed, `npm test` initially failed due a merge-resolution import issue, then passed at 147/147 after cleanup, `npm run build` passed, `git diff --check` passed.
-- **Commands still needed**:
-  - `git push origin main`
-  - Netlify production deploy status check.
-  - Authenticated production admin visual verification.
+  - `git push origin main`: succeeded, pushing `e425c98..47126cb`.
+  - Netlify API deploy polling confirmed deploy `6a489ba09ccb410008d66470` reached `ready`.
+  - Authenticated production Browser verification covered `/admin`, `/admin/inquiries`, `/admin/orders`, and `/admin/calendar`.
+- **Commands still needed**: None for this task.
 - **Files changed recently**:
   - `DECISIONS.md`
   - `HANDOFF.md`
@@ -52,8 +54,7 @@
   - Pre-existing untracked paths remain unstaged and untouched, including `.agents/`, `.claude/`, `.superpowers/`, `scratch/`, `skills-lock.json`, and `supabase/.temp/linked-project.json`.
 - **Known issues / verification caveats**:
   - Browser DOM snapshot API failed in this environment with `incrementalAriaSnapshot` unavailable, and local Playwright was not installed; visual QA used Browser runtime URL/title, screenshots, console logs, read-only DOM evaluation, and interactions.
-  - One non-timezone Next.js development warning appeared on mobile QA about `scroll-behavior: smooth`; no timezone, hydration, invalid-date, or React errors were observed.
-  - Production verification is pending until after push and Netlify deploy.
+  - One non-timezone Next.js warning appeared in local and production Browser logs about `scroll-behavior: smooth`; no timezone, hydration, invalid-date, or React errors were observed.
 - **Open decisions**: None.
 
 ## Admin Smoke-Test Fixes: Pagination, Manual Totals, Upload Errors — 2026-07-03
