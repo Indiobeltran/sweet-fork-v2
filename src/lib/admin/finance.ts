@@ -1,5 +1,4 @@
 import type { Enums, Json } from "@/types/supabase.generated";
-import { formatBusinessDate } from "@/lib/business-time";
 
 export type DashboardFinanceOrder = {
   eventDate: string;
@@ -221,9 +220,9 @@ export function buildReportsSummary({
 }
 
 export function getCurrentDateLabel(now: Date) {
-  return formatBusinessDate(now, {
+  return new Intl.DateTimeFormat("en-US", {
     dateStyle: "full",
-  });
+  }).format(now);
 }
 
 export function getWeekRange(today: Date) {

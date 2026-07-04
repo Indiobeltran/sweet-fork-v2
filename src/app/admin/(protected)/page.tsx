@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AlertCircle, ArrowRight, CalendarDays, CheckCircle2, Clock, FileText, ImageIcon, Layers, MessageCircle, PlusCircle } from "lucide-react";
 
-import { buildDashboardFinanceSummary, buildDashboardGreetingSummary, getCurrentDateLabel } from "@/lib/admin/finance";
+import { buildDashboardFinanceSummary, buildDashboardGreetingSummary } from "@/lib/admin/finance";
 import { getDashboardFinanceSetting } from "@/lib/admin/finance-data";
 import { getInquiryListData } from "@/lib/admin/inquiries";
 import { getOrderListData } from "@/lib/admin/orders";
@@ -120,9 +120,6 @@ export default async function AdminDashboardPage() {
           {todayLabel}
         </p>
         <h1 className="font-serif text-3xl tracking-[-0.03em] text-charcoal">Today at The Sweet Fork</h1>
-        <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-          {getCurrentDateLabel(new Date())}
-        </p>
         <p className="mt-2 text-charcoal/70 text-[0.95rem] sm:text-base leading-relaxed">
           {greetingSummary}
         </p>
