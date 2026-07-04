@@ -20,6 +20,7 @@ import {
   parseOrderWorkflowMetadata,
   type OrderPaymentSnapshot,
 } from "@/lib/admin/order-workflow";
+import { filterOrdersBySearch } from "@/lib/admin/order-list-view";
 import { getBusinessDateKey } from "@/lib/business-time";
 import { toTitleCase } from "@/lib/utils";
 import type { Enums, Json, Tables } from "@/types/supabase.generated";
@@ -718,19 +719,12 @@ export async function getOrderListData(
     throw new Error("Supabase is not configured for admin orders.");
   }
 
-  const searchTerm = escapeIlikeTerm(filters.search);
   const { from, to } = getPageRange(page, pageSize);
-
-  // Search matches customer contact fields, which requires an inner join so
-  // the ilike filter excludes non-matching orders instead of nulling the embed.
-  const customersEmbed = searchTerm
-    ? "customers!inner(id, full_name, email, phone)"
-    : "customers(id, full_name, email, phone)";
 
   let listQuery = supabase
     .from("orders")
     .select(
-      `id, status, payment_status, fulfillment_method, event_type, event_date, total_amount, balance_due_amount, deposit_due_amount, created_at, updated_at, ${customersEmbed}, inquiries(id, metadata), order_items(id), payments(amount, payment_type, status)`,
+      "id, status, payment_status, fulfillment_method, event_type, event_date, total_amount, balance_due_amount, deposit_due_amount, created_at, updated_at, customers(id, full_name, email, phone), inquiries(id, metadata), order_items(id), payments(amount, payment_type, status)",
       { count: "exact" },
     );
 
@@ -756,14 +750,6 @@ export async function getOrderListData(
     listQuery = listQuery.lte("event_date", filters.eventDateTo);
   }
 
-  if (searchTerm) {
-    const pattern = `%${searchTerm}%`;
-    listQuery = listQuery.or(
-      `full_name.ilike.${pattern},email.ilike.${pattern},phone.ilike.${pattern}`,
-      { referencedTable: "customers" },
-    );
-  }
-
   const { count, data, error } = await listQuery
     .order("event_date", { ascending: true })
     .range(from, to);
@@ -773,8 +759,8 @@ export async function getOrderListData(
   }
 
   const rows = (data ?? []) as OrderListQueryRow[];
-  const totalCount = count ?? rows.length;
-  const entries = rows.map((row) => {
+  const baseTotalCount = count ?? rows.length;
+  const mappedEntries = rows.map((row) => {
     const paymentSummary = calculateOrderPaymentSnapshot(row, row.payments ?? []);
     const paymentState = paymentSummary.paymentStatus || row.payment_status;
 
@@ -800,6 +786,10 @@ export async function getOrderListData(
       totalLabel: formatOrderMoneySummary(row.total_amount),
     } satisfies OrderListEntry;
   });
+  const entries = filters.search
+    ? filterOrdersBySearch(mappedEntries, filters.search)
+    : mappedEntries;
+  const totalCount = filters.search ? entries.length : baseTotalCount;
 
   const today = getBusinessDateKey();
   const awaitingPaymentCount = entries.filter((entry) => entry.paymentState !== "paid").length;

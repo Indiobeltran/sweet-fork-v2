@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { addOrderNote, addOrderPayment, updateOrderDetails, updateOrderPayment } from "@/app/admin/(protected)/orders/actions";
+import { addOrderNote, addOrderPayment, deleteOrder, updateOrderDetails, updateOrderPayment } from "@/app/admin/(protected)/orders/actions";
+import { ConfirmSubmitButton } from "@/components/admin/confirm-submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -345,6 +346,10 @@ function NoticeBanner({ notice }: { notice: string | undefined }) {
     "order-updated": {
       className: "border-emerald-200 bg-emerald-50 text-emerald-900",
       text: "Order details updated.",
+    },
+    "order-delete-error": {
+      className: "border-rose/24 bg-rose/10 text-charcoal",
+      text: "The order could not be deleted. Please try again.",
     },
     "payment-added": {
       className: "border-emerald-200 bg-emerald-50 text-emerald-900",
@@ -1207,6 +1212,33 @@ export default async function AdminOrderDetailPage({
             ))}
           </div>
         </details>
+
+        <section className="rounded-[1.75rem] border border-rose/20 bg-rose/5 p-4 shadow-soft sm:p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+            Delete order
+          </p>
+          <h2 className="mt-2 font-serif text-[1.6rem] tracking-[-0.04em] text-charcoal sm:text-[1.75rem]">
+            Permanently remove this order
+          </h2>
+          <p className="mt-3 text-sm leading-7 text-charcoal/68">
+            This permanently deletes the order, item rows, payment records, and internal order
+            notes. The customer and originating inquiry are preserved, and calendar or
+            notification references are unlinked.
+          </p>
+          <form action={deleteOrder} className="mt-4">
+            <input type="hidden" name="orderId" value={detail.id} />
+            <input type="hidden" name="redirectTo" value={redirectTo} />
+            <ConfirmSubmitButton
+              type="submit"
+              variant="secondary"
+              pendingLabel="Deleting..."
+              className="w-full border-rose/30 bg-white text-rose-700 hover:border-rose/45 hover:bg-rose/10 sm:w-auto"
+              confirmMessage={`Delete ${orderReference} for ${detail.customer?.fullName ?? "this customer"} permanently? This cannot be undone.`}
+            >
+              Delete order
+            </ConfirmSubmitButton>
+          </form>
+        </section>
       </div>
     </div>
   );

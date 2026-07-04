@@ -1,6 +1,6 @@
 import type { Enums } from "@/types/supabase.generated";
 
-export function getOrderStatusLabel(status: Enums<"order_status">) {
+export function getOrderStatusLabel(status: Enums<"order_status"> | string) {
   switch (status) {
     case "draft":
       return "Draft";
@@ -17,7 +17,7 @@ export function getOrderStatusLabel(status: Enums<"order_status">) {
     case "cancelled":
       return "Cancelled";
     default:
-      return status;
+      return status ? `Unmapped status: ${status}` : "Unmapped status";
   }
 }
 

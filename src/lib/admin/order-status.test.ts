@@ -11,6 +11,11 @@ describe("order workflow owner-friendly labels", () => {
     assert.equal(getOrderStatusLabel("completed"), "Completed");
   });
 
+  it("flags unmapped legacy order statuses for admin correction", () => {
+    assert.equal(getOrderStatusLabel("converted"), "Unmapped status: converted");
+    assert.equal(getOrderStatusLabel(""), "Unmapped status");
+  });
+
   it("renders payment statuses with business-friendly labels", () => {
     assert.equal(getPaymentStatusLabel("unpaid"), "Unpaid");
     assert.equal(getPaymentStatusLabel("deposit-paid"), "Deposit paid");

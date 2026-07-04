@@ -11,7 +11,13 @@ export type OrderListViewEntry = {
   totalLabel: string;
 };
 
-export type OrderListQueue = "active" | "awaiting-payment" | "completed" | "upcoming";
+export type OrderListQueue =
+  | "active"
+  | "all"
+  | "awaiting-payment"
+  | "cancelled"
+  | "completed"
+  | "upcoming";
 
 export type OrderDueDateSectionKey = "overdue" | "this-week" | "next-week" | "later";
 
@@ -48,6 +54,15 @@ function getDayDifference(eventDate: string, today: string) {
 
 function isFinishedOrder(entry: Pick<OrderListViewEntry, "status">) {
   return entry.status === "completed" || entry.status === "fulfilled" || entry.status === "cancelled";
+}
+
+function isKnownActiveStatus(status: string) {
+  return (
+    status === "draft" ||
+    status === "quoted" ||
+    status === "confirmed" ||
+    status === "in-production"
+  );
 }
 
 function getDueDateSectionKey(entry: OrderListViewEntry, today: string): OrderDueDateSectionKey {
@@ -120,7 +135,7 @@ export function groupOrdersByDueDate<TEntry extends OrderListViewEntry>(
 }
 
 export function isActiveOrder(entry: Pick<OrderListViewEntry, "status">) {
-  return !isFinishedOrder(entry);
+  return isKnownActiveStatus(entry.status);
 }
 
 export function isAwaitingPaymentOrder(
@@ -142,14 +157,22 @@ export function isCompletedOrder(entry: Pick<OrderListViewEntry, "status">) {
   return entry.status === "completed" || entry.status === "fulfilled";
 }
 
+export function isCancelledOrder(entry: Pick<OrderListViewEntry, "status">) {
+  return entry.status === "cancelled";
+}
+
 export function filterOrdersByQueue<TEntry extends OrderListViewEntry>(
   entries: TEntry[],
   queue: OrderListQueue,
   today: string,
 ) {
   switch (queue) {
+    case "all":
+      return entries;
     case "awaiting-payment":
       return entries.filter(isAwaitingPaymentOrder);
+    case "cancelled":
+      return entries.filter(isCancelledOrder);
     case "upcoming":
       return entries.filter((entry) => isUpcomingOrder(entry, today));
     case "completed":
@@ -157,6 +180,20 @@ export function filterOrdersByQueue<TEntry extends OrderListViewEntry>(
     default:
       return entries.filter(isActiveOrder);
   }
+}
+
+export function buildOrderQueueCounts<TEntry extends OrderListViewEntry>(
+  entries: TEntry[],
+  today: string,
+): Record<OrderListQueue, number> {
+  return {
+    active: entries.filter(isActiveOrder).length,
+    all: entries.length,
+    "awaiting-payment": entries.filter(isAwaitingPaymentOrder).length,
+    cancelled: entries.filter(isCancelledOrder).length,
+    completed: entries.filter(isCompletedOrder).length,
+    upcoming: entries.filter((entry) => isUpcomingOrder(entry, today)).length,
+  };
 }
 
 export function filterOrdersBySearch<TEntry extends OrderListViewEntry>(

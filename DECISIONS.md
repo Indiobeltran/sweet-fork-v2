@@ -2,6 +2,38 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
+## 2026-07-04 - Admin Orders Use Recoverable Queues And Hard Delete Orders
+
+### Status
+
+Accepted
+
+### Context
+
+Production `/admin/orders` reported three total orders while every visible queue tab showed zero. Read-only production inspection found all three counted records were valid `orders` rows with `status = 'cancelled'`. The Orders page counted all fetched rows, but its queue taxonomy exposed only Active, Awaiting payment, Upcoming, and Completed. Cancelled rows were treated as finished, excluded from Active/Awaiting/Upcoming, and not included in Completed. The schema has no order soft-delete or archived flag; order child rows (`order_items`, `payments`, `order_notes`) intentionally cascade on order deletion, while `calendar_entries` and `notification_logs` set `order_id` to null. Customers and inquiries are preserved.
+
+### Options Considered
+
+- Add cancelled orders to Completed.
+- Keep Active as the default and add only a Cancelled queue.
+- Add an All queue plus a Cancelled queue, and make All the default recovery view.
+- Add a new soft-delete/archive schema field before exposing deletion.
+- Hard-delete orders through the existing admin/RLS model, relying on verified foreign-key behavior.
+
+### Decision
+
+Add an `All` queue as the default Orders view and add a first-class `Cancelled` queue. Queue counts and visible rows now derive from shared queue membership helpers, and unknown future/legacy statuses remain reachable through All with an explicit unmapped-status label. Order search is applied after the base order fetch so optional customer joins do not hide records that match only order/event/reference fields.
+
+Implement admin-only hard deletion through a server action guarded by the existing authenticated admin roles (`owner` or `manager`) and a fixed-table deletion helper. Deleting an order removes the order row and lets verified FK cascades delete order items, payments, and order notes. Customer and inquiry rows are preserved; calendar and notification references are unlinked by FK behavior.
+
+### Consequences
+
+- Cancelled orders can no longer be silently inaccessible.
+- The three production rows remain untouched and are reachable in All and Cancelled.
+- Deletion is destructive and accurately labelled as permanent.
+- The delete action is intentionally server-side; no service-role key is exposed to browser code.
+- If the business later needs accounting-grade audit retention for deleted orders/payments, replace hard delete with an explicit soft-delete/archive model and migration.
+
 ## 2026-07-03 - Quick Add Custom Order Items Use Nullable Product References
 
 ### Status
