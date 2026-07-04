@@ -2,17 +2,27 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 // @ts-expect-error Node's strip-types test runner needs the .ts extension.
-import { canDeleteOrder, deleteOrderRecord } from "./order-deletion.ts";
+import { ORDER_DELETE_CONFIRMATION_TEXT, canPermanentlyDeleteOrder, deleteOrderRecord, getOrderDeletionEligibility, isOrderDeleteConfirmationValid } from "./order-deletion.ts";
 
 const orderId = "11111111-1111-4111-8111-111111111111";
 
 function createDeleteClient({
   deleteError = null,
-  order = { customer_id: "customer-1", id: orderId, inquiry_id: "inquiry-1" },
+  order = {
+    customer_id: "customer-1",
+    id: orderId,
+    inquiry_id: "inquiry-1",
+    status: "cancelled",
+  },
   selectError = null,
 }: {
   deleteError?: Error | null;
-  order?: { customer_id: string; id: string; inquiry_id: string | null } | null;
+  order?: {
+    customer_id: string;
+    id: string;
+    inquiry_id: string | null;
+    status: string;
+  } | null;
   selectError?: Error | null;
 }) {
   const calls: Array<{ column?: string; table: string; type: "delete" | "eq" | "select"; value?: string }> = [];
@@ -52,11 +62,44 @@ function createDeleteClient({
 }
 
 describe("order deletion authorization", () => {
-  it("allows only Sweet Fork admin roles to delete orders", () => {
-    assert.equal(canDeleteOrder({ role: "owner" }), true);
-    assert.equal(canDeleteOrder({ role: "manager" }), true);
-    assert.equal(canDeleteOrder({ role: "customer" }), false);
-    assert.equal(canDeleteOrder(null), false);
+  it("allows only Sweet Fork owners to permanently delete orders", () => {
+    assert.equal(canPermanentlyDeleteOrder({ role: "owner" }), true);
+    assert.equal(canPermanentlyDeleteOrder({ role: "manager" }), false);
+    assert.equal(canPermanentlyDeleteOrder({ role: "customer" }), false);
+    assert.equal(canPermanentlyDeleteOrder(null), false);
+  });
+
+  it("requires exact DELETE confirmation text", () => {
+    assert.equal(ORDER_DELETE_CONFIRMATION_TEXT, "DELETE");
+    assert.equal(isOrderDeleteConfirmationValid("DELETE"), true);
+    assert.equal(isOrderDeleteConfirmationValid("delete"), false);
+    assert.equal(isOrderDeleteConfirmationValid(" DELETE "), false);
+    assert.equal(isOrderDeleteConfirmationValid(null), false);
+  });
+
+  it("allows permanent deletion only for owner-cancelled orders", () => {
+    assert.deepEqual(getOrderDeletionEligibility({ actor: { role: "owner" }, status: "cancelled" }), {
+      ok: true,
+    });
+    assert.deepEqual(getOrderDeletionEligibility({ actor: { role: "manager" }, status: "cancelled" }), {
+      ok: false,
+      reason: "owner-only",
+    });
+
+    for (const status of [
+      "draft",
+      "quoted",
+      "confirmed",
+      "in-production",
+      "fulfilled",
+      "completed",
+      "legacy-status",
+    ]) {
+      assert.deepEqual(getOrderDeletionEligibility({ actor: { role: "owner" }, status }), {
+        ok: false,
+        reason: "not-cancelled",
+      });
+    }
   });
 });
 
@@ -64,7 +107,7 @@ describe("deleteOrderRecord", () => {
   it("accepts valid PostgreSQL UUID values even when they are not RFC versioned UUIDs", async () => {
     const legacyOrderId = "00000000-0000-0000-0000-000000000002";
     const client = createDeleteClient({
-      order: { customer_id: "customer-1", id: legacyOrderId, inquiry_id: null },
+      order: { customer_id: "customer-1", id: legacyOrderId, inquiry_id: null, status: "cancelled" },
     });
 
     const result = await deleteOrderRecord(client, legacyOrderId);
@@ -102,6 +145,27 @@ describe("deleteOrderRecord", () => {
       { table: "orders", type: "delete" },
       { column: "id", table: "orders", type: "eq", value: orderId },
     ]);
+  });
+
+  it("does not delete when the current database status is not cancelled", async () => {
+    for (const status of [
+      "draft",
+      "quoted",
+      "confirmed",
+      "in-production",
+      "fulfilled",
+      "completed",
+      "legacy-status",
+    ]) {
+      const client = createDeleteClient({
+        order: { customer_id: "customer-1", id: orderId, inquiry_id: null, status },
+      });
+
+      const result = await deleteOrderRecord(client, orderId);
+
+      assert.deepEqual(result, { ok: false, reason: "not-cancelled" });
+      assert.equal(client.calls.some((call) => call.type === "delete"), false);
+    }
   });
 
   it("does not delete when the order cannot be loaded", async () => {

@@ -4,6 +4,58 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## Order Deletion Safety Hardening — 2026-07-04 MDT
+
+- **Current branch**: `codex/harden-order-deletion`.
+- **Starting commit**: `470a186`.
+- **Current objective**: Complete authenticated production smoke verification if browser access is available, harden permanent order deletion, verify, then merge/push/deploy if gates pass.
+- **Pre-existing dirty files preserved**: Untracked `.agents/`, `.claude/`, `.superpowers/`, `scratch/`, `skills-lock.json`, and `supabase/.temp/linked-project.json` were present before this task and remain unstaged/preserved.
+- **Authenticated production smoke status**: Blocked. The in-app browser surface remained unavailable, and the available Chrome profile reached `/admin/login` but browser automation was blocked by an extension UI before the QA admin login form could be completed. Authenticated production browser verification has not been claimed.
+- **Read-only production verification completed**:
+  - Production `orders` count is still `0`.
+  - Production `cancelled` order count is still `0`.
+  - Deleted legacy target IDs `00000000-0000-0000-0000-000000000002` and `00000000-0000-0000-0000-000000000005` remain absent.
+  - Unauthenticated `https://thesweetfork.com/admin/orders` still redirects to `/admin/login`.
+- **Previous deletion behavior**: The hard-delete action was server-side and authenticated but allowed both `owner` and `manager` roles and did not require the current database order status to be `cancelled`.
+- **Deletion policy after hardening**:
+  - Permanent order deletion is owner-only.
+  - Only orders whose current database status is `cancelled` may be permanently deleted.
+  - Managers see a disabled destructive action with owner-only explanation.
+  - Non-cancelled orders show a disabled destructive action with `Only cancelled orders can be permanently deleted.`
+  - Completed, fulfilled, active, upcoming, awaiting-payment, draft/quoted/confirmed/in-production, and unknown-status orders are retained.
+- **Server-side enforcement**:
+  - The server action re-authenticates the admin and requires exact owner role before deletion.
+  - The server action validates exact typed confirmation `DELETE`.
+  - `deleteOrderRecord` validates the PostgreSQL lexical UUID, reloads the current order row from the database, and refuses to delete unless the loaded status is `cancelled`.
+  - Status supplied by the browser is not used; status races from cancelled to another status fail with a generic browser error.
+  - Safe diagnostics remain limited to app reason/order UUID and Supabase/PostgreSQL operation, SQLSTATE, constraint, and table when available.
+- **Confirmation dialog behavior**:
+  - Eligible cancelled owner-only deletion uses a native modal dialog.
+  - The dialog states the action cannot be undone, order items/payment records/internal notes are removed, and customers/inquiries are preserved.
+  - It shows the order reference, full order UUID, and a safe order label.
+  - The final destructive button remains disabled until the administrator types exactly `DELETE`; controls are disabled while pending/submitted to prevent duplicate submissions.
+- **Files changed recently**:
+  - `DECISIONS.md`
+  - `HANDOFF.md`
+  - `package.json`
+  - `src/app/admin/(protected)/orders/[id]/page.tsx`
+  - `src/app/admin/(protected)/orders/actions.ts`
+  - `src/components/admin/order-delete-form.tsx`
+  - `src/components/admin/order-delete-form.test.ts`
+  - `src/lib/admin/order-deletion.ts`
+  - `src/lib/admin/order-deletion.test.ts`
+- **Verification completed on branch**:
+  - Focused tests: `node --no-warnings --experimental-strip-types --test src/lib/admin/order-deletion.test.ts src/components/admin/order-delete-form.test.ts` passed, 12/12.
+  - `npm run lint`: passed.
+  - `npm run typecheck`: passed.
+  - `npm test`: passed, 163/163. Existing fail-soft Netlify bridge tests intentionally log simulated network/404 failures while passing.
+  - `npm run build`: passed.
+  - `git diff --check`: passed.
+- **Local browser QA**: Blocked by the same browser automation issue. No local visual/browser QA is claimed. Build and source/component tests cover the new dialog markup and button-disabled contracts.
+- **Database/RLS changes**: None. No migration, archive system, or RLS change was added.
+- **Production deployment status**: Pending commit, merge to `main`, post-merge gates, push, Netlify deploy, and post-deploy verification.
+- **Next exact task**: Review diff, commit `fix: harden permanent order deletion`, merge into `main`, rerun gates, push, confirm Netlify deploy, then repeat read-only production verification. Complete authenticated browser smoke later once the browser extension UI blocker is cleared.
+
 ## Legacy Order Deletion Fix — 2026-07-04 MDT
 
 - **Current branch**: `codex/fix-legacy-order-deletion`.

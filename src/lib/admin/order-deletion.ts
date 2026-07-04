@@ -8,6 +8,7 @@ type OrderDeleteRow = {
   customer_id: string | null;
   id: string;
   inquiry_id: string | null;
+  status: string;
 };
 
 type DeleteOperation = "delete" | "load";
@@ -41,8 +42,10 @@ export type DeleteOrderResult =
   | {
       diagnostic?: SafeDeleteDiagnostic;
       ok: false;
-      reason: "delete-failed" | "invalid-id" | "load-failed" | "not-found";
+      reason: "delete-failed" | "invalid-id" | "load-failed" | "not-cancelled" | "not-found";
     };
+
+export const ORDER_DELETE_CONFIRMATION_TEXT = "DELETE";
 
 const postgresUuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -65,8 +68,37 @@ function getSafeDeleteDiagnostic(error: unknown, operation: DeleteOperation): Sa
   };
 }
 
-export function canDeleteOrder(actor: DeleteActor) {
-  return actor?.role === "owner" || actor?.role === "manager";
+export function canPermanentlyDeleteOrder(actor: DeleteActor) {
+  return actor?.role === "owner";
+}
+
+export function isOrderDeleteConfirmationValid(value: unknown) {
+  return value === ORDER_DELETE_CONFIRMATION_TEXT;
+}
+
+export function getOrderDeletionEligibility({
+  actor,
+  status,
+}: {
+  actor: DeleteActor;
+  status: string;
+}):
+  | {
+      ok: true;
+    }
+  | {
+      ok: false;
+      reason: "not-cancelled" | "owner-only";
+    } {
+  if (!canPermanentlyDeleteOrder(actor)) {
+    return { ok: false, reason: "owner-only" };
+  }
+
+  if (status !== "cancelled") {
+    return { ok: false, reason: "not-cancelled" };
+  }
+
+  return { ok: true };
 }
 
 export async function deleteOrderRecord(
@@ -79,7 +111,7 @@ export async function deleteOrderRecord(
 
   const { data: order, error: loadError } = await client
     .from("orders")
-    .select("id, customer_id, inquiry_id")
+    .select("id, customer_id, inquiry_id, status")
     .eq("id", orderId)
     .maybeSingle();
 
@@ -93,6 +125,10 @@ export async function deleteOrderRecord(
 
   if (!order) {
     return { ok: false, reason: "not-found" };
+  }
+
+  if (order.status !== "cancelled") {
+    return { ok: false, reason: "not-cancelled" };
   }
 
   const { error: deleteError } = await client.from("orders").delete().eq("id", orderId);
