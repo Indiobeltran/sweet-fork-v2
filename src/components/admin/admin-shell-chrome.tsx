@@ -119,6 +119,12 @@ export function AdminShellChrome({
 
   return (
     <div className="min-h-screen overflow-x-hidden pb-[calc(env(safe-area-inset-bottom)+5.75rem)] pt-1.5 sm:pt-3 md:pb-8">
+      <a
+        href="#admin-main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[90] focus:rounded-full focus:border focus:border-charcoal/15 focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-charcoal focus:shadow-soft"
+      >
+        Skip to content
+      </a>
       {isRoutePending ? (
         <div
           aria-live="polite"
@@ -191,7 +197,9 @@ export function AdminShellChrome({
           }
         />
 
-        <div className="pt-3 sm:pt-4">{children}</div>
+        <div id="admin-main" className="pt-3 sm:pt-4">
+          {children}
+        </div>
       </div>
 
       <MoreMenuSheet

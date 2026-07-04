@@ -7,6 +7,7 @@ import {
 import { AdminNoticeBanner } from "@/components/admin/admin-notice-banner";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { CompactEmptyState } from "@/components/admin/compact-empty-state";
+import { AdminSearchInput } from "@/components/admin/admin-search-input";
 import { FilterSheet } from "@/components/admin/filter-sheet";
 import { PaginationLinks } from "@/components/admin/pagination-links";
 import { StatusChipRow } from "@/components/admin/status-chip-row";
@@ -478,13 +479,9 @@ export default async function AdminInquiriesPage({
             description="Narrow the queue without pushing the working list down the page."
           >
             <form method="get" className="grid gap-4 lg:grid-cols-2">
-              <FilterCard label="Search">
-                <Input
-                  name="search"
-                  defaultValue={filters.search}
-                  placeholder="Customer, email, or reference code"
-                />
-              </FilterCard>
+              {filters.search ? (
+                <input type="hidden" name="search" value={filters.search} />
+              ) : null}
 
               <FilterCard label="Status">
                 <Select name="status" defaultValue={filters.status}>
@@ -583,6 +580,12 @@ export default async function AdminInquiriesPage({
           </FilterSheet>
         }
       >
+        <AdminSearchInput
+          defaultValue={filters.search}
+          label="Search inquiries"
+          placeholder="Customer, email, or reference code"
+        />
+
         <StatusChipRow
           ariaLabel="Inquiry status filters"
           items={[

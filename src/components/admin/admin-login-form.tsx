@@ -74,7 +74,11 @@ export function AdminLoginForm({ disabled = false }: AdminLoginFormProps) {
         />
       </div>
 
-      {error ? <p className="text-sm leading-7 text-rose-700">{error}</p> : null}
+      {error ? (
+        <p role="alert" className="text-sm leading-7 text-rose-700">
+          {error}
+        </p>
+      ) : null}
 
       <Button
         type="submit"

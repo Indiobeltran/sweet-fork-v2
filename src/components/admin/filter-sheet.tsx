@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
 
+import { useDialogDismiss } from "@/components/admin/use-dialog-dismiss";
 import { Button } from "@/components/ui/button";
 
 type FilterSheetProps = {
@@ -26,26 +27,18 @@ export function FilterSheet({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const dialogId = useId();
+  const dialogRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     setIsOpen(false);
   }, [pathname, searchParams]);
 
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsOpen(false);
-      }
-    };
-
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, [isOpen]);
+  useDialogDismiss({
+    containerRef: dialogRef,
+    onClose: () => setIsOpen(false),
+    open: isOpen,
+  });
 
   return (
     <>
@@ -76,11 +69,13 @@ export function FilterSheet({
 
           <div className="fixed inset-0 z-[70] flex items-end justify-center px-3 pb-0 pt-6 md:items-center md:px-6 md:pb-6">
             <div
+              ref={dialogRef}
               id={dialogId}
               role="dialog"
               aria-modal="true"
               aria-label={title}
-              className="flex max-h-[min(88vh,50rem)] w-full max-w-2xl flex-col overflow-hidden rounded-t-[1.8rem] border border-charcoal/10 bg-ivory shadow-[0_24px_72px_rgba(53,37,29,0.18)] backdrop-blur-xl md:rounded-[1.8rem]"
+              tabIndex={-1}
+              className="flex max-h-[min(88vh,50rem)] w-full max-w-2xl flex-col overflow-hidden rounded-t-[1.8rem] border border-charcoal/10 bg-ivory shadow-[0_24px_72px_rgba(53,37,29,0.18)] backdrop-blur-xl md:rounded-[1.8rem] focus:outline-none"
             >
               <div className="border-b border-charcoal/8 px-4 pb-3 pt-3 sm:px-5">
                 <div className="mx-auto h-1.5 w-14 rounded-full bg-charcoal/14 md:hidden" />

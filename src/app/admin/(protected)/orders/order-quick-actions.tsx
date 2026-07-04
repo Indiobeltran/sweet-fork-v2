@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, MoreHorizontal, RotateCcw } from "lucide-react";
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import {
   markOrderCompletedQuickAction,
@@ -42,11 +42,47 @@ export function OrderQuickActions({
   status,
 }: Readonly<OrderQuickActionsProps>) {
   const pressTimerRef = useRef<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [notice, setNotice] = useState<NoticeState | null>(null);
   const [isPending, startTransition] = useTransition();
   const canMarkCompleted = status !== "completed" && status !== "cancelled";
   const canMarkPaid = balanceDue > 0;
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!notice) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => setNotice(null), 6000);
+    return () => window.clearTimeout(timeoutId);
+  }, [notice]);
 
   function clearPressTimer() {
     if (pressTimerRef.current) {
@@ -92,6 +128,7 @@ export function OrderQuickActions({
 
   return (
     <div
+      ref={containerRef}
       className="relative"
       onPointerDown={handlePressStart}
       onPointerLeave={clearPressTimer}

@@ -6,11 +6,17 @@ import { useEffect, useState, useTransition } from "react";
 
 import { Input } from "@/components/ui/input";
 
-type OrderSearchInputProps = {
+type AdminSearchInputProps = {
   defaultValue: string;
+  label?: string;
+  placeholder?: string;
 };
 
-export function OrderSearchInput({ defaultValue }: Readonly<OrderSearchInputProps>) {
+export function AdminSearchInput({
+  defaultValue,
+  label = "Search",
+  placeholder = "Search",
+}: Readonly<AdminSearchInputProps>) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -32,7 +38,13 @@ export function OrderSearchInput({ defaultValue }: Readonly<OrderSearchInputProp
         nextParams.delete("search");
       }
 
-      if (nextParams.toString() === searchParams.toString()) {
+      // A new search always starts from the first page of results.
+      nextParams.delete("page");
+
+      const currentParams = new URLSearchParams(searchParams.toString());
+      currentParams.delete("page");
+
+      if (nextParams.toString() === currentParams.toString()) {
         return;
       }
 
@@ -50,11 +62,11 @@ export function OrderSearchInput({ defaultValue }: Readonly<OrderSearchInputProp
   return (
     <label className="flex min-h-11 w-full items-center gap-2 rounded-full border border-charcoal/10 bg-white/88 px-3.5 text-sm text-charcoal shadow-sm focus-within:border-gold/45 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-gold/35">
       <Search aria-hidden="true" className="h-4 w-4 shrink-0 text-charcoal/45" />
-      <span className="sr-only">Search orders</span>
+      <span className="sr-only">{label}</span>
       <Input
         value={value}
         onChange={(event) => setValue(event.target.value)}
-        placeholder="Search name, occasion, order #"
+        placeholder={placeholder}
         className="h-9 border-0 bg-transparent px-0 shadow-none focus-visible:outline-none"
       />
     </label>

@@ -2,12 +2,12 @@ import Link from "next/link";
 
 import { ActiveFilterPills, type ActiveFilterPill } from "@/components/admin/active-filter-pills";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { AdminSearchInput } from "@/components/admin/admin-search-input";
 import { CompactEmptyState } from "@/components/admin/compact-empty-state";
 import { FilterSheet } from "@/components/admin/filter-sheet";
 import { StatusChipRow } from "@/components/admin/status-chip-row";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import {
@@ -319,41 +319,11 @@ export default async function AdminCustomersPage({ searchParams }: AdminCustomer
           </FilterSheet>
         }
       >
-        <form method="get" className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          {segment !== DEFAULT_SEGMENT ? <input type="hidden" name="segment" value={segment} /> : null}
-          {filters.preferredContact !== DEFAULT_CUSTOMER_FILTERS.preferredContact ? (
-            <input type="hidden" name="preferredContact" value={filters.preferredContact} />
-          ) : null}
-          {filters.repeatState !== DEFAULT_CUSTOMER_FILTERS.repeatState ? (
-            <input type="hidden" name="repeatState" value={filters.repeatState} />
-          ) : null}
-
-          <div className="flex-1">
-            <Label htmlFor="customer-search" className="sr-only">
-              Search customers
-            </Label>
-            <Input
-              id="customer-search"
-              name="search"
-              defaultValue={filters.search}
-              placeholder="Search by name, email, phone, or lead source"
-              className="h-12 rounded-[1.35rem] bg-white/92"
-            />
-          </div>
-
-          <div className="flex gap-2">
-            <Button type="submit" variant="secondary" className="h-12 px-5">
-              Search
-            </Button>
-            {filters.search ? (
-              <LinkButton
-                href={buildCustomersHref(filters, segment, { search: "" })}
-                label="Clear"
-                variant="secondary"
-              />
-            ) : null}
-          </div>
-        </form>
+        <AdminSearchInput
+          defaultValue={filters.search}
+          label="Search customers"
+          placeholder="Search by name, email, phone, or lead source"
+        />
 
         <StatusChipRow
           ariaLabel="Customer segments"

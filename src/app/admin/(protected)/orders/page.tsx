@@ -37,8 +37,8 @@ import {
   type OrderListQueue,
 } from "@/lib/admin/order-list-view";
 import { formatDate, toTitleCase } from "@/lib/utils";
+import { AdminSearchInput } from "@/components/admin/admin-search-input";
 import { OrderQuickActions } from "./order-quick-actions";
-import { OrderSearchInput } from "./order-search-input";
 
 export const metadata = {
   title: "Admin Orders",
@@ -517,7 +517,11 @@ export default async function AdminOrdersPage({
           </>
         }
       >
-        <OrderSearchInput defaultValue={filters.search} />
+        <AdminSearchInput
+          defaultValue={filters.search}
+          label="Search orders"
+          placeholder="Search name, occasion, order #"
+        />
 
         <StatusChipRow
           ariaLabel="Order queue filters"
