@@ -50,11 +50,22 @@
   - `npm run build`: passed.
   - `git diff --check`: passed.
 - **Local visual QA**: Local dev server was started at `http://127.0.0.1:3021`, but the in-app browser surface was unavailable in this session (`Browser is not available: iab`). Interactive browser QA has not been claimed as passed. Server-side local verification covered the patched delete helper and real FK behavior against a disposable fixture.
-- **Production deployment/verification status**: Pending commit, merge to `main`, push, Netlify deployment, and authenticated/read-only production UI verification.
+- **Commit/merge/deploy**:
+  - Task branch commit: `d2e1e18` (`fix: handle legacy order deletion dependencies`).
+  - Merged to `main` with merge commit `bc75e03` (`merge: handle legacy order deletion dependencies`).
+  - Pushed `main` to origin.
+  - Netlify production deploy `6a498028f4c758000813f13e` for commit `bc75e03f9fadd15bca6a09b973587eb0eebb36fa` reached `ready` in 76 seconds.
+- **Production verification status**:
+  - Post-deploy database verification confirmed target order IDs `00000000-0000-0000-0000-000000000002` and `00000000-0000-0000-0000-000000000005` no longer exist.
+  - Target-owned child counts are 0 for `order_items`, `payments`, `order_notes`, `calendar_entries`, and `notification_logs`.
+  - Production order counts are currently `all_orders = 0` and `cancelled_orders = 0`.
+  - Customer/inquiry preservation check showed `total_customers = 2` and `total_inquiries = 4`; the earlier related customer row was preserved during the guarded delete transaction.
+  - Unauthenticated `https://thesweetfork.com/admin/orders` still redirects to `/admin/login`, confirming the admin route remains protected.
+  - Authenticated browser verification of Orders filters, Dashboard, and Calendar could not be completed from this session because the in-app browser surface remained unavailable.
 - **Known issues / limitations**:
   - There is currently no remaining production order row, so Orders counts are expected to be `All 0 / Cancelled 0` unless new orders are created before verification.
   - Browser automation was unavailable for local QA in this session; use direct authenticated browser verification if the browser surface becomes available before final completion.
-- **Next exact task**: Review diff, commit `fix: handle legacy order deletion dependencies`, merge into `main`, rerun gates on `main`, push, confirm Netlify deploy, and perform production verification.
+- **Next exact task**: Owner or a future authenticated browser session should do a quick UI smoke check of `/admin/orders`, `/admin`, and `/admin/calendar` after the deploy. No additional database cleanup is pending.
 
 ## Admin Orders Visibility + Deletion — 2026-07-04 MDT
 
