@@ -4,6 +4,58 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## Legacy Order Deletion Fix — 2026-07-04 MDT
+
+- **Current branch**: `codex/fix-legacy-order-deletion`.
+- **Starting commit**: `62c6f43`.
+- **Current objective**: Fix the production-only delete failure for two cancelled all-zero/test-shaped orders, safely delete only those two target IDs, then merge/push/deploy and verify production.
+- **Pre-existing dirty files preserved**: Untracked `.agents/`, `.claude/`, `.superpowers/`, `scratch/`, `skills-lock.json`, and `supabase/.temp/linked-project.json` were present before this task and remain unstaged/preserved.
+- **Production symptom**: Newly created disposable QA orders deleted successfully, but `00000000-0000-0000-0000-000000000002` and `00000000-0000-0000-0000-000000000005` returned the generic admin error `The order could not be deleted. Please try again.`
+- **Exact root cause**: `src/lib/admin/order-deletion.ts` used an RFC version/variant UUID regex. Both failing IDs are valid PostgreSQL `uuid` values but not RFC versioned UUIDs, so the helper returned `invalid-id` before Supabase/PostgreSQL was queried. A production rollback delete probe deleted both target rows inside a transaction and rolled back successfully, proving no FK, RLS, trigger, or check constraint blocked the database delete.
+- **PostgreSQL/Supabase error details**: No PostgreSQL error code or constraint was produced for the UI failure because the database was not reached. The rollback delete probe succeeded. Future load/delete failures now return safe server diagnostics with operation, SQLSTATE code, constraint name, and table name when Supabase provides them.
+- **Relationship audit**:
+  - `order_items.order_id -> orders.id ON DELETE CASCADE`
+  - `payments.order_id -> orders.id ON DELETE CASCADE`
+  - `order_notes.order_id -> orders.id ON DELETE CASCADE`
+  - `calendar_entries.order_id -> orders.id ON DELETE SET NULL`
+  - `notification_logs.order_id -> orders.id ON DELETE SET NULL`
+  - No public views/materialized views referenced `orders`.
+  - Only standard `set_updated_at` triggers were present on order-related tables.
+  - No public functions referenced `orders`.
+- **Why disposable QA deletion passed**: The earlier disposable QA order used a generated UUIDv4 that matched the stricter RFC regex. The two legacy targets use all-zero-style UUIDs that PostgreSQL accepts but the app rejected.
+- **Target cleanup results**:
+  - Explicit allowlist: `00000000-0000-0000-0000-000000000002`, `00000000-0000-0000-0000-000000000005`.
+  - Pre-delete safety check confirmed both existed, both had `status = 'cancelled'`, both were unpaid pickup orders, both had all-zero/test-shaped IDs, both had no linked inquiry, each had one owned `order_items` row, and neither had payments, notes, calendar entries, or notification logs. Their customer row had a test marker.
+  - Guarded transaction deleted exactly those two order IDs and no other order IDs.
+  - Post-delete verification: target `orders`, `order_items`, `payments`, `order_notes`, `calendar_entries`, and `notification_logs` counts are all 0; the related customer row was preserved; there were no linked inquiries to preserve.
+  - Current production order count after cleanup is 0, so the earlier conditional expectation of `All 1 / Cancelled 1 if the third cancelled order remains` no longer applies.
+- **Implementation chosen**:
+  - Replaced the RFC-only UUID validator with PostgreSQL UUID lexical validation (`8-4-4-4-12` hex groups).
+  - Kept malformed UUID values blocked before database access.
+  - Added safe diagnostics to `deleteOrderRecord` for Supabase/PostgreSQL load/delete failures.
+  - Logged those safe diagnostics in the server action while keeping browser-facing errors generic.
+- **Database/RLS changes**: None. No migration or RPC was added. Existing RLS and FK behavior were preserved.
+- **Files changed recently**:
+  - `DECISIONS.md`
+  - `HANDOFF.md`
+  - `src/app/admin/(protected)/orders/actions.ts`
+  - `src/lib/admin/order-deletion.ts`
+  - `src/lib/admin/order-deletion.test.ts`
+- **Verification completed**:
+  - Focused red test first failed for all-zero PostgreSQL UUID rejection and missing diagnostic mapping, then passed after implementation.
+  - Disposable legacy-shaped QA fixture `00000000-0000-0000-0000-000000000099` was created, deleted through the patched server-side helper, and verified: order row 0, owned item row 0, customer row preserved, then the synthetic QA customer was removed.
+  - `npm run lint`: passed.
+  - `npm run typecheck`: passed.
+  - `npm test`: passed, 157/157. Existing fail-soft Netlify bridge tests intentionally log simulated network/404 failures while passing.
+  - `npm run build`: passed.
+  - `git diff --check`: passed.
+- **Local visual QA**: Local dev server was started at `http://127.0.0.1:3021`, but the in-app browser surface was unavailable in this session (`Browser is not available: iab`). Interactive browser QA has not been claimed as passed. Server-side local verification covered the patched delete helper and real FK behavior against a disposable fixture.
+- **Production deployment/verification status**: Pending commit, merge to `main`, push, Netlify deployment, and authenticated/read-only production UI verification.
+- **Known issues / limitations**:
+  - There is currently no remaining production order row, so Orders counts are expected to be `All 0 / Cancelled 0` unless new orders are created before verification.
+  - Browser automation was unavailable for local QA in this session; use direct authenticated browser verification if the browser surface becomes available before final completion.
+- **Next exact task**: Review diff, commit `fix: handle legacy order deletion dependencies`, merge into `main`, rerun gates on `main`, push, confirm Netlify deploy, and perform production verification.
+
 ## Admin Orders Visibility + Deletion — 2026-07-04 MDT
 
 - **Current branch**: `main`.

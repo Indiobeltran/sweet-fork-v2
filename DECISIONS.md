@@ -2,6 +2,34 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
+## 2026-07-04 - Legacy Order Deletion Accepts PostgreSQL UUID Syntax
+
+### Status
+
+Accepted
+
+### Context
+
+After admin hard deletion was added, new disposable QA orders could be deleted, but two old cancelled test-shaped orders with IDs `00000000-0000-0000-0000-000000000002` and `00000000-0000-0000-0000-000000000005` returned the generic admin error. A guarded rollback delete against production PostgreSQL succeeded for both rows, and the FK catalog showed only intentional order-owned cascades (`order_items`, `payments`, `order_notes`) plus optional `SET NULL` references (`calendar_entries`, `notification_logs`). The application helper rejected those IDs before querying Supabase because its UUID validator required RFC version/variant bits, while PostgreSQL's `uuid` type accepts the all-zero lexical form.
+
+### Options Considered
+
+- Leave the stricter RFC validator and manually clean up the old rows.
+- Special-case only the two known all-zero IDs.
+- Replace the helper validator with PostgreSQL UUID lexical validation and keep malformed values blocked before database access.
+- Add a migration or FK delete-action change.
+
+### Decision
+
+Use PostgreSQL UUID lexical validation in the order deletion helper: `8-4-4-4-12` hex groups without enforcing RFC version or variant nibbles. Keep malformed strings rejected before any database query. Preserve the existing hard-delete model and FK behavior; no schema, RLS, trigger, or cascade migration is required. Add safe server diagnostics for Supabase/PostgreSQL load/delete failures, limited to operation, SQLSTATE code, constraint name, and table name when available.
+
+### Consequences
+
+- Legacy all-zero UUID orders can be deleted through the same admin-only server action as normal generated orders.
+- Newly generated UUIDv4 orders continue to delete normally.
+- Browser-facing errors remain generic, while server logs can distinguish validation, load, and delete failures without PII.
+- No arbitrary table/ID deletion path was introduced, and no service-role key is exposed to browser code.
+
 ## 2026-07-04 - Admin Orders Use Recoverable Queues And Hard Delete Orders
 
 ### Status
