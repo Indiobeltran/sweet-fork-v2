@@ -22,9 +22,10 @@ export default async function PricingPage() {
     <div>
       <PublicPageHero
         eyebrow="Pricing"
-        title="A clear starting-point investment guide for custom cakes and desserts."
-        description="Every order from The Sweet Fork is quoted individually, but these starting prices help set expectations before you submit an inquiry."
-        accent="These starting prices help you plan, while the final quote reflects your guest count, design details, and pickup or delivery needs."
+        title="Pricing Guide"
+        description="I quote every order individually, but these starting prices help you plan before you request a quote."
+        accent="These starting prices help you plan. Your final quote reflects guest count, design details, and pickup or delivery needs."
+        quoteNote="I quote every order around the date, guest count, design direction, and pickup or delivery needs."
         cta={defaultCta}
       />
 
@@ -43,7 +44,7 @@ export default async function PricingPage() {
               Custom work starts with a baseline, then becomes more specific from there.
             </h2>
             <p className="text-base leading-8 text-charcoal/68">
-              Final quotes are shaped by quantity, servings, finish complexity, delivery, and overall event scope. The guide below gives you a helpful starting point before a custom quote is prepared.
+              I shape each quote around quantity, servings, finish complexity, delivery, and event scope. The guide below gives you a helpful starting point before I prepare a custom quote.
             </p>
           </div>
 
@@ -133,8 +134,11 @@ export default async function PricingPage() {
       </section>
 
       <InquiryCta
+        eyebrow="Small-batch availability"
         title="Ready for a quote tailored to your event?"
-        description="The inquiry form is the fastest way to share the details The Sweet Fork needs to confirm fit, timing, and next steps."
+        description="Tell me about your event, and I'll confirm fit, timing, and next steps in your quote."
+        urgencyNote="I take a limited number of orders each week so every cake gets my full attention."
+        showSubtext={false}
       />
     </div>
   );

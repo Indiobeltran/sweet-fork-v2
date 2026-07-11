@@ -158,7 +158,7 @@ export function SiteHeader({
             aria-current={pathname === defaultInquiryCta.href ? "page" : undefined}
             className="inline-flex h-10 items-center justify-center rounded-full border border-charcoal/16 bg-white px-4 text-sm font-medium text-charcoal transition hover:border-charcoal/28 hover:bg-white/95"
           >
-            Inquire
+            Request a Quote
           </Link>
           <button
             type="button"
@@ -237,7 +237,6 @@ export function SiteHeader({
             >
               {defaultInquiryCta.label}
             </Link>
-            <p className="mt-3 text-center text-sm text-charcoal/66">{defaultInquiryCta.subtext}</p>
           </div>
         </div>
       </div>

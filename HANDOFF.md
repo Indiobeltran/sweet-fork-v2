@@ -4,6 +4,162 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## COPY-1 Phase B — 2026-07-11 MDT
+
+- **Current branch**: `codex/public-copy-pass-phase-b`, created from current `main` (`27bed268`).
+- **Objective**: Implement only Melissa's approved COPY-1 public-site rows, including her five final owner-wording decisions, while leaving the inquiry wizard, metadata, alt text, testimonials, pricing figures, admin, and database schema untouched.
+- **Completion status**: Source/fallback copy and the append-only migration are complete. The migration was validated with a dry run only and has **not** been applied to the linked project. No merge, push, deploy, or production migration application occurred.
+
+### Owner Decisions Applied
+
+- All public inquiry CTAs now use `Request a Quote`; the `/start-order` wizard title and screen-reader heading remain unchanged.
+- Homepage offerings headline uses Melissa's final direction: `Explore desserts for your celebration`.
+- Homepage availability note uses Melissa's exact wording: `Dates around peak wedding season, and holiday celebrations tend to book first.`
+- FAQ licensing answer uses Melissa's exact wording: `I operate under Utah's Home Consumption and Homemade Food Act in a home kitchen that is not subject to state food service licensing or inspection.`
+- Privacy analytics answer uses Melissa's exact wording: `I use site analytics to understand site performance, popular pages, and the inquiry journey so the website can be improved for local customers.`
+- The rejected Wedding Cakes hero headline and photo-overlay statement remain exactly as they were.
+
+### Scope and Deviations
+
+- `src/components/site/site-header.tsx` is the authorized fifth shared component. Its diff contains only the two approved changes: mobile `Inquire` to `Request a Quote`, and removal of the mobile-menu duplicate helper line.
+- `InquiryCta` and `PublicPageHero` add optional display props with defaults that preserve their previous rendering when not supplied. `ProductPageTemplate` reads optional per-product overlay and final-CTA text; existing defaults retain its prior behavior.
+- Product overlay labels and final CTA headings are carried in existing source product data, not slug conditionals. This preserves the rejected Wedding Cakes overlay statement without a hardcoded exception.
+- `products` rows are intentionally unchanged by the migration. Their `short_description` values feed route metadata and pricing highlight notes, which were not approved rows; changing them would violate the untouched-rows rule. The required product read-back query below confirms this intentional preservation.
+- Remaining banned-word matches are intentionally out of scope: image alt text, SEO title/meta descriptions, legal/factual home-kitchen disclosures, the minimal About content, the `/start-order` wizard title, and default compatibility strings that are not rendered by current public routes. No admin copy was changed.
+- **Out-of-scope banned-word matches, listed and not fixed**: `src/app/(site)/page.tsx` homepage metadata (`polished`, `boutique`); `src/app/(site)/pricing/page.tsx` pricing metadata (`investment`); `src/app/(site)/start-order/page.tsx` wizard title (`Start Your Inquiry`); `src/lib/content/site-content.ts` image alt text (`refined`, `polished`, `boutique`) and legal/allergen/licensing disclosures (`home kitchen`, `Homemade Food Act`); `src/lib/site/marketing.ts` minimal About fallback (`home kitchen`, `Homemade Food Act`); `src/app/og/route.tsx` social-preview copy (`Boutique`, `Inquiry-first`); `src/lib/admin/pagination.ts` internal comment (`boutique`); and `src/app/admin/(protected)/testimonials/page.tsx` admin-only description (`polished`).
+
+### Render-Source Map
+
+| Page | Managed render source | Source fallback/direct render source | Code deploy before migration |
+|---|---|---|---|
+| Home | `content_blocks` for hero, process, and wedding highlight; `brand.identity` footer | Hero caption, offerings heading, gallery, wedding note, final CTA | **Mixed old/new**: managed hero, process, wedding, and footer stay old. |
+| Pricing | `products` and `product_prices` table/pricing values; `brand.identity` footer | Approved hero, pricing paragraph, and final CTA | **Mixed old/new**: approved route copy is new; footer stays old. |
+| How to Order | `brand.identity` footer | Approved hero, steps, detail, and final CTA | **Mixed old/new**: route copy is new; footer stays old. |
+| Custom Cakes | Product name/metadata from `products` (unchanged); `brand.identity` footer | Approved product hero, overlay, FAQ, pricing, and final CTA | **Mixed old/new**: product copy is new; footer stays old. |
+| Wedding Cakes | Product name/metadata from `products` (unchanged); `brand.identity` footer | Approved description, overlay label, details, pricing, FAQ, and final CTA | **Mixed old/new**: product copy is new; footer stays old. |
+| Cupcakes | Product name/metadata from `products` (unchanged); `brand.identity` footer | Approved hero, overlay, pricing, FAQ, and final CTA | **Mixed old/new**: product copy is new; footer stays old. |
+| Sugar Cookies | Product name/metadata from `products` (unchanged); `brand.identity` footer | Approved hero, overlay, pricing, FAQ, and final CTA | **Mixed old/new**: product copy is new; footer stays old. |
+| Macarons | Product name/metadata from `products` (unchanged); `brand.identity` footer | Approved hero, overlay, detail, pricing, FAQ, and final CTA | **Mixed old/new**: product copy is new; footer stays old. |
+| DIY Kits | Product name/metadata from `products` (unchanged); `brand.identity` footer | Approved overlay, availability, pricing, FAQ, and final CTA | **Mixed old/new**: product copy is new; footer stays old. |
+| FAQ | `faq_items` answers; `brand.identity` footer | Approved hero and final CTA | **Mixed old/new**: six FAQ answers and footer stay old. |
+| About | `content_blocks` story intentionally unchanged; `brand.identity` footer | Approved boilerplate removals and CTA label | **Mixed old/new**: unchanged story is stable; footer stays old. |
+| Gallery | Gallery media records unchanged; `brand.identity` footer | Approved hero and final CTA text | **Mixed old/new**: route copy is new; footer stays old. |
+| Terms | `brand.identity` footer | Approved hero and legal voice edits | **Mixed old/new**: route copy is new; footer stays old. |
+| Privacy | `brand.identity` footer | Approved hero and privacy voice edits | **Mixed old/new**: route copy is new; footer stays old. |
+
+### Required Human Migration Procedure
+
+> [!CAUTION]
+> **Step 0 is mandatory. Do not run the real migration push without a completed and retained backup.** Replace the placeholder connection string through the approved secure connection-handling method; do not place credentials in this file or shell history.
+
+0. Create and retain a pre-apply backup:
+
+   ```bash
+   pg_dump --format=custom --file "sweet-fork-before-copy-1-$(date +%Y%m%d%H%M%S).dump" "<SUPABASE_DATABASE_CONNECTION_STRING>"
+   ```
+
+1. Confirm the planned migration only:
+
+   ```bash
+   npx supabase db push --linked --dry-run
+   ```
+
+2. After code review and a successful backup, apply the single pending migration:
+
+   ```bash
+   npx supabase db push --linked
+   ```
+
+3. Read back the managed content. These queries should run through the same approved, credential-safe connection method:
+
+   ```sql
+   select page_key, section_key, block_key, heading, body, items_json, settings_json
+   from public.content_blocks
+   where (page_key, section_key, block_key) in (
+     ('home', 'hero', 'main'),
+     ('home', 'hero', 'weddings-highlight'),
+     ('home', 'process', 'steps')
+   )
+   order by page_key, section_key, block_key;
+
+   select setting_key, value_json
+   from public.site_settings
+   where setting_key in ('brand.identity', 'booking.notice')
+   order by setting_key;
+
+   select question, answer
+   from public.faq_items
+   where question in (
+     'How do I place an order?',
+     'Where are you located?',
+     'Can you recreate a cake I saw online?',
+     'Are you a licensed bakery?',
+     'How many orders do you take per week?',
+     'Do you offer tastings?'
+   )
+   order by question;
+
+   select slug, short_description, long_description
+   from public.products
+   where slug in (
+     'custom-cakes',
+     'wedding-cakes',
+     'cupcakes',
+     'sugar-cookies',
+     'macarons',
+     'diy-kits'
+   )
+   order by slug;
+   ```
+
+### Observed Browser Verification
+
+All routes below were loaded from the fallback-mode local dev server after the approved source changes. Screenshots were inspected at desktop width; no page had horizontal overflow. Mobile checks also passed for Home, Pricing, Custom Cakes, FAQ, and Privacy with no horizontal overflow and visible `Request a Quote` CTAs.
+
+| Page | Rendered copy visually confirmed | Layout |
+|---|---|---|
+| Home | `Custom cakes and desserts, designed for your celebration and baked from scratch in Centerville, Utah.` `I take a limited number of orders each week. Every cake and dessert is made to order, start to finish, by me.` | Unbroken desktop and mobile. |
+| Pricing | `Pricing Guide` and `I quote every order individually, but these starting prices help you plan before you request a quote.` | Unbroken desktop and mobile. |
+| How to Order | `How to order custom cakes and desserts.` and `Tell me about your celebration, I'll confirm availability and send a quote...` | Unbroken desktop. |
+| Custom Cakes | `Custom cakes baked from scratch for birthdays, showers, and milestone celebrations.` and `What goes into every cake`. | Unbroken desktop and mobile. |
+| Wedding Cakes | Existing hero headline remains `Wedding cakes with an elegant, tailored presence for Northern Utah celebrations.`; updated description begins `I quote each wedding cake around servings...`; existing overlay statement remains. | Unbroken desktop. |
+| Cupcakes | `Custom cupcakes for dessert tables, gifting, and easy-to-serve celebrations.` and the piped-buttercream overlay statement. | Unbroken desktop. |
+| Sugar Cookies | `Decorated sugar cookies styled for favors, gifting, and dessert tables.` and `Buttercream sugar cookies are designed to feel personal...` | Unbroken desktop. |
+| Macarons | `Custom macarons for gifting, dessert tables, and party orders.` and `Macarons bring color, flavor, and a giftable finish...` | Unbroken desktop. |
+| DIY Kits | `What goes into every kit` and the scratch-baked cookies, buttercream, sprinkles, and color-themed decorating statement. | Unbroken desktop. |
+| FAQ | `Answers to the questions clients ask before requesting a quote.` and `If anything still feels open-ended, include it in your request and I'll address it in the first reply.` | Unbroken desktop and mobile. |
+| About | Existing owner story remains; the shared side-panel label is `Made to order`, and removed final scarcity/helper lines are absent. | Unbroken desktop. |
+| Gallery | `Browse recent work across birthdays, weddings, showers, gifting moments, and dessert tables.` and final CTA text ending `I'll take it from there.` | Unbroken desktop. |
+| Terms | `These terms summarize... custom orders placed with me.` and `Customers with severe allergies should contact me before ordering.` | Unbroken desktop. |
+| Privacy | `This page covers the information customers share when requesting a custom order with me...` and `Preferred contact details are used so I can follow up...` | Unbroken desktop and mobile. |
+
+- A second normal local server with managed Supabase content enabled was also loaded for the homepage. It showed the expected old managed hero/process/wedding/footer copy, confirming the render-source map and that a code deploy without the migration would be mixed.
+- Observed click-through: the homepage hero `Request a Quote` and Custom Cakes hero `Request a Quote` each navigated to `/start-order` and rendered the `Start your inquiry` wizard heading. No form was submitted.
+
+### Commands and Results
+
+- `npx supabase --version`, `npx supabase migration new --help`, and `npx supabase db push --help`: completed.
+- `npx supabase migration new copy_1_public_copy_phase_b`: created `20260711172939_copy_1_public_copy_phase_b.sql`.
+- `npx supabase db push --linked --dry-run`: passed; would push only `20260711172939_copy_1_public_copy_phase_b.sql`.
+- `npm run lint`: passed.
+- `npm run typecheck`: passed.
+- `npm test`: passed, 163/163. Existing Netlify bridge tests log expected simulated network and 404 outcomes while passing.
+- `npm run build`: passed; 26 static pages generated.
+- `git diff --check`: passed before handoff update; rerun with final diff-scope verification before commit.
+
+### Files Changed
+
+- Public routes: homepage, pricing, how-to-order, FAQ, About, gallery, terms, and privacy.
+- Authorized shared components: `inquiry-cta.tsx`, `public-page-hero.tsx`, `product-page-template.tsx`, and `site-header.tsx`.
+- Public fallback modules: `site-content.ts`, `marketing.ts`, and `cta.ts`.
+- New migration: `supabase/migrations/20260711172939_copy_1_public_copy_phase_b.sql`.
+- Documentation: this `HANDOFF.md` entry.
+- Preserved: all admin files, inquiry wizard files, SEO title/meta copy, alt text, testimonials, pricing figures, existing migrations, and pre-existing untracked workspace files.
+
+### Next Exact Task
+
+Have a human reviewer inspect this branch. Before any production migration application, complete the mandatory backup in the procedure above, rerun the dry run, apply the migration only under supervision, run the read-back queries, and then visually inspect the deployed public pages for the managed-copy changes.
+
 ## Public Copy Pass Rollback — 2026-07-11 MDT
 
 - **Current branch**: `main`.

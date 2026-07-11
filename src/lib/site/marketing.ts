@@ -422,8 +422,8 @@ const productPagePaths = new Set(Object.keys(productPageContent).map((slug) => `
 
 const bookingNoticeFallback: PublicBookingNotice = {
   message:
-    "Most custom orders need at least 2 weeks notice. Holiday and wedding weekends can book earlier.",
-  title: "Limited booking notice",
+    "Most custom orders need at least 2 weeks notice. Wedding cakes usually need 4 to 6 weeks.",
+  title: "Booking calendar update",
   tone: "limited",
 };
 
@@ -504,7 +504,8 @@ export const siteSettingDefinitions: SiteSettingDefinition[] = [
     label: "SEO defaults",
     public: true,
     fallback: {
-      defaultDescription: siteConfig.description,
+      defaultDescription:
+        "Custom cakes, wedding cakes, cupcakes, macarons, and decorated cookies made to order in Centerville, Utah. Artisan quality, limited availability.",
       titleSuffix: siteConfig.name,
     },
   },
@@ -523,16 +524,16 @@ export const contentSectionDefinitions: ContentSectionDefinition[] = [
     blockType: "hero",
     fallback: {
       body:
-        "A boutique home bakery for custom cakes and desserts designed with a polished finish, thoughtful hospitality, and limited weekly availability.",
+        "I take a limited number of orders each week. Every cake and dessert is made to order, start to finish, by me.",
       eyebrow: "Centerville, Utah",
-      heading: "Custom cakes and desserts with a refined, made-to-order feel.",
+      heading: "Custom cakes and desserts, designed for your celebration and baked from scratch in Centerville, Utah.",
       items: homeExperiencePillars.map((item) => ({
         description: item.description,
         title: item.title,
       })),
       settings: {
         primaryCtaHref: "/start-order",
-        primaryCtaLabel: "Start Your Inquiry",
+        primaryCtaLabel: "Request a Quote",
         secondaryCtaHref: "/gallery",
         secondaryCtaLabel: "Explore the Gallery",
       },
@@ -553,9 +554,9 @@ export const contentSectionDefinitions: ContentSectionDefinition[] = [
     blockType: "rich-text",
     fallback: {
       body:
-        "Wedding cakes are designed as statement pieces, with companion desserts available when you want the full table to feel cohesive.",
+        "I design wedding cakes as focal points, with companion desserts available when you want the full table to feel cohesive.",
       eyebrow: "Wedding cakes",
-      heading: "Wedding cakes are quoted with the event, table, and guest experience in mind.",
+      heading: "I quote wedding cakes around servings, venue plans, and the dessert table you want.",
       items: [],
       settings: {},
     },
@@ -574,9 +575,9 @@ export const contentSectionDefinitions: ContentSectionDefinition[] = [
     blockType: "feature-list",
     fallback: {
       body:
-        "The process stays personal and clear from the first inquiry through the final confirmation.",
+        "I keep the process clear from your first request through final confirmation.",
       eyebrow: "How it works",
-      heading: "A simple inquiry-first process designed to keep the details easy.",
+      heading: "A clear process from first details to final confirmation.",
       items: staticProcessSteps.map((item) => ({
         description: item.description,
         step: item.step,

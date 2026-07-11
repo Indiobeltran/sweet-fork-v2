@@ -20,9 +20,10 @@ export default function HowToOrderPage() {
     <div>
       <PublicPageHero
         eyebrow="How to order"
-        title="A calm, inquiry-first process from first details to final confirmation."
-        description="The Sweet Fork keeps the process simple: share the celebration details, receive a quote tailored to the event, then reserve the date once everything feels right."
+        title="How to order custom cakes and desserts."
+        description="Tell me about your celebration, I'll confirm availability and send a quote, then we'll finalize the details before pickup or delivery."
         accent="Most custom orders require about 2 weeks notice. Wedding cakes are best submitted 4 to 6 weeks ahead."
+        quoteNote="I quote every order around the date, guest count, design direction, and pickup or delivery needs."
         cta={defaultCta}
       />
       <section className="section-shell space-y-4 py-16 md:py-20">
@@ -37,15 +38,18 @@ export default function HowToOrderPage() {
               {item.step === "01"
                 ? "Event type, date, dessert needs, pickup or delivery, and inspiration if you have it"
                 : item.step === "02"
-                  ? "Quote, invoice, timing confirmation, and the next details The Sweet Fork needs to move forward"
+                  ? "Quote, invoice, timing confirmation, and any next details I need to move forward"
                   : "A 50% deposit secures the date, and final payment is due before pickup or delivery"}
             </p>
           </article>
         ))}
       </section>
       <InquiryCta
-        title="Ready to begin with the details The Sweet Fork needs most?"
-        description="The inquiry form keeps the process efficient without losing the custom guidance that makes a boutique order feel personal."
+        title="Tell me about your event and I'll get you a quote."
+        description="The form keeps the details organized while I guide the custom parts."
+        showEyebrow={false}
+        showSubtext={false}
+        showUrgencyNote={false}
       />
     </div>
   );

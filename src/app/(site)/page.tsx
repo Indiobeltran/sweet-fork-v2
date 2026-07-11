@@ -131,7 +131,7 @@ export default async function HomePage() {
                 href={data.hero.settings.primaryCtaHref ?? "/start-order"}
                 className="inline-flex min-h-14 w-full items-center justify-center rounded-full bg-charcoal px-6 py-4 text-center text-sm font-semibold tracking-[0.02em] text-ivory shadow-[0_18px_38px_rgba(44,36,27,0.16)] transition duration-200 hover:-translate-y-0.5 hover:bg-charcoal/92 active:scale-[0.985] sm:w-auto"
               >
-                {data.hero.settings.primaryCtaLabel ?? "Start Your Inquiry"}
+                {data.hero.settings.primaryCtaLabel ?? "Request a Quote"}
               </Link>
               <Link
                 href={secondaryCtaHref}
@@ -178,7 +178,7 @@ export default async function HomePage() {
                   The Sweet Fork
                 </p>
                 <p className="mt-3 max-w-[25rem] font-serif text-3xl leading-[0.98] sm:text-5xl">
-                  Custom desserts with a quiet luxury finish.
+                  Custom desserts baked from scratch for your celebration.
                 </p>
               </div>
             </div>
@@ -190,15 +190,9 @@ export default async function HomePage() {
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <SectionHeading
             eyebrow="Signature offerings"
-            title="Choose the dessert path that fits your celebration."
+            title="Explore desserts for your celebration"
             description="Explore the cakes, cookies, cupcakes, macarons, and wedding desserts available for local celebrations."
           />
-          <Link
-            href="/start-order"
-            className="inline-flex min-h-12 items-center justify-center rounded-full bg-charcoal px-5 py-3 text-sm font-semibold tracking-[0.02em] text-ivory shadow-[0_16px_34px_rgba(44,36,27,0.14)] transition hover:-translate-y-0.5 hover:bg-charcoal/92"
-          >
-            Start Your Inquiry
-          </Link>
         </div>
 
         <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
@@ -259,7 +253,7 @@ export default async function HomePage() {
             </div>
             <SitePrimaryCta
               href="/start-order"
-              label="Start Your Inquiry"
+              label="Request a Quote"
               buttonClassName="bg-ivory text-charcoal hover:bg-white sm:w-full lg:w-auto"
               className="max-w-xl"
             />
@@ -274,8 +268,8 @@ export default async function HomePage() {
         <div className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-end">
           <SectionHeading
             eyebrow="Gallery preview"
-            title="Recent work from The Sweet Fork."
-            description="A small preview of recent work, from polished cakes to custom cookies and dessert-table details."
+            title="Recent cakes and desserts from my kitchen."
+            description="A preview of recent work, from tiered cakes to custom cookies and dessert-table details."
           />
           <HomeGalleryCarousel items={visibleGalleryTeaserItems} />
         </div>
@@ -309,17 +303,11 @@ export default async function HomePage() {
               >
                 Explore Wedding Cakes
               </Link>
-              <Link
-                href="/start-order"
-                className="inline-flex min-h-12 w-full items-center justify-center rounded-full px-4 py-3 text-center text-sm font-semibold tracking-[0.02em] text-charcoal underline decoration-gold/40 underline-offset-4 transition hover:decoration-gold sm:w-auto"
-              >
-                Start a Wedding Inquiry
-              </Link>
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             {[
-              "Limited weekend availability",
+              "Limited weekly order calendar",
               "Companion desserts can be quoted together",
               "Delivery and setup are planned from the start",
             ].map((item) => (
@@ -334,7 +322,13 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <InquiryCta />
+      <InquiryCta
+        eyebrow="Small-batch availability"
+        title="Tell me about your event, and I'll send a quote if the date is available."
+        description="Share your event details, dessert needs, and design direction. I usually reply within 24 to 48 hours with a custom quote and next steps."
+        urgencyNote="Dates around peak wedding season, and holiday celebrations tend to book first."
+        showSubtext={false}
+      />
     </div>
   );
 }

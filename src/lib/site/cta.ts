@@ -1,17 +1,17 @@
 const productInquiryCtaBySlug = {
-  "custom-cakes": "Start Designing Your Cake",
-  "wedding-cakes": "Begin Your Wedding Cake Vision",
-  cupcakes: "Build Your Cupcake Box",
-  "sugar-cookies": "Plan Your Custom Cookie Set",
-  macarons: "Create Your Macaron Assortment",
-  "diy-kits": "Plan Your DIY Cookie Kit",
+  "custom-cakes": "Request a Quote",
+  "wedding-cakes": "Request a Quote",
+  cupcakes: "Request a Quote",
+  "sugar-cookies": "Request a Quote",
+  macarons: "Request a Quote",
+  "diy-kits": "Request a Quote",
 } as const;
 
 export type ProductInquirySlug = keyof typeof productInquiryCtaBySlug;
 
 export const defaultInquiryCta = {
   href: "/start-order",
-  label: "Start Your Inquiry",
+  label: "Request a Quote",
   subtext: "Takes 2–3 minutes • No commitment required",
 } as const;
 

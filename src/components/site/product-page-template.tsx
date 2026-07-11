@@ -14,7 +14,10 @@ import { getInquiryCtaBySlug } from "@/lib/site/cta";
 import type { GalleryItem, ProductPageContent } from "@/types/domain";
 
 type ProductPageTemplateProps = {
-  content: ProductPageContent;
+  content: ProductPageContent & {
+    finalCtaTitle?: string;
+    heroEyebrow?: string;
+  };
   showcaseItems?: GalleryItem[];
 };
 
@@ -113,7 +116,9 @@ export function ProductPageTemplate({
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(48,39,33,0.14),rgba(48,39,33,0.34)_46%,rgba(48,39,33,0.84))]" />
                 <div className="absolute inset-x-0 bottom-0 h-2/3 bg-[radial-gradient(ellipse_at_bottom_left,rgba(48,39,33,0.72),rgba(48,39,33,0.18)_58%,transparent_78%)]" />
                 <div className="absolute inset-x-0 bottom-0 p-6 text-ivory sm:p-8">
-                  <p className="eyebrow-label text-gold/80">What makes it premium</p>
+                  <p className="eyebrow-label text-gold/80">
+                    {content.heroEyebrow ?? "What makes it premium"}
+                  </p>
                   <p className="mt-4 max-w-[28rem] font-serif text-3xl leading-tight tracking-[-0.04em] sm:text-[2.35rem]">
                     {content.heroStatement}
                   </p>
@@ -155,7 +160,7 @@ export function ProductPageTemplate({
             <SectionHeading
               eyebrow="More examples"
               title={`See more ${content.shortTitle.toLowerCase()} work.`}
-              description="A closer look at recent Sweet Fork orders in this category."
+              description="A closer look at recent orders in this category."
             />
             <Link
               href={galleryHref}
@@ -208,7 +213,7 @@ export function ProductPageTemplate({
           ) : (
             <div className="mt-8 rounded-[1.75rem] border border-charcoal/10 bg-white px-6 py-6 shadow-soft sm:px-7">
               <p className="max-w-2xl text-base leading-8 text-charcoal/70">
-                Browse the full Sweet Fork gallery for more recent cakes, cookies,
+                Browse the full gallery for more recent cakes, cookies,
                 cupcakes, macarons, and seasonal work.
               </p>
               <Link
@@ -226,8 +231,8 @@ export function ProductPageTemplate({
         <div className="section-shell grid gap-10 lg:grid-cols-[0.92fr_1.08fr] lg:items-start">
           <SectionHeading
             eyebrow="Pricing Guide"
-            title="A simple investment starting point."
-            description="The Sweet Fork quotes each order individually, but this gives you a confident place to begin."
+            title="Starting prices before a custom quote."
+            description="I quote each order individually, but this gives you a clear place to begin."
           />
           <div className="luxury-panel overflow-hidden rounded-[2rem]">
             <div className="border-b border-charcoal/8 px-6 py-5">
@@ -269,14 +274,17 @@ export function ProductPageTemplate({
 
       <InquiryCta
         slug={content.slug}
-        title={`Ready to inquire about ${content.shortTitle.toLowerCase()}?`}
-        description="Share your date, dessert needs, and design direction, and The Sweet Fork will guide the next steps."
+        title={content.finalCtaTitle ?? `Ready to inquire about ${content.shortTitle.toLowerCase()}?`}
+        description="Share your date, dessert needs, and design direction, and I'll guide the next steps."
+        showEyebrow={false}
+        showSubtext={false}
+        showUrgencyNote={false}
       />
 
       <StickyProductCta
         href={cta.href}
         label={cta.label}
-        subtext={cta.subtext}
+        subtext=""
         analyticsEvent={
           content.slug === "wedding-cakes"
             ? "wedding_consultation_started"
