@@ -9,7 +9,7 @@ export async function generateMetadata() {
   return buildMetadata({
     title: "About",
     description:
-      "Learn about The Sweet Fork, a small custom bakery in Centerville, Utah specializing in handcrafted cakes, cupcakes, macarons, and decorated cookies.",
+      "Meet Melissa, the owner and baker behind The Sweet Fork, an owner-operated Centerville home bakery creating from-scratch custom cakes and desserts.",
     path: "/about",
   });
 }
@@ -77,8 +77,8 @@ export default async function AboutPage() {
         </div>
       </section>
       <InquiryCta
-        title="If The Sweet Fork style feels like the right fit, the next step is easy."
-        description="Submit the inquiry with your date, dessert needs, and design direction, and The Sweet Fork will guide the rest from there."
+        title="If my work feels like the right fit, share what you're planning."
+        description="Send your date, dessert needs, and design direction through the guided inquiry. I'll review the details and follow up with availability, a custom quote, and next steps."
       />
     </div>
   );

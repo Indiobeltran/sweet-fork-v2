@@ -4,6 +4,132 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## Owner-Operated Public Copy Pass — 2026-07-10 MDT
+
+- **Current branch**: `codex/public-copy-pass`.
+- **Starting commit**: `ded49ce` (`docs: add COPY-1 public copy proposal`), with local `main` and `origin/main` at `0191183`.
+- **Current objective**: Implement the explicitly approved controlled first-pass public copy correction, verify it, merge it to `main`, push, and verify production without redesigning the site or changing pricing/schema.
+- **Starting working tree**:
+  - Pre-existing modified file preserved: `HANDOFF.md` (the uncommitted COPY-1 proposal handoff entry immediately below this section).
+  - Pre-existing untracked files preserved and intentionally unstaged: `.agents/`, `.claude/`, `.superpowers/`, `scratch/`, `skills-lock.json`, and `supabase/.temp/linked-project.json`.
+- **Copy architecture used**:
+  - Static product, policy, pricing fallback, and shared-process copy remains in `src/lib/content/site-content.ts`.
+  - Homepage/About managed content and footer/SEO defaults remain in `src/lib/site/marketing.ts` plus the existing `content_blocks` and `site_settings` records.
+  - Live FAQ and product metadata remain database-backed.
+  - `20260711050221_public_copy_owner_positioning.sql` is a content-only migration that updates only named public content blocks/settings/FAQ answers/product descriptions. It does not alter schema, pricing, customers, inquiries, or orders.
+- **Public messaging implemented**:
+  - Homepage hero now identifies Melissa, the owner-operated Centerville home bakery, from-scratch custom work, and a carefully managed calendar in the first viewport.
+  - Added a compact homepage Meet Melissa module; retained the existing design system and page structure.
+  - About now opens with “owner and baker,” explains Melissa's involvement from inquiry through completion, balances flavor with presentation, and describes the calendar as focused capacity rather than scarcity.
+  - Every product page now carries one concise, category-specific Melissa/craft trust line through the shared product template.
+  - Shared CTAs, mobile navigation, product CTAs, pricing, How to Order, gallery, FAQ, and footer use inquiry-accurate and owner-led wording without implying instant checkout or a bakery team.
+  - “Quiet luxury,” “The Sweet Fork standard,” generic “investment,” “Shop by category,” and misleading “Build/Create” CTA wording were removed from the affected public surfaces.
+- **P0 Privacy correction**:
+  - Removed public internal-planning language about future reassessment, expansion, shipping, tracking, consent posture, and legal advice.
+  - Corrected the privacy description from uploads/images to the live functionality: public inspiration links and written notes.
+  - Retained current inquiry-data, analytics, record-retention, contact, and customer-question explanations without adding legal guarantees.
+  - **Internal recommendation**: have qualified counsel review the public Privacy and Terms text before any material tracking, shipping, geographic, or business-model expansion. This recommendation is intentionally not displayed on the public page.
+- **Policy consistency resolved**:
+  - General custom work uses about/minimum 2 weeks; wedding work uses 4–6 weeks; requests inside 2 weeks remain subject to availability and a rush fee up to 25%.
+  - Pickup is in Centerville. Delivery may be available across Davis, Weber, and Salt Lake Counties depending on date, distance/location, and order details. Shipping remains unavailable.
+  - Wedding copy now says there are no in-person tastings and tasting boxes may be available for an additional fee; the unsupported guaranteed-availability and possible-credit claims were removed.
+  - A 50% non-refundable deposit secures the order/date after quote approval. Inquiry submission alone does not reserve a date or create a confirmed order.
+  - Inspiration wording now matches the live inquiry: links and written notes, not uploads.
+  - DIY kit copy now consistently uses “DIY cookie decorating kits” and identifies the supported contents: cookies, frosting bags, sprinkles, and decorating instructions.
+- **Unresolved business decisions**:
+  - Exact final-payment deadline remains authoritative only in Terms (“no later than the day before pickup or delivery”). Other pages retain the compatible, less-specific “before pickup or delivery” wording. Owner confirmation is still needed before standardizing the exact deadline everywhere.
+  - Wedding tasting-box availability remains conditional; no tasting-box credit policy is currently authoritative.
+- **Inquiry-flow changes**:
+  - Steps 1–5 now sound like Melissa reviews the request rather than an undefined team or automated proposal system.
+  - Replaced “fulfillment,” “product mix,” “dessert story,” “active selection,” “proposal,” and similar internal language with customer-facing terms.
+  - Step 4 accurately supports links/notes and explains that inspiration is interpreted rather than copied.
+  - Step 5 and the success state state that submission does not reserve the date; the published 24–48-hour response window remains qualified, not guaranteed.
+  - Budget flexibility now starts unselected and validates until the customer intentionally chooses one of three plain-language options.
+  - Saved inquiry drafts now restore after hydration, preventing the prior server/client attribute mismatch while preserving draft persistence.
+  - Native date-picker permission errors are safely caught; direct date entry remains available when a browser declines `showPicker()`.
+- **Files changed recently**:
+  - Public routes: `src/app/(site)/page.tsx`, `about/page.tsx`, `faq/page.tsx`, `gallery/page.tsx`, `how-to-order/page.tsx`, `pricing/page.tsx`, `privacy/page.tsx`, `start-order/page.tsx`.
+  - Shared public components: `src/components/site/inquiry-cta.tsx`, `product-page-template.tsx`, `public-page-hero.tsx`, `site-footer.tsx`, `site-header.tsx`.
+  - Inquiry flow: `src/components/inquiry/start-order-wizard.tsx`, `wizard-helpers.ts`, `wizard-helpers.test.ts`, `wizard-state.ts`, `wizard-state.test.ts`, `src/lib/inquiries/config.ts`, `src/lib/inquiries/submit.ts`, `src/lib/validations/inquiry.ts`, `src/app/api/inquiries/route.ts`.
+  - Copy/data/metadata sources: `src/lib/content/site-content.ts`, `src/lib/site/cta.ts`, `src/lib/site/marketing.ts`, `src/types/domain.ts`, `supabase/migrations/20260711050221_public_copy_owner_positioning.sql`.
+  - Documentation: `HANDOFF.md`.
+- **Automated verification on task branch**:
+  - `git diff --check`: passed.
+  - `npm run lint`: passed.
+  - `npm run typecheck`: passed.
+  - `npm test`: passed, 165/165. The existing fail-soft Netlify bridge tests intentionally log simulated network/404 failures while passing.
+  - `npm run build`: passed; all 26 static pages generated and `/start-order` built successfully.
+  - `npx supabase migration list --linked`: only `20260711050221` is pending.
+  - `npx supabase db push --linked --dry-run`: passed and would apply only `20260711050221_public_copy_owner_positioning.sql`.
+  - Local database execution was unavailable because Docker was not running; the migration has not yet been applied at this handoff checkpoint.
+- **Desktop browser QA performed**:
+  - Unauthenticated checks completed for `/`, `/about`, all six product pages, `/pricing`, `/how-to-order`, `/gallery`, `/faq`, `/privacy`, `/terms`, and `/start-order`.
+  - All checked pages had expected titles/headings, no horizontal overflow, no public internal Privacy memo text, and no remaining “quiet luxury” copy.
+  - Product trust lines were visible, footer/contact language was correct, and no false production inquiry was submitted.
+  - The five-step inquiry was progressed locally through Step 5 using safe local-only test values; Step 4 correctly exposed links/notes, Step 5 showed the no-reservation statement, and submission was not triggered.
+- **Mobile browser QA performed at 390×844**:
+  - Homepage hero owner copy remained visible with no overflow.
+  - Mobile navigation opened correctly and used “Explore desserts.”
+  - Product trust copy remained visible.
+  - Inquiry opening copy remained visible; budget flexibility had zero selected choices on a fresh visit; Step 1 and the footer had no overflow.
+  - Saved-draft reload restored state after hydration with no new warning/error logs.
+- **Limitations**:
+  - The in-app browser could not directly automate the native date widget. A temporary local default date was used only to complete the five-step browser walk-through and was reverted before final verification.
+  - No production inquiry was submitted and no authenticated admin QA was needed.
+- **Commit / merge / deployment status at this checkpoint**:
+  - Task-branch commit: pending.
+  - Merge commit: pending.
+  - Final `main` hash: pending.
+  - Push/deployment: pending.
+- **Next exact task**: Commit the verified task files only, merge into `main`, rerun the required gates on `main`, push `main`, apply the single content-only migration, wait for deployment, verify the live public copy and inquiry defaults without submitting, then append final hashes/status here.
+
+## COPY-1 Public Site Copy Proposal — 2026-07-05 MDT
+
+- **Current branch**: `codex/public-copy-pass`.
+- **Starting point**: Fresh branch created from fetched `origin/main`.
+- **Current objective**: Phase A only for COPY-1: propose public marketing-site copy revisions for owner review without editing source files.
+- **Last completed work**:
+  - Read repo guidance docs and inspected public-site route/content sources.
+  - Located COPY-1 target strings across public marketing pages and shared public-site copy helpers.
+  - Created root-level `COPY-1-PROPOSAL.md` organized for a non-technical reviewer with before/after rows and deletion notes.
+  - Committed only `COPY-1-PROPOSAL.md` in commit `ded49ce` (`docs: add COPY-1 public copy proposal`).
+  - Did not edit public source files, the inquiry wizard, admin files, schema, data, image assets, alt text, testimonials, pricing table figures, or SEO title/meta tags.
+- **In-progress work**: None. Proposal is awaiting owner review.
+- **Next exact task**: Wait for Melissa/owner review. Phase B must implement only approved rows and any owner wording edits verbatim.
+- **Commands run**:
+  - `git status --short --branch`
+  - `git remote -v`
+  - `git branch --show-current`
+  - `git fetch origin main`
+  - `git branch --list codex/public-copy-pass`
+  - `git switch -c codex/public-copy-pass origin/main`
+  - `sed -n ...` reads for `AGENTS.md`, `HANDOFF.md`, `ROADMAP.md`, `GATES.md`, `DECISIONS.md`, `BACKLOG.md`, `README.md`, public route files, and public copy helper files
+  - `rg --files ...`
+  - Targeted `rg -n ...` public-copy sweeps across `src/app/(site)`, `src/components/site`, `src/lib/site`, and `src/lib/content`
+  - `wc -l COPY-1-PROPOSAL.md`
+  - `date '+%Y-%m-%d %Z %H:%M:%S'`
+  - `git diff -- HANDOFF.md`
+  - `find . -maxdepth 2 -name 'COPY-1-PROPOSAL.md' -type f -print`
+  - `git diff --stat`
+  - `git add COPY-1-PROPOSAL.md`
+  - `git diff --cached --stat`
+  - `git diff --cached --check`
+  - `git commit -m "docs: add COPY-1 public copy proposal"`
+- **Commands still needed**:
+  - None for Phase A until owner review. Phase B should run only on explicit human approval.
+- **Files changed recently by this task**:
+  - `COPY-1-PROPOSAL.md` (new proposal document)
+  - `HANDOFF.md` (COPY-1 handoff note; should remain uncommitted unless the owner explicitly wants it committed)
+- **Known issues / deviations**:
+  - Phase A did not run a dev server or visual verification because the spec reserves observed rendered-page verification for Phase B.
+  - SEO title/meta strings with banned words were intentionally excluded from the proposal because COPY-1 says not to touch SEO title/meta tags.
+  - Image alt text with banned words was intentionally excluded because COPY-1 says alt text is out of scope.
+  - About page founder/kitchen wording was intentionally left out of the proposal because Task 7 says the About page should only receive CTA-label and boilerplate-cap edits.
+  - Homepage CTA count reduction is included as a reviewer-facing proposed deletion, but Phase B should verify the approved implementation still respects the copy-only/markup guard or get owner clarification before structural removal.
+- **Open decisions**:
+  - Owner approval/rejection/editing of each proposed row.
+  - Whether homepage duplicate CTA removal is approved and how to implement it within the scope guard.
+
 ## Order Deletion Safety Hardening — 2026-07-04 MDT
 
 - **Current branch**: `codex/harden-order-deletion`.

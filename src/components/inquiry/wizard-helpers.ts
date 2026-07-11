@@ -60,7 +60,7 @@ export function getStepErrorMessage(stepIndex: number) {
 }
 
 export function getSafeSubmissionErrorMessage(error: unknown) {
-  const fallback = "We could not submit the inquiry right now. Please try again in a few minutes.";
+  const fallback = "The inquiry could not be submitted right now. Please try again in a few minutes.";
 
   if (!(error instanceof Error) || error.message.trim().length === 0) {
     return fallback;

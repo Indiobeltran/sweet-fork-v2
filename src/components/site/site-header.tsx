@@ -187,7 +187,7 @@ export function SiteHeader({
             <p className="text-[11px] uppercase tracking-[0.22em] text-charcoal/52">{tagline}</p>
 
             <div className="mt-6">
-              <p className="eyebrow-label">Shop by category</p>
+              <p className="eyebrow-label">Explore desserts</p>
               <nav className="mt-3 grid gap-2">
                 {primaryNavigation.map((item) => (
                   <Link
