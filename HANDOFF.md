@@ -59,9 +59,10 @@
   - `npm run typecheck`: passed.
   - `npm test`: passed, 165/165. The existing fail-soft Netlify bridge tests intentionally log simulated network/404 failures while passing.
   - `npm run build`: passed; all 26 static pages generated and `/start-order` built successfully.
-  - `npx supabase migration list --linked`: only `20260711050221` is pending.
-  - `npx supabase db push --linked --dry-run`: passed and would apply only `20260711050221_public_copy_owner_positioning.sql`.
-  - Local database execution was unavailable because Docker was not running; the migration has not yet been applied at this handoff checkpoint.
+  - `npx supabase migration list --linked`: initially showed only `20260711050221` pending; after deployment it shows the local and remote migration histories aligned.
+  - `npx supabase db push --linked --dry-run`: passed and identified only `20260711050221_public_copy_owner_positioning.sql`.
+  - Local database execution was unavailable because Docker was not running. The same single migration later applied successfully to the linked production project and its named public records were read back successfully.
+  - After merge, `npm run lint`, `npm run typecheck`, `npm test` (165/165), and `npm run build` all passed again on `main`.
 - **Desktop browser QA performed**:
   - Unauthenticated checks completed for `/`, `/about`, all six product pages, `/pricing`, `/how-to-order`, `/gallery`, `/faq`, `/privacy`, `/terms`, and `/start-order`.
   - All checked pages had expected titles/headings, no horizontal overflow, no public internal Privacy memo text, and no remaining “quiet luxury” copy.
@@ -76,12 +77,20 @@
 - **Limitations**:
   - The in-app browser could not directly automate the native date widget. A temporary local default date was used only to complete the five-step browser walk-through and was reverted before final verification.
   - No production inquiry was submitted and no authenticated admin QA was needed.
-- **Commit / merge / deployment status at this checkpoint**:
-  - Task-branch commit: pending.
-  - Merge commit: pending.
-  - Final `main` hash: pending.
-  - Push/deployment: pending.
-- **Next exact task**: Commit the verified task files only, merge into `main`, rerun the required gates on `main`, push `main`, apply the single content-only migration, wait for deployment, verify the live public copy and inquiry defaults without submitting, then append final hashes/status here.
+- **Commit / merge / deployment status**:
+  - Task-branch commit: `51d3fc0` (`feat: clarify owner-operated bakery messaging`).
+  - Merge commit / final application `main` hash: `79e9a49af1c92e376a5c2605f3bc7f6ded388c64` (`merge: clarify owner-operated bakery messaging`).
+  - `main` push: succeeded to `origin/main`.
+  - Production content migration: `20260711050221_public_copy_owner_positioning.sql` applied successfully; content blocks, brand/SEO settings, FAQ answer, and product metadata read-back matched the intended owner-led copy.
+  - Netlify production deploy: `6a51d2161f9c3400083aaa81`, context `production`, branch `main`, commit `79e9a49af1c92e376a5c2605f3bc7f6ded388c64`, state `ready`, published `2026-07-11T05:19:32.649Z`.
+  - This HANDOFF-only documentation commit follows the application merge; its hash is the final repository ref and does not change deployed application behavior.
+- **Production verification**:
+  - Live homepage title, hero eyebrow/headline/body, owner-led footer summary, and Centerville/local-service copy matched the approved implementation.
+  - Live About identified Melissa as owner and baker; live Custom Cakes displayed the category trust line; live How to Order identified Melissa as the reviewer.
+  - Live Privacy contained none of the removed internal reassessment/legal-advice language.
+  - Live inquiry opening was visible, budget flexibility had zero selected options on fresh desktop and mobile visits, and no customer data was entered or submitted.
+  - Desktop and 390×844 mobile checks showed no horizontal overflow and no browser warning/error logs.
+- **Recommended next step**: Treat this as the completed first pass. For the later refinement pass, confirm the exact final-payment deadline and tasting-box policy, obtain appropriate legal review of Terms/Privacy, and consider replacing remaining generic adjective-led alt/caption language only where it materially improves customer-facing clarity.
 
 ## COPY-1 Public Site Copy Proposal — 2026-07-05 MDT
 
