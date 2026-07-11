@@ -4,6 +4,32 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## Public Copy Pass Rollback — 2026-07-11 MDT
+
+- **Current branch**: `main`.
+- **Rollback request**: Restore the website and production content to the state immediately before the owner-operated public copy pass because the owner did not approve the result.
+- **Rollback target**: application/source tree from `0191183` (`docs: record order deletion hardening deployment`).
+- **Starting production ref**: `6b62591` (`docs: record public copy deployment`), with application merge `79e9a49` and owner-copy task commit `51d3fc0` beneath it.
+- **Pre-existing work preserved**: Untracked `.agents/`, `.claude/`, `.superpowers/`, `scratch/`, `skills-lock.json`, and `supabase/.temp/linked-project.json` remain untouched and unstaged.
+- **Git rollback completed locally**:
+  - `ce67365` reverts the final public-copy deployment documentation commit.
+  - `8f1b5ce` reverts merge commit `79e9a49` with parent 1 as the mainline.
+  - `git diff --exit-code 0191183 -- src next.config.ts netlify.toml package.json package-lock.json` passes, confirming the application/source/config tree matches the pre-copy-pass state.
+  - `COPY-1-PROPOSAL.md` and all public-copy source changes are removed by the merge revert.
+- **Supabase rollback approach**:
+  - The already-applied `20260711050221_public_copy_owner_positioning.sql` migration is retained in the repository solely to keep local and remote migration history aligned.
+  - `20260711134620_rollback_owner_copy_positioning.sql` restores the exact prior managed homepage, process, About, brand/SEO, FAQ, and product-description records.
+  - The rollback migration changes public content only; it does not change schema, pricing, customers, inquiries, or orders.
+  - `npx supabase db push --linked --dry-run` identifies only the rollback migration as pending.
+- **Verification completed locally**:
+  - `git diff --check`: passed.
+  - `npm run lint`: passed.
+  - `npm run typecheck`: passed.
+  - `npm test`: passed, 163/163. Existing fail-soft Netlify bridge tests intentionally log simulated network/404 outcomes while passing.
+  - `npm run build`: passed; all 26 static pages generated successfully.
+- **Current production status at this checkpoint**: The local rollback is verified but not yet pushed. The compensating content migration has not yet been applied.
+- **Next exact task**: Commit the migration-history and rollback documentation files, push the verified revert commits to `main`, apply the single compensating content migration, wait for the Netlify production deploy, verify the original live copy is restored, then record final hashes and deployment status.
+
 ## Order Deletion Safety Hardening — 2026-07-04 MDT
 
 - **Current branch**: `codex/harden-order-deletion`.
