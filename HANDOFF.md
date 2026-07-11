@@ -27,8 +27,20 @@
   - `npm run typecheck`: passed.
   - `npm test`: passed, 163/163. Existing fail-soft Netlify bridge tests intentionally log simulated network/404 outcomes while passing.
   - `npm run build`: passed; all 26 static pages generated successfully.
-- **Current production status at this checkpoint**: The local rollback is verified but not yet pushed. The compensating content migration has not yet been applied.
-- **Next exact task**: Commit the migration-history and rollback documentation files, push the verified revert commits to `main`, apply the single compensating content migration, wait for the Netlify production deploy, verify the original live copy is restored, then record final hashes and deployment status.
+- **Rollback commit and push**:
+  - `27bed268c3b254a81cf9d0dd8954730a604be918` (`revert: restore pre-copy public content`) retains migration history, adds the compensating migration, and records the rollback.
+  - `main` was pushed successfully through `27bed26`; `origin/main` matched before this final documentation update.
+- **Production content rollback**:
+  - `20260711134620_rollback_owner_copy_positioning.sql` applied successfully to the linked project.
+  - Local and remote migration histories align through `20260711134620`.
+  - Read-back confirmed the exact prior homepage hero/process, About story/settings, brand/SEO defaults, affected FAQ answers, and product descriptions.
+- **Production deployment**:
+  - Netlify deploy `6a5249d1d770520008ba158e` reached `ready` for production branch `main` at commit `27bed268c3b254a81cf9d0dd8954730a604be918`.
+  - Published at `2026-07-11T13:50:27.448Z`.
+  - Direct HTTP checks returned `200` for `/`, `/custom-cakes`, `/about`, `/start-order`, and `/privacy`; prior copy was present and the reverted copy-pass language was absent.
+  - No production inquiry or authenticated admin action was performed.
+- **Final state**: The public application/source/config tree matches `0191183`. Only append-only rollback/migration history and this operational handoff distinguish the repository from that historical commit.
+- **Recommended next step**: No further rollback action is required. Any future copy work should begin from the restored site and use a smaller owner-reviewed set of changes before implementation.
 
 ## Order Deletion Safety Hardening — 2026-07-04 MDT
 
