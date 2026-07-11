@@ -251,18 +251,12 @@ export function StartOrderWizard({
   submissionAvailable,
   submissionUnavailableMessage,
 }: StartOrderWizardProps) {
-  const [initialDraft] = useState(readInitialWizardDraft);
   const [startedAt] = useState(() => Date.now());
-  const [currentStep, setCurrentStep] = useState(() => initialDraft?.currentStep ?? 0);
-  const [hasStarted, setHasStarted] = useState(() =>
-    Boolean(initialDraft && initialDraft.currentStep > 0),
-  );
-  const [activeItemType, setActiveItemType] = useState<ProductType | null>(
-    () => initialDraft?.activeItemType ?? null,
-  );
-  const [values, setValues] = useState<InquiryFormValues>(
-    () => initialDraft?.values ?? createEmptyInquiryValues(),
-  );
+  const [currentStep, setCurrentStep] = useState(0);
+  const [hasStarted, setHasStarted] = useState(false);
+  const [activeItemType, setActiveItemType] = useState<ProductType | null>(null);
+  const [values, setValues] = useState<InquiryFormValues>(createEmptyInquiryValues);
+  const [draftReady, setDraftReady] = useState(false);
   const [errors, setErrors] = useState<ErrorMap>({});
   const [honeypotValue, setHoneypotValue] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -297,6 +291,19 @@ export function StartOrderWizard({
   );
 
   useEffect(() => {
+    const draft = readInitialWizardDraft();
+
+    if (draft) {
+      setCurrentStep(draft.currentStep);
+      setHasStarted(draft.currentStep > 0);
+      setActiveItemType(draft.activeItemType);
+      setValues(draft.values);
+    }
+
+    setDraftReady(true);
+  }, []);
+
+  useEffect(() => {
     if (selectedItems.length === 0) {
       setActiveItemType(null);
       return;
@@ -314,7 +321,7 @@ export function StartOrderWizard({
   }, [currentStep]);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (!draftReady || typeof window === "undefined") {
       return;
     }
 
@@ -334,7 +341,7 @@ export function StartOrderWizard({
     } catch {
       // Draft persistence is a browser convenience; the live controlled state remains canonical.
     }
-  }, [activeItemType, currentStep, values]);
+  }, [activeItemType, currentStep, draftReady, values]);
 
   useEffect(() => {
     if (viewedStepsRef.current.has(currentStep)) {
@@ -781,7 +788,7 @@ export function StartOrderWizard({
         `Event type: ${preparedValues.eventType || "Not set"}`,
         `Event date: ${preparedValues.eventDate || "Not set"}`,
         `Guest count: ${preparedValues.guestCount ?? "Not set"}`,
-        `Fulfillment: ${preparedValues.fulfillmentMethod}`,
+        `Pickup or delivery: ${preparedValues.fulfillmentMethod}`,
         `Delivery ZIP: ${preparedValues.deliveryZip ?? "Not needed / not set"}`,
         `Budget range: ${getBudgetRangeLabel(preparedValues.budgetRange)}`,
         `Budget flexibility: ${getBudgetFlexibilityLabel(preparedValues.budgetFlexibility)}`,
@@ -880,12 +887,12 @@ export function StartOrderWizard({
         throw new Error(
           payload && "error" in payload && payload.error
             ? payload.error
-            : "We could not submit the inquiry right now.",
+            : "The inquiry could not be submitted right now.",
         );
       }
 
       if (!payload || "error" in payload) {
-        throw new Error("We could not submit the inquiry right now.");
+        throw new Error("The inquiry could not be submitted right now.");
       }
 
       if (!submissionTrackedRef.current) {
@@ -1003,15 +1010,16 @@ export function StartOrderWizard({
             <Badge>Inquiry received</Badge>
             <div className="space-y-4">
               <h2 className="font-serif text-4xl tracking-[-0.04em] text-charcoal sm:text-5xl">
-                Your celebration details are in.
+                Thank you—your inquiry has been received.
               </h2>
               <p className="max-w-2xl text-base leading-8 text-charcoal/72">
                 Your request was received under{" "}
                 <span className="font-semibold text-charcoal">
                   {submissionResult.referenceCode}
                 </span>
-                . The Sweet Fork can now review the event scope, design direction, and timing
-                before sending the next reply.
+                . Melissa will review the date, dessert selections, and inspiration, then usually
+                follow up within 24 to 48 hours with availability, a custom quote, and next steps.
+                Your date is not reserved until the quote is approved and the required deposit is paid.
               </p>
             </div>
 
@@ -1037,7 +1045,7 @@ export function StartOrderWizard({
               </div>
               <div className="rounded-[1.8rem] border border-charcoal/8 bg-cream/70 p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                  Fulfillment
+                  Pickup or delivery
                 </p>
                 <p className="mt-3 text-lg font-medium text-charcoal capitalize">
                   {normalizedValues.fulfillmentMethod}
@@ -1053,21 +1061,21 @@ export function StartOrderWizard({
                 <div>
                   <p className="font-medium">1. Review</p>
                   <p className="mt-1 text-sm leading-7 text-ivory/70">
-                  The order details, selected desserts, and inspiration references are reviewed
-                  together.
+                  Melissa reviews the date, selected desserts, and inspiration against her
+                  carefully managed production calendar.
                 </p>
               </div>
               <div>
                 <p className="font-medium">2. Quote</p>
                 <p className="mt-1 text-sm leading-7 text-ivory/70">
-                  A quote and next-step details are prepared around the design, servings, timing,
-                  and delivery needs.
+                  Melissa prepares a custom quote around the design, servings, timing, and pickup
+                  or delivery needs.
                 </p>
               </div>
               <div>
                 <p className="font-medium">3. Reserve</p>
                 <p className="mt-1 text-sm leading-7 text-ivory/70">
-                  Once the quote is approved, a deposit secures the order date.
+                  Once the quote is approved, the required deposit secures the order date.
                 </p>
               </div>
             </div>
@@ -1103,7 +1111,7 @@ export function StartOrderWizard({
                   <p className="text-sm text-charcoal/60">
                     {hasStarted
                       ? "You can go back anytime to update your answers before submitting."
-                      : "Tell us what you are planning."}
+                      : "Tell Melissa what you're planning."}
                   </p>
                 </div>
                 {hasStarted ? <div className="lg:w-[18rem] lg:flex-none">{currentStepPanel}</div> : null}
@@ -1114,7 +1122,7 @@ export function StartOrderWizard({
                   <p className="font-medium text-charcoal">Online submission is paused.</p>
                   <p className="mt-1">
                     {submissionUnavailableMessage ??
-                      "You can still prepare your inquiry details here, then email The Sweet Fork directly from the review step."}
+                      "You can still prepare the inquiry details here, then email Melissa directly from the review step."}
                   </p>
                 </div>
               ) : catalogSource === "fallback" ? (
@@ -1127,12 +1135,12 @@ export function StartOrderWizard({
                 <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
                   <div className="min-w-0 space-y-2.5 sm:space-y-3">
                     <h2 className="font-serif text-[1.7rem] leading-[1.05] tracking-[-0.04em] text-charcoal sm:text-5xl sm:leading-tight">
-                      Tell us about your order so we can prepare a custom quote.
+                      Tell Melissa what you’re planning.
                     </h2>
-                    <p className="hidden max-w-2xl text-[0.95rem] leading-7 text-charcoal/70 sm:block sm:text-base sm:leading-8">
-                      Choose your desserts, share your event date, share style inspiration, and tell
-                      us the best way to reach you. We&apos;ll review the details and follow up with
-                      next steps.
+                    <p className="max-w-2xl text-[0.95rem] leading-7 text-charcoal/70 sm:text-base sm:leading-8">
+                      Share your date, desserts, quantities, budget, and inspiration. Melissa will
+                      personally review the details and follow up with availability, a custom quote,
+                      and next steps.
                     </p>
                   </div>
                   {currentStepPanel}
@@ -1162,7 +1170,7 @@ export function StartOrderWizard({
                   />
                 </div>
                 <p className="text-sm text-charcoal/58">
-                  Fields marked <span className="font-medium text-rose-700" aria-label="required">*</span> are needed for a tailored quote.
+                  Fields marked <span className="font-medium text-rose-700" aria-label="required">*</span> are needed for a custom quote.
                 </p>
               </div>
 
@@ -1266,7 +1274,11 @@ export function StartOrderWizard({
                       onKeyDown={(event) => {
                         if ((event.key === "Enter" || event.key === " ") && "showPicker" in event.currentTarget) {
                           event.preventDefault();
-                          event.currentTarget.showPicker?.();
+                          try {
+                            event.currentTarget.showPicker?.();
+                          } catch {
+                            // Native picker permissions vary by browser; the date field remains usable directly.
+                          }
                         }
                       }}
                       min={minimumEventDate}
@@ -1280,7 +1292,7 @@ export function StartOrderWizard({
                       aria-invalid={Boolean(errors.eventDate)}
                     />
                     <p id="event-date-hint" className="mt-2 text-sm text-charcoal/58">
-                      Choose a future date. The Sweet Fork reviews inquiry timing in Mountain Time.
+                      Choose a future date. Melissa reviews inquiry timing in Mountain Time. Submitting an inquiry does not reserve the date.
                     </p>
                     <InlineError id={getErrorDescriptionId("eventDate")} message={errors.eventDate} />
                   </div>
@@ -1310,7 +1322,7 @@ export function StartOrderWizard({
 
                 <div className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
                   <div className="space-y-3">
-                    <FieldLabel id="fulfillment-type-label" required>Fulfillment type</FieldLabel>
+                    <FieldLabel id="fulfillment-type-label" required>Pickup or delivery</FieldLabel>
                     <div
                       className="grid gap-3 sm:grid-cols-2"
                       role="group"
@@ -1338,6 +1350,9 @@ export function StartOrderWizard({
                       id={getErrorDescriptionId("fulfillmentMethod")}
                       message={errors.fulfillmentMethod}
                     />
+                    <p className="text-sm leading-6 text-charcoal/58">
+                      Pickup is in Centerville. Delivery may be available across Davis, Weber, and Salt Lake Counties depending on the date, location, and order details.
+                    </p>
                   </div>
 
                   <div>
@@ -1466,11 +1481,11 @@ export function StartOrderWizard({
                 <div className="grid gap-3 rounded-[2rem] border border-charcoal/8 bg-cream/60 p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
                   <div className="space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                      Product mix
+                      Dessert selections
                     </p>
                     <p className="text-sm leading-7 text-charcoal/68">
-                      Select every sweet you want The Sweet Fork to consider for this event. One
-                      inquiry can cover the full dessert story.
+                      Choose the desserts you would like Melissa to consider for your celebration.
+                      One inquiry can include multiple items.
                     </p>
                   </div>
                   <PartyPopper className="h-6 w-6 text-charcoal/45" />
@@ -1613,7 +1628,7 @@ export function StartOrderWizard({
                 </div>
 
                 <div className="rounded-[1.6rem] border border-charcoal/8 bg-cream/45 px-4 py-4 text-sm leading-7 text-charcoal/66">
-                  Counts or servings marked <span className="font-medium text-rose-700" aria-label="required">*</span> are needed before The Sweet Fork can review that item confidently.
+                  Counts or servings marked <span className="font-medium text-rose-700" aria-label="required">*</span> are needed before Melissa can prepare an accurate custom quote.
                 </div>
 
                 {activeItem ? (
@@ -1621,7 +1636,7 @@ export function StartOrderWizard({
                     <div className="flex flex-wrap items-center justify-between gap-4">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-                          Active selection
+                          Dessert details
                         </p>
                         <h3 className="mt-2 font-serif text-[2rem] tracking-[-0.04em] text-charcoal sm:text-4xl">
                           {catalogMap[activeItem.productType]?.name ??
@@ -2038,7 +2053,7 @@ export function StartOrderWizard({
                             inspirationNotes: event.target.value,
                           })
                         }
-                        placeholder="Anything about this item that should stand out in the proposal"
+                        placeholder="Anything about this item Melissa should consider in the custom quote"
                         className={cn(
                           "min-h-[120px]",
                           getFieldErrorClass(errors[itemPath(activeItem.productType, "inspirationNotes")]),
@@ -2059,7 +2074,7 @@ export function StartOrderWizard({
                       Style & inspiration
                     </p>
                     <p className="text-sm leading-7 text-charcoal/68">
-                      Share any inspiration links or describe the look you have in mind. Pinterest boards, Instagram posts, invitations, color palettes, florals, and mood-board links are all helpful.
+                      Share the colors, mood, florals, textures, wording, or inspiration you’re drawn to. Melissa will use them as a starting point rather than copy another design exactly.
                     </p>
                   </div>
                   <ImagePlus className="h-6 w-6 text-charcoal/45" />
@@ -2139,7 +2154,7 @@ export function StartOrderWizard({
                   <div>
                     <Label htmlFor="inspiration-text">Style notes</Label>
                     <p className="mt-1 mb-3 text-sm leading-7 text-charcoal/60">
-                      Tell us about colors, themes, florals, textures, favorite designs, or anything you want us to know.
+                      Tell Melissa about colors, themes, florals, textures, wording, or anything else that should guide the design.
                     </p>
                     <Textarea
                       id="inspiration-text"
@@ -2148,7 +2163,7 @@ export function StartOrderWizard({
                       onChange={(event) =>
                         setFieldValue("inspirationText", event.target.value)
                       }
-                      placeholder="Share the mood, must-have details, floral direction, venue feel, or anything the images do not explain well."
+                      placeholder="Share the mood, must-have details, floral direction, venue feel, or anything the links do not explain well."
                       className={cn(
                         "min-h-[180px]",
                         getFieldErrorClass(errors.inspirationText),
@@ -2172,7 +2187,7 @@ export function StartOrderWizard({
                     Optional
                   </p>
                   <p className="mt-3 text-sm leading-7 text-charcoal/68">
-                    No inspiration ready yet? That is completely okay — we can help shape the design from your event details.
+                    No inspiration ready yet? That is completely okay—Melissa can shape the design from your event details.
                   </p>
                 </div>
               </div>
@@ -2328,7 +2343,7 @@ export function StartOrderWizard({
                 </div>
 
                 <div>
-                  <Label htmlFor="additional-notes">Anything else we should know?</Label>
+                  <Label htmlFor="additional-notes">Anything else Melissa should know?</Label>
                   <Textarea
                     id="additional-notes"
                     ref={registerFieldRef("additionalNotes")}
@@ -2451,6 +2466,9 @@ export function StartOrderWizard({
                       </div>
                     </div>
                   </div>
+                  <p className="mt-5 text-sm leading-7 text-ivory/72">
+                    Submitting this form sends your inquiry for review. It does not reserve your date or create a confirmed order.
+                  </p>
                 </div>
               </div>
             ) : null}
@@ -2511,7 +2529,7 @@ export function StartOrderWizard({
                     }
                     className="w-full sm:w-auto"
                   >
-                    {isSubmitting ? "Submitting inquiry..." : "Submit inquiry"}
+                    {isSubmitting ? "Submitting inquiry..." : "Submit Inquiry"}
                   </Button>
                 )}
               </div>
@@ -2527,15 +2545,15 @@ export function StartOrderWizard({
                   What happens next
                 </p>
                 <h3 className="mt-3 font-serif text-[2rem] tracking-[-0.04em] text-charcoal sm:text-4xl">
-                  Thoughtful review, then a tailored quote.
+                  Melissa reviews the details, then prepares a custom quote.
                 </h3>
               </div>
               <Sparkles className="h-5 w-5 text-charcoal/40" />
             </div>
             <div className="mt-5 space-y-3 text-sm leading-7 text-charcoal/66">
-              <p>1. The Sweet Fork reviews the event details, selected desserts, and inspiration.</p>
-              <p>2. A quote and next-step details are usually sent within 24 to 48 hours.</p>
-              <p>3. If everything looks right, a deposit secures the date on the calendar.</p>
+              <p>1. Melissa reviews the date, dessert selections, and inspiration against her carefully managed production calendar.</p>
+              <p>2. She usually follows up within 24 to 48 hours with availability, a custom quote, and next steps.</p>
+              <p>3. If the quote is approved, the required deposit secures the date. The inquiry itself does not reserve it.</p>
             </div>
           </div>
 
@@ -2557,7 +2575,7 @@ export function StartOrderWizard({
                 }
               />
               <StatRow
-                label="Fulfillment"
+                label="Pickup or delivery"
                 value={normalizedValues.fulfillmentMethod === "delivery" ? "Delivery" : "Pickup"}
               />
               <StatRow

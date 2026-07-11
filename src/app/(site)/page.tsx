@@ -16,7 +16,7 @@ export async function generateMetadata() {
   return buildMetadata({
     title: "Custom Cakes & Desserts in Centerville, Utah",
     description:
-      "Custom cakes, wedding cakes, cupcakes, macarons, sugar cookies, and DIY kits crafted in Centerville, Utah with a polished, boutique finish.",
+      "Melissa creates from-scratch custom cakes and desserts from her owner-operated home bakery in Centerville, Utah, with local pickup and select delivery.",
     path: "/",
   });
 }
@@ -141,7 +141,7 @@ export default async function HomePage() {
               </Link>
             </div>
             <p className="text-sm leading-6 text-charcoal/60">
-              Inquiry takes 2-3 minutes. No commitment required.
+              Start with a guided inquiry. Submitting it does not reserve your date.
             </p>
 
             <div className="hidden gap-2.5 sm:grid sm:grid-cols-3">
@@ -178,7 +178,7 @@ export default async function HomePage() {
                   The Sweet Fork
                 </p>
                 <p className="mt-3 max-w-[25rem] font-serif text-3xl leading-[0.98] sm:text-5xl">
-                  Custom desserts with a quiet luxury finish.
+                  Beautiful desserts designed for your celebration.
                 </p>
               </div>
             </div>
@@ -233,6 +233,27 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section className="border-y border-charcoal/7 bg-cream/58 py-12 md:py-16">
+        <div className="section-shell grid gap-8 lg:grid-cols-[0.78fr_1.22fr] lg:items-center">
+          <SectionHeading
+            eyebrow="Meet Melissa"
+            title="One baker guiding each custom order from first ideas to final details."
+            description="I'm the owner, baker, and designer behind The Sweet Fork. I personally guide each order through design, baking, finishing, and pickup or delivery coordination, with a carefully managed calendar that leaves room for focused attention and clear communication."
+          />
+          <div className="luxury-panel rounded-[1.8rem] px-6 py-6 sm:px-8 sm:py-8">
+            <p className="text-base leading-8 text-charcoal/72">
+              From-scratch flavor matters as much as presentation. Inspiration is welcome, and I use it to shape a cake or dessert collection that fits your celebration rather than copy another baker’s design exactly.
+            </p>
+            <Link
+              href="/about"
+              className="mt-5 inline-flex text-sm font-semibold uppercase tracking-[0.16em] text-charcoal transition hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50"
+            >
+              Meet Melissa
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <section className="relative overflow-hidden border-y border-gold/10 bg-[linear-gradient(135deg,rgb(var(--color-charcoal)),rgba(44,36,27,0.94))] py-12 text-ivory md:py-16">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/30 to-transparent" />
         <div className="section-shell grid gap-9 lg:grid-cols-[0.86fr_1.14fr] lg:items-start">
@@ -264,7 +285,7 @@ export default async function HomePage() {
               className="max-w-xl"
             />
             <p className="text-sm leading-7 text-ivory/68">
-              Share the event, timing, dessert mix, and design direction.
+              Share the date, desserts, quantities, budget, and inspiration Melissa needs to review the request.
             </p>
           </div>
         </div>
@@ -319,7 +340,7 @@ export default async function HomePage() {
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             {[
-              "Limited weekend availability",
+              "Wedding dates are carefully scheduled",
               "Companion desserts can be quoted together",
               "Delivery and setup are planned from the start",
             ].map((item) => (

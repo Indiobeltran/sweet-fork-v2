@@ -96,7 +96,7 @@ function parsePayload(payload: string) {
     return parsed;
   } catch {
     throw new InquirySubmissionError(
-      "We couldn't read the inquiry details. Please refresh the page and try again.",
+      "The inquiry details couldn't be read. Please refresh the page and try again.",
     );
   }
 }
@@ -106,7 +106,7 @@ function validateRequestOrigin(request: Request) {
 
   if (!isAllowedInquiryRequestOrigin({ originHeader, requestUrl: request.url })) {
     throw new InquirySubmissionError(
-      "We couldn't verify this inquiry. Please refresh the page and try again.",
+      "This inquiry couldn't be verified. Please refresh the page and try again.",
       403,
     );
   }
@@ -123,7 +123,7 @@ function validateRequestSize(request: Request) {
 
   if (!Number.isFinite(contentLength) || contentLength < 0) {
     throw new InquirySubmissionError(
-      "We couldn't read the inquiry details. Please refresh the page and try again.",
+      "The inquiry details couldn't be read. Please refresh the page and try again.",
     );
   }
 
@@ -251,7 +251,7 @@ export async function POST(request: Request) {
 
     if (typeof honeypot === "string" && honeypot.trim().length > 0) {
       throw new InquirySubmissionError(
-        "We couldn't verify this inquiry. Please refresh the page and try again.",
+        "This inquiry couldn't be verified. Please refresh the page and try again.",
       );
     }
 
@@ -320,7 +320,7 @@ export async function POST(request: Request) {
     const message =
       isInquirySubmissionError(error)
         ? error.message
-        : "We could not submit the inquiry right now. Please try again in a few minutes.";
+        : "The inquiry could not be submitted right now. Please try again in a few minutes.";
     const status = isInquirySubmissionError(error) ? error.status : 500;
 
     if (!isInquirySubmissionError(error)) {

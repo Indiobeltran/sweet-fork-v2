@@ -9,7 +9,7 @@ export async function generateMetadata() {
   return buildMetadata({
     title: "Pricing",
     description:
-      "A starting-price investment guide for custom cakes, wedding cakes, cupcakes, sugar cookies, macarons, and DIY kits in Centerville, Utah.",
+      "Starting prices for custom cakes, wedding cakes, cupcakes, sugar cookies, macarons, and DIY kits from The Sweet Fork in Centerville, Utah.",
     path: "/pricing",
   });
 }
@@ -22,9 +22,9 @@ export default async function PricingPage() {
     <div>
       <PublicPageHero
         eyebrow="Pricing"
-        title="A clear starting-point investment guide for custom cakes and desserts."
-        description="Every order from The Sweet Fork is quoted individually, but these starting prices help set expectations before you submit an inquiry."
-        accent="These starting prices help you plan, while the final quote reflects your guest count, design details, and pickup or delivery needs."
+        title="Starting prices for custom cakes and desserts."
+        description="Every celebration is different, so custom orders are quoted individually. These starting prices show the typical minimums; the final quote reflects servings, quantity, design detail, packaging, and pickup or delivery needs."
+        accent="Use these starting prices to check fit before sharing your date and celebration details with Melissa."
         cta={defaultCta}
       />
 
@@ -40,10 +40,10 @@ export default async function PricingPage() {
           <div className="space-y-5">
             <p className="eyebrow-label">Starting prices</p>
             <h2 className="font-serif text-5xl leading-[0.92] tracking-[-0.05em] text-charcoal">
-              Custom work starts with a baseline, then becomes more specific from there.
+              Clear pricing guidance before you inquire.
             </h2>
             <p className="text-base leading-8 text-charcoal/68">
-              Final quotes are shaped by quantity, servings, finish complexity, delivery, and overall event scope. The guide below gives you a helpful starting point before a custom quote is prepared.
+              Final quotes are shaped by quantity, servings, piping and finish details, packaging, delivery, and the overall event scope.
             </p>
           </div>
 
@@ -119,22 +119,22 @@ export default async function PricingPage() {
             <p className="eyebrow-label">Delivery</p>
             <p className="mt-4 font-serif text-3xl tracking-[-0.04em] text-charcoal">$15–$50+</p>
             <p className="mt-3 text-sm leading-7 text-charcoal/66">
-              Delivery is available across nearby Northern Utah communities and is quoted by location.
+              Delivery may be available across Davis, Weber, and Salt Lake Counties depending on the date, distance, and order details.
             </p>
           </article>
           <article className="luxury-panel rounded-[1.8rem] px-6 py-6">
             <p className="eyebrow-label">Reserve the date</p>
             <p className="mt-4 font-serif text-3xl tracking-[-0.04em] text-charcoal">50% deposit</p>
             <p className="mt-3 text-sm leading-7 text-charcoal/66">
-              The date is secured once the quote is approved and the deposit is received.
+              The date is secured once the quote is approved and the 50% non-refundable deposit is received. An inquiry alone does not reserve it.
             </p>
           </article>
         </div>
       </section>
 
       <InquiryCta
-        title="Ready for a quote tailored to your event?"
-        description="The inquiry form is the fastest way to share the details The Sweet Fork needs to confirm fit, timing, and next steps."
+        title="Ready for a custom quote for your event?"
+        description="Share your date, desserts, quantities, budget, and inspiration. Melissa will review the request and follow up with availability, a custom quote, and next steps."
       />
     </div>
   );

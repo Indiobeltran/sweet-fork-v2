@@ -97,6 +97,20 @@ describe("editable keyboard targets", () => {
 });
 
 describe("wizard draft state", () => {
+  it("does not silently preselect a budget flexibility option", () => {
+    const parsed = parseWizardDraft(
+      JSON.stringify({
+        activeItemType: null,
+        currentStep: 0,
+        savedAt: new Date().toISOString(),
+        values: {},
+        version: 1,
+      }),
+    );
+
+    assert.equal(parsed?.values.budgetFlexibility, "");
+  });
+
   it("treats non-default preference choices as meaningful draft data", () => {
     assert.equal(
       hasMeaningfulWizardValues({
@@ -242,6 +256,18 @@ describe("start-order wizard source contracts", () => {
     assert.doesNotMatch(source, /setValues\(normalizedValues\)/);
     assert.doesNotMatch(source, /setValues\(normalizeInquiryFormValues/);
     assert.doesNotMatch(source, /const selectedItems = normalizedValues\.orderItems/);
+  });
+
+  it("restores saved drafts after hydration before persisting changes", async () => {
+    const source = await readFile(
+      new URL("./start-order-wizard.tsx", import.meta.url),
+      "utf8",
+    );
+
+    assert.match(source, /const \[draftReady, setDraftReady\] = useState\(false\)/);
+    assert.match(source, /useEffect\(\(\) => \{[\s\S]+readInitialWizardDraft\(\)[\s\S]+setDraftReady\(true\)/);
+    assert.match(source, /if \(!draftReady \|\| typeof window === "undefined"\)/);
+    assert.doesNotMatch(source, /useState\(readInitialWizardDraft\)/);
   });
 
   it("keeps admin inquiry detail wrappers constrained for long customer text", async () => {

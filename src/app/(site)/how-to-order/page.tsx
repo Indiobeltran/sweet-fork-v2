@@ -8,7 +8,7 @@ export async function generateMetadata() {
   return buildMetadata({
     title: "How to Order",
     description:
-      "Learn how The Sweet Fork inquiry, quote, deposit, pickup, and delivery process works.",
+      "Learn how Melissa reviews each Sweet Fork inquiry and guides the custom quote, deposit, pickup, and local delivery process.",
     path: "/how-to-order",
   });
 }
@@ -20,8 +20,8 @@ export default function HowToOrderPage() {
     <div>
       <PublicPageHero
         eyebrow="How to order"
-        title="A calm, inquiry-first process from first details to final confirmation."
-        description="The Sweet Fork keeps the process simple: share the celebration details, receive a quote tailored to the event, then reserve the date once everything feels right."
+        title="A clear, personal process from first details to pickup or delivery."
+        description="Ordering begins with a guided inquiry rather than instant checkout. Share your date, dessert needs, guest count, pickup or delivery preference, and inspiration. Melissa reviews each request and follows up with availability, a custom quote, and clear next steps."
         accent="Most custom orders require about 2 weeks notice. Wedding cakes are best submitted 4 to 6 weeks ahead."
         cta={defaultCta}
       />
@@ -37,15 +37,15 @@ export default function HowToOrderPage() {
               {item.step === "01"
                 ? "Event type, date, dessert needs, pickup or delivery, and inspiration if you have it"
                 : item.step === "02"
-                  ? "Quote, invoice, timing confirmation, and the next details The Sweet Fork needs to move forward"
-                  : "A 50% deposit secures the date, and final payment is due before pickup or delivery"}
+                  ? "Availability, custom pricing, and the next details Melissa needs to move forward"
+                  : "A 50% non-refundable deposit secures the date; an inquiry alone does not reserve it"}
             </p>
           </article>
         ))}
       </section>
       <InquiryCta
-        title="Ready to begin with the details The Sweet Fork needs most?"
-        description="The inquiry form keeps the process efficient without losing the custom guidance that makes a boutique order feel personal."
+        title="Ready to share your celebration details?"
+        description="The guided inquiry gives Melissa the date, quantities, budget, and inspiration needed to review availability and prepare an accurate custom quote."
       />
     </div>
   );

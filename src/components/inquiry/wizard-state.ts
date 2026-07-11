@@ -148,7 +148,7 @@ function getDraftDefaults(): InquiryFormValues {
     fulfillmentMethod: "pickup",
     deliveryZip: undefined,
     budgetRange: "not-sure",
-    budgetFlexibility: "moderate",
+    budgetFlexibility: "" as InquiryFormValues["budgetFlexibility"],
     orderItems: [],
     colorPalette: undefined,
     inspirationLinks: [],
@@ -327,7 +327,7 @@ export function hasMeaningfulWizardValues(values: InquiryFormValues) {
       values.fulfillmentMethod !== "pickup" ||
       values.deliveryZip ||
       values.budgetRange !== "not-sure" ||
-      values.budgetFlexibility !== "moderate" ||
+      Boolean(values.budgetFlexibility) ||
       values.orderItems.length > 0 ||
       values.colorPalette ||
       values.inspirationLinks.length > 0 ||
