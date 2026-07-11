@@ -160,6 +160,52 @@ All routes below were loaded from the fallback-mode local dev server after the a
 
 Have a human reviewer inspect this branch. Before any production migration application, complete the mandatory backup in the procedure above, rerun the dry run, apply the migration only under supervision, run the read-back queries, and then visually inspect the deployed public pages for the managed-copy changes.
 
+### COPY-1 Go-Live — 2026-07-11 MDT
+
+- **Human backup decision**: The required `pg_dump` step was explicitly waived after the environment did not expose the password to the command process. No dump file was created or retained; there is no backup-file location to record.
+- **Production migration**: `npx supabase db push --linked` applied only `20260711172939_copy_1_public_copy_phase_b.sql` successfully. No schema, RLS, table, enum, storage, pricing, customer, inquiry, order, or product-row change was applied.
+- **Merge and push**: `codex/public-copy-pass-phase-b` was merged into `main` as `27f0301c14af7c643a7594f5337d04abaf423810` (`merge: apply approved public copy revisions`) and pushed to `origin/main`. No other branch or commit was merged.
+- **Netlify production deploy**: Deploy `6a5281636900720007483791` reached `ready` for commit `27f0301` at `2026-07-11T17:47:39.747Z`, with an 87-second deploy time. Production URL: `https://thesweetfork.com`.
+
+#### Production Browser Verification
+
+All fourteen touched public pages were loaded from `https://thesweetfork.com` after the deploy. Desktop screenshots were inspected and every page reported no horizontal overflow.
+
+| Page | Rendered production copy observed | Layout |
+|---|---|---|
+| Home | `Custom cakes and desserts, designed for your celebration and baked from scratch in Centerville, Utah.` `I take a limited number of orders each week. Every cake and dessert is made to order, start to finish, by me.` | Unbroken desktop. |
+| Pricing | `Pricing Guide` and `I quote every order individually, but these starting prices help you plan before you request a quote.` | Unbroken desktop. |
+| How to Order | `How to order custom cakes and desserts.` and `Tell me about your celebration, I'll confirm availability and send a quote...` | Unbroken desktop. |
+| Custom Cakes | `Custom cakes baked from scratch for birthdays, showers, and milestone celebrations.` and `From-scratch cake layers, real butter buttercream, and one baker from first sketch to final box.` | Unbroken desktop. |
+| Wedding Cakes | Rejected headline remains `Wedding cakes with an elegant, tailored presence for Northern Utah celebrations.` Updated description begins `I quote each wedding cake around servings...`; rejected overlay statement remains `Designed as a focal point...`. | Unbroken desktop. |
+| Cupcakes | `Custom cupcakes for dessert tables, gifting, and easy-to-serve celebrations.` and the piped-buttercream overlay statement. | Unbroken desktop. |
+| Sugar Cookies | `Decorated sugar cookies styled for favors, gifting, and dessert tables.` and `Buttercream sugar cookies are designed to feel personal...` | Unbroken desktop. |
+| Macarons | `Custom macarons for gifting, dessert tables, and party orders.` and `Macarons bring color, flavor, and a giftable finish...` | Unbroken desktop. |
+| DIY Kits | `What goes into every kit` and the scratch-baked cookies, buttercream, sprinkles, and color-themed decorating statement. | Unbroken desktop. |
+| FAQ | `Answers to the questions clients ask before requesting a quote.` and `Start with the online form. I usually reply within 24 to 48 hours with a detailed quote...` | Unbroken desktop. |
+| About | Existing owner story remains; the side-panel label is `Made to order`; removed final scarcity/helper copy remains absent. | Unbroken desktop. |
+| Gallery | `Browse recent work across birthdays, weddings, showers, gifting moments, and dessert tables.` and final CTA heading `Have a direction in mind after browsing?` | Unbroken desktop and mobile. |
+| Terms | `These terms summarize... custom orders placed with me.` and `Customers with severe allergies should contact me before ordering.` | Unbroken desktop. |
+| Privacy | `This page covers the information customers share when requesting a custom order with me...` and `Preferred contact details are used so I can follow up...` | Unbroken desktop. |
+
+- **Melissa's five exact edits** were observed in production: Homepage `Explore desserts for your celebration`; Homepage `Dates around peak wedding season, and holiday celebrations tend to book first.`; FAQ licensing answer beginning `I operate under Utah's Home Consumption and Homemade Food Act...`; Privacy analytics sentence `I use site analytics to understand site performance, popular pages, and the inquiry journey so the website can be improved for local customers.`; and the approved `Request a Quote` CTA label sitewide.
+- **Mobile Gallery**: At 390px wide, the approved gallery sentence and `Request a Quote` button were visible with no horizontal overflow.
+- **Observed CTA click-throughs**: Homepage hero and Custom Cakes hero `Request a Quote` buttons each navigated to `https://thesweetfork.com/start-order` and rendered the `Start your inquiry` wizard heading. No production inquiry was submitted.
+
+#### Production Read-Back
+
+- `content_blocks`: Home hero, wedding highlight, and process rows contain the approved headings, bodies, three craft pillars, three process steps, and `primaryCtaLabel: Request a Quote`.
+- `site_settings`: `brand.identity.description` now reads `Custom cakes, wedding cakes, cupcakes, macarons, and decorated cookies made to order in Centerville, Utah with from-scratch recipes and custom design details.` No `booking.notice` row exists, so the optional booking notice was not created by the content-only update.
+- `faq_items`: All approved answer values match production, including Melissa's licensing sentence. Two existing `Do you offer tastings?` rows were both updated to the same approved sentence.
+- `products`: All six requested product rows read back unchanged, as required by the untouched-rows rule.
+
+#### Go-Live Commands and Final State
+
+- Ran: `npx supabase db push --linked`, `git fetch origin main`, `git merge --no-ff codex/public-copy-pass-phase-b`, `git push origin main`, Netlify deploy polling, production browser verification, and production read-back queries.
+- **No backup**: waived by explicit human decision; `pg_dump` was not retried.
+- **No source changes were made during go-live.** This handoff update is the only local post-deploy change and must be committed to `main`.
+- **Known follow-up**: During production screenshot checks, Custom Cakes, Wedding Cakes, Sugar Cookies, Macarons, and DIY Kits showed dark product-hero media panels while Cupcakes showed its image. COPY-1 did not change media code or assignments, so this was not investigated or changed during go-live.
+
 ## Public Copy Pass Rollback — 2026-07-11 MDT
 
 - **Current branch**: `main`.
