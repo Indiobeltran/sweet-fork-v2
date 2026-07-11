@@ -8,6 +8,9 @@ type InquiryCtaProps = {
   title?: string;
   description?: string;
   urgencyNote?: string;
+  showEyebrow?: boolean;
+  showSubtext?: boolean;
+  showUrgencyNote?: boolean;
 };
 
 export function InquiryCta({
@@ -16,6 +19,9 @@ export function InquiryCta({
   title = "Reserve a place on The Sweet Fork calendar before your date fills.",
   description = "Share the event details, dessert needs, and overall design direction in one guided inquiry. Most replies are sent within 24 to 48 hours with quote-ready next steps.",
   urgencyNote = "Dates around weddings, holidays, and peak weekends tend to book first.",
+  showEyebrow = true,
+  showSubtext = true,
+  showUrgencyNote = true,
 }: InquiryCtaProps) {
   const cta = getInquiryCtaBySlug(slug);
   const productCategory = slug ? getProductCategory(slug) : undefined;
@@ -28,7 +34,9 @@ export function InquiryCta({
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/35 to-transparent" />
       <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1.08fr_0.92fr] lg:items-end">
         <div className="space-y-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gold/70">{eyebrow}</p>
+          {showEyebrow ? (
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gold/70">{eyebrow}</p>
+          ) : null}
           <h2 className="max-w-3xl text-balance font-serif text-4xl leading-[0.96] sm:text-5xl">
             {title}
           </h2>
@@ -38,7 +46,7 @@ export function InquiryCta({
           <SitePrimaryCta
             href={cta.href}
             label={cta.label}
-            subtext={cta.subtext}
+            subtext={showSubtext ? cta.subtext : undefined}
             buttonClassName="bg-ivory text-charcoal hover:bg-white sm:w-full"
             analyticsEvent={
               slug === "wedding-cakes"
@@ -51,9 +59,11 @@ export function InquiryCta({
               ...(slug ? { page_path: `/${slug}`, product_slug: slug } : {}),
             }}
           />
-          <p className="text-sm leading-7 text-ivory/66">
-            {urgencyNote}
-          </p>
+          {showUrgencyNote ? (
+            <p className="text-sm leading-7 text-ivory/66">
+              {urgencyNote}
+            </p>
+          ) : null}
         </div>
       </div>
     </section>

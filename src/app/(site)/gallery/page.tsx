@@ -31,7 +31,7 @@ export default async function GalleryPage() {
                   Custom cakes and desserts created for recent celebrations.
                 </h1>
                 <p className="max-w-2xl text-base leading-7 text-charcoal/74 sm:text-lg">
-                  Browse The Sweet Fork work across birthdays, weddings, showers, gifting
+                  Browse recent work across birthdays, weddings, showers, gifting
                   moments, and dessert tables.
                 </p>
               </div>
@@ -56,7 +56,10 @@ export default async function GalleryPage() {
       </section>
       <InquiryCta
         title="Have a direction in mind after browsing?"
-        description="Share the event details, product mix, and inspiration that feels closest to your celebration, and The Sweet Fork will take it from there."
+        description="Share the event details, product mix, and inspiration that feels closest to your celebration, and I'll take it from there."
+        showEyebrow={false}
+        showSubtext={false}
+        showUrgencyNote={false}
       />
     </div>
   );

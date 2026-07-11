@@ -1,9 +1,14 @@
 import type { GalleryItem, ProductPageContent, ProductType } from "@/types/domain";
 
+type ProductPageCopyOverrides = {
+  finalCtaTitle?: string;
+  heroEyebrow?: string;
+};
+
 export const siteConfig = {
   name: "The Sweet Fork",
   description:
-    "Custom cakes, wedding cakes, cupcakes, macarons, and decorated cookies made to order in Centerville, Utah. Artisan quality, limited availability.",
+    "Custom cakes, wedding cakes, cupcakes, macarons, and decorated cookies made to order in Centerville, Utah with from-scratch recipes and custom design details.",
   phone: "(801) 739-4168",
   email: "thesweetfork@yahoo.com",
   instagram: "the_sweet_fork",
@@ -30,15 +35,17 @@ export const secondaryNavigation = [
 
 export const footerNavigation = [{ href: "/terms", label: "Terms" }, { href: "/privacy", label: "Privacy" }];
 
-export const productPageContent: Record<string, ProductPageContent> = {
+export const productPageContent: Record<string, ProductPageContent & ProductPageCopyOverrides> = {
   "custom-cakes": {
     slug: "custom-cakes",
     shortTitle: "Custom Cakes",
-    title: "Custom cakes designed with a polished, boutique finish for milestone celebrations.",
+    title: "Custom cakes baked from scratch for birthdays, showers, and milestone celebrations.",
     eyebrow: "Custom Cakes",
+    heroEyebrow: "What goes into every cake",
     intro:
-      "Every cake is designed around your gathering, guest count, and overall mood, then finished with the refined details that make a celebration feel considered.",
-    heroStatement: "Handcrafted in Centerville with limited weekly availability for custom work.",
+      "I design each cake around your gathering, guest count, color palette, and flavors, then finish it with details like hand-piped borders, textured buttercream, fresh fruit, or florals.",
+    heroStatement: "From-scratch cake layers, real butter buttercream, and one baker from first sketch to final box.",
+    finalCtaTitle: "Ready to request a quote for custom cakes?",
     heroImage: {
       src: "/placeholders/marketing/garden-cake.jpg",
       alt: "Floral buttercream celebration cake with soft garden tones and an ivory finish",
@@ -51,8 +58,8 @@ export const productPageContent: Record<string, ProductPageContent> = {
     detailBullets: [
       "Single-tier celebration cakes are a strong fit for birthdays, showers, and smaller gatherings.",
       "Tiered cakes can be designed for larger celebrations when you need more servings or a stronger visual centerpiece.",
-      "Inspiration is welcome, but each design is interpreted through The Sweet Fork style rather than copied exactly.",
-      "Sharing your guest count, event date, color or theme direction, flavor preferences, and any inspiration photos up front helps your custom quote come back quickly and accurately.",
+      "Inspiration is welcome, but I interpret each design in my style rather than copying it exactly.",
+      "Sharing your guest count, event date, color or theme direction, flavor preferences, and any inspiration photos up front helps me prepare your quote quickly and accurately.",
     ],
     faq: [
       {
@@ -63,12 +70,12 @@ export const productPageContent: Record<string, ProductPageContent> = {
       {
         question: "How does ordering work?",
         answer:
-          "Every cake is custom-quoted, so you start with the inquiry form rather than instant checkout. The Sweet Fork follows up with a tailored quote, and once you approve it a 50% deposit reserves your date.",
+          "Every cake is custom-quoted, so start with the form rather than instant checkout. I follow up with a custom quote, and once you approve it a 50% deposit reserves your date.",
       },
       {
         question: "Can you recreate a cake I saw online?",
         answer:
-          "Inspiration photos are welcome, but designs are interpreted in The Sweet Fork's style rather than copied exactly.",
+          "Inspiration photos are welcome, but I interpret each design in my style rather than copying it exactly.",
       },
       {
         question: "What flavors do you offer?",
@@ -78,7 +85,7 @@ export const productPageContent: Record<string, ProductPageContent> = {
       {
         question: "Do you offer pickup and delivery?",
         answer:
-          "Custom cakes are available for local pickup in Centerville and local delivery across Davis County, Salt Lake County, and nearby Weber County. Delivery is quoted by distance, date, and order details, and The Sweet Fork does not currently ship cakes.",
+          "Custom cakes are available for local pickup in Centerville and local delivery across Davis County, Salt Lake County, and nearby Weber County. Delivery is quoted by distance, date, and order details, and I do not currently ship cakes.",
       },
     ],
   },
@@ -87,9 +94,11 @@ export const productPageContent: Record<string, ProductPageContent> = {
     shortTitle: "Wedding Cakes",
     title: "Wedding cakes with an elegant, tailored presence for Northern Utah celebrations.",
     eyebrow: "Wedding cakes",
+    heroEyebrow: "What goes into every wedding cake",
     intro:
-      "Each wedding cake is quoted around your guest count, floral or styling direction, and the role the cake plays within the overall dessert presentation.",
+      "I quote each wedding cake around servings, venue logistics, floral or styling direction, and whether you want cake only or a dessert table mix.",
     heroStatement: "Designed as a focal point, with companion desserts available through the same inquiry.",
+    finalCtaTitle: "Ready to request a quote for wedding cakes?",
     heroImage: {
       src: "/placeholders/marketing/wedding-tier.jpg",
       alt: "Elegant tiered wedding cake with refined ivory buttercream and floral detail",
@@ -100,16 +109,16 @@ export const productPageContent: Record<string, ProductPageContent> = {
       "Your quote is shaped by servings, structure, finish complexity, venue logistics, and delivery needs.",
     availabilityNote: "Wedding inquiries are best submitted 4 to 6 weeks ahead, with earlier booking recommended for peak dates.",
     detailBullets: [
-      "Wedding cakes are available as statement centerpieces or as part of a larger dessert table with coordinated companion sweets.",
+      "I can design your cake as a centerpiece or as part of a larger dessert table with coordinated companion sweets.",
       "Delivery is available across Davis, Salt Lake, and nearby Weber County communities when timing and setup require it.",
       "Sharing your wedding date, venue or delivery location, estimated guest count, and style inspiration early gives the most room to plan tasting, design direction, and display.",
-      "The earlier the inquiry comes in, the more room there is to align date, design direction, and display planning.",
+      "The earlier you reach out, the more room I have to align the date, design direction, and display plan.",
     ],
     faq: [
       {
         question: "Do you offer tastings?",
         answer:
-          "Curated wedding tasting boxes are available at a cost. Depending on final order size and details, the tasting cost may sometimes be credited toward the final product. From there, the planning conversation covers flavors, servings, and design direction so the cake suits the day.",
+          "Wedding tasting boxes are available at a cost. Depending on final order size and details, the tasting cost may sometimes be credited toward the final product. From there, the planning conversation covers flavors, servings, and design direction so the cake suits the day.",
       },
       {
         question: "How do I secure the wedding date?",
@@ -126,11 +135,13 @@ export const productPageContent: Record<string, ProductPageContent> = {
   cupcakes: {
     slug: "cupcakes",
     shortTitle: "Cupcakes",
-    title: "Custom cupcakes for polished dessert tables, gifting, and easy-to-serve celebrations.",
+    title: "Custom cupcakes for dessert tables, gifting, and easy-to-serve celebrations.",
     eyebrow: "Custom cupcakes",
+    heroEyebrow: "What goes into every cupcake order",
     intro:
       "Cupcakes bring the same custom color story and handmade finish to showers, birthdays, launch parties, and dessert displays.",
-    heroStatement: "A versatile option when you want a refined presentation without the formality of a tiered cake.",
+    heroStatement: "A versatile option when you want piped buttercream, coordinated colors, and easy serving without a tiered cake.",
+    finalCtaTitle: "Ready to request a quote for cupcakes?",
     heroImage: {
       src: "/placeholders/marketing/cupcake-set.jpg",
       alt: "Coordinated cupcake set with piped buttercream and polished event styling",
@@ -164,17 +175,19 @@ export const productPageContent: Record<string, ProductPageContent> = {
       {
         question: "Are cupcakes available for pickup and delivery?",
         answer:
-          "Cupcakes are available for local pickup in Centerville and local delivery across Davis, Salt Lake, and nearby Weber County, with delivery quoted by date and distance. The Sweet Fork does not currently ship cupcakes.",
+          "Cupcakes are available for local pickup in Centerville and local delivery across Davis, Salt Lake, and nearby Weber County, with delivery quoted by date and distance. I do not currently ship cupcakes.",
       },
     ],
   },
   "sugar-cookies": {
     slug: "sugar-cookies",
     shortTitle: "Sugar Cookies",
-    title: "Decorated sugar cookies styled for favors, gifting, and elevated dessert tables.",
+    title: "Decorated sugar cookies styled for favors, gifting, and dessert tables.",
     eyebrow: "Decorated sugar cookies",
+    heroEyebrow: "What goes into every cookie order",
     intro:
-      "Buttercream sugar cookies are designed to feel polished and personal, whether they are headed to a shower, a birthday table, or an event welcome box.",
+      "Buttercream sugar cookies are designed to feel personal, whether they are headed to a shower, a birthday table, or an event welcome box.",
+    finalCtaTitle: "Ready to request a quote for sugar cookies?",
     heroStatement: "Ideal for custom themes, favor sets, and coordinated dessert-table details.",
     heroImage: {
       src: "/placeholders/marketing/cookie-favors.jpg",
@@ -208,17 +221,19 @@ export const productPageContent: Record<string, ProductPageContent> = {
       {
         question: "Can you ship cookies, or is it pickup and delivery?",
         answer:
-          "Decorated cookies are made for local pickup in Centerville and local delivery across Davis, Salt Lake, and nearby Weber County. The Sweet Fork does not currently ship cookies, so favors and gift sets are arranged for local pickup or delivery.",
+          "Decorated cookies are made for local pickup in Centerville and local delivery across Davis, Salt Lake, and nearby Weber County. I do not currently ship cookies, so favors and gift sets are arranged for local pickup or delivery.",
       },
     ],
   },
   macarons: {
     slug: "macarons",
     shortTitle: "Macarons",
-    title: "Custom macarons for gifting, dessert tables, and refined party orders.",
+    title: "Custom macarons for gifting, dessert tables, and party orders.",
     eyebrow: "Custom macarons",
+    heroEyebrow: "What goes into every macaron order",
     intro:
-      "Macarons bring a polished, giftable finish to showers, weddings, dessert tables, and modern celebration spreads.",
+      "Macarons bring color, flavor, and a giftable finish to showers, weddings, dessert tables, and modern celebration spreads.",
+    finalCtaTitle: "Ready to request a quote for macarons?",
     heroStatement: "Handcrafted with classic technique and tailored around your chosen palette and flavor mix.",
     heroImage: {
       src: "/placeholders/marketing/macaron-tower.jpg",
@@ -233,7 +248,7 @@ export const productPageContent: Record<string, ProductPageContent> = {
       "Minimum order is 1 dozen, available as assorted or single flavors.",
       "Assortments suit gift boxes, dessert tables, and party favors for showers, weddings, and local events.",
       "Most macaron orders need 1 to 2 weeks notice.",
-      "Custom colors and flavor pairings can be discussed for weddings, gifting, and curated dessert styling.",
+      "Custom colors and flavor pairings can be discussed for weddings, gifting, and coordinated dessert styling.",
     ],
     faq: [
       {
@@ -243,7 +258,7 @@ export const productPageContent: Record<string, ProductPageContent> = {
       {
         question: "What flavors are available?",
         answer:
-          "Core flavors include vanilla, chocolate, raspberry, lemon, salted caramel, pistachio, and lavender, with seasonal and custom flavors offered when availability allows. Share your preferences in your inquiry and The Sweet Fork will confirm what's available for your date.",
+          "Core flavors include vanilla, chocolate, raspberry, lemon, salted caramel, pistachio, and lavender, with seasonal and custom flavors offered when availability allows. Share your preferences and I'll confirm what's available for your date.",
       },
       {
         question: "Can macarons be customized?",
@@ -253,7 +268,7 @@ export const productPageContent: Record<string, ProductPageContent> = {
       {
         question: "Are macarons available for pickup and delivery?",
         answer:
-          "Macarons are available for local pickup in Centerville and local delivery across Davis, Salt Lake, and nearby Weber County. The Sweet Fork does not currently ship macarons, so gift boxes and dessert-table orders are arranged locally.",
+          "Macarons are available for local pickup in Centerville and local delivery across Davis, Salt Lake, and nearby Weber County. I do not currently ship macarons, so gift boxes and dessert-table orders are arranged locally.",
       },
     ],
   },
@@ -262,9 +277,11 @@ export const productPageContent: Record<string, ProductPageContent> = {
     shortTitle: "DIY Kits",
     title: "DIY decorating kits for hosted activities, gifting, and sweet-at-home celebrations.",
     eyebrow: "DIY decoration kits",
+    heroEyebrow: "What goes into every kit",
     intro:
       "Available year-round, these all-inclusive kits are designed for family nights, classroom treats, party activities, farmers markets and vendor events, and giftable sweet moments that still feel beautifully put together.",
-    heroStatement: "An easy way to bring The Sweet Fork aesthetic into birthdays, holidays, vendor booths, and group activities.",
+    heroStatement: "An easy way to bring scratch-baked cookies, buttercream, sprinkles, and color-themed decorating to birthdays, holidays, vendor booths, and group activities.",
+    finalCtaTitle: "Ready to request a quote for DIY kits?",
     heroImage: {
       src: "/placeholders/marketing/diy-kit.jpg",
       alt: "DIY cookie decorating kit with cookies, frosting bags, sprinkles, and decorating instructions.",
@@ -273,7 +290,7 @@ export const productPageContent: Record<string, ProductPageContent> = {
     pricingNote: "DIY kits begin at $25 each.",
     pricingContext:
       "Quotes depend on kit size, seasonal themes, add-ons, and how many kits you need prepared together.",
-    availabilityNote: "DIY kits are available year-round. Most kit orders need 1 to 2 weeks notice, with a little extra lead time around holidays, school-event weekends, and busy market seasons.",
+    availabilityNote: "DIY kits are available year-round. Most kit orders need 1 to 2 weeks notice, with extra lead time around holidays, school-event weekends, and busy market seasons.",
     detailBullets: [
       "Each kit is assembled to feel complete and ready to use right away.",
       "DIY kits work especially well for parties, family activities, farmers markets, vendor events, and holiday gifting.",
@@ -296,7 +313,7 @@ export const productPageContent: Record<string, ProductPageContent> = {
       },
       {
         question: "How far ahead should I order?",
-        answer: "Most kit orders need 1 to 2 weeks notice, with a little more around holidays and busy market weekends.",
+        answer: "Most kit orders need 1 to 2 weeks notice, with more lead time around holidays and busy market weekends.",
       },
     ],
   },
@@ -304,17 +321,17 @@ export const productPageContent: Record<string, ProductPageContent> = {
 
 export const homeExperiencePillars = [
   {
-    title: "Handcrafted in small batches",
-    description: "Each order is made from scratch with the kind of restraint and finish that feels personal, not mass produced.",
+    title: "Baked from scratch in small batches",
+    description: "Each order is baked from scratch with real butter, balanced flavors, and a finish shaped for your celebration.",
   },
   {
-    title: "Limited weekly availability",
-    description: "Weekly order volume stays intentionally limited so every cake, dessert table, and pickup window receives close attention.",
+    title: "Small-batch weekly calendar",
+    description: "I take a limited number of orders each week so every cake, dessert table, and pickup window gets my full attention.",
   },
   {
     title: "Serving Northern Utah",
     description:
-      "Based in Centerville, with pickup available locally and delivery offered across Davis, Salt Lake, and nearby Weber County communities. Baked goods are currently available for local pickup or local delivery only. We do not currently ship desserts.",
+      "Based in Centerville, with pickup available locally and delivery offered across Davis, Salt Lake, and nearby Weber County communities. Baked goods are currently available for local pickup or local delivery only. I do not currently ship desserts.",
   },
 ];
 
@@ -322,17 +339,17 @@ export const processSteps = [
   {
     step: "01",
     title: "Share the celebration",
-    description: "Tell us about the event, timing, dessert mix, and overall design direction in one guided inquiry.",
+    description: "Tell me about the event, timing, dessert mix, and overall design direction in one guided request.",
   },
   {
     step: "02",
     title: "Receive your quote",
-    description: "The Sweet Fork reviews availability and usually replies within 24 to 48 hours with a tailored quote and next steps.",
+    description: "I review availability and usually reply within 24 to 48 hours with a custom quote and next steps.",
   },
   {
     step: "03",
     title: "Reserve the date",
-    description: "Once the quote is approved, a 50% deposit secures the date and the order moves into production planning. Final payment is due before pickup or delivery.",
+    description: "Once you approve the quote, a 50% deposit reserves your date and I move the order into planning. Final payment is due before pickup or delivery.",
   },
 ];
 
@@ -369,7 +386,7 @@ export const galleryItems: GalleryItem[] = [
   },
   {
     id: "gal-06",
-    title: "Premium DIY cookie kit",
+    title: "DIY cookie kit",
     category: "diy-kit",
     alt: "Cookie decorating kit arranged with frosted cookies, piping bags, and sprinkles",
   },
@@ -379,7 +396,7 @@ export const pricingHighlights = [
   {
     label: "Celebration Cakes",
     value: "Starting at $80",
-    note: "A polished starting point for birthdays, showers, and milestone gatherings.",
+    note: "A starting point for birthdays, showers, and milestone gatherings.",
   },
   {
     label: "Wedding Cakes",
@@ -407,7 +424,7 @@ export const faqItems = [
   {
     question: "How do I place an order?",
     answer:
-      "Start with the online inquiry form. The Sweet Fork usually replies within 24 to 48 hours with a detailed quote, and a 50% deposit secures the date.",
+      "Start with the online form. I usually reply within 24 to 48 hours with a detailed quote, and a 50% deposit secures the date.",
   },
   {
     question: "How much do custom cakes cost?",
@@ -427,7 +444,7 @@ export const faqItems = [
   {
     question: "Where are you located?",
     answer:
-      "The Sweet Fork is based in Centerville, Utah. Pickup is available from the bakery location, and the pickup address is shared after booking.",
+      "I am based in Centerville, Utah. Pickup is available from the bakery location, and the pickup address is shared after booking.",
   },
   {
     question: "Do you deliver?",
@@ -437,7 +454,7 @@ export const faqItems = [
   {
     question: "Can you recreate a cake I saw online?",
     answer:
-      "Inspiration photos are welcome, but they are used as a starting point rather than copied exactly. Each design is interpreted in The Sweet Fork's style.",
+      "Inspiration photos are welcome, but they are used as a starting point rather than copied exactly. I interpret each design in my style.",
   },
   {
     question: "What flavors do you offer?",
@@ -452,17 +469,17 @@ export const faqItems = [
   {
     question: "Are you a licensed bakery?",
     answer:
-      "The Sweet Fork operates under Utah's Home Consumption and Homemade Food Act in a dedicated home kitchen that is not subject to state food service licensing or inspection.",
+      "I operate under Utah's Home Consumption and Homemade Food Act in a home kitchen that is not subject to state food service licensing or inspection.",
   },
   {
     question: "How many orders do you take per week?",
     answer:
-      "The Sweet Fork typically limits custom cake orders to about 6 to 7 per week so each client and event receives full attention.",
+      "I typically limit custom cake orders to about 6 to 7 per week so each client and event receives full attention.",
   },
   {
     question: "Do you offer tastings?",
     answer:
-      "Curated wedding tasting boxes are available at a cost. Depending on final order size and details, the tasting cost may sometimes be credited toward the final product.",
+      "Wedding tasting boxes are available at a cost. Depending on final order size and details, the tasting cost may sometimes be credited toward the final product.",
   },
 ];
 
@@ -640,7 +657,7 @@ export const termsSections = [
     title: "Allergen notice",
     points: [
       "All products are prepared in a home kitchen that processes common allergens including wheat, eggs, milk, soy, tree nuts, and peanuts. Cross-contamination is possible.",
-      "Customers with severe allergies should contact The Sweet Fork before ordering.",
+      "Customers with severe allergies should contact me before ordering.",
     ],
   },
   {
@@ -675,7 +692,7 @@ export const termsSections = [
     points: [
       "Pickup is available from Centerville at no charge, and customers are responsible for safe transport after pickup.",
       "Delivery is available across Davis County, Salt Lake County, and nearby Weber County communities, with fees based on location.",
-      "Once a pickup order leaves the bakery, or a delivered order is accepted, The Sweet Fork is no longer responsible for damage.",
+      "Once a pickup order leaves the bakery, or a delivered order is accepted, I am no longer responsible for damage.",
       "Most custom cakes should stay refrigerated until 1 to 2 hours before serving for the best flavor and texture.",
     ],
   },
@@ -684,20 +701,20 @@ export const termsSections = [
     points: [
       "Inspiration photos are welcome, but exact replicas are not offered.",
       "Color matching is approximate because screens, printed references, and food coloring can vary.",
-      "The Sweet Fork reserves the right to decline an order that does not align with bakery capabilities or values.",
+      "I reserve the right to decline an order that does not align with bakery capabilities or values.",
     ],
   },
   {
     title: "Non-edible items and photography",
     points: [
       "Some custom orders can include dowels, wires, toppers, ribbons, or other non-edible support pieces that must be removed before serving.",
-      "The Sweet Fork may photograph finished work and use the images for website, social, or portfolio marketing.",
+      "I may photograph finished work and use the images for website, social, or portfolio marketing.",
     ],
   },
   {
     title: "Utah home bakery status",
     points: [
-      "The Sweet Fork operates under Utah's Home Consumption and Homemade Food Act.",
+      "I operate under Utah's Home Consumption and Homemade Food Act.",
       "Products are made in a home kitchen that is not subject to state food service licensing or inspection and are not for resale.",
     ],
   },
@@ -721,23 +738,23 @@ export const privacySections = [
     title: "How inquiry details are used",
     points: [
       "Submitted information is used to review availability, prepare quotes, coordinate pickup or delivery, and manage the order from inquiry through fulfillment.",
-      "Preferred contact details are used so The Sweet Fork can follow up about the request and any confirmed order.",
+      "Preferred contact details are used so I can follow up about the request and any confirmed order.",
     ],
   },
   {
     title: "Website analytics",
     points: [
-      "The Sweet Fork uses Google Analytics 4 to understand site performance, popular pages, and the inquiry journey so the website can be improved for local customers.",
+      "I use site analytics to understand site performance, popular pages, and the inquiry journey so the website can be improved for local customers.",
       "Google Analytics may use cookies or similar technologies to collect general technical and usage information such as page views, broad interaction events, browser or device information, and approximate traffic patterns.",
       "Customer inquiry details such as names, email addresses, phone numbers, street addresses, exact event dates, free-form inquiry notes, uploaded file names, image URLs, and internal order or inquiry identifiers are not intentionally sent to Google Analytics.",
-      "Analytics is used for first-party site measurement and inquiry-funnel improvement. The Sweet Fork does not currently use Google Analytics for personalized advertising, remarketing, Google Ads audiences, Meta Pixel tracking, or cross-site behavioral advertising.",
+      "Analytics is used for first-party site measurement and inquiry-funnel improvement. I do not currently use Google Analytics for personalized advertising, remarketing, Google Ads audiences, Meta Pixel tracking, or cross-site behavioral advertising.",
     ],
   },
   {
     title: "Cookie and analytics controls",
     points: [
       "Customers can control cookies through their browser settings and can use Google's Analytics opt-out browser add-on if they prefer not to be measured by Google Analytics.",
-      "The Sweet Fork should reassess consent and tracking requirements before international marketing, international orders or shipping, national expansion, Google Ads remarketing, Meta Pixel installation, personalized advertising, cross-site behavioral tracking, material business-scale changes, or material privacy-law changes.",
+      "I will reassess consent and tracking requirements before international marketing, international orders or shipping, national expansion, Google Ads remarketing, Meta Pixel installation, personalized advertising, cross-site behavioral tracking, material business-scale changes, or material privacy-law changes.",
       "The current absence of a cookie banner reflects the current local Utah bakery measurement posture and is not permanent legal advice.",
     ],
   },
@@ -751,7 +768,7 @@ export const privacySections = [
   {
     title: "Questions about your information",
     points: [
-      "Customers who need to update an inquiry or ask about stored order details can contact The Sweet Fork directly by phone or email.",
+      "Customers who need to update a request or ask about stored order details can contact me directly by phone or email.",
     ],
   },
 ];

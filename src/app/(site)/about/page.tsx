@@ -30,6 +30,7 @@ export default async function AboutPage() {
         title={data.heading}
         description={data.body}
         accent={data.settings.accent}
+        quoteNote={null}
         cta={defaultCta}
       />
       <section className="section-shell grid gap-8 py-16 md:py-20 lg:grid-cols-[0.95fr_1.05fr]">
@@ -79,6 +80,9 @@ export default async function AboutPage() {
       <InquiryCta
         title="If The Sweet Fork style feels like the right fit, the next step is easy."
         description="Submit the inquiry with your date, dessert needs, and design direction, and The Sweet Fork will guide the rest from there."
+        showEyebrow={false}
+        showSubtext={false}
+        showUrgencyNote={false}
       />
     </div>
   );
