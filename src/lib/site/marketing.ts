@@ -422,8 +422,8 @@ const productPagePaths = new Set(Object.keys(productPageContent).map((slug) => `
 
 const bookingNoticeFallback: PublicBookingNotice = {
   message:
-    "Melissa carefully manages the production calendar. Most custom orders need at least 2 weeks notice, and wedding or holiday dates can book earlier.",
-  title: "Current booking guidance",
+    "Most custom orders need at least 2 weeks notice. Holiday and wedding weekends can book earlier.",
+  title: "Limited booking notice",
   tone: "limited",
 };
 
@@ -523,9 +523,9 @@ export const contentSectionDefinitions: ContentSectionDefinition[] = [
     blockType: "hero",
     fallback: {
       body:
-        "I'm Melissa, the owner and baker behind The Sweet Fork. I design and make each custom order from scratch with a carefully managed calendar so every celebration receives focused attention and clear communication.",
-      eyebrow: "Owner-operated home bakery • Centerville, Utah",
-      heading: "From-scratch custom cakes and desserts, made for your celebration.",
+        "A boutique home bakery for custom cakes and desserts designed with a polished finish, thoughtful hospitality, and limited weekly availability.",
+      eyebrow: "Centerville, Utah",
+      heading: "Custom cakes and desserts with a refined, made-to-order feel.",
       items: homeExperiencePillars.map((item) => ({
         description: item.description,
         title: item.title,
@@ -574,9 +574,9 @@ export const contentSectionDefinitions: ContentSectionDefinition[] = [
     blockType: "feature-list",
     fallback: {
       body:
-        "Ordering begins with a guided inquiry rather than instant checkout. Melissa reviews each request and follows up with availability, a custom quote, and clear next steps.",
+        "The process stays personal and clear from the first inquiry through the final confirmation.",
       eyebrow: "How it works",
-      heading: "A personal, inquiry-first process from first details to pickup or delivery.",
+      heading: "A simple inquiry-first process designed to keep the details easy.",
       items: staticProcessSteps.map((item) => ({
         description: item.description,
         step: item.step,
@@ -599,26 +599,26 @@ export const contentSectionDefinitions: ContentSectionDefinition[] = [
     blockType: "rich-text",
     fallback: {
       body:
-        "The Sweet Fork is my owner-operated home bakery in Centerville, Utah. I create from-scratch cakes and desserts for local celebrations, balancing beautiful presentation with flavor, clear communication, and dependable service.",
+        "I'm a home baker in Centerville, Utah who believes handmade desserts should feel personal and beautifully made. The Sweet Fork is my small, intentional bakery serving families across Northern Utah.",
       eyebrow: "About",
-      heading: "Hi, I'm Melissa — the owner and baker behind The Sweet Fork.",
+      heading: "Hi, I'm Melissa — the baker behind The Sweet Fork.",
       items: [
         {
           text:
-            "I personally guide each order from the first inquiry through design, baking, finishing, and pickup or delivery coordination. That direct connection helps the final desserts reflect the event instead of feeling selected from a catalog.",
+            "What began as a love of baking for the people around me has grown into a made-to-order bakery for custom cakes, macarons, cupcakes, and decorated sugar cookies — created for celebrations across Northern Utah.",
         },
         {
           text:
-            "Every order is baked from scratch in my Centerville home kitchen. Flavor and presentation matter equally, whether I am working through a color palette, piping details, florals, textures, or the way everything will be displayed and served.",
+            "Every order is baked from scratch in my home kitchen with the kind of care you'd expect for your own family celebration. I keep my calendar intentionally small so each cake and dessert gets the attention it deserves.",
         },
         {
           text:
-            "I carefully manage my production calendar so confirmed orders receive focused attention and dependable communication. Inspiration is always welcome, but I interpret it for your celebration rather than copy another baker's design exactly.",
+            "From birthday cakes and decorated sugar cookies to wedding tastings and macarons, my goal is to make the whole process feel personal, clear, and special — from your first inquiry through pickup or delivery.",
         },
       ],
       settings: {
         accent:
-          "The Sweet Fork operates under Utah's Home Consumption and Homemade Food Act, with pickup in Centerville and select delivery across Davis, Weber, and Salt Lake Counties.",
+          "The Sweet Fork operates under Utah's Home Consumption and Homemade Food Act, baking for Centerville and the surrounding Davis, Salt Lake, and nearby Weber County communities.",
         studioEyebrow: "From Melissa's kitchen",
         studioQuote:
           "\"Baked from my home kitchen in Centerville, with the kind of care I'd want for my own family's celebration.\"",
@@ -919,7 +919,7 @@ function getFallbackLeadTime(productType: ProductType) {
     item.product.toLowerCase().includes(productType.replace("-", " ").split(" ")[0]),
   );
 
-  return fallbackRow?.leadTime ?? (productType === "wedding-cake" ? "4+ weeks" : "About 2 weeks");
+  return fallbackRow?.leadTime ?? (productType === "wedding-cake" ? "4+ weeks" : "1-2 weeks");
 }
 
 function getFallbackPricingRule(productType: ProductType) {

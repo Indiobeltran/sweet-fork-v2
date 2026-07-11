@@ -123,7 +123,6 @@ export type ProductPageContent = {
   title: string;
   eyebrow: string;
   intro: string;
-  trustStatement: string;
   heroStatement: string;
   heroImage: {
     alt: string;

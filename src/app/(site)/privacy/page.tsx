@@ -6,7 +6,7 @@ export async function generateMetadata() {
   return buildMetadata({
     title: "Privacy",
     description:
-      "Privacy overview for inquiry submissions, inspiration links, website analytics, and order records at The Sweet Fork.",
+      "Privacy overview for inquiry submissions, inspiration uploads, and order records at The Sweet Fork.",
     path: "/privacy",
   });
 }

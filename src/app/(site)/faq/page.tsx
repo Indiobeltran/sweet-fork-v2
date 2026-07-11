@@ -38,13 +38,13 @@ export default async function FaqPage() {
         eyebrow="FAQ"
         title="Answers to the questions clients ask before they inquire."
         description="These are the details that most often help with timing, customization, pricing expectations, pickup, and delivery before a quote is requested."
-        accent="If anything still feels open-ended, include it in the inquiry and Melissa will address it when she reviews your request."
+        accent="If anything still feels open-ended, include it in the inquiry and The Sweet Fork will address it in the first reply."
         cta={defaultCta}
       />
       <FaqList items={faqItems} />
       <InquiryCta
         title="Ready to ask about your own celebration?"
-        description="The inquiry form is the simplest way to share your date, dessert needs, and design direction for Melissa to review. Submitting it does not reserve your date."
+        description="The inquiry form is the simplest way to share your date, dessert needs, and design direction without any commitment to book."
       />
     </div>
   );

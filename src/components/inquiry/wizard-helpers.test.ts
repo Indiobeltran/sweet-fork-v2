@@ -101,7 +101,7 @@ describe("getSafeSubmissionErrorMessage", () => {
 
   it("hides unexpected internal errors behind a safe fallback", () => {
     const fallback =
-      "The inquiry could not be submitted right now. Please try again in a few minutes.";
+      "We could not submit the inquiry right now. Please try again in a few minutes.";
     assert.equal(
       getSafeSubmissionErrorMessage(new Error("estimated_max 5072 column violation")),
       fallback,

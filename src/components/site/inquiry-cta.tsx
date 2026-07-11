@@ -12,10 +12,10 @@ type InquiryCtaProps = {
 
 export function InquiryCta({
   slug,
-  eyebrow = "Carefully managed calendar",
-  title = "Share your celebration with Melissa.",
-  description = "Send your date, dessert needs, and design direction through the guided inquiry. Melissa reviews each request and usually follows up within 24 to 48 hours with availability, a custom quote, and next steps.",
-  urgencyNote = "Availability is limited so each confirmed order receives focused design and production time.",
+  eyebrow = "Limited availability",
+  title = "Reserve a place on The Sweet Fork calendar before your date fills.",
+  description = "Share the event details, dessert needs, and overall design direction in one guided inquiry. Most replies are sent within 24 to 48 hours with quote-ready next steps.",
+  urgencyNote = "Dates around weddings, holidays, and peak weekends tend to book first.",
 }: InquiryCtaProps) {
   const cta = getInquiryCtaBySlug(slug);
   const productCategory = slug ? getProductCategory(slug) : undefined;

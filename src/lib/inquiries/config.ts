@@ -14,11 +14,11 @@ export const inquiryStepTitles = [
 ] as const;
 
 export const inquiryStepDescriptions = [
-  "Share the celebration date, pickup or delivery preference, guest count, and budget.",
-  "Choose the desserts you would like Melissa to consider for your celebration.",
-  "Add estimated quantities, servings, flavors, and design notes for each dessert.",
-  "Share colors, mood, textures, wording, public inspiration links, or written notes.",
-  "Review the inquiry, add your contact details, and submit it for Melissa to review.",
+  "Confirm the event type, date, fulfillment plan, and budget range.",
+  "Choose the desserts you would like included in your quote.",
+  "Add serving counts, flavors, and design notes for each dessert.",
+  "Share color direction, inspiration images, links, or written notes.",
+  "Review the full inquiry, add contact details, and send it through.",
 ] as const;
 
 export const eventTypeSuggestions = [
@@ -64,12 +64,12 @@ export const budgetRangeOptions: Array<{
   {
     value: "2000-plus",
     label: "$2,000+",
-    note: "Larger wedding and event dessert plans.",
+    note: "High-capacity wedding and event orders.",
   },
   {
     value: "not-sure",
     label: "Not sure yet",
-    note: "Melissa can help you narrow it down from the event details.",
+    note: "We'll help you narrow it down — no pressure.",
   },
 ];
 
@@ -80,18 +80,18 @@ export const budgetFlexibilityOptions: Array<{
 }> = [
   {
     value: "firm",
-    label: "Stay near this range",
-    note: "Keep the custom quote close to this budget.",
+    label: "This is our comfort zone",
+    note: "We would like the proposal to stay close to this range.",
   },
   {
     value: "moderate",
     label: "Some flexibility",
-    note: "There is a little room for the right design detail or delivery option.",
+    note: "We can stretch a little for the right design direction or service plan.",
   },
   {
     value: "open",
-    label: "Recommend the best fit",
-    note: "Start with the strongest recommendation, then adjust if needed.",
+    label: "Open to guidance",
+    note: "We would rather see the best recommendation first and adjust from there.",
   },
 ];
 
@@ -113,7 +113,7 @@ export const productPresentationByType: Record<
   "wedding-cake": {
     name: "Wedding Cakes",
     slug: "wedding-cakes",
-    shortDescription: "Wedding cakes planned around servings, design, delivery, and companion desserts.",
+    shortDescription: "Elegant centerpiece cakes with room to coordinate companion desserts.",
     requiresConsultation: true,
   },
   cupcakes: {
@@ -131,7 +131,7 @@ export const productPresentationByType: Record<
   macarons: {
     name: "Macarons",
     slug: "macarons",
-    shortDescription: "Small-batch macarons for gifting, weddings, and coordinated dessert displays.",
+    shortDescription: "Handcrafted macarons for gifting, weddings, and curated dessert styling.",
     requiresConsultation: false,
   },
   "diy-kit": {

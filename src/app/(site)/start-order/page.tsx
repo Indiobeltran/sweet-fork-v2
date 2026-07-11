@@ -6,7 +6,7 @@ export async function generateMetadata() {
   return buildMetadata({
     title: "Start Your Inquiry",
     description:
-      "Tell Melissa about your celebration, dessert needs, budget, and inspiration for a custom quote from The Sweet Fork in Centerville, Utah.",
+      "Submit an order inquiry for custom cakes, wedding cakes, cupcakes, sugar cookies, macarons, and DIY kits in Centerville, Utah.",
     path: "/start-order",
   });
 }

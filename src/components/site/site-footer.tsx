@@ -28,7 +28,6 @@ export function SiteFooter({ legalLinks, site }: Readonly<SiteFooterProps>) {
             className="h-auto w-[188px]"
           />
           <p className="max-w-xl text-sm leading-8 text-ivory/80">{site.description}</p>
-          <p className="text-sm font-medium text-ivory">Questions? Contact Melissa.</p>
           <div className="grid gap-2 text-sm text-ivory/84">
             <p>{site.location}</p>
             <a
@@ -83,7 +82,7 @@ export function SiteFooter({ legalLinks, site }: Readonly<SiteFooterProps>) {
             ))}
           </div>
           <p className="text-sm leading-7 text-ivory/66">
-            Local pickup in Centerville and select delivery across Davis, Weber, and Salt Lake Counties.
+            Custom cakes and desserts for pickup in Centerville and local delivery across Northern Utah.
           </p>
         </div>
       </div>

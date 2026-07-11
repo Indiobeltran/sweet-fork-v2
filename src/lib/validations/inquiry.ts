@@ -463,7 +463,7 @@ export function createEmptyInquiryValues(): InquiryFormValues {
     fulfillmentMethod: "pickup",
     deliveryZip: undefined,
     budgetRange: "not-sure",
-    budgetFlexibility: "" as InquiryFormValues["budgetFlexibility"],
+    budgetFlexibility: "moderate",
     orderItems: [],
     colorPalette: undefined,
     inspirationLinks: [],

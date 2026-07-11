@@ -76,9 +76,6 @@ export function ProductPageTemplate({
               <p className="max-w-2xl text-base leading-8 text-charcoal/72 sm:text-lg">
                 {content.intro}
               </p>
-              <p className="max-w-2xl border-l border-gold/45 pl-4 text-sm leading-7 text-charcoal/68 sm:text-base">
-                {content.trustStatement}
-              </p>
             </div>
             <SitePrimaryCta
               href={cta.href}
@@ -116,7 +113,7 @@ export function ProductPageTemplate({
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(48,39,33,0.14),rgba(48,39,33,0.34)_46%,rgba(48,39,33,0.84))]" />
                 <div className="absolute inset-x-0 bottom-0 h-2/3 bg-[radial-gradient(ellipse_at_bottom_left,rgba(48,39,33,0.72),rgba(48,39,33,0.18)_58%,transparent_78%)]" />
                 <div className="absolute inset-x-0 bottom-0 p-6 text-ivory sm:p-8">
-                  <p className="eyebrow-label text-gold/80">Crafted for your event</p>
+                  <p className="eyebrow-label text-gold/80">What makes it premium</p>
                   <p className="mt-4 max-w-[28rem] font-serif text-3xl leading-tight tracking-[-0.04em] sm:text-[2.35rem]">
                     {content.heroStatement}
                   </p>
@@ -229,8 +226,8 @@ export function ProductPageTemplate({
         <div className="section-shell grid gap-10 lg:grid-cols-[0.92fr_1.08fr] lg:items-start">
           <SectionHeading
             eyebrow="Pricing Guide"
-            title="A clear starting price."
-            description="Each order is quoted individually. The final quote reflects quantity, servings, design detail, packaging, and pickup or delivery needs."
+            title="A simple investment starting point."
+            description="The Sweet Fork quotes each order individually, but this gives you a confident place to begin."
           />
           <div className="luxury-panel overflow-hidden rounded-[2rem]">
             <div className="border-b border-charcoal/8 px-6 py-5">
@@ -273,7 +270,7 @@ export function ProductPageTemplate({
       <InquiryCta
         slug={content.slug}
         title={`Ready to inquire about ${content.shortTitle.toLowerCase()}?`}
-        description="Share your date, dessert needs, and design direction. Melissa will review the details and follow up with availability, a custom quote, and next steps."
+        description="Share your date, dessert needs, and design direction, and The Sweet Fork will guide the next steps."
       />
 
       <StickyProductCta

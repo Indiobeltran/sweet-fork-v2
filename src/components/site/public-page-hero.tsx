@@ -37,13 +37,13 @@ export function PublicPageHero({
           ) : null}
         </div>
         <div className="luxury-panel section-reveal p-7 sm:p-8">
-          <p className="eyebrow-label">Made to order</p>
+          <p className="eyebrow-label">The Sweet Fork standard</p>
           <p className="mt-4 font-serif text-3xl leading-tight tracking-[-0.04em] text-charcoal sm:text-[2.4rem]">
             {accent}
           </p>
           <div className="mt-8 h-px w-full bg-gradient-to-r from-gold/35 via-charcoal/10 to-transparent" />
           <p className="mt-6 text-sm leading-7 text-charcoal/70">
-            Each inquiry is reviewed around the date, servings, design direction, and pickup or delivery needs.
+            Every order is quoted around the date, guest count, design direction, and pickup or delivery needs.
           </p>
         </div>
       </div>

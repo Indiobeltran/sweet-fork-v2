@@ -392,7 +392,7 @@ export async function submitInquiry(
     }
 
     throw new InquirySubmissionError(
-      "The inquiry could not be submitted right now. Please try again in a few minutes.",
+      "We could not submit the inquiry right now. Please try again in a few minutes.",
       500,
     );
   }

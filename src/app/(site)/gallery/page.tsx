@@ -39,7 +39,7 @@ export default async function GalleryPage() {
             <div className="section-reveal max-w-md rounded-[1.7rem] border border-charcoal/10 bg-white/70 px-5 py-4 shadow-soft lg:max-w-sm">
               <p className="eyebrow-label">Centerville, Utah</p>
               <p className="mt-2 text-sm leading-6 text-charcoal/68">
-                Owner-operated by Melissa, with local pickup and select delivery across Davis, Weber, and Salt Lake Counties.
+                Serving Davis, Salt Lake, and nearby Weber County celebrations.
               </p>
               <a
                 href={defaultCta.href}
@@ -56,7 +56,7 @@ export default async function GalleryPage() {
       </section>
       <InquiryCta
         title="Have a direction in mind after browsing?"
-        description="Share the date, desserts, and inspiration that feel closest to your celebration. Melissa will interpret those ideas for your event and prepare a custom quote if the date is available."
+        description="Share the event details, product mix, and inspiration that feels closest to your celebration, and The Sweet Fork will take it from there."
       />
     </div>
   );
