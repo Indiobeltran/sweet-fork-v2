@@ -4,6 +4,16 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## Inquiry Quote Accelerator Publication — 2026-07-12 MDT
+
+- **Current branch**: `main`.
+- **Objective**: Merge the completed inquiry quote accelerator into production `main` and publish it to GitHub after verification.
+- **Completed**: Feature commit `a5261b4` (`feat: add inquiry quote builder`) was fast-forwarded from `codex/inquiry-quote-builder` into `main` and pushed to `origin/main` at `https://github.com/Indiobeltran/sweet-fork-v2.git`.
+- **Verification on merged `main`**: `npm test` passed `211/211`; `npm run lint` passed; `npm run typecheck` passed; `npm run build` passed with `26/26` static pages generated; `git diff --check` passed before publication.
+- **Files changed by this publication step**: `HANDOFF.md` only; application and migration content is the exact verified feature commit.
+- **Files intentionally preserved**: Existing untracked `.agents/`, `.claude/`, `.superpowers/`, `skills-lock.json`, `scratch/**`, and `supabase/.temp/linked-project.json` remain untouched and uncommitted.
+- **Next exact task**: Review and apply `supabase/migrations/20260712213211_inquiry_quote_builder_schema.sql` through the approved backup/dry-run process, then perform authenticated owner/manager quote lifecycle QA. No Supabase migration or deployment mutation was performed during the GitHub publication.
+
 ## Inquiry Quote Accelerator — 2026-07-12 MDT
 
 - **Current branch**: `codex/inquiry-quote-builder` in isolated worktree `/Users/indiobeltran/.config/superpowers/worktrees/sweet-fork-v2/inquiry-quote-builder`.
