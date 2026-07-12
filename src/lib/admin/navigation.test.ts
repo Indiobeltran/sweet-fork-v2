@@ -12,4 +12,15 @@ describe("admin page metadata", () => {
       title: "Add manual order",
     });
   });
+
+  it("names the inquiry quote route as a build workflow", () => {
+    assert.deepEqual(
+      getAdminPageMeta("/admin/inquiries/00000000-0000-0000-0000-000000000000/quote"),
+      {
+        activePrimaryKey: "inquiries",
+        key: "inquiries",
+        title: "Build quote",
+      },
+    );
+  });
 });

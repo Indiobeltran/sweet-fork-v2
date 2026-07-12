@@ -300,6 +300,75 @@ export type Database = {
         }
         Relationships: []
       }
+      inquiry_quotes: {
+        Row: {
+          calculation_snapshot: Json
+          created_at: string
+          created_by: string | null
+          customer_message: string | null
+          customer_scope: string | null
+          deposit_amount: number
+          final_price: number
+          finalized_at: string | null
+          id: string
+          inquiry_id: string
+          is_current: boolean
+          status: string
+          updated_at: string
+          valid_through: string | null
+          version: number
+        }
+        Insert: {
+          calculation_snapshot?: Json
+          created_at?: string
+          created_by?: string | null
+          customer_message?: string | null
+          customer_scope?: string | null
+          deposit_amount?: number
+          final_price?: number
+          finalized_at?: string | null
+          id?: string
+          inquiry_id: string
+          is_current?: boolean
+          status?: string
+          updated_at?: string
+          valid_through?: string | null
+          version: number
+        }
+        Update: {
+          calculation_snapshot?: Json
+          created_at?: string
+          created_by?: string | null
+          customer_message?: string | null
+          customer_scope?: string | null
+          deposit_amount?: number
+          final_price?: number
+          finalized_at?: string | null
+          id?: string
+          inquiry_id?: string
+          is_current?: boolean
+          status?: string
+          updated_at?: string
+          valid_through?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inquiry_quotes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inquiry_quotes_inquiry_id_fkey"
+            columns: ["inquiry_id"]
+            isOneToOne: false
+            referencedRelation: "inquiries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inquiries: {
         Row: {
           additional_notes: string | null
@@ -1593,6 +1662,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_inquiry_quote_revision: {
+        Args: {
+          p_calculation_snapshot: Json
+          p_current_quote_id: string
+          p_created_by: string
+          p_customer_message: string | null
+          p_customer_scope: string | null
+          p_deposit_amount: number
+          p_final_price: number
+          p_inquiry_id: string
+          p_valid_through: string | null
+          p_version: number
+        }
+        Returns: string
+      }
       current_admin_role: {
         Args: never
         Returns: Database["public"]["Enums"]["admin_role"]

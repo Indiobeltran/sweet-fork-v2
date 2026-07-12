@@ -235,6 +235,8 @@ export default async function AdminInquiryDetailPage({
   const noticeValue = rawSearchParams.notice;
   const notice = Array.isArray(noticeValue) ? noticeValue[0] : noticeValue;
   const redirectTo = `/admin/inquiries/${detail.id}`;
+  const finalizedQuote = conversion?.finalizedQuote ?? null;
+  const finalizedQuoteIssue = conversion?.finalizedQuoteIssue ?? null;
 
   return (
     <div className="min-w-0 max-w-full space-y-6">
@@ -303,9 +305,15 @@ export default async function AdminInquiryDetailPage({
               Email
             </a>
           ) : null}
+          <Link
+            href={`/admin/inquiries/${detail.id}/quote`}
+            className="inline-flex min-h-11 min-w-0 max-w-full items-center justify-center rounded-full bg-charcoal px-5 py-2 text-center text-sm font-medium text-ivory shadow-soft transition hover:bg-charcoal/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-charcoal"
+          >
+            Build quote
+          </Link>
           <a
             href="#convert-to-order"
-            className="inline-flex min-h-11 min-w-0 max-w-full items-center justify-center rounded-full bg-charcoal px-5 py-2 text-center text-sm font-medium text-ivory transition hover:bg-charcoal/90"
+            className="inline-flex min-h-11 min-w-0 max-w-full items-center justify-center rounded-full border border-charcoal/15 bg-white px-5 py-2 text-center text-sm font-medium text-charcoal transition hover:bg-charcoal/5"
           >
             Convert to order ↓
           </a>
@@ -649,9 +657,25 @@ export default async function AdminInquiryDetailPage({
                 <input type="hidden" name="redirectTo" value={redirectTo} />
 
                 <div className={cn("min-w-0 max-w-full rounded-[1.6rem] border border-charcoal/8 bg-ivory/70 p-5 text-sm leading-8 text-charcoal/70", userTextClass)}>
-                  This creates a manual-first order from the inquiry’s event details and requested
-                  items. You can finish pricing, payment records, Square references, and bakery
-                  notes after conversion on the order detail page.
+                  {finalizedQuoteIssue ? (
+                    <span role="alert">
+                      {finalizedQuoteIssue} Open the quote, create and finalize a revision, then
+                      return here to convert it safely.
+                    </span>
+                  ) : finalizedQuote ? (
+                    <>
+                      Finalized quote version {finalizedQuote.version} will set the order total,
+                      deposit, line pricing, and internal summary. Those saved quote values are
+                      verified again on the server when the order is created.
+                    </>
+                  ) : (
+                    <>
+                      No finalized quote is current, so this remains a manual conversion. This
+                      creates an order from the inquiry’s event details and requested items;
+                      payment records, Square references, and bakery notes can continue on the
+                      order detail page.
+                    </>
+                  )}
                 </div>
 
                 <div className="min-w-0 max-w-full rounded-[1.6rem] border border-charcoal/8 bg-white/82 p-5">
@@ -734,6 +758,8 @@ export default async function AdminInquiryDetailPage({
                       name="estimatedTotalAmount"
                       inputMode="decimal"
                       placeholder="Optional"
+                      defaultValue={finalizedQuote?.estimatedTotalAmount ?? undefined}
+                      readOnly={Boolean(finalizedQuote)}
                     />
                   </div>
 
@@ -744,6 +770,8 @@ export default async function AdminInquiryDetailPage({
                       name="totalAmount"
                       inputMode="decimal"
                       placeholder="Optional for now"
+                      defaultValue={finalizedQuote?.totalAmount ?? undefined}
+                      readOnly={Boolean(finalizedQuote)}
                     />
                   </div>
 
@@ -754,6 +782,8 @@ export default async function AdminInquiryDetailPage({
                       name="depositDueAmount"
                       inputMode="decimal"
                       placeholder="Optional"
+                      defaultValue={finalizedQuote?.depositDueAmount ?? undefined}
+                      readOnly={Boolean(finalizedQuote)}
                     />
                   </div>
 
@@ -784,11 +814,17 @@ export default async function AdminInquiryDetailPage({
                       id="internalSummary"
                       name="internalSummary"
                       placeholder="A short bakery-side summary for the new order."
+                      defaultValue={finalizedQuote?.internalSummary ?? undefined}
+                      readOnly={Boolean(finalizedQuote)}
                     />
                   </div>
                 </div>
 
-                <Button type="submit" className="max-w-full text-center">
+                <Button
+                  type="submit"
+                  className="max-w-full text-center"
+                  disabled={Boolean(finalizedQuoteIssue)}
+                >
                   Create order from inquiry
                 </Button>
               </form>

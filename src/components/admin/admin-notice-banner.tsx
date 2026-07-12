@@ -48,7 +48,11 @@ export function AdminNoticeBanner({
   }
 
   return (
-    <div className={`rounded-[1.6rem] border px-4 py-3 text-sm font-medium ${copy.className}`}>
+    <div
+      className={`rounded-[1.6rem] border px-4 py-3 text-sm font-medium ${copy.className}`}
+      role="status"
+      aria-live="polite"
+    >
       {copy.text}
     </div>
   );

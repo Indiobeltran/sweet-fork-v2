@@ -134,6 +134,14 @@ export function getAdminPageMeta(pathname: string): AdminPageMeta {
     return exactRoute;
   }
 
+  if (/^\/admin\/inquiries\/[^/]+\/quote\/?$/.test(normalizedPathname)) {
+    return {
+      activePrimaryKey: "inquiries",
+      key: "inquiries",
+      title: "Build quote",
+    };
+  }
+
   const detailRoute = DETAIL_ROUTE_META.find(
     (route) => normalizedPathname !== route.href && isAdminHrefActive(normalizedPathname, route.href),
   );

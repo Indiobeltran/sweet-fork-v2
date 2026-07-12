@@ -23,10 +23,16 @@ import {
   type OrderDeleteClient,
 } from "@/lib/admin/order-deletion";
 import { validateManualOrderPaymentAmounts } from "@/lib/admin/order-payments";
+import {
+  reconcileQuoteBackedItemCounts,
+  resolveInquiryOrderConversion,
+} from "@/lib/admin/inquiry-order-conversion";
+import { parseQuoteSnapshot } from "@/lib/quotes/workflow";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   Constants,
   type Enums,
+  type Json,
   type Tables,
   type TablesInsert,
   type TablesUpdate,
@@ -628,12 +634,12 @@ export async function createOrderFromInquiry(formData: FormData) {
   const customerAction = parseRequiredString(formData.get("customerAction"));
   const existingCustomerId = parseOptionalString(formData.get("existingCustomerId"));
   const orderStatus = parseRequiredString(formData.get("orderStatus"));
-  const estimatedTotalAmount = parseAmount(formData.get("estimatedTotalAmount"));
-  const totalAmount = parseAmount(formData.get("totalAmount")) ?? 0;
-  const depositDueAmount = parseAmount(formData.get("depositDueAmount")) ?? 0;
+  const manualEstimatedTotalAmount = parseAmount(formData.get("estimatedTotalAmount"));
+  const manualTotalAmount = parseAmount(formData.get("totalAmount")) ?? 0;
+  const manualDepositDueAmount = parseAmount(formData.get("depositDueAmount")) ?? 0;
   const depositDueAt = parseDateInputAsIso(formData.get("depositDueAt"));
   const finalDueAt = parseDateInputAsIso(formData.get("finalDueAt"));
-  const internalSummary = parseOptionalString(formData.get("internalSummary"));
+  const manualInternalSummary = parseOptionalString(formData.get("internalSummary"));
   const fulfillmentNotes = parseOptionalString(formData.get("fulfillmentNotes"));
 
   if (!inquiryId) {
@@ -666,12 +672,25 @@ export async function createOrderFromInquiry(formData: FormData) {
     .select("id")
     .eq("inquiry_id", inquiryId)
     .maybeSingle();
+  const finalizedQuotePromise = supabase
+    .from("inquiry_quotes")
+    .select("id, version, customer_scope, calculation_snapshot")
+    .eq("inquiry_id", inquiryId)
+    .eq("is_current", true)
+    .eq("status", "finalized")
+    .maybeSingle();
 
   const [
     { data: inquiry, error: inquiryError },
     { data: inquiryItems, error: itemsError },
     { data: existingOrder, error: existingOrderError },
-  ] = await Promise.all([inquiryPromise, itemsPromise, existingOrderPromise]);
+    { data: finalizedQuote, error: finalizedQuoteError },
+  ] = await Promise.all([
+    inquiryPromise,
+    itemsPromise,
+    existingOrderPromise,
+    finalizedQuotePromise,
+  ]);
 
   if (inquiryError || !inquiry) {
     redirectWithNotice(redirectTarget, "convert-error");
@@ -685,9 +704,53 @@ export async function createOrderFromInquiry(formData: FormData) {
     redirectWithNotice(redirectTarget, "convert-error");
   }
 
+  if (finalizedQuoteError) {
+    redirectWithNotice(redirectTarget, "convert-error");
+  }
+
   if (existingOrder?.id) {
     redirectWithNotice(`/admin/orders/${existingOrder.id}`, "order-exists");
   }
+
+  let conversionValues;
+
+  try {
+    conversionValues = resolveInquiryOrderConversion({
+      finalizedQuote: finalizedQuote
+        ? {
+            customerScope: finalizedQuote.customer_scope,
+            id: finalizedQuote.id,
+            snapshot: parseQuoteSnapshot(finalizedQuote.calculation_snapshot),
+            version: finalizedQuote.version,
+          }
+        : null,
+      inquiryItems: inquiryItems.map((item) => ({
+        id: item.id,
+        productType: item.product_type,
+        quantity: item.quantity,
+      })),
+      manualValues: {
+        depositDueAmount: manualDepositDueAmount,
+        estimatedTotalAmount: manualEstimatedTotalAmount,
+        internalSummary: manualInternalSummary,
+        totalAmount: manualTotalAmount,
+      },
+    });
+  } catch {
+    redirectWithNotice(redirectTarget, "convert-error");
+  }
+
+  const {
+    balanceDueAmount,
+    depositDueAmount,
+    estimatedTotalAmount,
+    internalSummary,
+    linePricing,
+    quoteMetadata,
+    subtotalAmount,
+    taxAmount,
+    totalAmount,
+  } = conversionValues;
 
   let customerId = inquiry.customer_id;
   let createdCustomerId: string | null = null;
@@ -756,13 +819,14 @@ export async function createOrderFromInquiry(formData: FormData) {
     customerSnapshot = currentCustomer;
   }
 
-  const metadata = mergeOrderWorkflowMetadata({}, {
+  const metadataBase: Json = quoteMetadata ?? {};
+  const metadata = mergeOrderWorkflowMetadata(metadataBase, {
     estimatedTotalAmount,
     fulfillmentNotes,
   });
 
   const orderInsert: TablesInsert<"orders"> = {
-    balance_due_amount: totalAmount,
+    balance_due_amount: balanceDueAmount,
     customer_id: customerId,
     delivery_address: inquiry.fulfillment_method === "delivery" ? inquiry.venue_address : null,
     deposit_due_amount: depositDueAmount,
@@ -778,7 +842,8 @@ export async function createOrderFromInquiry(formData: FormData) {
     metadata,
     payment_status: "unpaid",
     status: nextOrderStatus,
-    subtotal_amount: totalAmount,
+    subtotal_amount: subtotalAmount,
+    tax_amount: taxAmount,
     total_amount: totalAmount,
     venue_address: inquiry.venue_address,
     venue_name: inquiry.venue_name,
@@ -799,33 +864,58 @@ export async function createOrderFromInquiry(formData: FormData) {
     .single();
 
   if (orderError || !createdOrder) {
+    if (createdCustomerId) {
+      await supabase.from("customers").delete().eq("id", createdCustomerId);
+    }
     redirectWithNotice(redirectTarget, "convert-error");
   }
 
-  const orderItemsInsert: TablesInsert<"order_items">[] = inquiryItems.map((item) => ({
-    color_palette: item.color_palette,
-    cookie_count: item.cookie_count,
-    cupcake_count: item.cupcake_count,
-    design_notes: item.design_notes,
-    detail_json: item.detail_json,
-    flavor_notes: item.flavor_notes,
-    icing_style: item.icing_style,
-    inquiry_item_id: item.id,
-    kit_count: item.kit_count,
-    macaron_count: item.macaron_count,
-    order_id: createdOrder.id,
-    product_id: item.product_id,
-    product_label: item.product_label,
-    product_type: item.product_type,
-    quantity: item.quantity,
-    servings: item.servings,
-    shape: item.shape,
-    size_label: item.size_label,
-    sort_order: item.sort_order,
-    tiers: item.tiers,
-    topper_text: item.topper_text,
-    wedding_servings: item.wedding_servings,
-  }));
+  const linePricingByInquiryItemId = new Map(
+    linePricing?.map((line) => [line.inquiryItemId, line]) ?? [],
+  );
+  const orderItemsInsert: TablesInsert<"order_items">[] = inquiryItems.map((item) => {
+    const quoteLine = linePricingByInquiryItemId.get(item.id);
+    const counts = quoteLine
+      ? reconcileQuoteBackedItemCounts(item.product_type, quoteLine.quantity, {
+          cookieCount: item.cookie_count,
+          cupcakeCount: item.cupcake_count,
+          kitCount: item.kit_count,
+          macaronCount: item.macaron_count,
+        })
+      : {
+          cookieCount: item.cookie_count,
+          cupcakeCount: item.cupcake_count,
+          kitCount: item.kit_count,
+          macaronCount: item.macaron_count,
+        };
+
+    return {
+      color_palette: item.color_palette,
+      cookie_count: counts.cookieCount,
+      cupcake_count: counts.cupcakeCount,
+      design_notes: item.design_notes,
+      detail_json: item.detail_json,
+      flavor_notes: item.flavor_notes,
+      icing_style: item.icing_style,
+      inquiry_item_id: item.id,
+      kit_count: counts.kitCount,
+      line_total: quoteLine?.lineTotal,
+      macaron_count: counts.macaronCount,
+      order_id: createdOrder.id,
+      product_id: item.product_id,
+      product_label: item.product_label,
+      product_type: item.product_type,
+      quantity: quoteLine?.quantity ?? item.quantity,
+      servings: item.servings,
+      shape: item.shape,
+      size_label: item.size_label,
+      sort_order: item.sort_order,
+      tiers: item.tiers,
+      topper_text: item.topper_text,
+      unit_price: quoteLine?.unitPrice,
+      wedding_servings: item.wedding_servings,
+    };
+  });
 
   const { error: orderItemsError } = await supabase.from("order_items").insert(orderItemsInsert);
 

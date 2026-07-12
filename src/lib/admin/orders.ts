@@ -21,7 +21,9 @@ import {
   type OrderPaymentSnapshot,
 } from "@/lib/admin/order-workflow";
 import { filterOrdersBySearch } from "@/lib/admin/order-list-view";
+import { resolveInquiryOrderConversion } from "@/lib/admin/inquiry-order-conversion";
 import { getBusinessDateKey } from "@/lib/business-time";
+import { parseQuoteSnapshot } from "@/lib/quotes/workflow";
 import { toTitleCase } from "@/lib/utils";
 import type { Enums, Json, Tables } from "@/types/supabase.generated";
 
@@ -182,6 +184,11 @@ type InquiryConversionInquiryRow = Pick<
 
 type InquiryConversionOrderRow = Pick<OrderRow, "id" | "payment_status" | "status">;
 
+type InquiryConversionQuoteRow = Pick<
+  Tables<"inquiry_quotes">,
+  "calculation_snapshot" | "customer_scope" | "id" | "version"
+>;
+
 type InquiryConversionCustomerRow = Pick<
   CustomerRow,
   | "email"
@@ -262,6 +269,15 @@ export type InquiryConversionData = {
     paymentStatus: Enums<"payment_status">;
     status: Enums<"order_status">;
   } | null;
+  finalizedQuote: {
+    depositDueAmount: number;
+    estimatedTotalAmount: number | null;
+    id: string;
+    internalSummary: string | null;
+    totalAmount: number;
+    version: number;
+  } | null;
+  finalizedQuoteIssue: string | null;
   linkedCustomer: InquiryConversionCustomerOption | null;
   matchedCustomerIds: string[];
   suggestedOrderStatus: Enums<"order_status">;
@@ -555,6 +571,18 @@ export async function getInquiryConversionData(
     .select("id, status, payment_status")
     .eq("inquiry_id", inquiryId)
     .maybeSingle();
+  const itemsPromise = supabase
+    .from("inquiry_items")
+    .select("id, product_type, quantity")
+    .eq("inquiry_id", inquiryId)
+    .order("sort_order", { ascending: true });
+  const quotePromise = supabase
+    .from("inquiry_quotes")
+    .select("id, version, customer_scope, calculation_snapshot")
+    .eq("inquiry_id", inquiryId)
+    .eq("is_current", true)
+    .eq("status", "finalized")
+    .maybeSingle();
   // The picker shows the most recently active customers; suggested matches
   // beyond this cap are merged in from a targeted lookup below.
   const customersPromise = supabase
@@ -567,8 +595,16 @@ export async function getInquiryConversionData(
   const [
     { data: inquiryData, error: inquiryError },
     { data: orderData, error: orderError },
+    { data: itemData, error: itemsError },
+    { data: quoteData, error: quoteError },
     { data: customerData, error: customersError },
-  ] = await Promise.all([inquiryPromise, orderPromise, customersPromise]);
+  ] = await Promise.all([
+    inquiryPromise,
+    orderPromise,
+    itemsPromise,
+    quotePromise,
+    customersPromise,
+  ]);
 
   if (inquiryError) {
     throw inquiryError;
@@ -576,6 +612,14 @@ export async function getInquiryConversionData(
 
   if (orderError) {
     throw orderError;
+  }
+
+  if (itemsError) {
+    throw itemsError;
+  }
+
+  if (quoteError) {
+    throw quoteError;
   }
 
   if (customersError) {
@@ -589,6 +633,38 @@ export async function getInquiryConversionData(
   const inquiry = inquiryData as InquiryConversionInquiryRow;
   const existingOrder = orderData as InquiryConversionOrderRow | null;
   const customers = (customerData ?? []) as InquiryConversionCustomerRow[];
+  const conversionItems = (itemData ?? []) as Array<
+    Pick<Tables<"inquiry_items">, "id" | "product_type" | "quantity">
+  >;
+  const currentQuote = quoteData as InquiryConversionQuoteRow | null;
+  let quoteConversion: ReturnType<typeof resolveInquiryOrderConversion> | null = null;
+  let finalizedQuoteIssue: string | null = null;
+
+  if (currentQuote) {
+    try {
+      quoteConversion = resolveInquiryOrderConversion({
+        finalizedQuote: {
+          customerScope: currentQuote.customer_scope,
+          id: currentQuote.id,
+          snapshot: parseQuoteSnapshot(currentQuote.calculation_snapshot),
+          version: currentQuote.version,
+        },
+        inquiryItems: conversionItems.map((item) => ({
+          id: item.id,
+          productType: item.product_type,
+          quantity: item.quantity,
+        })),
+        manualValues: {
+          depositDueAmount: 0,
+          estimatedTotalAmount: null,
+          internalSummary: null,
+          totalAmount: 0,
+        },
+      });
+    } catch {
+      finalizedQuoteIssue = "The current finalized quote is invalid or no longer matches this inquiry.";
+    }
+  }
 
   const matchConditions: string[] = [];
   const matchEmail = escapeIlikeTerm(inquiry.customer_email ?? "");
@@ -676,6 +752,17 @@ export async function getInquiryConversionData(
           status: existingOrder.status,
         }
       : null,
+    finalizedQuote: currentQuote && quoteConversion
+      ? {
+          depositDueAmount: quoteConversion.depositDueAmount,
+          estimatedTotalAmount: quoteConversion.estimatedTotalAmount,
+          id: currentQuote.id,
+          internalSummary: quoteConversion.internalSummary,
+          totalAmount: quoteConversion.totalAmount,
+          version: currentQuote.version,
+      }
+      : null,
+    finalizedQuoteIssue,
     linkedCustomer: sortedOptions.find((customer) => customer.isLinked) ?? null,
     matchedCustomerIds,
     suggestedOrderStatus: getSuggestedOrderStatus(inquiry.status),

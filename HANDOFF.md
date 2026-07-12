@@ -4,6 +4,88 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## Inquiry Quote Accelerator — 2026-07-12 MDT
+
+- **Current branch**: `codex/inquiry-quote-builder` in isolated worktree `/Users/indiobeltran/.config/superpowers/worktrees/sweet-fork-v2/inquiry-quote-builder`.
+- **Current objective**: Reduce the time from follow-up conversation to a quality customer estimate by implementing a private, calibrated admin quote builder and finalized quote-to-order handoff.
+- **Completion status**: Application, schema migration, contract/unit tests, and order-conversion integration are implemented and verified statically. The migration is unapplied, so authenticated database-backed quote runtime QA remains pending.
+- **Last completed work**:
+  - Added a deterministic cost-plus quote engine covering production-stage time, owner labor, materials, packaging, special costs, fixed/variable overhead, delivery, contingency, rush, discount, margin, tax, deposit, validity, website-floor warnings, and owner-editable final price.
+  - Seeded website starting-price floors at `$80` custom cakes, `$300` wedding cakes, `$36` cupcakes, `$48` sugar cookies, `$30` macarons, and `$25` DIY kits.
+  - Updated the editable mileage seed to the official 2026 IRS business benchmark of `$0.725` per mile.
+  - Added private owner pricing calibration, explicit warnings, detailed internal outcomes, customer-safe copy, draft/finalize/revision history, finalized immutability, and accessible save/copy/recalculation feedback.
+  - Added `inquiry_quotes`, RLS/grants, finalized-content protection, current-version uniqueness, deposit/total integrity, and an atomic revision RPC.
+  - Made the current finalized snapshot authoritative during order conversion, carried approved whole-number quote quantities and derived dozen/kit display counts into order items, allocated pre-tax cents deterministically, blocked invalid/stale quote conversion without crashing the inquiry page, constrained manual deposits to the order total, and added an insert-time database freshness guard.
+  - Recorded the durable architecture and security decision in `DECISIONS.md`.
+- **In-progress work**: None.
+- **Next exact task**: Review the unstaged diff and migration. After an approved backup and non-production/linked migration plan, apply the migration, sign in as owner and manager, and complete the authenticated quote lifecycle smoke test below before any deployment.
+
+### Files Created
+
+- `src/app/admin/(protected)/inquiries/[id]/quote/actions.ts`
+- `src/app/admin/(protected)/inquiries/[id]/quote/page.tsx`
+- `src/components/admin/inquiry-quote-builder.tsx`
+- `src/components/admin/inquiry-quote-builder.test.ts`
+- `src/lib/admin/inquiry-order-conversion.ts`
+- `src/lib/admin/inquiry-order-conversion.test.ts`
+- `src/lib/admin/quotes.ts`
+- `src/lib/quotes/default-profile.ts`
+- `src/lib/quotes/pricing-engine.ts`
+- `src/lib/quotes/pricing-engine.test.ts`
+- `src/lib/quotes/schema-contract.test.ts`
+- `src/lib/quotes/server-contract.test.ts`
+- `src/lib/quotes/types.ts`
+- `src/lib/quotes/validation.ts`
+- `src/lib/quotes/validation.test.ts`
+- `src/lib/quotes/workflow.ts`
+- `src/lib/quotes/workflow.test.ts`
+- `supabase/migrations/20260712213211_inquiry_quote_builder_schema.sql`
+
+### Files Changed
+
+- `DECISIONS.md` — recorded quote architecture, calibration, security, versioning, and order-handoff decisions.
+- `HANDOFF.md` — added this recovery and verification record.
+- `package.json` — registered all quote and conversion tests.
+- `src/app/admin/(protected)/inquiries/[id]/page.tsx` — added Build quote CTA and finalized-quote conversion preview/locked defaults.
+- `src/app/admin/(protected)/orders/actions.ts` — reloaded and enforced finalized snapshot values during conversion.
+- `src/components/admin/admin-notice-banner.tsx` — made admin action notices a polite live status region.
+- `src/lib/admin/navigation.ts` and `src/lib/admin/navigation.test.ts` — named the quote route correctly.
+- `src/lib/admin/orders.ts` — loaded finalized conversion data for the inquiry detail page.
+- `src/types/supabase.generated.ts` — added the new table and revision RPC surfaces.
+
+### Commands Run And Results
+
+- `npm test` — passed, `211/211`.
+- `npm run lint` — passed with zero warnings.
+- `npm run typecheck` — passed.
+- `npm run build` — passed; Next.js compiled and generated `26/26` static pages, including the dynamic `/admin/inquiries/[id]/quote` route.
+- `git diff --check` — passed.
+- Targeted quote engine/schema/server/validation/workflow/UI/conversion tests — passed throughout TDD and review.
+- Local in-app browser smoke — `/admin/inquiries` redirected to `/admin/login`; login rendered without browser console warnings/errors. The quote route itself could not be exercised because this worktree has no Supabase environment configuration.
+- `docker info` — unavailable because Docker is not installed in this environment.
+- `npx supabase migration list --local` — could not connect because no local PostgreSQL service is running.
+- Spreadsheet connector session discovery — no connected Excel session was available, so no secondary calibration workbook was created.
+
+### Commands Still Needed
+
+- Review a credential-safe backup and migration procedure before any linked apply.
+- Run a migration dry run against the intended environment, then apply only after approval and backup.
+- Run authenticated owner/manager browser QA for: new quote, line preset/manual edits, delivery, adjustments, calibration ownership, draft save, finalize lock, copy message, revision, quote history, and quote-backed order conversion.
+- Verify the deployed `inquiry_quotes` constraints, RLS, finalized trigger, and revision RPC with executable database tests.
+
+### Known Issues And Open Decisions
+
+- The migration has **not** been applied locally or remotely; no production data or settings were changed.
+- Authenticated quote UI, database writes, RLS behavior, and responsive/mobile layout have not been manually exercised against a running migrated database.
+- The initial labor/time/material/overhead/margin profile is deliberately marked as an owner-review calibration seed. Melissa must approve or tune it before using the recommendations operationally.
+- The spreadsheet plugin exposed no connected workbook session. The in-app pricing profile is the authoritative source; a secondary workbook remains optional after an Excel session is connected.
+
+### Preservation And Git State
+
+- The public site, public inquiry wizard, pricing copy, route names, and unrelated user changes were intentionally preserved.
+- The main checkout and its existing untracked/user files were not modified; all task work stayed in the isolated worktree.
+- Nothing is staged, committed, pushed, merged, deployed, or applied to Supabase. All changes are unstaged.
+
 ## COPY-1 Phase B — 2026-07-11 MDT
 
 - **Current branch**: `codex/public-copy-pass-phase-b`, created from current `main` (`27bed268`).

@@ -2,6 +2,41 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
+## 2026-07-12 - Use Versioned Admin Quotes For Post-Inquiry Pricing
+
+### Status
+
+Accepted
+
+### Context
+
+The existing inquiry estimate is useful for early triage, but it is intentionally broad and cannot efficiently turn the additional details learned in a client conversation into a defensible customer quote. The bakery needs a fast private workflow that values the owner's time, direct costs, delivery, overhead, and profit without exposing internal assumptions to customers or drifting away from the public starting prices.
+
+### Options Considered
+
+- Keep the current inquiry estimate and finish every quote manually in notes or email.
+- Use a standalone spreadsheet as the primary calculator and copy results into the admin.
+- Add a mutable total directly to the inquiry record.
+- Add a private, versioned admin quote builder backed by an owner-controlled pricing profile, immutable finalized snapshots, and an authoritative handoff into order conversion.
+
+### Decision
+
+Use a versioned admin quote builder as the source of truth for post-inquiry pricing. The engine calculates stage-based owner labor, materials, packaging, special costs, fixed and variable overhead, round-trip delivery expense and setup labor, contingency, rush charges, discounts, tax, deposit, and margin. Public starting prices remain warning floors sourced from the current website intent: custom cakes `$80`, wedding cakes `$300`, cupcakes `$36` per dozen, sugar cookies `$48` per dozen, macarons `$30` per dozen, and DIY kits `$25`.
+
+Store the editable pricing profile in the private `site_settings` key `quote.pricing-profile`. Only owners may save it. The initial profile is a calibration seed, not an approved promise; the admin explicitly warns that the owner must review it. The delivery seed uses the 2026 IRS business-mile benchmark of `$0.725` per mile, while labor, time, material, overhead, margin, delivery minimum, tax, deposit, and product presets remain editable.
+
+Persist quote revisions in `inquiry_quotes`. Drafts may be recalculated and edited. Finalization revalidates and locks the saved snapshot instead of silently applying a newer profile. Finalized content is database-protected from mutation; creating a revision atomically retires the current finalized version and creates a new current draft. Customer scope and message text are regenerated on the server from safe quote data and never trusted from browser fields.
+
+When an inquiry has a current finalized quote, order conversion reloads that snapshot on the server and treats its total, deposit, tax, summary, and cent-allocated line pricing as authoritative. Hidden or read-only browser values cannot override it. A database trigger verifies the quote ID and version are still current and finalized for that inquiry at the exact order-insert boundary. Inquiries without a finalized quote retain the existing manual conversion path, with the deposit constrained to the order total. Finalizing a quote does not send email, create an invoice, collect payment, or create an order.
+
+### Consequences
+
+- The owner can quote from one admin workflow while retaining a complete revision history and customer-safe copy.
+- Internal cost, labor, margin, and warning details remain private.
+- Website starting prices act as visible calibration warnings rather than guaranteed fixed prices.
+- The new migration must be reviewed and applied before the quote route can operate against a deployed database.
+- A spreadsheet can still be used later as a secondary calibration/export tool, but it is not the authoritative pricing store.
+
 ## 2026-07-04 - Permanent Order Deletion Is Owner-Only And Cancelled-Only
 
 ### Status
