@@ -24,6 +24,13 @@ function readQuoteMigration() {
   };
 }
 
+function readAllMigrationSql() {
+  return readdirSync(migrationsDirectory)
+    .sort()
+    .map((file) => readFileSync(join(migrationsDirectory, file), "utf8"))
+    .join("\n");
+}
+
 function assertSql(sql: string, pattern: RegExp, message: string) {
   assert.match(sql, pattern, message);
 }
@@ -74,6 +81,16 @@ describe("inquiry quote schema contract", () => {
 
     assertSql(sql, /for update[\s\S]*using \(\(select public\.is_admin\(\)\)\)[\s\S]*with check \(\(select public\.is_admin\(\)\)\)/i, "Admin updates need USING and WITH CHECK guards.");
     assert.doesNotMatch(sql, /create policy inquiry_quotes_admin_delete/i, "Authenticated admins must not receive a delete policy.");
+  });
+
+  it("removes inherited table privileges before restoring the intended authenticated grants", () => {
+    const sql = readAllMigrationSql();
+
+    assertSql(
+      sql,
+      /revoke all privileges on table public\.inquiry_quotes from authenticated[\s\S]*grant select, insert, update on table public\.inquiry_quotes to authenticated/i,
+      "Hosted default privileges must not leave authenticated with DELETE, TRUNCATE, REFERENCES, or TRIGGER access.",
+    );
   });
 
   it("keeps finalized content immutable while allowing current-revision switches", () => {

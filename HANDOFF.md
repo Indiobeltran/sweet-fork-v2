@@ -4,6 +4,27 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## Inquiry Quote Supabase Migration — 2026-07-12 MDT
+
+- **Current branch**: `main`.
+- **Objective**: Apply and verify the inquiry quote schema on the linked Supabase project.
+- **Backup decision**: The user explicitly directed this migration to proceed without a database backup for now. No backup was created.
+- **Completed**:
+  - Dry-run confirmed only `20260712213211_inquiry_quote_builder_schema.sql` was pending; it was applied successfully.
+  - Remote verification found hosted default table privileges had left `authenticated` with broad table-level privileges despite the migration's narrower grant. RLS still had no DELETE policy, but defense-in-depth did not match the intended model.
+  - Created, dry-ran, and applied `20260712231746_tighten_inquiry_quote_grants.sql`, which resets authenticated privileges and restores only SELECT/INSERT/UPDATE while keeping anon with none.
+  - Local and remote migration histories now include both quote migrations.
+- **Remote verification**:
+  - `public.inquiry_quotes` exists, has RLS enabled, and currently contains zero quote rows.
+  - Authenticated privileges are SELECT/INSERT/UPDATE only; DELETE/TRUNCATE/REFERENCES/TRIGGER are false. Anon has no table/column access.
+  - Admin SELECT/INSERT/UPDATE policies exist; finalized immutability, timestamp, and quote-backed order freshness triggers exist.
+  - Revision RPC exists; required constraints exist; private `quote.pricing-profile` is version 1 with mileage rate `0.725`.
+  - `supabase db advisors --linked --type all --level warn` found no warning tied to the new quote table or functions. Existing project-wide warnings remain for legacy helper-function exposure/search paths, `citext` in public, leaked-password protection, several older RLS init plans, and duplicate permissive read policies.
+- **Files changed**: `supabase/migrations/20260712231746_tighten_inquiry_quote_grants.sql`, `src/lib/quotes/schema-contract.test.ts`, and `HANDOFF.md`.
+- **Files intentionally preserved**: Existing untracked `.agents/`, `.claude/`, `.superpowers/`, `skills-lock.json`, `scratch/**`, and `supabase/.temp/linked-project.json` remain untouched.
+- **Next exact task**: Run authenticated owner/manager browser QA for quote creation, draft save, finalization, revision, customer copy, and quote-backed order conversion. Review the pre-existing Supabase advisor warnings as a separate security-hardening task.
+- **Known issue**: This deployment was intentionally performed without a fresh backup, so rollback would require a forward corrective migration rather than restoration from a task-specific snapshot.
+
 ## Inquiry Quote Accelerator Publication — 2026-07-12 MDT
 
 - **Current branch**: `main`.
