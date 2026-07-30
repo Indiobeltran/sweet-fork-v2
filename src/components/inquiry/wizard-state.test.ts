@@ -4,6 +4,10 @@ import { describe, it } from "node:test";
 
 // @ts-expect-error Node's strip-types test runner needs the .ts extension.
 import { createWizardDraft, getPaletteState, hasMeaningfulWizardValues, isEditableFormTarget, parseWizardDraft, serializePaletteSelection } from "./wizard-state.ts";
+// @ts-expect-error Node's strip-types test runner needs the .ts extension.
+import { sanitizeTextValue } from "../../lib/validations/text.ts";
+// @ts-expect-error Node's strip-types test runner needs the .ts extension.
+import { MAX_INSPIRATION_LINKS, getInvalidInspirationLinkIndex, normalizeInspirationLinks } from "../../lib/validations/inspiration-links.ts";
 import type { InquiryFormValues } from "@/lib/validations/inquiry";
 
 const baseValues: InquiryFormValues = {
@@ -134,6 +138,9 @@ describe("wizard draft state", () => {
     assert.equal(parsed?.values.orderItems[0].flavorNotes, "Chocolate ganache\nVanilla bean");
     assert.equal(parsed?.values.orderItems[0].topperText, "Happy Birthday\nAdd stars");
     assert.equal(parsed?.values.colorPalette, "Neutrals - ivory and champagne");
+    assert.deepEqual(parsed?.values.inspirationLinks, [
+      "https://example.com/board",
+    ]);
   });
 
   it("preserves raw in-progress item and palette whitespace in the serialized draft", () => {
@@ -181,6 +188,69 @@ describe("wizard draft state", () => {
   });
 });
 
+describe("URL-only inspiration references", () => {
+  it("normalizes practical bare domains while preserving explicit URLs", () => {
+    assert.deepEqual(
+      normalizeInspirationLinks([
+        " pinterest.com/sweet-fork/board ",
+        "",
+        "https://www.instagram.com/p/ABC123/?utm_source=customer",
+        "drive.google.com/file/d/example/view\n\ndropbox.com/s/example/cake.jpg",
+      ]),
+      [
+        "https://pinterest.com/sweet-fork/board",
+        "https://www.instagram.com/p/ABC123/?utm_source=customer",
+        "https://drive.google.com/file/d/example/view",
+        "https://dropbox.com/s/example/cake.jpg",
+      ],
+    );
+  });
+
+  it("identifies an invalid line without discarding the other entries", () => {
+    const links = normalizeInspirationLinks([
+      "pinterest.com/example",
+      "not a public link",
+      "https://examplebakery.com/gallery",
+    ]);
+
+    assert.deepEqual(links, [
+      "https://pinterest.com/example",
+      "not a public link",
+      "https://examplebakery.com/gallery",
+    ]);
+    assert.equal(getInvalidInspirationLinkIndex(links), 1);
+  });
+
+  it("keeps the optional field empty and bounds link count", () => {
+    assert.deepEqual(normalizeInspirationLinks([]), []);
+    assert.equal(MAX_INSPIRATION_LINKS, 6);
+  });
+});
+
+describe("multiline inquiry normalization", () => {
+  it("preserves meaningful spaces and line breaks in wording, flavor, and design notes", () => {
+    assert.equal(
+      sanitizeTextValue("Happy Birthday Ava\nLove, Mom and Dad", {
+        multiline: true,
+      }),
+      "Happy Birthday Ava\nLove, Mom and Dad",
+    );
+    assert.equal(
+      sanitizeTextValue(
+        "White cake with Bavarian cream\nFresh raspberry layer",
+        { multiline: true },
+      ),
+      "White cake with Bavarian cream\nFresh raspberry layer",
+    );
+    assert.equal(
+      sanitizeTextValue("Soft blue ribbon\nSmall gold stars", {
+        multiline: true,
+      }),
+      "Soft blue ribbon\nSmall gold stars",
+    );
+  });
+});
+
 describe("start-order wizard source contracts", () => {
   it("keeps customer notes and wording fields multiline", async () => {
     const source = await readFile(
@@ -195,14 +265,127 @@ describe("start-order wizard source contracts", () => {
     assert.doesNotMatch(source, /const selectedItems = normalizedValues\.orderItems/);
   });
 
-  it("fires the GA4 inquiry_submitted event from one code path only", async () => {
+  it("fires generate_lead from one post-persistence code path only", async () => {
     const source = await readFile(
       new URL("./start-order-wizard.tsx", import.meta.url),
       "utf8",
     );
-    const matches = source.match(/trackAnalyticsEvent\("inquiry_submitted"/g) ?? [];
+    const matches =
+      source.match(/emitGenerateLeadAfterPersistence\(\{/g) ?? [];
 
     assert.equal(matches.length, 1);
+    assert.doesNotMatch(source, /trackAnalyticsEvent\("inquiry_submitted"/);
+    assert.match(
+      source,
+      /const payload = await submitInquiryRequest\([\s\S]+emitGenerateLeadAfterPersistence\(\{[\s\S]+confirmation: payload/,
+    );
+  });
+
+  it("does not reintroduce unsupported customer image uploads", async () => {
+    const source = await readFile(
+      new URL("./start-order-wizard.tsx", import.meta.url),
+      "utf8",
+    );
+
+    assert.doesNotMatch(source, /type=["']file["']/);
+    assert.doesNotMatch(source, /inspirationFiles/);
+  });
+
+  it("uses one optional newline-separated inspiration-link field", async () => {
+    const source = await readFile(
+      new URL("./start-order-wizard.tsx", import.meta.url),
+      "utf8",
+    );
+
+    assert.match(source, /Inspiration links \(optional\)/);
+    assert.match(source, /Pinterest, Instagram, Google Drive, Dropbox, bakery sites/);
+    assert.match(source, /separate multiple links with[\s\S]+a new line/);
+    assert.match(source, /placeholder="https:\/\/www\.pinterest\.com\/\.\.\."/);
+    assert.match(source, /value=\{values\.inspirationLinks\.join\("\\n"\)\}/);
+  });
+
+  it("submits JSON and keeps customer files out of the public API", async () => {
+    const [clientSource, routeSource] = await Promise.all([
+      readFile(
+        new URL("../../lib/inquiries/client-submit.ts", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../../app/api/inquiries/route.ts", import.meta.url),
+        "utf8",
+      ),
+    ]);
+
+    assert.match(clientSource, /"Content-Type": "application\/json"/);
+    assert.doesNotMatch(clientSource, /FormData|multipart|inspirationFiles/);
+    assert.doesNotMatch(routeSource, /\.formData\(\)|multipart|inspirationFiles/);
+    assert.match(routeSource, /contentType\.startsWith\("application\/json"\)/);
+  });
+
+  it("stores reference links and exposes them in authenticated inquiry detail", async () => {
+    const [submitSource, adminDataSource, adminPageSource] = await Promise.all([
+      readFile(
+        new URL("../../lib/inquiries/submit.ts", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../../lib/admin/inquiries.ts", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../../app/admin/(protected)/inquiries/[id]/page.tsx", import.meta.url),
+        "utf8",
+      ),
+    ]);
+
+    assert.match(submitSource, /asset_type: "reference-link"/);
+    assert.match(submitSource, /external_url: link/);
+    assert.match(adminDataSource, /asset\.asset_type === "reference-link"/);
+    assert.match(adminPageSource, /Open reference/);
+    assert.match(adminPageSource, /Inspiration references/);
+  });
+
+  it("keeps required-field validation contracts for every wizard stage", async () => {
+    const source = await readFile(
+      new URL("../../lib/validations/inquiry.ts", import.meta.url),
+      "utf8",
+    );
+
+    for (const contract of [
+      /eventType: z\.string\(\)\.trim\(\)\.min\(2, "Tell us what you are celebrating\."\)/,
+      /\.min\(1, "Choose your event date\."\)/,
+      /budgetRange: z\.enum\(budgetRangeValues/,
+      /budgetFlexibility: z\.enum\(budgetFlexibilityValues/,
+      /"Delivery requests need a ZIP code\."/,
+      /\.min\(1, "Select at least one product to continue\."\)/,
+      /"Cake selections need an estimated serving count\."/,
+      /"Cupcake count is required\."/,
+      /"Cookie count is required\."/,
+      /"Macaron count is required\."/,
+      /"DIY kit quantity is required\."/,
+      /customerName: z\.string\(\)\.trim\(\)\.min\(2, "Enter your name\."\)/,
+      /customerEmail: z\.string\(\)\.trim\(\)\.email\("Enter a valid email address\."\)/,
+      /customerPhone: z[\s\S]+\.min\(10, "Enter a valid phone number with area code\."\)/,
+      /preferredContact: z\.enum\(\["email", "text", "phone"\]\)/,
+    ]) {
+      assert.match(source, contract);
+    }
+  });
+
+  it("emits validation analytics only for advance or submit attempts", async () => {
+    const source = await readFile(
+      new URL("./start-order-wizard.tsx", import.meta.url),
+      "utf8",
+    );
+
+    assert.match(
+      source,
+      /validateStepOnBlur[\s\S]+!attemptedStepsRef\.current\.has\(stepIndex\)[\s\S]+trackErrors: false/,
+    );
+    assert.match(
+      source,
+      /const goToNextStep = \(\) => \{[\s\S]+attemptedStepsRef\.current\.add\(currentStep\);[\s\S]+validateStep\(currentStep\)/,
+    );
   });
 
   it("does not horizontally scroll the wizard card to center step markers", async () => {

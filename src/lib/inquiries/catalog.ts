@@ -46,10 +46,6 @@ function parseBoolean(value: Json | undefined) {
   return typeof value === "boolean" ? value : undefined;
 }
 
-function parseString(value: Json | undefined) {
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
-}
-
 function mergeFeatureFlags(settingFlags?: Partial<InquiryFeatureFlags>) {
   const envOverrides = getInquiryFeatureFlagEnvOverrides();
 
@@ -58,10 +54,6 @@ function mergeFeatureFlags(settingFlags?: Partial<InquiryFeatureFlags>) {
       envOverrides.linkFallbackEnabled ??
       settingFlags?.linkFallbackEnabled ??
       defaultInquiryFeatureFlags.linkFallbackEnabled,
-    storageBucket:
-      envOverrides.storageBucket ??
-      settingFlags?.storageBucket ??
-      defaultInquiryFeatureFlags.storageBucket,
   } satisfies InquiryFeatureFlags;
 }
 
@@ -72,7 +64,6 @@ function parseFeatureFlags(value: Json | null) {
 
   return mergeFeatureFlags({
     linkFallbackEnabled: parseBoolean(value.linkFallbackEnabled),
-    storageBucket: parseString(value.storageBucket),
   });
 }
 

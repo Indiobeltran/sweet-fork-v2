@@ -91,7 +91,7 @@ const sectionDefinitions: Array<Pick<SettingsAdminSection, "description" | "key"
     key: "inquiries",
     title: "Inquiry intake controls",
     description:
-      "Keep the intake flow practical. These flags control uploads, link fallback behavior, and the storage bucket used by inspiration files.",
+      "Keep the intake flow practical. Customer inspiration is URL-only; this setting controls whether public reference links are available.",
   },
   {
     key: "booking",
@@ -130,20 +130,12 @@ const adminSettingDefinitions: AdminSettingDefinition[] = [
       {
         key: "linkFallbackEnabled",
         label: "Allow inspiration links",
-        helpText: "Leave this on if clients should still be able to share Pinterest or Instagram references.",
+        helpText: "Leave this on so clients can share publicly accessible Pinterest, Instagram, Google Drive, Dropbox, bakery-site, and other reference links.",
         type: "boolean",
-      },
-      {
-        key: "storageBucket",
-        label: "Upload bucket",
-        helpText: "This should match the Supabase storage bucket that holds inquiry inspiration uploads.",
-        required: true,
-        type: "text",
       },
     ],
     fallback: {
       linkFallbackEnabled: defaultInquiryFeatureFlags.linkFallbackEnabled,
-      storageBucket: defaultInquiryFeatureFlags.storageBucket,
     },
   },
   {
@@ -228,7 +220,7 @@ export const launchReadinessSections: LaunchReadinessSection[] = [
   {
     title: "Launch checklist",
     items: [
-      "Review inquiry flags, storage bucket naming, and upload fallback behavior in case clients need to submit links instead of files.",
+      "Confirm inspiration links remain enabled and verify one URL-only reference appears in the authenticated inquiry detail view.",
       "Confirm business info, Instagram, and SEO defaults are correct before pointing the final domain to the site.",
       "Check `/admin/calendar` for upcoming orders and add blackout dates for vacations, sold-out weekends, or major family events.",
       "Check `/admin/notifications` after a test inquiry so the internal notification event and log history look healthy.",

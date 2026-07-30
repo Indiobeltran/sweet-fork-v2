@@ -65,16 +65,15 @@ General app configuration:
 
 - `NEXT_PUBLIC_SITE_URL`
 - `NEXT_PUBLIC_GA_MEASUREMENT_ID`
-- `INQUIRY_UPLOAD_ENABLED`
 - `INQUIRY_LINK_FALLBACK_ENABLED`
-- `SUPABASE_STORAGE_BUCKET`
 
 See `.env.example`.
 
 ## Current Phase Status
 
 - Public marketing routes are implemented with route-level metadata, sitemap, robots, OG image generation, gallery lightbox behavior, and inquiry CTAs.
-- `/start-order` uses a multi-step inquiry wizard with client-side guidance, server-side validation, upload checks, honeypot/timing checks, duplicate detection, and a fallback email path when submissions are unavailable.
+- `/start-order` uses a multi-step inquiry wizard with client-side guidance, server-side validation, URL-only inspiration references, honeypot/timing checks, duplicate detection, and a fallback email path when submissions are unavailable.
+- Customer file uploads are intentionally unsupported. Inspiration URLs are stored with the inquiry but excluded from analytics; any future upload feature requires a separately approved storage, security, retention, and privacy design.
 - Supabase-backed public reads degrade to curated fallback content when the backend is unavailable.
 - Admin routes are implemented behind Supabase auth and role checks.
 

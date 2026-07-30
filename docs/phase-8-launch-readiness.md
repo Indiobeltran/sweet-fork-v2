@@ -74,7 +74,7 @@ Then verify the seeded reference data:
 
 - Measurement plan: `docs/analytics-measurement-plan.md`.
 - Migration map: `docs/v1-v2-url-migration-map.md`.
-- Primary GA4 key event recommendation: `inquiry_submitted`.
+- Primary GA4 key event recommendation: `generate_lead` after confirmed inquiry persistence. `inquiry_step_completed` remains diagnostic and must not be treated as the primary conversion.
 - Optional secondary GA4 key event: `wedding_consultation_started`, only if the owner wants wedding lead actions separated.
 - GA4 Realtime, DebugView, and Search Console sitemap submission are owner/account checks after deployed-domain verification; do not claim them from code-only verification.
 - Reassess consent requirements before international marketing, international orders or shipping, national expansion, remarketing, Meta Pixel installation, personalized advertising, cross-site behavioral tracking, material business-scale changes, or material privacy-law changes.

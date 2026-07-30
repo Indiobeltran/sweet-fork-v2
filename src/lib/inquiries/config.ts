@@ -17,7 +17,7 @@ export const inquiryStepDescriptions = [
   "Confirm the event type, date, fulfillment plan, and budget range.",
   "Choose the desserts you would like included in your quote.",
   "Add serving counts, flavors, and design notes for each dessert.",
-  "Share color direction, inspiration images, links, or written notes.",
+  "Share color direction, publicly accessible inspiration links, or written notes.",
   "Review the full inquiry, add contact details, and send it through.",
 ] as const;
 
@@ -159,12 +159,10 @@ export const icingStyleOptions = [
 
 export type InquiryFeatureFlags = {
   linkFallbackEnabled: boolean;
-  storageBucket: string;
 };
 
 export const defaultInquiryFeatureFlags: InquiryFeatureFlags = {
   linkFallbackEnabled: true,
-  storageBucket: "inspiration",
 };
 
 export function createDefaultInquiryItem(productType: ProductType): InquiryProductItem {

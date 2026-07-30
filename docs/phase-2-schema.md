@@ -5,7 +5,7 @@
 This phase establishes the real Supabase/Postgres data model for Sweet Fork v2:
 
 - staff identity and roles
-- inquiry intake with multiple items and inspiration assets
+- inquiry intake with multiple items and URL/text inspiration references
 - customer, order, payment, and notes workflow
 - structured content and settings storage
 - pricing foundations for future automation
@@ -18,7 +18,7 @@ This phase establishes the real Supabase/Postgres data model for Sweet Fork v2:
 - `user_roles` stores the current role for each staff user. Current roles are `owner` and `manager`.
 - `inquiries` stores the event-level inquiry record.
 - `inquiry_items` stores one or more requested products under a single inquiry.
-- `inquiry_assets` stores inspiration uploads, links, or text references at the inquiry or item level.
+- `inquiry_assets` stores URL or text inspiration references at the inquiry or item level. Historical upload-shaped rows may remain, but the public wizard intentionally does not accept customer files.
 - `customers` stores the reusable customer record once a lead is worth tracking beyond a raw inquiry.
 - `orders` can originate from a single `inquiry` and belong to one `customer`.
 - `order_items` stores the production and pricing snapshot for each ordered product.
@@ -32,6 +32,7 @@ This phase establishes the real Supabase/Postgres data model for Sweet Fork v2:
 - The table layout, foreign keys, enum constraints, and indexes are ready for app wiring.
 - Inquiry-to-order lineage is explicit through `orders.inquiry_id`.
 - Multi-product inquiry intake is supported through `inquiry_items`.
+- Public inspiration references are URL-only. A future customer-upload feature requires a separately approved Storage, security, retention, and privacy design before any schema or application work.
 - Media reuse is supported through the central `media_assets` and `media_assignments` model.
 - Pricing data can start simple with seeded `product_prices` and grow into rule-driven automation with `pricing_rules`.
 - Structured content editing can start with `content_blocks` and `site_settings` without introducing a full CMS.

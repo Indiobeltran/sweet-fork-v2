@@ -699,7 +699,7 @@ export const termsSections = [
   {
     title: "Design expectations",
     points: [
-      "Inspiration photos are welcome, but exact replicas are not offered.",
+      "Inspiration references are welcome through publicly accessible links, but exact replicas are not offered.",
       "Color matching is approximate because screens, printed references, and food coloring can vary.",
       "I reserve the right to decline an order that does not align with bakery capabilities or values.",
     ],
@@ -731,7 +731,7 @@ export const privacySections = [
     title: "Information collected with an inquiry",
     points: [
       "The website collects the contact details, event information, product selections, design notes, budget details, and other information entered into the inquiry form.",
-      "If inspiration links or images are submitted, those references are stored with the inquiry so the order can be reviewed accurately.",
+      "Optional publicly accessible inspiration links are stored with the inquiry so the order can be reviewed accurately. Customer file uploads are intentionally unsupported.",
     ],
   },
   {
@@ -746,7 +746,7 @@ export const privacySections = [
     points: [
       "I use site analytics to understand site performance, popular pages, and the inquiry journey so the website can be improved for local customers.",
       "Google Analytics may use cookies or similar technologies to collect general technical and usage information such as page views, broad interaction events, browser or device information, and approximate traffic patterns.",
-      "Customer inquiry details such as names, email addresses, phone numbers, street addresses, exact event dates, free-form inquiry notes, uploaded file names, image URLs, and internal order or inquiry identifiers are not intentionally sent to Google Analytics.",
+      "Customer inquiry details such as names, email addresses, phone numbers, street addresses, exact event dates, free-form inquiry notes, inspiration URLs, and internal order or inquiry identifiers are not intentionally sent to Google Analytics.",
       "Analytics is used for first-party site measurement and inquiry-funnel improvement. I do not currently use Google Analytics for personalized advertising, remarketing, Google Ads audiences, Meta Pixel tracking, or cross-site behavioral advertising.",
     ],
   },
