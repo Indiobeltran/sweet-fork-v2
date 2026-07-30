@@ -4,6 +4,39 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## Inquiry Analytics Production Merge and Deployment — 2026-07-30 MDT
+
+- **Task branch and final task head**: `codex/inquiry-analytics-hardening` at `904637b28fff2a582f4d8913be6ab6dc0554723a`.
+- **Pull request**: GitHub PR `#7`, `Harden inquiry analytics and URL-only inspiration references`.
+- **Integration result**: Current `origin/main` remained at the task branch's exact base, `ce5780576cea8ed11dd288639cf4e7343abb5ff4`, so the task branch required no merge, rebase, conflict resolution, or replacement commit before final verification.
+- **Merge method**: GitHub merge commit, without force merge or branch deletion.
+- **Application merge commit / verified main commit**: `2b4d7f0fee3323a168e51beb407ad097553196c5`, with parents `ce5780576cea8ed11dd288639cf4e7343abb5ff4` and `904637b28fff2a582f4d8913be6ab6dc0554723a`.
+- **Final clean-worktree gates**:
+  - `npm test` passed `231/231`.
+  - `npm run lint` passed with zero warnings.
+  - `npm run typecheck` passed.
+  - `npm run build` passed; all `26/26` static pages generated.
+  - `git diff --check origin/main...HEAD` passed before merge.
+  - The clean PR diff contained no `scratch/`, `artifacts/`, `netlify/`, or `supabase/` paths.
+  - The repository does not track `package-lock.json`, so `npm ci` was unavailable in the temporary worktree. Gates used the primary checkout's already installed dependency tree through an ignored read-only symlink; no lockfile or dependency metadata was generated or committed.
+- **Final policy/source checks**: The public wizard and inquiry API contain no customer file-input, multipart, `FormData`, or `inspirationFiles` path. Inspiration references remain URL-only and newline-separated. The exact-once `generate_lead` path remains downstream of explicit `persisted: true`, and automated analytics tests continue to reject PII, free text, identifiers, exact dates, URLs and URL components, filenames, and link counts.
+- **Preview status before merge**: Netlify deploy preview and Vercel preview passed. GitHub reported the PR cleanly mergeable with no reviews, requested changes, or unresolved review threads.
+- **Netlify production deployment**: Deploy ID `6a6b5bcec0ecdb0008c103f7`, state `ready`, production context, published `2026-07-30T14:14:18.266Z`. Netlify reports commit ref `2b4d7f0fee3323a168e51beb407ad097553196c5`, no build error, successful plugin state, no database migrations, and no database snapshots.
+- **Read-only production checks**:
+  - `https://thesweetfork.com/` loaded with the expected homepage heading, no horizontal overflow at the desktop smoke-test viewport, and no browser console warnings or errors.
+  - `https://thesweetfork.com/start-order` loaded the five-step inquiry wizard, with no file input or browser console warnings/errors.
+  - The immutable production-deploy bundle contains `Inspiration links (optional)`, the multiple-link newline instruction, the Pinterest placeholder, and `inspirationLinks.join("\n")`; it contains no public `inspirationFiles`, file-input, or multipart submission path.
+  - A cookie-free request to `https://thesweetfork.com/admin` returned HTTP `307` with `Location: /admin/login`, confirming unauthenticated protection. The browser happened to have an existing authenticated admin session and loaded the dashboard read-only, but no inquiry detail was opened and no admin record was created, edited, or deleted; this is not the required authenticated inquiry readback verification.
+- **Production verification limitation**: No production inquiry was submitted. No GA4 Tag Assistant or DebugView validation was performed. No completed inquiry was checked against the authenticated admin interface, and no claim is made that production `generate_lead` delivery or exact-once behavior has been observed.
+- **Remaining owner verification**:
+  1. Enable Tag Assistant/debug mode and open GA4 DebugView.
+  2. Trigger one validation failure and confirm `step_id`, `step_name`, `field_id`, `error_code`, and `form_version`.
+  3. Submit one controlled production inquiry and confirm it appears exactly once in authenticated admin.
+  4. Confirm `generate_lead` appears exactly once and no PII, customer-entered text, identifiers, exact dates, inspiration URL details, filenames, or link counts appear.
+  5. Repeat on a mobile device and confirm Back navigation and browser draft restoration preserve answers and inspiration links.
+  6. Mark `generate_lead` as a GA4 key event, register the desired custom dimensions, link Search Console, and create the funnel exploration.
+- **Safety confirmation**: The primary checkout's pre-existing modified and untracked owner/admin-integration work remained untouched and outside both PR `#7` and this deployment verification. No Supabase schema, Storage, RLS, configuration, migration, database snapshot, or hosted-data mutation was performed.
+
 ## Inquiry Analytics and Wizard Hardening — Audit Baseline — 2026-07-30 MDT
 
 - **Current branch**: `codex/inquiry-analytics-hardening`, created from `main` at starting commit `ce5780576cea8ed11dd288639cf4e7343abb5ff4`.
