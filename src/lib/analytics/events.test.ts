@@ -11,6 +11,7 @@ describe("analytics event allowlist", () => {
     assert.equal(isAnalyticsEventName("gallery_item_viewed"), true);
     assert.equal(isAnalyticsEventName("inquiry_submitted"), false);
     assert.equal(isAnalyticsEventName("inquiry_step_back"), false);
+    assert.equal(isAnalyticsEventName("inspiration_image_added"), false);
     assert.equal(isAnalyticsEventName("form_submit"), false);
     assert.equal(isAnalyticsEventName("customer_email_captured"), false);
   });
@@ -24,7 +25,11 @@ describe("analytics event allowlist", () => {
       event_date: "2026-07-18",
       filename: "private-inspiration.jpg",
       form_version: INQUIRY_FORM_VERSION,
-      has_inspiration_images: true,
+      has_inspiration_links: true,
+      inspiration_domain: "pinterest.com",
+      inspiration_link_count: 2,
+      inspiration_url:
+        "https://www.pinterest.com/customer/private-board?secret=value",
       inquiry_id: "abc-123",
       page_path: "/start-order",
       phone: "801-555-1234",
@@ -36,11 +41,15 @@ describe("analytics event allowlist", () => {
       params: {
         budget_bucket: "250_500",
         form_version: INQUIRY_FORM_VERSION,
-        has_inspiration_images: true,
+        has_inspiration_links: true,
         page_path: "/start-order",
         selected_product_count: 2,
       },
     });
+    assert.equal(
+      JSON.stringify(payload).includes("pinterest.com"),
+      false,
+    );
   });
 
   it("rejects arbitrary strings in inquiry contract parameters", () => {

@@ -31,14 +31,16 @@ export async function submitInquiryRequest({
   startedAt,
   values,
 }: InquirySubmissionRequest): Promise<InquirySubmissionResponse> {
-  const formData = new FormData();
-  formData.append("payload", JSON.stringify(values));
-  formData.append("startedAt", String(startedAt));
-  formData.append("website", honeypotValue);
-
   const response = await fetchImpl("/api/inquiries", {
     method: "POST",
-    body: formData,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      payload: values,
+      startedAt,
+      website: honeypotValue,
+    }),
   });
   const responseText = await response.text();
   let payload: unknown = null;

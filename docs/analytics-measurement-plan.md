@@ -27,11 +27,10 @@ Allowed parameter keys:
 - `gallery_position`
 - `step_number`
 - `step_name`
-- `occasion_type`
 - `lead_time_bucket`
 - `budget_bucket`
 - `delivery_method`
-- `has_inspiration_images`
+- `has_inspiration_links`
 - `selected_product_count`
 - `contact_method`
 - `page_path`
@@ -51,8 +50,8 @@ Never send:
 - exact street address
 - event address
 - free-form inquiry text
-- uploaded filenames
-- uploaded image URLs
+- inspiration URLs, domains, paths, or query strings
+- inspiration-link counts
 - exact customer-specific event dates
 - Supabase IDs
 - inquiry IDs
@@ -75,11 +74,11 @@ Never send:
 | `gallery_item_navigated` | Do users browse within the lightbox? | Next/previous lightbox navigation | `gallery_category`, `page_path` | image URL, filename, media ID | Custom | No | `src/components/site/gallery-grid.tsx` | Navigate lightbox | Deeper gallery engagement |
 | `inquiry_started` | How many visitors meaningfully begin the inquiry? | First form value or selection change, never page load alone | `form_version`, `page_path` | field values | Custom | No | `src/components/inquiry/start-order-wizard.tsx` | Change the first field | Funnel start |
 | `inquiry_step_viewed` | Where do users progress in the wizard? | Step first viewed in a mounted inquiry session | `form_version`, `step_id`, `step_name`, `step_number`, `page_path` | field values | Custom | No | Inquiry wizard | Navigate steps | Funnel visualization |
-| `inquiry_step_completed` | Where do users successfully pass validation? | First successful validated forward progression for that step per inquiry session | `form_version`, `step_id`, `step_name`, `step_number`, `lead_time_bucket`, `budget_bucket`, `delivery_method`, `selected_product_count`, `has_inspiration_images`, `page_path` | exact date, notes, ZIP | Custom | No | Inquiry wizard | Move forward after validation, then go back and repeat | Diagnostic step completion only; not a conversion |
+| `inquiry_step_completed` | Where do users successfully pass validation? | First successful validated forward progression for that step per inquiry session | `form_version`, `step_id`, `step_name`, `step_number`, `lead_time_bucket`, `budget_bucket`, `delivery_method`, `selected_product_count`, `has_inspiration_links`, `page_path` | exact date, notes, ZIP, inspiration URL/domain/path/query, link count | Custom | No | Inquiry wizard | Move forward after validation, then go back and repeat | Diagnostic step completion only; not a conversion |
 | `inquiry_back_clicked` | Where do users go backward? | Intentional Back-button or earlier-step-marker navigation | `form_version`, `from_step_id`, `to_step_id`, `page_path` | field values | Custom | No | Inquiry wizard | Use back controls | Friction indicator |
 | `inquiry_validation_error` | Which safe error categories create friction? | Advance or submit attempt fails validation; blur-only revalidation is excluded | `form_version`, `step_id`, `step_name`, `step_number`, `field_id`, `error_code`, `page_path` | invalid value, customer text, validation message | Custom | No | Inquiry wizard | Attempt to continue with a required field missing | UX improvement |
 | `inquiry_submission_error` | Are real submission attempts failing? | Failed or unavailable submission attempt | `error_category`, `page_path` | raw error, payload, identifiers | Custom | No | Inquiry wizard | Force failed submission in controlled QA | Reliability alert |
-| `generate_lead` | How many confirmed leads were received? | API returns an explicit `persisted: true` response after all required Supabase inquiry records are saved | `form_version`, `budget_bucket`, `delivery_method`, `has_inspiration_images`, `lead_time_bucket`, `page_path`, `product_category`, `selected_product_count` | reference code, inquiry ID, exact date, contact data, all free text | GA4 recommended custom emission | Yes | Inquiry wizard after successful persistence response | Submit one QA inquiry and confirm one database/admin record plus one DebugView event | Primary conversion |
+| `generate_lead` | How many confirmed leads were received? | API returns an explicit `persisted: true` response after all required Supabase inquiry records are saved | `form_version`, `budget_bucket`, `delivery_method`, `has_inspiration_links`, `lead_time_bucket`, `page_path`, `product_category`, `selected_product_count` | reference code, inquiry ID, exact date, contact data, inspiration URL/domain/path/query, link count, all free text | GA4 recommended custom emission | Yes | Inquiry wizard after successful persistence response | Submit one QA inquiry and confirm one database/admin record plus one DebugView event | Primary conversion |
 | `contact_method_clicked` | Which contact paths get used? | Footer phone/email/Instagram click | `contact_method` | actual phone/email/URL | Custom | No | `src/components/site/site-footer.tsx` | Click contact links | Contact preference |
 
 ## Phase 2 Candidates
@@ -96,6 +95,16 @@ Never send:
 - Duplicate generic outbound click tracking. Enhanced Measurement already covers outbound clicks.
 - Treating Enhanced Measurement form interactions or `inquiry_step_completed` as conversions. The multi-step wizard uses `generate_lead` only after confirmed persistence.
 - Sending exact event dates, ZIP-derived user identifiers, filenames, URLs, or free-form inquiry notes.
+
+## Inspiration Reference Policy
+
+- Customer inspiration references are URL-only and optional. The public wizard accepts one or more publicly accessible links separated by new lines.
+- Valid bare public domains are normalized to `https://` when needed; explicit valid HTTP/HTTPS URLs are otherwise preserved except for surrounding whitespace.
+- The application does not fetch, crawl, preview, download, or otherwise access customer-provided URLs during submission.
+- Links are stored with the inquiry as `reference-link` records and are visible in the authenticated inquiry detail view.
+- File inputs, multipart inquiry requests, customer Supabase Storage uploads, preview generation, filename persistence, upload validation, and upload-state restoration are intentionally unsupported.
+- GA4 may receive only `has_inspiration_links: true|false`. It must never receive a URL, domain, path, query string, link count, or customer-entered reference text.
+- A future customer-upload feature requires a separately approved storage, authorization, validation, security, retention, deletion, and privacy design.
 
 ## GA4 Account Follow-Up
 
@@ -116,6 +125,6 @@ Never send:
 5. Complete and submit one clearly identifiable QA inquiry.
 6. Sign in to the Sweet Fork admin dashboard and confirm that inquiry appears exactly once.
 7. In DebugView, confirm `generate_lead` appears exactly once for that submission.
-8. Inspect all inquiry event parameters and confirm no name, email, phone, address, exact event date, uploaded filename/URL, topper wording, flavor/design notes, or other customer-entered free text appears.
+8. Inspect all inquiry event parameters and confirm no name, email, phone, address, exact event date, inspiration URL/domain/path/query, topper wording, flavor/design notes, link count, or other customer-entered free text appears.
 9. Repeat the validation and successful-submission checks from a mobile device.
-10. During the mobile pass, use the wizard Back controls and confirm answers remain populated. The current wizard has no customer image-upload control, so uploaded-image persistence is not an applicable production check unless that feature is deliberately reintroduced later.
+10. During the mobile pass, use the wizard Back controls and confirm answers and inspiration links remain populated. Customer file uploads are intentionally unsupported.

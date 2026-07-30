@@ -551,7 +551,7 @@ export default async function AdminInquiryDetailPage({
         </div>
         <div className="min-w-0 space-y-6">
           {detail.assets.length > 0 ? (
-            <SectionCard title="Inspiration and uploads">
+            <SectionCard title="Inspiration references">
               <div className="grid min-w-0 gap-4 md:grid-cols-2">
                 {detail.assets.map((asset) => (
                   <AssetCard key={asset.id} asset={asset} />
@@ -850,7 +850,7 @@ export default async function AdminInquiryDetailPage({
                 Delete inquiry
               </p>
               <p className={cn("mt-3 text-sm leading-7 text-charcoal/68", userTextClass)}>
-                This permanently removes the inquiry, notes, uploads, and request details from the
+                This permanently removes the inquiry, notes, inspiration references, and request details from the
                 desk. Any linked order record stays intact but becomes unlinked from this inquiry.
               </p>
               <form action={deleteInquiry} className="mt-4">

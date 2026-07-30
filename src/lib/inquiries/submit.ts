@@ -131,7 +131,6 @@ function buildInternalSummary(
 }
 
 async function cleanupFailedSubmission(
-  bucket: string,
   cleanup: SubmissionCleanup,
 ) {
   const admin = createAdminClient();
@@ -151,7 +150,7 @@ export async function submitInquiry(
     );
   }
 
-  const { catalog, featureFlags, pricingBaseline, deliveryRange } =
+  const { catalog, pricingBaseline, deliveryRange } =
     await getStartOrderPageData();
 
   if (!isSupabaseConfigured()) {
@@ -387,7 +386,7 @@ export async function submitInquiry(
       referenceCode,
     };
   } catch (error) {
-    await cleanupFailedSubmission(featureFlags.storageBucket, cleanup).catch(() => undefined);
+    await cleanupFailedSubmission(cleanup).catch(() => undefined);
 
     if (error instanceof InquirySubmissionError) {
       throw error;

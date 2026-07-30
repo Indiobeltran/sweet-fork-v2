@@ -13,12 +13,11 @@ import {
   CalendarDays,
   Check,
   CheckCircle2,
-  ImagePlus,
+  Link2,
   LoaderCircle,
   PartyPopper,
   PhoneCall,
   Sparkles,
-  Trash2,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -74,6 +73,7 @@ import {
   type InquiryFormValues,
 } from "@/lib/validations/inquiry";
 import { submitInquiryRequest } from "@/lib/inquiries/client-submit";
+import { MAX_INSPIRATION_LINKS_TEXT_LENGTH } from "@/lib/validations/inspiration-links";
 import type { InquiryProductItem, ProductType } from "@/types/domain";
 import {
   findStepForErrors,
@@ -509,7 +509,7 @@ export function StartOrderWizard({
       budget_bucket: stepIndex === 0 ? getBudgetBucket(preparedValues.budgetRange) : undefined,
       delivery_method:
         stepIndex === 0 ? preparedValues.fulfillmentMethod : undefined,
-      has_inspiration_images:
+      has_inspiration_links:
         stepIndex === 3 ? preparedValues.inspirationLinks.length > 0 : undefined,
       lead_time_bucket:
         stepIndex === 0 ? getLeadTimeBucket(preparedValues.eventDate) : undefined,
@@ -605,20 +605,10 @@ export function StartOrderWizard({
     });
   };
 
-  const setInspirationLink = (index: number, value: string) => {
-    const nextLinks = [...values.inspirationLinks];
-    nextLinks[index] = value;
-    setFieldValue("inspirationLinks", nextLinks);
-  };
-
-  const addInspirationLink = () => {
-    setFieldValue("inspirationLinks", [...values.inspirationLinks, ""]);
-  };
-
-  const removeInspirationLink = (index: number) => {
+  const setInspirationLinksText = (value: string) => {
     setFieldValue(
       "inspirationLinks",
-      values.inspirationLinks.filter((_, linkIndex) => linkIndex !== index),
+      value.length === 0 ? [] : value.replace(/\r\n?/g, "\n").split("\n"),
     );
   };
 
@@ -939,9 +929,7 @@ export function StartOrderWizard({
         params: {
           budget_bucket: getBudgetBucket(preparedValues.budgetRange),
           delivery_method: preparedValues.fulfillmentMethod,
-          has_inspiration_images:
-            preparedValues.inspirationLinks.length > 0 ||
-            Boolean(preparedValues.inspirationText),
+          has_inspiration_links: preparedValues.inspirationLinks.length > 0,
           lead_time_bucket: getLeadTimeBucket(preparedValues.eventDate),
           page_path: "/start-order",
           product_category:
@@ -2153,10 +2141,10 @@ export function StartOrderWizard({
                       Style & inspiration
                     </p>
                     <p className="text-sm leading-7 text-charcoal/68">
-                      Share any inspiration links or describe the look you have in mind. Pinterest boards, Instagram posts, invitations, color palettes, florals, and mood-board links are all helpful.
+                      Share publicly accessible inspiration links or describe the look you have in mind. Pinterest boards, Instagram posts, invitations, color palettes, florals, and mood-board links are all helpful.
                     </p>
                   </div>
-                  <ImagePlus className="h-6 w-6 text-charcoal/45" />
+                  <Link2 className="h-6 w-6 text-charcoal/45" />
                 </div>
 
                 <ColorPaletteSelector
@@ -2170,57 +2158,44 @@ export function StartOrderWizard({
                 <div className="grid gap-6 lg:grid-cols-2">
                   <div className="space-y-6">
                     <div>
-                      <div className="flex items-center justify-between gap-3">
-                        <Label className="mb-0">Inspiration links</Label>
-                        <p className="text-xs uppercase tracking-[0.16em] text-charcoal/45">
-                          {featureFlags.linkFallbackEnabled ? "Optional" : "Currently unavailable"}
-                        </p>
-                      </div>
-                      <p className="mt-2 text-sm leading-7 text-charcoal/60">
-                        Paste Pinterest, Instagram, Canva, Google Drive, or other inspiration links here.
+                      <Label htmlFor="inspiration-links" className="mb-0">
+                        Inspiration links (optional)
+                      </Label>
+                      <p
+                        id="inspiration-links-help"
+                        className="mt-2 text-sm leading-7 text-charcoal/60"
+                      >
+                        Paste links to any cakes, cookies, colors, themes, or designs that inspire
+                        you. Pinterest, Instagram, Google Drive, Dropbox, bakery sites, and other
+                        publicly accessible links are welcome. Please separate multiple links with
+                        a new line.
                       </p>
                       {featureFlags.linkFallbackEnabled ? (
-                        <div className="mt-3 space-y-3">
-                          {values.inspirationLinks.map((link, index) => (
-                            <div key={`inspiration-link-${index}`} className="flex gap-3">
-                              <Input
-                                id={`inspiration-link-${index}`}
-                                ref={index === 0 ? registerFieldRef("inspirationLinks") : undefined}
-                                value={link}
-                                onChange={(event) =>
-                                  setInspirationLink(index, event.target.value)
-                                }
-                                onBlur={() => validateStepOnBlur(3)}
-                                placeholder="Pinterest board, Instagram post, venue gallery..."
-                                className={getFieldErrorClass(errors.inspirationLinks)}
-                                aria-describedby={
-                                  errors.inspirationLinks
-                                    ? getErrorDescriptionId("inspirationLinks")
-                                    : undefined
-                                }
-                                aria-invalid={Boolean(errors.inspirationLinks)}
-                              />
-                              <button
-                              type="button"
-                              className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-charcoal/10 text-charcoal transition hover:border-charcoal/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/50"
-                              onClick={() => removeInspirationLink(index)}
-                              aria-label={`Remove inspiration link ${index + 1}`}
-                            >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
-                          ))}
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={addInspirationLink}
-                          >
-                            Add link
-                          </Button>
-                        </div>
+                        <Textarea
+                          id="inspiration-links"
+                          ref={registerFieldRef("inspirationLinks")}
+                          value={values.inspirationLinks.join("\n")}
+                          maxLength={MAX_INSPIRATION_LINKS_TEXT_LENGTH}
+                          onChange={(event) =>
+                            setInspirationLinksText(event.target.value)
+                          }
+                          onBlur={() => validateStepOnBlur(3)}
+                          placeholder="https://www.pinterest.com/..."
+                          className={cn(
+                            "mt-3 min-h-[150px]",
+                            getFieldErrorClass(errors.inspirationLinks),
+                          )}
+                          aria-describedby={getDescribedBy(
+                            "inspiration-links-help",
+                            errors.inspirationLinks &&
+                              getErrorDescriptionId("inspirationLinks"),
+                          )}
+                          aria-invalid={Boolean(errors.inspirationLinks)}
+                        />
                       ) : (
                         <p className="mt-3 text-sm leading-7 text-charcoal/60">
-                          Share written notes instead when links are unavailable.
+                          Inspiration links are temporarily unavailable. Share written notes
+                          instead.
                         </p>
                       )}
                       <InlineError
@@ -2243,7 +2218,7 @@ export function StartOrderWizard({
                       onChange={(event) =>
                         setFieldValue("inspirationText", event.target.value)
                       }
-                      placeholder="Share the mood, must-have details, floral direction, venue feel, or anything the images do not explain well."
+                      placeholder="Share the mood, must-have details, floral direction, venue feel, or anything the links do not explain well."
                       className={cn(
                         "min-h-[180px]",
                         getFieldErrorClass(errors.inspirationText),

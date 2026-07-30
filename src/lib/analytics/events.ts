@@ -1,6 +1,6 @@
 import type { BudgetRangeValue, ProductType } from "@/types/domain";
 
-export const INQUIRY_FORM_VERSION = "inquiry_wizard_v2" as const;
+export const INQUIRY_FORM_VERSION = "inquiry_wizard_v3" as const;
 
 export const inquiryAnalyticsSteps = [
   { id: "event_details", name: "Event Details" },
@@ -39,7 +39,6 @@ export const analyticsEventNames = [
   "inquiry_step_completed",
   "inquiry_back_clicked",
   "inquiry_validation_error",
-  "inspiration_image_added",
   "inquiry_submission_error",
   "generate_lead",
   "wedding_consultation_started",
@@ -60,7 +59,7 @@ export type AnalyticsParamKey =
   | "from_step_id"
   | "gallery_category"
   | "gallery_position"
-  | "has_inspiration_images"
+  | "has_inspiration_links"
   | "lead_time_bucket"
   | "page_path"
   | "product_category"
@@ -130,7 +129,7 @@ const allowedParamKeys = new Set<AnalyticsParamKey>([
   "from_step_id",
   "gallery_category",
   "gallery_position",
-  "has_inspiration_images",
+  "has_inspiration_links",
   "lead_time_bucket",
   "page_path",
   "product_category",

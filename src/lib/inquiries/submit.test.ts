@@ -218,11 +218,13 @@ test("isAllowedInquiryRequestOrigin rejects unrelated origins", () => {
 });
 
 test("submitInquiryRequest returns only an explicit persistence confirmation", async () => {
-  let requestBody: FormData | undefined;
+  let requestBody: string | undefined;
+  let requestHeaders: HeadersInit | undefined;
 
   const result = await submitInquiryRequest({
     fetchImpl: async (_input, init) => {
-      requestBody = init?.body as FormData;
+      requestBody = init?.body as string;
+      requestHeaders = init?.headers;
 
       return new Response(
         JSON.stringify({
@@ -246,8 +248,17 @@ test("submitInquiryRequest returns only an explicit persistence confirmation", a
     persisted: true,
     referenceCode: "SF-PERSISTED",
   });
-  assert.equal(requestBody?.get("startedAt"), "123456");
-  assert.equal(requestBody?.get("website"), "");
+  assert.deepEqual(JSON.parse(requestBody ?? ""), {
+    payload: {
+      customerEmail: "customer@example.com",
+      designNotes: "private free text",
+    },
+    startedAt: 123456,
+    website: "",
+  });
+  assert.deepEqual(requestHeaders, {
+    "Content-Type": "application/json",
+  });
 });
 
 test("submitInquiryRequest rejects failed requests and unconfirmed success payloads", async () => {

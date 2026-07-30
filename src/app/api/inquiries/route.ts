@@ -11,7 +11,7 @@ import {
 
 const MIN_SUBMISSION_TIME_MS = 3500;
 const MAX_INQUIRY_REQUEST_SIZE_BYTES =
-  MAX_INQUIRY_PAYLOAD_SIZE_BYTES + 50_000_000;
+  MAX_INQUIRY_PAYLOAD_SIZE_BYTES + 5_000;
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const MAX_SUBMISSIONS_PER_WINDOW = 5;
 const DUPLICATE_SUBMISSION_WINDOW_MS = 15 * 60 * 1000;
@@ -79,21 +79,59 @@ function pruneSubmissionAttempts() {
   });
 }
 
-function parsePayload(payload: string) {
-  if (textEncoder.encode(payload).byteLength > MAX_INQUIRY_PAYLOAD_SIZE_BYTES) {
+function parsePayload(payload: unknown) {
+  if (
+    !payload ||
+    typeof payload !== "object" ||
+    Array.isArray(payload)
+  ) {
+    throw new InquirySubmissionError(
+      "We couldn't read the inquiry details. Please refresh the page and try again.",
+    );
+  }
+
+  if (
+    textEncoder.encode(JSON.stringify(payload)).byteLength >
+    MAX_INQUIRY_PAYLOAD_SIZE_BYTES
+  ) {
     throw new InquirySubmissionError(
       "Some inquiry details are too long to send at once. Please shorten the notes and try again.",
     );
   }
 
+  return payload;
+}
+
+async function parseRequestBody(request: Request) {
+  const contentType = request.headers.get("content-type")?.toLowerCase() ?? "";
+
+  if (!contentType.startsWith("application/json")) {
+    throw new InquirySubmissionError(
+      "We couldn't read the inquiry details. Please refresh the page and try again.",
+      415,
+    );
+  }
+
+  const bodyText = await request.text();
+
+  if (
+    textEncoder.encode(bodyText).byteLength >
+    MAX_INQUIRY_REQUEST_SIZE_BYTES
+  ) {
+    throw new InquirySubmissionError(
+      "The inquiry is too large to send at once. Please shorten the notes and try again.",
+      413,
+    );
+  }
+
   try {
-    const parsed = JSON.parse(payload);
+    const parsed = JSON.parse(bodyText);
 
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      throw new Error("Invalid payload shape.");
+      throw new Error("Invalid request body.");
     }
 
-    return parsed;
+    return parsed as Record<string, unknown>;
   } catch {
     throw new InquirySubmissionError(
       "We couldn't read the inquiry details. Please refresh the page and try again.",
@@ -129,7 +167,7 @@ function validateRequestSize(request: Request) {
 
   if (contentLength > MAX_INQUIRY_REQUEST_SIZE_BYTES) {
     throw new InquirySubmissionError(
-      "The inquiry is too large to send at once. Please remove a few images and try again.",
+      "The inquiry is too large to send at once. Please shorten the notes and try again.",
       413,
     );
   }
@@ -222,8 +260,11 @@ function clearPendingSubmission(identifier: string, fingerprint: string) {
   pendingSubmissionFingerprints.delete(getFingerprintKey(identifier, fingerprint));
 }
 
-function validateSubmissionTiming(value: FormDataEntryValue | null) {
-  if (typeof value !== "string" || value.trim().length === 0) {
+function validateSubmissionTiming(value: unknown) {
+  if (
+    (typeof value !== "number" && typeof value !== "string") ||
+    String(value).trim().length === 0
+  ) {
     throw new InquirySubmissionError(
       "Please take a moment to review the inquiry before submitting.",
     );
@@ -244,9 +285,9 @@ export async function POST(request: Request) {
     validateRequestOrigin(request);
     pruneSubmissionAttempts();
 
-    const formData = await request.formData();
-    const honeypot = formData.get("website");
-    const payload = formData.get("payload");
+    const requestBody = await parseRequestBody(request);
+    const honeypot = requestBody.website;
+    const payload = requestBody.payload;
     const identifier = getClientIdentifier(request);
 
     if (typeof honeypot === "string" && honeypot.trim().length > 0) {
@@ -255,16 +296,7 @@ export async function POST(request: Request) {
       );
     }
 
-    validateSubmissionTiming(formData.get("startedAt"));
-
-    if (typeof payload !== "string") {
-      return NextResponse.json(
-        {
-          error: "Missing inquiry details.",
-        },
-        { status: 400 },
-      );
-    }
+    validateSubmissionTiming(requestBody.startedAt);
 
     if (registerSubmissionAttempt(identifier)) {
       return NextResponse.json(
@@ -272,19 +304,6 @@ export async function POST(request: Request) {
           error: "Too many inquiry attempts were received. Please wait a few minutes and try again.",
         },
         { status: 429 },
-      );
-    }
-
-    const files = formData
-      .getAll("inspirationFiles")
-      .filter((entry): entry is File => entry instanceof File);
-
-    if (files.length > 0) {
-      return NextResponse.json(
-        {
-          error: "Image uploads are no longer supported. Please use links or notes instead.",
-        },
-        { status: 400 },
       );
     }
 

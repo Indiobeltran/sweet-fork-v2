@@ -6,6 +6,8 @@ import { describe, it } from "node:test";
 import { createWizardDraft, getPaletteState, hasMeaningfulWizardValues, isEditableFormTarget, parseWizardDraft, serializePaletteSelection } from "./wizard-state.ts";
 // @ts-expect-error Node's strip-types test runner needs the .ts extension.
 import { sanitizeTextValue } from "../../lib/validations/text.ts";
+// @ts-expect-error Node's strip-types test runner needs the .ts extension.
+import { MAX_INSPIRATION_LINKS, getInvalidInspirationLinkIndex, normalizeInspirationLinks } from "../../lib/validations/inspiration-links.ts";
 import type { InquiryFormValues } from "@/lib/validations/inquiry";
 
 const baseValues: InquiryFormValues = {
@@ -136,6 +138,9 @@ describe("wizard draft state", () => {
     assert.equal(parsed?.values.orderItems[0].flavorNotes, "Chocolate ganache\nVanilla bean");
     assert.equal(parsed?.values.orderItems[0].topperText, "Happy Birthday\nAdd stars");
     assert.equal(parsed?.values.colorPalette, "Neutrals - ivory and champagne");
+    assert.deepEqual(parsed?.values.inspirationLinks, [
+      "https://example.com/board",
+    ]);
   });
 
   it("preserves raw in-progress item and palette whitespace in the serialized draft", () => {
@@ -180,6 +185,45 @@ describe("wizard draft state", () => {
     const parsed = parseWizardDraft(JSON.stringify(draft));
 
     assert.equal(parsed?.activeItemType, null);
+  });
+});
+
+describe("URL-only inspiration references", () => {
+  it("normalizes practical bare domains while preserving explicit URLs", () => {
+    assert.deepEqual(
+      normalizeInspirationLinks([
+        " pinterest.com/sweet-fork/board ",
+        "",
+        "https://www.instagram.com/p/ABC123/?utm_source=customer",
+        "drive.google.com/file/d/example/view\n\ndropbox.com/s/example/cake.jpg",
+      ]),
+      [
+        "https://pinterest.com/sweet-fork/board",
+        "https://www.instagram.com/p/ABC123/?utm_source=customer",
+        "https://drive.google.com/file/d/example/view",
+        "https://dropbox.com/s/example/cake.jpg",
+      ],
+    );
+  });
+
+  it("identifies an invalid line without discarding the other entries", () => {
+    const links = normalizeInspirationLinks([
+      "pinterest.com/example",
+      "not a public link",
+      "https://examplebakery.com/gallery",
+    ]);
+
+    assert.deepEqual(links, [
+      "https://pinterest.com/example",
+      "not a public link",
+      "https://examplebakery.com/gallery",
+    ]);
+    assert.equal(getInvalidInspirationLinkIndex(links), 1);
+  });
+
+  it("keeps the optional field empty and bounds link count", () => {
+    assert.deepEqual(normalizeInspirationLinks([]), []);
+    assert.equal(MAX_INSPIRATION_LINKS, 6);
   });
 });
 
@@ -245,6 +289,60 @@ describe("start-order wizard source contracts", () => {
 
     assert.doesNotMatch(source, /type=["']file["']/);
     assert.doesNotMatch(source, /inspirationFiles/);
+  });
+
+  it("uses one optional newline-separated inspiration-link field", async () => {
+    const source = await readFile(
+      new URL("./start-order-wizard.tsx", import.meta.url),
+      "utf8",
+    );
+
+    assert.match(source, /Inspiration links \(optional\)/);
+    assert.match(source, /Pinterest, Instagram, Google Drive, Dropbox, bakery sites/);
+    assert.match(source, /separate multiple links with[\s\S]+a new line/);
+    assert.match(source, /placeholder="https:\/\/www\.pinterest\.com\/\.\.\."/);
+    assert.match(source, /value=\{values\.inspirationLinks\.join\("\\n"\)\}/);
+  });
+
+  it("submits JSON and keeps customer files out of the public API", async () => {
+    const [clientSource, routeSource] = await Promise.all([
+      readFile(
+        new URL("../../lib/inquiries/client-submit.ts", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../../app/api/inquiries/route.ts", import.meta.url),
+        "utf8",
+      ),
+    ]);
+
+    assert.match(clientSource, /"Content-Type": "application\/json"/);
+    assert.doesNotMatch(clientSource, /FormData|multipart|inspirationFiles/);
+    assert.doesNotMatch(routeSource, /\.formData\(\)|multipart|inspirationFiles/);
+    assert.match(routeSource, /contentType\.startsWith\("application\/json"\)/);
+  });
+
+  it("stores reference links and exposes them in authenticated inquiry detail", async () => {
+    const [submitSource, adminDataSource, adminPageSource] = await Promise.all([
+      readFile(
+        new URL("../../lib/inquiries/submit.ts", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../../lib/admin/inquiries.ts", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../../app/admin/(protected)/inquiries/[id]/page.tsx", import.meta.url),
+        "utf8",
+      ),
+    ]);
+
+    assert.match(submitSource, /asset_type: "reference-link"/);
+    assert.match(submitSource, /external_url: link/);
+    assert.match(adminDataSource, /asset\.asset_type === "reference-link"/);
+    assert.match(adminPageSource, /Open reference/);
+    assert.match(adminPageSource, /Inspiration references/);
   });
 
   it("keeps required-field validation contracts for every wizard stage", async () => {

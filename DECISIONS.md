@@ -22,7 +22,7 @@ The public inquiry wizard had privacy-safe funnel events and emitted `inquiry_su
 
 Use `generate_lead` as the sole primary inquiry conversion event. The API response includes `persisted: true` only after the inquiry, line items, optional references, and required internal notification record have been saved. The client may emit `generate_lead` only from that confirmed response path and only once per mounted inquiry session; failed requests and failed persistence cannot consume the one-time lead guard, so a later successful retry emits once.
 
-Keep `inquiry_started`, `inquiry_step_viewed`, `inquiry_step_completed`, `inquiry_validation_error`, and `inquiry_back_clicked` as diagnostics under central form version `inquiry_wizard_v2`. Step completion records the first successful completion per inquiry session and is not a key event. Validation errors are emitted only on advance/submit attempts with stable step, field, and error codes. Customer names, contact details, exact event dates, database/reference IDs, URLs, filenames, and customer-entered free text remain excluded by the analytics parameter allowlist and bounded inquiry parameter values.
+Keep `inquiry_started`, `inquiry_step_viewed`, `inquiry_step_completed`, `inquiry_validation_error`, and `inquiry_back_clicked` as diagnostics under the centrally versioned inquiry contract. The URL-only inspiration decision advances that contract to `inquiry_wizard_v3`. Step completion records the first successful completion per inquiry session and is not a key event. Validation errors are emitted only on advance/submit attempts with stable step, field, and error codes. Customer names, contact details, exact event dates, database/reference IDs, URLs, filenames, and customer-entered free text remain excluded by the analytics parameter allowlist and bounded inquiry parameter values.
 
 ### Consequences
 
@@ -31,6 +31,38 @@ Keep `inquiry_started`, `inquiry_step_viewed`, `inquiry_step_completed`, `inquir
 - Existing historical `inquiry_submitted` and `inquiry_step_back` data remains in GA4, but new reporting uses `generate_lead` and `inquiry_back_clicked`.
 - The owner must mark `generate_lead` as a GA4 key event, register any desired custom dimensions, link Search Console, and build the funnel exploration manually.
 - No Supabase schema or migration change is required.
+
+## 2026-07-30 - Keep Customer Inspiration References URL-Only
+
+### Status
+
+Accepted
+
+### Context
+
+The current public wizard no longer exposes a file control, but its request still used multipart `FormData`, active inquiry settings retained upload-bucket remnants, the link field required customers to enter an explicit protocol, and GA4 named its safe presence Boolean `has_inspiration_images`. The owner confirmed that customer file uploads are not wanted at this time.
+
+### Options Considered
+
+- Restore or retain a configurable customer-upload path using Supabase Storage.
+- Remove all inspiration references from the inquiry.
+- Keep optional publicly accessible links, normalize safe protocol-less domains, store the URLs with the inquiry, and exclude every URL detail from analytics.
+
+### Decision
+
+Customer inspiration references are URL-only. The wizard provides one optional newline-separated field for up to six publicly accessible links. It trims each line, ignores blanks, preserves valid explicit HTTP/HTTPS URLs, and normalizes practical bare public domains to HTTPS. Invalid lines receive one clear inline field error without deleting the other entries.
+
+The public inquiry request uses JSON, not multipart form data. The application does not fetch, crawl, preview, download, or upload customer reference content. Existing `inquiry_assets` `reference-link` rows remain the persistence model and authenticated inquiry detail remains the owner view; no new attachment table, Storage policy, bucket, or migration is introduced. Historical upload-shaped records and the separate authenticated marketing-media workflow are not deleted by this decision.
+
+GA4 may receive only the bounded Boolean `has_inspiration_links`. URLs, domains, paths, query strings, link counts, filenames, and customer-entered reference text remain prohibited. The central form version advances to `inquiry_wizard_v3`.
+
+### Consequences
+
+- The inquiry flow has one clear reference mechanism without file security, retention, or deletion ambiguity.
+- Protocol-less Pinterest, Instagram, Google Drive, Dropbox, bakery-site, and similar public domains can be submitted without asking customers to type `https://`.
+- Existing links continue to persist through wizard navigation/draft restoration, store with the inquiry, and render for Melissa in authenticated admin.
+- A future customer-upload feature requires a separately approved storage, authorization, validation, security, retention, deletion, and privacy design.
+- No Supabase schema, Storage, or hosted-data change is required.
 
 ## 2026-07-12 - Use Versioned Admin Quotes For Post-Inquiry Pricing
 

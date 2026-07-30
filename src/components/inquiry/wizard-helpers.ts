@@ -5,7 +5,7 @@ import type { InquiryProductItem } from "@/types/domain";
  *
  * These functions hold the wizard's step routing, error mapping, and summary
  * formatting logic so the large client component can stay focused on state and
- * presentation. Nothing here touches the submission payload, uploads, Supabase,
+ * presentation. Nothing here touches the submission payload, Supabase,
  * or Netlify Forms behavior — it is display/validation-routing logic only.
  */
 
@@ -74,9 +74,7 @@ export function getSafeSubmissionErrorMessage(error: unknown) {
     message.startsWith("The inquiry") ||
     message.startsWith("Too many ") ||
     message.startsWith("Online submission") ||
-    message.startsWith("Image ") ||
     message.startsWith("Reference ") ||
-    message.includes("upload") ||
     message.includes("inspiration");
 
   return isExpectedSubmissionMessage ? message : fallback;

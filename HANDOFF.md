@@ -51,13 +51,13 @@
 
 ### Final implementation and event contract
 
-- **Form version**: `inquiry_wizard_v2`, exported once as `INQUIRY_FORM_VERSION` from `src/lib/analytics/events.ts`.
+- **Form version**: `inquiry_wizard_v3`, exported once as `INQUIRY_FORM_VERSION` from `src/lib/analytics/events.ts`. The version advanced during pre-merge review when the owner confirmed URL-only inspiration references and the public request moved from multipart to JSON.
 - **`inquiry_started`**: fires once per mounted inquiry session after the first meaningful value or product-selection change; it does not fire from page load.
 - **`inquiry_step_viewed`**: fires once per step per mounted inquiry session after draft restoration, with `step_id`, `step_name`, and `form_version`.
 - **`inquiry_step_completed`**: remains a diagnostic event, not a key event. It fires on the first successful validation-and-forward-advance for each step per mounted inquiry session, with `step_id`, `step_name`, and `form_version`. Going backward and recompleting an already completed step does not emit it again.
 - **`inquiry_validation_error`**: fires only when an advance or submit attempt fails validation. It includes bounded `step_id`, `step_name`, `field_id`, `error_code`, and `form_version`; it never includes the invalid value. Blur may reveal validation UI only after an attempted step and does not emit analytics.
 - **`inquiry_back_clicked`**: fires on an intentional Back button or earlier completed-step marker action with bounded `from_step_id`, `to_step_id`, and `form_version`.
-- **`generate_lead`**: is the sole primary inquiry conversion event. It is emitted only after `submitInquiryRequest` receives an HTTP `201` payload containing `persisted: true`, a nonempty internal inquiry ID, and a nonempty reference code. Those identifiers are used only to prove the response shape and are never included in GA4 parameters. The lead payload contains only `form_version` and normalized non-PII buckets/counts such as product category, fulfillment mode, budget range, lead-time bucket, selected product count, and reference-presence boolean.
+- **`generate_lead`**: is the sole primary inquiry conversion event. It is emitted only after `submitInquiryRequest` receives an HTTP `201` payload containing `persisted: true`, a nonempty internal inquiry ID, and a nonempty reference code. Those identifiers are used only to prove the response shape and are never included in GA4 parameters. The lead payload contains only `form_version` and normalized non-PII buckets/counts such as product category, fulfillment mode, budget range, lead-time bucket, selected product count, and `has_inspiration_links`.
 - **Retained events**: existing product, gallery, CTA, FAQ, pricing, page-view, and safe submission-error diagnostics remain in place.
 - **Privacy boundary**: the analytics sanitizer now bounds inquiry step, field, error, and form-version values to central allowlists in addition to dropping unknown keys. Names, email addresses, phone numbers, event addresses, exact event dates, database/reference IDs, URLs, filenames, wording, flavor/design/palette notes, messages, and all customer-entered free text cannot pass through the event contract.
 
@@ -75,7 +75,7 @@
 - The custom date control now catches browsers that reject scripted `showPicker()` calls and leaves native keyboard behavior intact instead of throwing or swallowing the key.
 - Inquiry fields render at `16px` on mobile to avoid iOS focus zoom and retain the existing compact desktop scale. Single-line fields provide an appropriate next-key hint.
 - Palette guidance now explains that customers can choose one or more families, add exact shades or colors to avoid, or select No preference. The existing flexible free-text-compatible storage shape and business rules are preserved.
-- Uploaded-image preview alignment and File-object back-navigation persistence were not reproducible because the current public wizard intentionally contains no upload input and the API rejects uploaded files. No unsupported upload feature or Supabase schema was introduced.
+- Uploaded-image preview alignment and File-object back-navigation persistence are not defects: the owner confirmed that the public wizard intentionally supports URL-only inspiration references. No unsupported upload feature or Supabase schema was introduced.
 
 ### Verification and task status
 
@@ -94,8 +94,33 @@
 - **Manual GA4 work still required**: Mark `generate_lead` as a key event; register the desired event-scoped custom dimensions for `form_version`, step/field/error identifiers, and safe funnel buckets; link Search Console; and create a funnel exploration using the diagnostic events with `generate_lead` as the terminal conversion.
 - **Files changed by this task**: `DECISIONS.md`, `HANDOFF.md`, analytics measurement/launch-readiness docs, the inquiry wizard and textarea component, the analytics contract/tests, the inquiry client/persistence response/tests/types, and inquiry text sanitization/tests.
 - **Files intentionally preserved**: All pre-existing owner/admin-integration modifications and untracked files listed in the baseline remain present and excluded from this task's staged/committed scope.
-- **Known issues and open decisions**: Production GA4 delivery, DebugView parameter visibility, one-to-one admin record creation, mobile-device behavior, and any future upload UI remain owner verification or separately scoped work. The owner may choose which safe parameters warrant custom dimensions; no reporting requirement justified transmitting customer-entered values.
+- **Known issues and open decisions**: Production GA4 delivery, DebugView parameter visibility, one-to-one admin record creation, and mobile-device behavior remain owner verification. Any future customer-upload UI requires separately approved storage, authorization, validation, security, retention, deletion, and privacy design. The owner may choose which safe parameters warrant custom dimensions; no reporting requirement justified transmitting customer-entered values.
 - **Assumptions**: A mounted wizard instance is the current inquiry analytics session; normalized catalog product categories and aggregate counts/buckets are privacy-safe; the existing HTTP `201` response is authoritative only after the new explicit persistence marker is present.
+
+### Confirmed URL-only inspiration policy — pre-merge follow-up
+
+- **Business decision**: Customer file uploads are intentionally unsupported. Do not add file inputs, multipart inquiry submissions, customer Supabase Storage writes, attachment tables, image previews, filename persistence, file type/size validation, or upload-state restoration.
+- **Wizard field**: Step 4 provides one field labeled `Inspiration links (optional)` with owner-approved guidance for Pinterest, Instagram, Google Drive, Dropbox, bakery sites, and other publicly accessible references. Multiple links are separated by new lines; empty input remains valid.
+- **Normalization and validation**: Each line is trimmed, blank lines are ignored, explicit valid HTTP/HTTPS URLs are otherwise preserved, and practical bare public domains are normalized to HTTPS. Up to six links are accepted, with the existing per-URL and overall inquiry request bounds. An uninterpretable line yields one clear inline error naming its line position without deleting the other draft entries. Submission never fetches or previews a URL.
+- **Navigation and draft behavior**: The live textarea remains backed by the existing `inspirationLinks: string[]` wizard state. Forward/back navigation does not replace that state, and the existing versioned session draft serializer/parser round-trips the array with the other inquiry answers.
+- **Transport**: The public browser now sends `application/json`; the API rejects non-JSON content, applies the same origin, size, timing, honeypot, rate-limit, and normalized duplicate-fingerprint checks, and contains no file parsing path.
+- **Persistence/admin confirmation**: `submitInquiry` continues to insert each normalized link as an existing `inquiry_assets` `reference-link` row with `external_url`. `getInquiryDetail` selects those rows, and the authenticated inquiry page renders each as `Open reference` under `Inspiration references`. No schema or hosted-data change was necessary.
+- **Deduplication**: The fingerprint continues to include sorted normalized inspiration links. Equivalent bare-domain and explicit-HTTPS inputs normalize before hashing, so retry/duplicate behavior remains stable without exposing the fingerprint or URL.
+- **Analytics**: The only inspiration signal is `has_inspiration_links: true|false`; `has_inspiration_images` and `inspiration_image_added` are removed. URL, domain, path, query string, link count, and reference text are not allowlisted and are covered by privacy tests. `generate_lead` remains post-persistence and exact-once.
+- **Active upload remnants removed**: Public upload environment overrides, inquiry upload-bucket settings, upload-oriented wizard/config copy, and the multipart request path were removed. Existing historical upload-shaped database rows and the separately authenticated marketing-media workflow were intentionally preserved.
+- **Documentation**: `README.md`, the analytics measurement plan, privacy copy/metadata, schema notes, this handoff, and `DECISIONS.md` now describe the URL-only policy and the separate approval required for any future upload feature.
+- **Automated verification**:
+  - `npm test` passed `236/236`, including URL normalization, invalid-line retention, empty optional input, six-link bound, JSON transport, public file-path absence, existing Supabase reference-link persistence/admin visibility source contracts, GA4 URL/domain/count exclusion, and the prior generate-lead deduplication/retry suite.
+  - `npm run lint` passed with zero warnings.
+  - `npm run typecheck` passed after Next route-type generation.
+  - `npm run build` passed in a clean detached worktree containing only the follow-up task patch; all `26/26` static pages generated.
+  - `git diff --check` and staged patch checks passed.
+- **Runtime/browser verification**:
+  - Local JSON `POST /api/inquiries` with an intentionally incomplete non-PII payload reached normal server validation and returned `400`; the equivalent multipart request returned `415`. Neither request could persist an inquiry.
+  - Local in-app browser checks at `390x844` and `1280x900` found no horizontal overflow, no customer file inputs, no console warnings/errors, and no local `gtag`. Mobile retains the existing `16px` input sizing and desktop uses `14px`.
+  - The browser-control surface could not set the controlled native date value, so it could not advance to a live Step 4 rendering. Step 4’s exact label/helper/placeholder, newline state, inline error wiring, draft round-trip, JSON transport, storage/admin mapping, and no-upload contract are covered by the passing executable source/unit tests. Do not report a complete browser wizard pass from this run.
+- **Production verification**: Pending owner execution after deployment. No production link-bearing inquiry, authenticated admin readback, or GA4 DebugView event has been created during this pre-merge follow-up.
+- **Supabase status**: No migration, schema, Storage, RLS, configuration, or hosted-data mutation was performed. The current Supabase changelog was reviewed; no breaking change affects this existing server-side `reference-link` insert/select path.
 
 ## Inquiry Quote Supabase Migration — 2026-07-12 MDT
 

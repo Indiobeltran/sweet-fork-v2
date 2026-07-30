@@ -10,24 +10,16 @@ import {
   sanitizeOptionalTextValue,
   sanitizeTextValue,
 } from "@/lib/validations/text";
+import {
+  MAX_INSPIRATION_LINKS,
+  getInvalidInspirationLinkIndex,
+  normalizeInspirationLinks,
+} from "@/lib/validations/inspiration-links";
 
 const dateInputPattern = /^(\d{4})-(\d{2})-(\d{2})$/;
 const instagramHandlePattern = /^@?[a-z0-9._]{1,30}$/i;
 const instagramUrlPattern =
   /^https?:\/\/(?:www\.)?instagram\.com\/([a-z0-9._]{1,30})(?:[/?#].*)?$/i;
-const publicUrlSchema = z
-  .string()
-  .trim()
-  .max(2048, "Keep inspiration links under 2,048 characters.")
-  .url("Enter a valid inspiration link.")
-  .refine((value) => {
-    try {
-      const url = new URL(value);
-      return url.protocol === "https:" || url.protocol === "http:";
-    } catch {
-      return false;
-    }
-  }, "Use a public http or https inspiration link.");
 const zipCodePattern = /^\d{5}(?:-\d{4})?$/;
 const phoneAllowedPattern = /^[+\d().\-\s]+$/;
 export const MAX_INQUIRY_PAYLOAD_SIZE_BYTES = 75_000;
@@ -129,10 +121,6 @@ function normalizeInstagramHandle(value: unknown) {
   const handle = candidate.replace(/[^a-z0-9._]/gi, "").slice(0, 30);
 
   return handle.length > 0 ? `@${handle}` : undefined;
-}
-
-function toStringArray(value: unknown) {
-  return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
 }
 
 export function getMinimumInquiryDate(referenceDate = new Date()) {
@@ -273,7 +261,19 @@ export const inquiryItemDetailsSchema = z.object({
 
 export const inquiryInspirationSchema = z.object({
   colorPalette: trimmedOptionalString(160),
-  inspirationLinks: z.array(publicUrlSchema).max(6),
+  inspirationLinks: z
+    .array(z.string())
+    .max(MAX_INSPIRATION_LINKS, `Add no more than ${MAX_INSPIRATION_LINKS} inspiration links.`)
+    .superRefine((links, ctx) => {
+      const invalidIndex = getInvalidInspirationLinkIndex(links);
+
+      if (invalidIndex !== -1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Review inspiration link ${invalidIndex + 1}. Paste a public website address such as pinterest.com/your-board.`,
+        });
+      }
+    }),
   inspirationText: trimmedOptionalString(1200),
 });
 
@@ -332,8 +332,6 @@ export function normalizeInquiryFormValues(values: unknown): InquiryFormValues {
           } => Boolean(item && typeof item.productType === "string"),
         )
     : [];
-  const inspirationLinks = toStringArray(source.inspirationLinks);
-
   return {
     eventType: sanitizeTextValue(
       typeof source.eventType === "string" ? source.eventType : "",
@@ -358,9 +356,7 @@ export function normalizeInquiryFormValues(values: unknown): InquiryFormValues {
       typeof source.colorPalette === "string"
         ? sanitizeOptionalTextValue(source.colorPalette, { multiline: true })
         : undefined,
-    inspirationLinks: inspirationLinks
-      .map((link) => link.trim())
-      .filter((link): link is string => Boolean(link)),
+    inspirationLinks: normalizeInspirationLinks(source.inspirationLinks),
     inspirationText:
       typeof source.inspirationText === "string"
         ? sanitizeOptionalTextValue(source.inspirationText, { multiline: true })

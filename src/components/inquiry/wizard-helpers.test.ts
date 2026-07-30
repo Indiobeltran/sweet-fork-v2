@@ -56,7 +56,7 @@ describe("isErrorForStep", () => {
     assert.equal(isErrorForStep("orderItems", 2), false);
   });
 
-  it("routes inspiration and upload keys to step 3", () => {
+  it("routes inspiration keys to step 3", () => {
     assert.equal(isErrorForStep("colorPalette", 3), true);
     assert.equal(isErrorForStep("inspirationLinks", 3), true);
   });
