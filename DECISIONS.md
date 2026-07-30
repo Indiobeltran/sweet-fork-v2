@@ -2,6 +2,36 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
+## 2026-07-30 - Treat Only Persisted Inquiries As GA4 Leads
+
+### Status
+
+Accepted
+
+### Context
+
+The public inquiry wizard had privacy-safe funnel events and emitted `inquiry_submitted` after an HTTP success response, but it did not use GA4's recommended `generate_lead` event. Inquiry diagnostics also lacked stable step/field/error identifiers and a form version, blur validation could inflate error counts, and successful step recompletion after backward navigation could inflate completion counts.
+
+### Options Considered
+
+- Keep `inquiry_submitted` as the primary conversion and configure it as a GA4 key event.
+- Treat the final wizard step or `inquiry_step_completed` as the primary conversion.
+- Emit `generate_lead` only after the server explicitly confirms required Supabase persistence, with session-level duplicate prevention and a versioned privacy-safe event contract.
+
+### Decision
+
+Use `generate_lead` as the sole primary inquiry conversion event. The API response includes `persisted: true` only after the inquiry, line items, optional references, and required internal notification record have been saved. The client may emit `generate_lead` only from that confirmed response path and only once per mounted inquiry session; failed requests and failed persistence cannot consume the one-time lead guard, so a later successful retry emits once.
+
+Keep `inquiry_started`, `inquiry_step_viewed`, `inquiry_step_completed`, `inquiry_validation_error`, and `inquiry_back_clicked` as diagnostics under central form version `inquiry_wizard_v2`. Step completion records the first successful completion per inquiry session and is not a key event. Validation errors are emitted only on advance/submit attempts with stable step, field, and error codes. Customer names, contact details, exact event dates, database/reference IDs, URLs, filenames, and customer-entered free text remain excluded by the analytics parameter allowlist and bounded inquiry parameter values.
+
+### Consequences
+
+- GA4 lead totals align with successfully persisted inquiry records instead of wizard progress.
+- React rerenders and repeated calls cannot duplicate the lead event; failed-then-successful retries still produce one lead.
+- Existing historical `inquiry_submitted` and `inquiry_step_back` data remains in GA4, but new reporting uses `generate_lead` and `inquiry_back_clicked`.
+- The owner must mark `generate_lead` as a GA4 key event, register any desired custom dimensions, link Search Console, and build the funnel exploration manually.
+- No Supabase schema or migration change is required.
+
 ## 2026-07-12 - Use Versioned Admin Quotes For Post-Inquiry Pricing
 
 ### Status

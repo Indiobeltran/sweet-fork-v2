@@ -6,10 +6,12 @@ import {
   productTypes,
 } from "@/types/domain";
 import { BUSINESS_TIME_ZONE } from "@/lib/business-time";
+import {
+  sanitizeOptionalTextValue,
+  sanitizeTextValue,
+} from "@/lib/validations/text";
 
-const controlCharacterPattern = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
 const dateInputPattern = /^(\d{4})-(\d{2})-(\d{2})$/;
-const htmlTagPattern = /<[^>]*>/g;
 const instagramHandlePattern = /^@?[a-z0-9._]{1,30}$/i;
 const instagramUrlPattern =
   /^https?:\/\/(?:www\.)?instagram\.com\/([a-z0-9._]{1,30})(?:[/?#].*)?$/i;
@@ -75,31 +77,6 @@ function parseDateInput(value: string) {
 
 function countPhoneDigits(value: string) {
   return value.replace(/\D/g, "").length;
-}
-
-function sanitizeTextValue(value: string, options: { multiline?: boolean } = {}) {
-  const normalized = value
-    .replace(/\r\n?/g, "\n")
-    .replace(controlCharacterPattern, " ")
-    .replace(htmlTagPattern, " ");
-
-  const collapsed = options.multiline
-    ? normalized.replace(/[ \t]{2,}/g, " ").replace(/\n{3,}/g, "\n\n")
-    : normalized.replace(/\s+/g, " ");
-
-  return collapsed.trim();
-}
-
-function sanitizeOptionalTextValue(
-  value: string | undefined,
-  options: { multiline?: boolean } = {},
-) {
-  if (!value) {
-    return undefined;
-  }
-
-  const sanitized = sanitizeTextValue(value, options);
-  return sanitized.length > 0 ? sanitized : undefined;
 }
 
 function getRecord(value: unknown) {

@@ -29,7 +29,16 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { trackAnalyticsEvent } from "@/lib/analytics/client";
 import {
+  INQUIRY_FORM_VERSION,
+  consumeInquiryStarted,
+  consumeInquiryStepCompleted,
+  consumeInquiryStepViewed,
+  createInquiryAnalyticsSession,
+  emitGenerateLeadAfterPersistence,
   getBudgetBucket,
+  getInquiryAnalyticsStep,
+  getInquiryFieldId,
+  getInquiryValidationErrorCode,
   getLeadTimeBucket,
   getProductCategory,
 } from "@/lib/analytics/events";
@@ -64,6 +73,7 @@ import {
   normalizeInquiryFormValues,
   type InquiryFormValues,
 } from "@/lib/validations/inquiry";
+import { submitInquiryRequest } from "@/lib/inquiries/client-submit";
 import type { InquiryProductItem, ProductType } from "@/types/domain";
 import {
   findStepForErrors,
@@ -179,7 +189,8 @@ function ColorPaletteSelector({
     <div className="space-y-3">
       <Label id={`${idPrefix}-palette-label`}>Color Palette</Label>
       <p id={helpId} className="text-sm leading-7 text-charcoal/60">
-        Choose any that fit, or add specific colors below.
+        Select one or more color families, then add exact shades or colors to avoid.
+        Choose No preference if you would like The Sweet Fork to guide the palette.
       </p>
       <div
         role="group"
@@ -220,7 +231,7 @@ function ColorPaletteSelector({
       </div>
       <InlineError id={errorId} message={error} />
       <div>
-        <Label htmlFor={detailsId}>Specific colors or palette details</Label>
+        <Label htmlFor={detailsId}>Specific colors or palette details (optional)</Label>
         <Textarea
           id={detailsId}
           value={selectedNoPreference ? "" : state.customDetails}
@@ -238,6 +249,7 @@ function ColorPaletteSelector({
           placeholder="Specific tones, venue colors, invitation palette, or anything to avoid"
           className="min-h-[104px]"
           disabled={selectedNoPreference}
+          aria-describedby={helpId}
         />
       </div>
     </div>
@@ -251,17 +263,13 @@ export function StartOrderWizard({
   submissionAvailable,
   submissionUnavailableMessage,
 }: StartOrderWizardProps) {
-  const [initialDraft] = useState(readInitialWizardDraft);
   const [startedAt] = useState(() => Date.now());
-  const [currentStep, setCurrentStep] = useState(() => initialDraft?.currentStep ?? 0);
-  const [hasStarted, setHasStarted] = useState(() =>
-    Boolean(initialDraft && initialDraft.currentStep > 0),
-  );
-  const [activeItemType, setActiveItemType] = useState<ProductType | null>(
-    () => initialDraft?.activeItemType ?? null,
-  );
+  const [currentStep, setCurrentStep] = useState(0);
+  const [hasStarted, setHasStarted] = useState(false);
+  const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
+  const [activeItemType, setActiveItemType] = useState<ProductType | null>(null);
   const [values, setValues] = useState<InquiryFormValues>(
-    () => initialDraft?.values ?? createEmptyInquiryValues(),
+    createEmptyInquiryValues,
   );
   const [errors, setErrors] = useState<ErrorMap>({});
   const [honeypotValue, setHoneypotValue] = useState("");
@@ -278,9 +286,8 @@ export function StartOrderWizard({
   const hasMountedRef = useRef(false);
   const fieldRefs = useRef<Record<string, HTMLElement | null>>({});
   const shouldFocusErrorRef = useRef(false);
-  const viewedStepsRef = useRef<Set<number>>(new Set());
-  const inquiryStartedTrackedRef = useRef(false);
-  const submissionTrackedRef = useRef(false);
+  const attemptedStepsRef = useRef<Set<number>>(new Set());
+  const analyticsSessionRef = useRef(createInquiryAnalyticsSession());
 
   const normalizedValues = normalizeInquiryFormValues(values);
   const minimumEventDate = getMinimumInquiryDate();
@@ -295,6 +302,19 @@ export function StartOrderWizard({
     },
     {} as Record<ProductType, InquiryCatalogItem>,
   );
+
+  useEffect(() => {
+    const draft = readInitialWizardDraft();
+
+    if (draft) {
+      setActiveItemType(draft.activeItemType);
+      setCurrentStep(draft.currentStep);
+      setHasStarted(draft.currentStep > 0);
+      setValues(draft.values);
+    }
+
+    setHasRestoredDraft(true);
+  }, []);
 
   useEffect(() => {
     if (selectedItems.length === 0) {
@@ -314,7 +334,7 @@ export function StartOrderWizard({
   }, [currentStep]);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (!hasRestoredDraft || typeof window === "undefined") {
       return;
     }
 
@@ -334,20 +354,27 @@ export function StartOrderWizard({
     } catch {
       // Draft persistence is a browser convenience; the live controlled state remains canonical.
     }
-  }, [activeItemType, currentStep, values]);
+  }, [activeItemType, currentStep, hasRestoredDraft, values]);
 
   useEffect(() => {
-    if (viewedStepsRef.current.has(currentStep)) {
+    if (!hasRestoredDraft) {
       return;
     }
 
-    viewedStepsRef.current.add(currentStep);
+    const step = getInquiryAnalyticsStep(currentStep);
+
+    if (!consumeInquiryStepViewed(analyticsSessionRef.current, step.id)) {
+      return;
+    }
+
     trackAnalyticsEvent("inquiry_step_viewed", {
+      form_version: INQUIRY_FORM_VERSION,
       page_path: "/start-order",
-      step_name: inquiryStepTitles[currentStep].toLowerCase().replace(/\s+/g, "_"),
+      step_id: step.id,
+      step_name: step.name,
       step_number: currentStep + 1,
     });
-  }, [currentStep]);
+  }, [currentStep, hasRestoredDraft]);
 
   useEffect(() => {
     if (!hasMountedRef.current) {
@@ -437,10 +464,22 @@ export function StartOrderWizard({
     return index === -1 ? field : `orderItems.${index}.${field}`;
   };
 
+  const trackInquiryStarted = () => {
+    if (!consumeInquiryStarted(analyticsSessionRef.current)) {
+      return;
+    }
+
+    trackAnalyticsEvent("inquiry_started", {
+      form_version: INQUIRY_FORM_VERSION,
+      page_path: "/start-order",
+    });
+  };
+
   const setFieldValue = <Key extends keyof InquiryFormValues>(
     key: Key,
     value: InquiryFormValues[Key],
   ) => {
+    trackInquiryStarted();
     setValues((current) => ({
       ...current,
       [key]: value,
@@ -458,6 +497,12 @@ export function StartOrderWizard({
   };
 
   const trackStepCompleted = (stepIndex: number) => {
+    const step = getInquiryAnalyticsStep(stepIndex);
+
+    if (!consumeInquiryStepCompleted(analyticsSessionRef.current, step.id)) {
+      return;
+    }
+
     const preparedValues = normalizeInquiryFormValues(values);
 
     trackAnalyticsEvent("inquiry_step_completed", {
@@ -468,31 +513,29 @@ export function StartOrderWizard({
         stepIndex === 3 ? preparedValues.inspirationLinks.length > 0 : undefined,
       lead_time_bucket:
         stepIndex === 0 ? getLeadTimeBucket(preparedValues.eventDate) : undefined,
+      form_version: INQUIRY_FORM_VERSION,
       page_path: "/start-order",
       selected_product_count:
         stepIndex >= 1 ? preparedValues.orderItems.length : undefined,
-      step_name: inquiryStepTitles[stepIndex].toLowerCase().replace(/\s+/g, "_"),
+      step_id: step.id,
+      step_name: step.name,
       step_number: stepIndex + 1,
     });
   };
 
-  const trackInquiryStarted = () => {
-    if (inquiryStartedTrackedRef.current) {
-      return;
-    }
-
-    inquiryStartedTrackedRef.current = true;
-    trackAnalyticsEvent("inquiry_started", {
-      page_path: "/start-order",
-    });
-  };
-
   const trackValidationErrors = (stepIndex: number, nextErrors: ErrorMap) => {
-    Object.keys(nextErrors).forEach((key) => {
+    const step = getInquiryAnalyticsStep(stepIndex);
+
+    Object.entries(nextErrors).forEach(([key, message]) => {
+      const fieldId = getInquiryFieldId(key);
+
       trackAnalyticsEvent("inquiry_validation_error", {
-        error_category: key.split(".").at(-1) ?? "unknown",
+        error_code: getInquiryValidationErrorCode(fieldId, message),
+        field_id: fieldId,
+        form_version: INQUIRY_FORM_VERSION,
         page_path: "/start-order",
-        step_name: inquiryStepTitles[stepIndex].toLowerCase().replace(/\s+/g, "_"),
+        step_id: step.id,
+        step_name: step.name,
         step_number: stepIndex + 1,
       });
     });
@@ -510,6 +553,7 @@ export function StartOrderWizard({
   };
 
   const toggleProductSelection = (productType: ProductType) => {
+    trackInquiryStarted();
     setValues((current) => {
       const alreadySelected = current.orderItems.some(
         (item) => item.productType === productType,
@@ -542,6 +586,7 @@ export function StartOrderWizard({
     productType: ProductType,
     patch: Partial<InquiryProductItem>,
   ) => {
+    trackInquiryStarted();
     setValues((current) => ({
       ...current,
       orderItems: current.orderItems.map((item) =>
@@ -580,9 +625,9 @@ export function StartOrderWizard({
   const validateStep = (
     stepIndex: number,
     nextValues = values,
-    options: { focusOnError?: boolean } = {},
+    options: { focusOnError?: boolean; trackErrors?: boolean } = {},
   ) => {
-    const { focusOnError = true } = options;
+    const { focusOnError = true, trackErrors = true } = options;
     const preparedValues = normalizeInquiryFormValues(nextValues);
     let nextErrors: ErrorMap = {};
 
@@ -669,7 +714,9 @@ export function StartOrderWizard({
     });
 
     if (Object.keys(nextErrors).length > 0) {
-      trackValidationErrors(stepIndex, nextErrors);
+      if (trackErrors) {
+        trackValidationErrors(stepIndex, nextErrors);
+      }
 
       if (focusOnError) {
         shouldFocusErrorRef.current = true;
@@ -695,32 +742,41 @@ export function StartOrderWizard({
     return true;
   };
   const validateStepOnBlur = (stepIndex: number) => {
-    if (stepIndex !== currentStep) {
+    if (
+      stepIndex !== currentStep ||
+      !attemptedStepsRef.current.has(stepIndex)
+    ) {
       return;
     }
 
     window.setTimeout(() => {
-      validateStep(stepIndex, values, { focusOnError: false });
+      validateStep(stepIndex, values, {
+        focusOnError: false,
+        trackErrors: false,
+      });
     }, 0);
   };
 
   const goToNextStep = () => {
+    attemptedStepsRef.current.add(currentStep);
+
     if (!validateStep(currentStep)) {
       return;
     }
 
-    if (currentStep === 0) {
-      trackInquiryStarted();
-    }
     trackStepCompleted(currentStep);
     setCurrentStep((current) => Math.min(current + 1, inquiryStepTitles.length - 1));
   };
 
   const goToPreviousStep = () => {
-    trackAnalyticsEvent("inquiry_step_back", {
+    const fromStep = getInquiryAnalyticsStep(currentStep);
+    const toStep = getInquiryAnalyticsStep(Math.max(currentStep - 1, 0));
+
+    trackAnalyticsEvent("inquiry_back_clicked", {
+      form_version: INQUIRY_FORM_VERSION,
+      from_step_id: fromStep.id,
       page_path: "/start-order",
-      step_name: inquiryStepTitles[currentStep].toLowerCase().replace(/\s+/g, "_"),
-      step_number: currentStep + 1,
+      to_step_id: toStep.id,
     });
     setCurrentStep((current) => Math.max(current - 1, 0));
   };
@@ -731,16 +787,21 @@ export function StartOrderWizard({
     }
 
     if (stepIndex < currentStep) {
-      trackAnalyticsEvent("inquiry_step_back", {
+      const fromStep = getInquiryAnalyticsStep(currentStep);
+      const toStep = getInquiryAnalyticsStep(stepIndex);
+
+      trackAnalyticsEvent("inquiry_back_clicked", {
+        form_version: INQUIRY_FORM_VERSION,
+        from_step_id: fromStep.id,
         page_path: "/start-order",
-        step_name: inquiryStepTitles[currentStep].toLowerCase().replace(/\s+/g, "_"),
-        step_number: currentStep + 1,
+        to_step_id: toStep.id,
       });
       setCurrentStep(stepIndex);
       return;
     }
 
     for (let index = currentStep; index < stepIndex; index += 1) {
+      attemptedStepsRef.current.add(index);
       const valid = validateStep(index);
 
       if (!valid) {
@@ -748,9 +809,6 @@ export function StartOrderWizard({
         return;
       }
 
-      if (index === 0) {
-        trackInquiryStarted();
-      }
       trackStepCompleted(index);
     }
 
@@ -812,6 +870,7 @@ export function StartOrderWizard({
     setErrors({});
 
     for (let stepIndex = 0; stepIndex < inquiryStepTitles.length; stepIndex += 1) {
+      attemptedStepsRef.current.add(stepIndex);
       const valid = validateStep(stepIndex);
 
       if (!valid) {
@@ -833,10 +892,15 @@ export function StartOrderWizard({
     }
 
     if (!featureFlags.linkFallbackEnabled && preparedValues.inspirationLinks.length > 0) {
+      const step = getInquiryAnalyticsStep(3);
+
       trackAnalyticsEvent("inquiry_validation_error", {
-        error_category: "inspiration_links_disabled",
+        error_code: "feature_disabled",
+        field_id: "inspiration_links",
+        form_version: INQUIRY_FORM_VERSION,
         page_path: "/start-order",
-        step_name: inquiryStepTitles[3].toLowerCase().replace(/\s+/g, "_"),
+        step_id: step.id,
+        step_name: step.name,
         step_number: 4,
       });
       shouldFocusErrorRef.current = true;
@@ -851,6 +915,7 @@ export function StartOrderWizard({
     if (!submissionAvailable) {
       trackAnalyticsEvent("inquiry_submission_error", {
         error_category: "submission_paused",
+        form_version: INQUIRY_FORM_VERSION,
         page_path: "/start-order",
       });
       setSubmitError(
@@ -862,35 +927,16 @@ export function StartOrderWizard({
     setIsSubmitting(true);
 
     try {
-      const formData = new FormData();
-      formData.append("payload", JSON.stringify(result.data));
-      formData.append("startedAt", String(startedAt));
-      formData.append("website", honeypotValue);
-
-      const response = await fetch("/api/inquiries", {
-        method: "POST",
-        body: formData,
+      const payload = await submitInquiryRequest({
+        honeypotValue,
+        startedAt,
+        values: result.data,
       });
-      const responseText = await response.text();
-      const payload = responseText
-        ? (JSON.parse(responseText) as InquirySubmissionResponse | { error?: string })
-        : null;
 
-      if (!response.ok) {
-        throw new Error(
-          payload && "error" in payload && payload.error
-            ? payload.error
-            : "We could not submit the inquiry right now.",
-        );
-      }
-
-      if (!payload || "error" in payload) {
-        throw new Error("We could not submit the inquiry right now.");
-      }
-
-      if (!submissionTrackedRef.current) {
-        submissionTrackedRef.current = true;
-        trackAnalyticsEvent("inquiry_submitted", {
+      emitGenerateLeadAfterPersistence({
+        confirmation: payload,
+        emit: trackAnalyticsEvent,
+        params: {
           budget_bucket: getBudgetBucket(preparedValues.budgetRange),
           delivery_method: preparedValues.fulfillmentMethod,
           has_inspiration_images:
@@ -903,15 +949,15 @@ export function StartOrderWizard({
               ? getProductCategory(preparedValues.orderItems[0].productType)
               : "multiple",
           selected_product_count: preparedValues.orderItems.length,
-          step_name: inquiryStepTitles[4].toLowerCase().replace(/\s+/g, "_"),
-          step_number: 5,
-        });
-      }
+        },
+        session: analyticsSessionRef.current,
+      });
       clearStoredWizardDraft();
-      setSubmissionResult(payload as InquirySubmissionResponse);
+      setSubmissionResult(payload);
     } catch (error) {
       trackAnalyticsEvent("inquiry_submission_error", {
         error_category: "submission_failed",
+        form_version: INQUIRY_FORM_VERSION,
         page_path: "/start-order",
       });
       setSubmitError(getSafeSubmissionErrorMessage(error));
@@ -925,6 +971,7 @@ export function StartOrderWizard({
     setErrors({});
 
     for (let stepIndex = 0; stepIndex < inquiryStepTitles.length; stepIndex += 1) {
+      attemptedStepsRef.current.add(stepIndex);
       const valid = validateStep(stepIndex);
 
       if (!valid) {
@@ -1083,7 +1130,7 @@ export function StartOrderWizard({
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
         <div
           ref={wizardCardRef}
-          className="grain-surface overflow-hidden rounded-[2.4rem] border border-charcoal/10 bg-white shadow-soft"
+          className="grain-surface overflow-hidden rounded-[2.4rem] border border-charcoal/10 bg-white shadow-soft [&_input]:text-base [&_select]:text-base [&_textarea]:text-base sm:[&_input]:text-sm sm:[&_select]:text-sm sm:[&_textarea]:text-sm"
         >
           <div
             className={cn(
@@ -1228,6 +1275,7 @@ export function StartOrderWizard({
                     value={values.eventType}
                     onChange={(event) => setFieldValue("eventType", event.target.value)}
                     onBlur={() => validateStepOnBlur(0)}
+                    enterKeyHint="next"
                     placeholder="Birthday, wedding, shower, launch, holiday gathering..."
                     className={getFieldErrorClass(errors.eventType)}
                     required
@@ -1265,8 +1313,12 @@ export function StartOrderWizard({
                       onBlur={() => validateStepOnBlur(0)}
                       onKeyDown={(event) => {
                         if ((event.key === "Enter" || event.key === " ") && "showPicker" in event.currentTarget) {
-                          event.preventDefault();
-                          event.currentTarget.showPicker?.();
+                          try {
+                            event.currentTarget.showPicker?.();
+                            event.preventDefault();
+                          } catch {
+                            // Preserve the native keyboard behavior when showPicker is unavailable.
+                          }
                         }
                       }}
                       min={minimumEventDate}
@@ -1297,6 +1349,7 @@ export function StartOrderWizard({
                       value={values.guestCount ?? ""}
                       onChange={(event) => setNumericValue("guestCount", event.target.value)}
                       onBlur={() => validateStepOnBlur(0)}
+                      enterKeyHint="next"
                       placeholder="Approximate number of guests"
                       className={getFieldErrorClass(errors.guestCount)}
                       aria-describedby={
@@ -1350,6 +1403,7 @@ export function StartOrderWizard({
                       value={values.deliveryZip ?? ""}
                       onChange={(event) => setFieldValue("deliveryZip", event.target.value)}
                       onBlur={() => validateStepOnBlur(0)}
+                      enterKeyHint="next"
                       placeholder={
                         values.fulfillmentMethod === "delivery"
                           ? "Required for delivery requests"
@@ -1969,6 +2023,7 @@ export function StartOrderWizard({
                           id={`${activeItem.productType}-topper`}
                           ref={registerFieldRef(itemPath(activeItem.productType, "topperText"))}
                           value={activeItem.topperText ?? ""}
+                          maxLength={240}
                           onChange={(event) =>
                             updateOrderItem(activeItem.productType, {
                               topperText: event.target.value,
@@ -1980,6 +2035,15 @@ export function StartOrderWizard({
                             getFieldErrorClass(errors[itemPath(activeItem.productType, "topperText")]),
                           )}
                           aria-invalid={Boolean(errors[itemPath(activeItem.productType, "topperText")])}
+                          aria-describedby={
+                            errors[itemPath(activeItem.productType, "topperText")]
+                              ? getErrorDescriptionId(itemPath(activeItem.productType, "topperText"))
+                              : undefined
+                          }
+                        />
+                        <InlineError
+                          id={getErrorDescriptionId(itemPath(activeItem.productType, "topperText"))}
+                          message={errors[itemPath(activeItem.productType, "topperText")]}
                         />
                       </div>
                     </div>
@@ -1991,6 +2055,7 @@ export function StartOrderWizard({
                           id={`${activeItem.productType}-flavor`}
                           ref={registerFieldRef(itemPath(activeItem.productType, "flavorNotes"))}
                           value={activeItem.flavorNotes ?? ""}
+                          maxLength={600}
                           onChange={(event) =>
                             updateOrderItem(activeItem.productType, {
                               flavorNotes: event.target.value,
@@ -2002,6 +2067,15 @@ export function StartOrderWizard({
                             getFieldErrorClass(errors[itemPath(activeItem.productType, "flavorNotes")]),
                           )}
                           aria-invalid={Boolean(errors[itemPath(activeItem.productType, "flavorNotes")])}
+                          aria-describedby={
+                            errors[itemPath(activeItem.productType, "flavorNotes")]
+                              ? getErrorDescriptionId(itemPath(activeItem.productType, "flavorNotes"))
+                              : undefined
+                          }
+                        />
+                        <InlineError
+                          id={getErrorDescriptionId(itemPath(activeItem.productType, "flavorNotes"))}
+                          message={errors[itemPath(activeItem.productType, "flavorNotes")]}
                         />
                       </div>
                       <div>
@@ -2010,6 +2084,7 @@ export function StartOrderWizard({
                           id={`${activeItem.productType}-design`}
                           ref={registerFieldRef(itemPath(activeItem.productType, "designNotes"))}
                           value={activeItem.designNotes ?? ""}
+                          maxLength={1200}
                           onChange={(event) =>
                             updateOrderItem(activeItem.productType, {
                               designNotes: event.target.value,
@@ -2021,6 +2096,15 @@ export function StartOrderWizard({
                             getFieldErrorClass(errors[itemPath(activeItem.productType, "designNotes")]),
                           )}
                           aria-invalid={Boolean(errors[itemPath(activeItem.productType, "designNotes")])}
+                          aria-describedby={
+                            errors[itemPath(activeItem.productType, "designNotes")]
+                              ? getErrorDescriptionId(itemPath(activeItem.productType, "designNotes"))
+                              : undefined
+                          }
+                        />
+                        <InlineError
+                          id={getErrorDescriptionId(itemPath(activeItem.productType, "designNotes"))}
+                          message={errors[itemPath(activeItem.productType, "designNotes")]}
                         />
                       </div>
                     </div>
@@ -2033,6 +2117,7 @@ export function StartOrderWizard({
                         id={`${activeItem.productType}-inspiration`}
                         ref={registerFieldRef(itemPath(activeItem.productType, "inspirationNotes"))}
                         value={activeItem.inspirationNotes ?? ""}
+                        maxLength={1200}
                         onChange={(event) =>
                           updateOrderItem(activeItem.productType, {
                             inspirationNotes: event.target.value,
@@ -2044,6 +2129,15 @@ export function StartOrderWizard({
                           getFieldErrorClass(errors[itemPath(activeItem.productType, "inspirationNotes")]),
                         )}
                         aria-invalid={Boolean(errors[itemPath(activeItem.productType, "inspirationNotes")])}
+                        aria-describedby={
+                          errors[itemPath(activeItem.productType, "inspirationNotes")]
+                            ? getErrorDescriptionId(itemPath(activeItem.productType, "inspirationNotes"))
+                            : undefined
+                        }
+                      />
+                      <InlineError
+                        id={getErrorDescriptionId(itemPath(activeItem.productType, "inspirationNotes"))}
+                        message={errors[itemPath(activeItem.productType, "inspirationNotes")]}
                       />
                     </div>
                   </div>
@@ -2145,6 +2239,7 @@ export function StartOrderWizard({
                       id="inspiration-text"
                       ref={registerFieldRef("inspirationText")}
                       value={values.inspirationText ?? ""}
+                      maxLength={1200}
                       onChange={(event) =>
                         setFieldValue("inspirationText", event.target.value)
                       }
@@ -2204,6 +2299,7 @@ export function StartOrderWizard({
                       value={values.customerName}
                       onChange={(event) => setFieldValue("customerName", event.target.value)}
                       onBlur={() => validateStepOnBlur(4)}
+                      enterKeyHint="next"
                       placeholder="Full name"
                       className={getFieldErrorClass(errors.customerName)}
                       autoComplete="name"
@@ -2227,6 +2323,7 @@ export function StartOrderWizard({
                       value={values.customerEmail}
                       onChange={(event) => setFieldValue("customerEmail", event.target.value)}
                       onBlur={() => validateStepOnBlur(4)}
+                      enterKeyHint="next"
                       placeholder="hello@yourmail.com"
                       className={getFieldErrorClass(errors.customerEmail)}
                       autoComplete="email"
@@ -2250,6 +2347,7 @@ export function StartOrderWizard({
                       value={values.customerPhone}
                       onChange={(event) => setFieldValue("customerPhone", event.target.value)}
                       onBlur={() => validateStepOnBlur(4)}
+                      enterKeyHint="next"
                       placeholder="(555) 555-5555"
                       className={getFieldErrorClass(errors.customerPhone)}
                       autoComplete="tel"
@@ -2333,12 +2431,23 @@ export function StartOrderWizard({
                     id="additional-notes"
                     ref={registerFieldRef("additionalNotes")}
                     value={values.additionalNotes ?? ""}
+                    maxLength={2000}
                     onChange={(event) => setFieldValue("additionalNotes", event.target.value)}
                     placeholder="Extra timing notes, venue constraints, setup details, or anything helpful before the first reply."
                     className={cn(
                       "min-h-[150px]",
                       getFieldErrorClass(errors.additionalNotes),
                     )}
+                    aria-describedby={
+                      errors.additionalNotes
+                        ? getErrorDescriptionId("additionalNotes")
+                        : undefined
+                    }
+                    aria-invalid={Boolean(errors.additionalNotes)}
+                  />
+                  <InlineError
+                    id={getErrorDescriptionId("additionalNotes")}
+                    message={errors.additionalNotes}
                   />
                 </div>
 

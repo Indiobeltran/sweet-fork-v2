@@ -5,6 +5,8 @@ import test from "node:test";
 import { serializeNetlifyFormsPayload, submitNetlifyFormsBridge } from "./netlify-bridge.ts";
 // @ts-expect-error Node's strip-types test runner needs the .ts extension.
 import { isAllowedInquiryRequestOrigin } from "./request-origin.ts";
+// @ts-expect-error Node's strip-types test runner needs the .ts extension.
+import { submitInquiryRequest } from "./client-submit.ts";
 import type { InquiryProductItem } from "@/types/domain";
 
 test("serializeNetlifyFormsPayload correctly formats URL-encoded parameters", () => {
@@ -212,5 +214,72 @@ test("isAllowedInquiryRequestOrigin rejects unrelated origins", () => {
       },
     }),
     false,
+  );
+});
+
+test("submitInquiryRequest returns only an explicit persistence confirmation", async () => {
+  let requestBody: FormData | undefined;
+
+  const result = await submitInquiryRequest({
+    fetchImpl: async (_input, init) => {
+      requestBody = init?.body as FormData;
+
+      return new Response(
+        JSON.stringify({
+          inquiryId: "persisted-inquiry-id",
+          persisted: true,
+          referenceCode: "SF-PERSISTED",
+        }),
+        { status: 201 },
+      );
+    },
+    honeypotValue: "",
+    startedAt: 123456,
+    values: {
+      customerEmail: "customer@example.com",
+      designNotes: "private free text",
+    } as never,
+  });
+
+  assert.deepEqual(result, {
+    inquiryId: "persisted-inquiry-id",
+    persisted: true,
+    referenceCode: "SF-PERSISTED",
+  });
+  assert.equal(requestBody?.get("startedAt"), "123456");
+  assert.equal(requestBody?.get("website"), "");
+});
+
+test("submitInquiryRequest rejects failed requests and unconfirmed success payloads", async () => {
+  await assert.rejects(
+    submitInquiryRequest({
+      fetchImpl: async () =>
+        new Response(
+          JSON.stringify({ error: "We could not submit the inquiry right now." }),
+          { status: 500 },
+        ),
+      honeypotValue: "",
+      startedAt: 123456,
+      values: {} as never,
+    }),
+    /could not submit/i,
+  );
+
+  await assert.rejects(
+    submitInquiryRequest({
+      fetchImpl: async () =>
+        new Response(
+          JSON.stringify({
+            inquiryId: "not-confirmed",
+            persisted: false,
+            referenceCode: "SF-NOTCONFIRMED",
+          }),
+          { status: 201 },
+        ),
+      honeypotValue: "",
+      startedAt: 123456,
+      values: {} as never,
+    }),
+    /could not confirm/i,
   );
 });

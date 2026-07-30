@@ -27,5 +27,6 @@ export type StartOrderPageData = {
 
 export type InquirySubmissionResponse = {
   inquiryId: string;
+  persisted: true;
   referenceCode: string;
 };

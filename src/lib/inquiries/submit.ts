@@ -37,6 +37,7 @@ export class InquirySubmissionError extends Error {
 
 export type InquirySubmissionResult = {
   inquiryId: string;
+  persisted: true;
   referenceCode: string;
 };
 
@@ -382,6 +383,7 @@ export async function submitInquiry(
 
     return {
       inquiryId,
+      persisted: true,
       referenceCode,
     };
   } catch (error) {

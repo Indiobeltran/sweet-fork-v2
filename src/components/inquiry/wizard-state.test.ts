@@ -4,6 +4,8 @@ import { describe, it } from "node:test";
 
 // @ts-expect-error Node's strip-types test runner needs the .ts extension.
 import { createWizardDraft, getPaletteState, hasMeaningfulWizardValues, isEditableFormTarget, parseWizardDraft, serializePaletteSelection } from "./wizard-state.ts";
+// @ts-expect-error Node's strip-types test runner needs the .ts extension.
+import { sanitizeTextValue } from "../../lib/validations/text.ts";
 import type { InquiryFormValues } from "@/lib/validations/inquiry";
 
 const baseValues: InquiryFormValues = {
@@ -181,6 +183,30 @@ describe("wizard draft state", () => {
   });
 });
 
+describe("multiline inquiry normalization", () => {
+  it("preserves meaningful spaces and line breaks in wording, flavor, and design notes", () => {
+    assert.equal(
+      sanitizeTextValue("Happy Birthday Ava\nLove, Mom and Dad", {
+        multiline: true,
+      }),
+      "Happy Birthday Ava\nLove, Mom and Dad",
+    );
+    assert.equal(
+      sanitizeTextValue(
+        "White cake with Bavarian cream\nFresh raspberry layer",
+        { multiline: true },
+      ),
+      "White cake with Bavarian cream\nFresh raspberry layer",
+    );
+    assert.equal(
+      sanitizeTextValue("Soft blue ribbon\nSmall gold stars", {
+        multiline: true,
+      }),
+      "Soft blue ribbon\nSmall gold stars",
+    );
+  });
+});
+
 describe("start-order wizard source contracts", () => {
   it("keeps customer notes and wording fields multiline", async () => {
     const source = await readFile(
@@ -195,14 +221,73 @@ describe("start-order wizard source contracts", () => {
     assert.doesNotMatch(source, /const selectedItems = normalizedValues\.orderItems/);
   });
 
-  it("fires the GA4 inquiry_submitted event from one code path only", async () => {
+  it("fires generate_lead from one post-persistence code path only", async () => {
     const source = await readFile(
       new URL("./start-order-wizard.tsx", import.meta.url),
       "utf8",
     );
-    const matches = source.match(/trackAnalyticsEvent\("inquiry_submitted"/g) ?? [];
+    const matches =
+      source.match(/emitGenerateLeadAfterPersistence\(\{/g) ?? [];
 
     assert.equal(matches.length, 1);
+    assert.doesNotMatch(source, /trackAnalyticsEvent\("inquiry_submitted"/);
+    assert.match(
+      source,
+      /const payload = await submitInquiryRequest\([\s\S]+emitGenerateLeadAfterPersistence\(\{[\s\S]+confirmation: payload/,
+    );
+  });
+
+  it("does not reintroduce unsupported customer image uploads", async () => {
+    const source = await readFile(
+      new URL("./start-order-wizard.tsx", import.meta.url),
+      "utf8",
+    );
+
+    assert.doesNotMatch(source, /type=["']file["']/);
+    assert.doesNotMatch(source, /inspirationFiles/);
+  });
+
+  it("keeps required-field validation contracts for every wizard stage", async () => {
+    const source = await readFile(
+      new URL("../../lib/validations/inquiry.ts", import.meta.url),
+      "utf8",
+    );
+
+    for (const contract of [
+      /eventType: z\.string\(\)\.trim\(\)\.min\(2, "Tell us what you are celebrating\."\)/,
+      /\.min\(1, "Choose your event date\."\)/,
+      /budgetRange: z\.enum\(budgetRangeValues/,
+      /budgetFlexibility: z\.enum\(budgetFlexibilityValues/,
+      /"Delivery requests need a ZIP code\."/,
+      /\.min\(1, "Select at least one product to continue\."\)/,
+      /"Cake selections need an estimated serving count\."/,
+      /"Cupcake count is required\."/,
+      /"Cookie count is required\."/,
+      /"Macaron count is required\."/,
+      /"DIY kit quantity is required\."/,
+      /customerName: z\.string\(\)\.trim\(\)\.min\(2, "Enter your name\."\)/,
+      /customerEmail: z\.string\(\)\.trim\(\)\.email\("Enter a valid email address\."\)/,
+      /customerPhone: z[\s\S]+\.min\(10, "Enter a valid phone number with area code\."\)/,
+      /preferredContact: z\.enum\(\["email", "text", "phone"\]\)/,
+    ]) {
+      assert.match(source, contract);
+    }
+  });
+
+  it("emits validation analytics only for advance or submit attempts", async () => {
+    const source = await readFile(
+      new URL("./start-order-wizard.tsx", import.meta.url),
+      "utf8",
+    );
+
+    assert.match(
+      source,
+      /validateStepOnBlur[\s\S]+!attemptedStepsRef\.current\.has\(stepIndex\)[\s\S]+trackErrors: false/,
+    );
+    assert.match(
+      source,
+      /const goToNextStep = \(\) => \{[\s\S]+attemptedStepsRef\.current\.add\(currentStep\);[\s\S]+validateStep\(currentStep\)/,
+    );
   });
 
   it("does not horizontally scroll the wizard card to center step markers", async () => {
