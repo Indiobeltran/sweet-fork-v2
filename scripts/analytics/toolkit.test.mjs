@@ -19,6 +19,7 @@ import {
   getSearchConsolePeriods,
   percentageChange,
 } from "./report-utils.mjs";
+import { planLegacyKeyEventRetirement } from "./retire-legacy-key-event.mjs";
 
 const validEnvironment = {
   GA4_PROPERTY_ID: "123456789",
@@ -165,6 +166,47 @@ test("plans only the approved property timezone update", () => {
   assert.equal(
     planProperty({ timeZone: "America/Denver" }).status,
     "already_present",
+  );
+});
+
+test("plans only one fixed legacy key-event retirement", () => {
+  const propertyName = "properties/123456789";
+  const legacy = {
+    custom: true,
+    deletable: true,
+    eventName: "inquiry_submitted",
+    name: `${propertyName}/keyEvents/legacy-resource`,
+  };
+
+  assert.deepEqual(planLegacyKeyEventRetirement([], propertyName), {
+    status: "already_absent",
+    resourceName: null,
+    existing: [],
+  });
+  assert.equal(
+    planLegacyKeyEventRetirement([legacy], propertyName).status,
+    "delete",
+  );
+  assert.equal(
+    planLegacyKeyEventRetirement(
+      [legacy, { ...legacy, name: `${propertyName}/keyEvents/duplicate` }],
+      propertyName,
+    ).status,
+    "ambiguous",
+  );
+  assert.equal(
+    planLegacyKeyEventRetirement(
+      [{ ...legacy, deletable: false }],
+      propertyName,
+    ).status,
+    "not_deletable",
+  );
+  assert.equal(
+    planLegacyKeyEventRetirement(
+      [{ ...legacy, name: "properties/999/keyEvents/wrong-property" }],
+      propertyName,
+    ).status,
+    "invalid_resource_name",
   );
 });
 

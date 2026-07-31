@@ -4,6 +4,59 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## Legacy GA4 Key-Event Retirement — 2026-07-30 MDT
+
+- **Branch / starting commit**:
+  `codex/retire-legacy-inquiry-key-event`, created in a clean temporary
+  worktree from `origin/main` at
+  `2ee3d1d8732e19528fd874705ec326fb09133624`.
+- **Production QA result**: The owner confirmed one controlled inquiry was
+  successfully persisted, exactly one authenticated admin record appeared,
+  and exactly one `generate_lead` appeared in both DebugView and Realtime. No
+  PII, customer free text, identifier, exact date, URL or URL component,
+  filename, or link count appeared in analytics. Mobile navigation and draft
+  restoration passed.
+- **Fresh property audit**: The Admin API unambiguously verified
+  `properties/504065366`, display name `The Sweet Fork`, timezone
+  `America/Denver`, and `generate_lead` exactly once with `ONCE_PER_EVENT`.
+  The sole legacy resource was
+  `properties/504065366/keyEvents/15190855388`, and it was custom and
+  deletable. `purchase`, `qualify_lead`, and `close_convert_lead` were present,
+  and each of the five requested custom parameters remained present exactly
+  once.
+- **Dry run / apply / idempotency**: The first dry run proposed exactly one
+  deletion and made zero changes. Explicit apply deleted only the fixed
+  `inquiry_submitted` resource. A fresh audit verified the final key-event list
+  as `purchase`, `generate_lead`, `qualify_lead`, and `close_convert_lead`.
+  The second dry run proposed and made zero changes.
+- **Data preservation**: The Admin API operation removed only the legacy
+  key-event configuration. It did not delete or rewrite historical Analytics
+  event data, submit an inquiry, or change application/customer data.
+- **Toolkit changes**: Added a guarded, dry-run-by-default
+  `analytics:retire-legacy` command and focused planner tests. The ordinary
+  `analytics:configure` desired state now protects the four final key events
+  without requiring the retired legacy event.
+- **Scope and safety**: No application source, Supabase, Netlify, Search
+  Console, Google Cloud billing, hosted service, or hosted-data change was
+  made. The external credential was not opened, printed, copied, staged, or
+  committed. The primary checkout's unrelated modified and untracked work
+  remained untouched.
+- **Verification**:
+  - `npm run analytics:test` passed `10/10`.
+  - `npm run analytics:verify`, `npm run analytics:audit`,
+    `npm run analytics:configure`, and the final
+    `npm run analytics:retire-legacy` dry run passed.
+  - The final configure and retirement dry runs each proposed and made zero
+    changes.
+  - `npm test` passed `231/231`, followed by the integrated toolkit tests
+    passing `10/10`.
+  - `npm run lint`, `npm run typecheck`, and `npm run build` passed; the build
+    generated `26/26` static pages.
+  - `git diff --check`, task-scope, tracked-credential-filename,
+    credential-fragment, and private-path scans passed.
+- **Owner follow-up**: Downgrade the service account from GA4 Editor to Viewer
+  unless another explicitly approved GA4 property write is planned.
+
 ## Analytics Operations Toolkit Integration and Deployment — 2026-07-30 MDT
 
 - **Toolkit branch and final head**:

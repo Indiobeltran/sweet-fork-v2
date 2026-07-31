@@ -15,6 +15,7 @@
     "analytics:verify": "node scripts/analytics/verify-access.mjs",
     "analytics:audit": "node scripts/analytics/audit-config.mjs",
     "analytics:configure": "node scripts/analytics/configure-custom-dimensions.mjs",
+    "analytics:retire-legacy": "node scripts/analytics/retire-legacy-key-event.mjs",
     "analytics:realtime": "node scripts/analytics/realtime-check.mjs",
     "analytics:funnel": "node scripts/analytics/inquiry-funnel-report.mjs",
     "analytics:validation": "node scripts/analytics/validation-diagnostics-report.mjs",

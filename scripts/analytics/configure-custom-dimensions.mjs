@@ -22,7 +22,6 @@ export const requiredExistingKeyEvents = [
   "purchase",
   "qualify_lead",
   "close_convert_lead",
-  "inquiry_submitted",
 ];
 
 export const desiredCustomDimensions = [
