@@ -346,6 +346,7 @@ export type OrderDetail = {
   finalDueAt: string | null;
   fulfillmentMethod: Enums<"fulfillment_method">;
   fulfillmentNotes: string | null;
+  suppressFulfillmentReminder: boolean;
   fulfillmentWindow: string | null;
   id: string;
   inquiry: {
@@ -971,6 +972,7 @@ export async function getOrderDetail(orderId: string): Promise<OrderDetail | nul
     finalDueAt: row.final_due_at,
     fulfillmentMethod: row.fulfillment_method,
     fulfillmentNotes: workflowMetadata.fulfillmentNotes,
+    suppressFulfillmentReminder: workflowMetadata.suppressFulfillmentReminder,
     fulfillmentWindow: row.fulfillment_window,
     id: row.id,
     inquiry: row.inquiries

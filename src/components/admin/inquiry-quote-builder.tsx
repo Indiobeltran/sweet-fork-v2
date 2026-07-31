@@ -81,6 +81,7 @@ export function InquiryQuoteBuilder({ data }: Readonly<BuilderProps>) {
   );
   const [profile, setProfile] = useState<PricingProfile>(() => clone(data.pricingProfile));
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
+  const [routeStatus, setRouteStatus] = useState<"idle" | "loading" | "ready" | "failed">("idle");
 
   const calculationState = useMemo(() => {
     if (!input) return { calculation: null, error: null };
@@ -117,6 +118,30 @@ export function InquiryQuoteBuilder({ data }: Readonly<BuilderProps>) {
         ),
       };
     });
+  }
+
+  async function calculateDeliveryMileage() {
+    setRouteStatus("loading");
+    try {
+      const response = await fetch("/api/admin/integrations/delivery-route", {
+        body: JSON.stringify({ inquiryId: data.inquiry.id }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+      const result = await response.json() as { roundTripMiles?: number };
+      if (!response.ok || typeof result.roundTripMiles !== "number") throw new Error("route-failed");
+      setInput((current) => current ? {
+        ...current,
+        delivery: {
+          roundTripMiles: result.roundTripMiles as number,
+          setupHours: current.delivery?.setupHours ?? 0,
+          tollsParking: current.delivery?.tollsParking ?? 0,
+        },
+      } : current);
+      setRouteStatus("ready");
+    } catch {
+      setRouteStatus("failed");
+    }
   }
 
   function manualPricingFor(line: QuoteLineInput) {
@@ -457,6 +482,20 @@ export function InquiryQuoteBuilder({ data }: Readonly<BuilderProps>) {
 
       {data.inquiry.event.fulfillmentMethod === "delivery" ? (
         <AdminSectionCard title="Delivery" description="Use round-trip travel and the hands-on setup time required at the venue.">
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <Button disabled={!data.inquiry.event.venueAddress || routeStatus === "loading"} onClick={calculateDeliveryMileage} type="button" variant="secondary">
+              {routeStatus === "loading" ? "Calculating…" : "Calculate from venue"}
+            </Button>
+            <p aria-live="polite" className="text-sm text-charcoal/60">
+              {!data.inquiry.event.venueAddress
+                ? "Add a venue address to use routing."
+                : routeStatus === "ready"
+                  ? "Round-trip mileage updated. Review before saving."
+                  : routeStatus === "failed"
+                    ? "Routing is unavailable. Enter mileage manually."
+                    : "The saved bakery origin remains private."}
+            </p>
+          </div>
           <div className="grid gap-4 sm:grid-cols-3">
             <NumberField
               id="round-trip-mileage"

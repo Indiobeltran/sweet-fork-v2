@@ -30,6 +30,12 @@ import {
 import { parseQuoteSnapshot } from "@/lib/quotes/workflow";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
+  sendSquareInvoiceForOrder,
+} from "@/lib/integrations/square-workflow";
+import { SquareIntegrationError } from "@/lib/integrations/square";
+import { handleConfirmedOrderIntegrations } from "@/lib/integrations/order-lifecycle";
+import { syncConfirmedOrderToGoogleCalendar } from "@/lib/integrations/google-calendar-workflow";
+import {
   Constants,
   type Enums,
   type Json,
@@ -1037,6 +1043,7 @@ export async function updateOrderDetails(formData: FormData) {
   const squareInvoiceUrl = parseOptionalString(formData.get("squareInvoiceUrl"));
   const squareInvoiceStatus = parseOptionalString(formData.get("squareInvoiceStatus"));
   const fulfillmentNotes = parseOptionalString(formData.get("fulfillmentNotes"));
+  const suppressFulfillmentReminder = formData.get("suppressFulfillmentReminder") === "on";
 
   if (!orderId || !eventType || !/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) {
     redirectWithNotice(redirectTarget, "order-error");
@@ -1055,7 +1062,7 @@ export async function updateOrderDetails(formData: FormData) {
   const { data: currentOrder, error: currentOrderError } = await supabase
     .from("orders")
     .select(
-      "id, customer_id, inquiry_id, metadata, quoted_at, confirmed_at, fulfilled_at, completed_at, cancelled_at",
+      "id, customer_id, inquiry_id, status, event_date, metadata, quoted_at, confirmed_at, fulfilled_at, completed_at, cancelled_at",
     )
     .eq("id", orderId)
     .maybeSingle();
@@ -1068,6 +1075,7 @@ export async function updateOrderDetails(formData: FormData) {
     designNotes: workflowDesignNotes,
     estimatedTotalAmount,
     fulfillmentNotes,
+    suppressFulfillmentReminder,
     squareInvoiceNumber,
     squareInvoiceStatus,
     squareInvoiceUrl,
@@ -1106,6 +1114,11 @@ export async function updateOrderDetails(formData: FormData) {
   }
 
   await syncOrderPaymentState(orderId);
+  if (nextStatus === "confirmed" && currentOrder.status !== "confirmed") {
+    await handleConfirmedOrderIntegrations(orderId);
+  } else if (eventDate !== currentOrder.event_date || nextStatus === "cancelled") {
+    await syncConfirmedOrderToGoogleCalendar(orderId).catch(() => undefined);
+  }
   revalidateOrderWorkflow(orderId, currentOrder.customer_id, currentOrder.inquiry_id);
   redirectWithNotice(redirectTarget, "order-updated");
 }
@@ -1249,6 +1262,42 @@ export async function updateOrderPayment(formData: FormData) {
   await syncOrderPaymentState(orderId);
   revalidateOrderWorkflow(orderId, order.customer_id, order.inquiry_id);
   redirectWithNotice(redirectTarget, "payment-updated");
+}
+
+export async function sendSquareInvoice(formData: FormData) {
+  await requireAdmin();
+  const orderId = parseRequiredString(formData.get("orderId"));
+  const redirectTarget = getSafeOrderRedirectTarget(formData.get("redirectTo"), orderId ?? undefined);
+
+  if (!orderId) {
+    redirectWithNotice(redirectTarget, "square-invoice-error");
+  }
+
+  try {
+    await sendSquareInvoiceForOrder(orderId);
+  } catch (error) {
+    if (error instanceof SquareIntegrationError) {
+      const notice = error.code === "square-disabled"
+        ? "square-invoice-disabled"
+        : error.code === "invoice-already-exists"
+          ? "square-invoice-exists"
+          : error.code === "order-not-quoted"
+            ? "square-invoice-order-state"
+            : "square-invoice-error";
+      redirectWithNotice(redirectTarget, notice);
+    }
+
+    console.error("Square invoice creation failed.", {
+      code: error instanceof SquareIntegrationError ? error.code : "unknown",
+      operation: "send-square-invoice",
+      orderId,
+    });
+    redirectWithNotice(redirectTarget, "square-invoice-error");
+  }
+
+  revalidateOrderWorkflow(orderId);
+  revalidatePath("/admin/settings");
+  redirectWithNotice(redirectTarget, "square-invoice-sent");
 }
 
 export async function addOrderNote(formData: FormData) {

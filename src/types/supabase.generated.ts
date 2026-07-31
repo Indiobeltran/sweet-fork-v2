@@ -234,6 +234,63 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_route_snapshots: {
+        Row: {
+          calculated_at: string
+          calculated_fee: number
+          created_at: string
+          destination_place_id: string | null
+          distance_meters: number
+          duration_seconds: number | null
+          id: string
+          inquiry_id: string | null
+          inquiry_quote_id: string | null
+          mileage_rate: number
+          normalized_destination: string
+          order_id: string | null
+          owner_override_fee: number | null
+          provider: string
+          provider_response_hash: string
+          round_trip_miles: number
+        }
+        Insert: {
+          calculated_at?: string
+          calculated_fee: number
+          created_at?: string
+          destination_place_id?: string | null
+          distance_meters: number
+          duration_seconds?: number | null
+          id?: string
+          inquiry_id?: string | null
+          inquiry_quote_id?: string | null
+          mileage_rate: number
+          normalized_destination: string
+          order_id?: string | null
+          owner_override_fee?: number | null
+          provider?: string
+          provider_response_hash: string
+          round_trip_miles: number
+        }
+        Update: {
+          calculated_at?: string
+          calculated_fee?: number
+          created_at?: string
+          destination_place_id?: string | null
+          distance_meters?: number
+          duration_seconds?: number | null
+          id?: string
+          inquiry_id?: string | null
+          inquiry_quote_id?: string | null
+          mileage_rate?: number
+          normalized_destination?: string
+          order_id?: string | null
+          owner_override_fee?: number | null
+          provider?: string
+          provider_response_hash?: string
+          round_trip_miles?: number
+        }
+        Relationships: []
+      }
       faq_items: {
         Row: {
           answer: string
@@ -296,6 +353,213 @@ export type Database = {
           is_active?: boolean
           name?: string
           slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      integration_connections: {
+        Row: {
+          config_json: Json
+          created_at: string
+          display_name: string | null
+          enabled: boolean
+          external_account_id: string | null
+          last_error_code: string | null
+          last_error_message: string | null
+          last_event_at: string | null
+          last_success_at: string | null
+          last_sync_at: string | null
+          mode: string
+          provider: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          config_json?: Json
+          created_at?: string
+          display_name?: string | null
+          enabled?: boolean
+          external_account_id?: string | null
+          last_error_code?: string | null
+          last_error_message?: string | null
+          last_event_at?: string | null
+          last_success_at?: string | null
+          last_sync_at?: string | null
+          mode?: string
+          provider: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          config_json?: Json
+          created_at?: string
+          display_name?: string | null
+          enabled?: boolean
+          external_account_id?: string | null
+          last_error_code?: string | null
+          last_error_message?: string | null
+          last_event_at?: string | null
+          last_success_at?: string | null
+          last_sync_at?: string | null
+          mode?: string
+          provider?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      integration_links: {
+        Row: {
+          created_at: string
+          external_entity_type: string
+          external_id: string
+          external_parent_id: string | null
+          external_version: string | null
+          id: string
+          last_synced_at: string | null
+          local_entity_id: string
+          local_entity_type: string
+          metadata: Json
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          external_entity_type: string
+          external_id: string
+          external_parent_id?: string | null
+          external_version?: string | null
+          id?: string
+          last_synced_at?: string | null
+          local_entity_id: string
+          local_entity_type: string
+          metadata?: Json
+          provider: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          external_entity_type?: string
+          external_id?: string
+          external_parent_id?: string | null
+          external_version?: string | null
+          id?: string
+          last_synced_at?: string | null
+          local_entity_id?: string
+          local_entity_type?: string
+          metadata?: Json
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      integration_sync_conflicts: {
+        Row: {
+          conflict_type: string
+          created_at: string
+          detected_at: string
+          external_value: Json
+          field_name: string | null
+          id: string
+          integration_link_id: string | null
+          local_entity_id: string | null
+          local_entity_type: string | null
+          local_value: Json
+          provider: string
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          conflict_type: string
+          created_at?: string
+          detected_at?: string
+          external_value?: Json
+          field_name?: string | null
+          id?: string
+          integration_link_id?: string | null
+          local_entity_id?: string | null
+          local_entity_type?: string | null
+          local_value?: Json
+          provider: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          conflict_type?: string
+          created_at?: string
+          detected_at?: string
+          external_value?: Json
+          field_name?: string | null
+          id?: string
+          integration_link_id?: string | null
+          local_entity_id?: string | null
+          local_entity_type?: string | null
+          local_value?: Json
+          provider?: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      integration_webhook_events: {
+        Row: {
+          attempt_count: number
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          error_code: string | null
+          event_type: string
+          external_event_id: string
+          id: string
+          occurred_at: string | null
+          payload_checksum: string
+          processed_at: string | null
+          provider: string
+          received_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempt_count?: number
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          error_code?: string | null
+          event_type: string
+          external_event_id: string
+          id?: string
+          occurred_at?: string | null
+          payload_checksum: string
+          processed_at?: string | null
+          provider: string
+          received_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempt_count?: number
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          error_code?: string | null
+          event_type?: string
+          external_event_id?: string
+          id?: string
+          occurred_at?: string | null
+          payload_checksum?: string
+          processed_at?: string | null
+          provider?: string
+          received_at?: string
+          status?: string
           updated_at?: string
         }
         Relationships: []

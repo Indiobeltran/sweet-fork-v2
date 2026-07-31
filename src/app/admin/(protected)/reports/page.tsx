@@ -63,6 +63,22 @@ export default async function AdminReportsPage() {
       </section>
 
       <AdminSectionCard
+        title="Bookkeeping export"
+        description="Download order totals, payment and refund activity, and Square references for Relay or your accountant."
+      >
+        <form action="/api/admin/reports/financial-export" className="flex flex-wrap items-end gap-3" method="get">
+          <label className="grid gap-1 text-sm text-charcoal/70">
+            Event month (optional)
+            <input className="rounded-xl border border-charcoal/15 bg-white px-3 py-2 text-charcoal" name="month" type="month" />
+          </label>
+          <button className="rounded-full bg-charcoal px-5 py-2.5 text-sm font-semibold text-white" type="submit">
+            Download CSV
+          </button>
+        </form>
+        <p className="mt-3 text-sm text-charcoal/55">The export is a reconciliation aid; Square remains authoritative for card-processing fees and Relay remains authoritative for bank transactions.</p>
+      </AdminSectionCard>
+
+      <AdminSectionCard
         title="Order count by month"
         description="Each row shows counted order totals and booked value for the trailing twelve months."
       >

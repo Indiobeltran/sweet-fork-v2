@@ -5,6 +5,7 @@
     "middleware.ts",
     "next.config.ts",
     "tailwind.config.ts",
+    "netlify/**/*.ts",
     "src/**/*.ts",
     "src/**/*.tsx"
   ],

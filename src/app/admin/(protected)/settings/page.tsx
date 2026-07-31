@@ -1,4 +1,8 @@
 import { saveAdminSetting } from "@/app/admin/(protected)/settings/actions";
+import {
+  resolveIntegrationConflict,
+  updateIntegrationEnabled,
+} from "@/app/admin/(protected)/settings/integration-actions";
 import { AdminNoticeBanner } from "@/components/admin/admin-notice-banner";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
@@ -12,6 +16,9 @@ import {
   launchReadinessSections,
   type ManagedAdminSetting,
 } from "@/lib/admin/settings";
+import { getIntegrationHealthData } from "@/lib/admin/integrations";
+import { requireAdmin } from "@/lib/auth";
+import { formatOptionalDateTime } from "@/lib/admin/order-workflow";
 
 export const metadata = {
   title: "Admin Settings",
@@ -144,9 +151,11 @@ function SettingCard({ setting }: Readonly<{ setting: ManagedAdminSetting }>) {
 
 export default async function AdminSettingsPage({ searchParams }: AdminSettingsPageProps) {
   const rawSearchParams = await searchParams;
-  const [notice, data] = await Promise.all([
+  const [notice, data, integrationData, admin] = await Promise.all([
     Promise.resolve(getNoticeValue(rawSearchParams)),
     getSettingsAdminData(),
+    getIntegrationHealthData(),
+    requireAdmin(),
   ]);
 
   return (
@@ -161,6 +170,22 @@ export default async function AdminSettingsPage({ searchParams }: AdminSettingsP
           "settings-updated": {
             className: "border-emerald-200 bg-emerald-50 text-emerald-900",
             text: "Settings updated.",
+          },
+          "integration-disabled": {
+            className: "border-gold/24 bg-gold/12 text-charcoal",
+            text: "Integration disabled. Existing external records were preserved.",
+          },
+          "integration-enabled": {
+            className: "border-emerald-200 bg-emerald-50 text-emerald-900",
+            text: "Integration enabled. Verify its first live synchronization before relying on it.",
+          },
+          "integration-error": {
+            className: "border-rose/24 bg-rose/10 text-charcoal",
+            text: "The integration setting could not be updated.",
+          },
+          "integration-conflict-resolved": {
+            className: "border-emerald-200 bg-emerald-50 text-emerald-900",
+            text: "Integration conflict reviewed.",
           },
         }}
       />
@@ -191,6 +216,73 @@ export default async function AdminSettingsPage({ searchParams }: AdminSettingsP
           </div>
         </AdminSectionCard>
       ))}
+
+      <AdminSectionCard
+        title="Integrations"
+        description="Private provider health, synchronization activity, and conflicts. Environment flags remain the final safety switch."
+      >
+        <div className="grid gap-4 xl:grid-cols-2">
+          {integrationData.integrations.length === 0 ? (
+            <p className="rounded-[1.35rem] border border-gold/20 bg-gold/10 p-4 text-sm text-charcoal/70 xl:col-span-2">
+              Integration controls will appear after the reviewed database migration is applied. No provider is active.
+            </p>
+          ) : null}
+          {integrationData.integrations.map((integration) => (
+            <article key={integration.provider} className="rounded-[1.7rem] border border-charcoal/10 bg-paper p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+                    {integration.mode}
+                  </p>
+                  <h3 className="mt-1 font-serif text-2xl tracking-[-0.03em] text-charcoal">
+                    {integration.displayName}
+                  </h3>
+                </div>
+                <span className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${integration.status === "ready" ? "border-emerald-200 bg-emerald-50 text-emerald-900" : integration.status === "error" ? "border-rose/24 bg-rose/10 text-charcoal" : "border-charcoal/10 bg-white text-charcoal/68"}`}>
+                  {integration.status}
+                </span>
+              </div>
+              <dl className="mt-4 grid gap-2 text-sm text-charcoal/64 sm:grid-cols-2">
+                <div><dt className="font-medium text-charcoal">Credentials</dt><dd>{integration.configured ? "Configured" : "Missing"}</dd></div>
+                <div><dt className="font-medium text-charcoal">Environment flag</dt><dd>{integration.environmentEnabled ? "Enabled" : "Disabled"}</dd></div>
+                <div><dt className="font-medium text-charcoal">Last success</dt><dd>{formatOptionalDateTime(integration.lastSuccessAt)}</dd></div>
+                <div><dt className="font-medium text-charcoal">Last event</dt><dd>{formatOptionalDateTime(integration.lastEventAt)}</dd></div>
+                <div><dt className="font-medium text-charcoal">Open conflicts</dt><dd>{integration.openConflictCount}</dd></div>
+                <div><dt className="font-medium text-charcoal">Recent failures</dt><dd>{integration.recentFailedEventCount}</dd></div>
+              </dl>
+              {integration.lastErrorCode ? <p className="mt-3 text-sm text-rose-800">Last error: {integration.lastErrorCode}</p> : null}
+              {admin.role === "owner" ? (
+                <form action={updateIntegrationEnabled} className="mt-4">
+                  <input type="hidden" name="provider" value={integration.provider} />
+                  <input type="hidden" name="enabled" value={String(!integration.enabled)} />
+                  <Button type="submit" variant="secondary" size="sm" disabled={!integration.configured || !integration.environmentEnabled}>
+                    {integration.enabled ? "Disable" : "Enable"}
+                  </Button>
+                </form>
+              ) : null}
+            </article>
+          ))}
+        </div>
+
+        {integrationData.conflicts.length > 0 ? (
+          <div className="mt-5 space-y-3">
+            <h3 className="font-serif text-2xl text-charcoal">Open synchronization conflicts</h3>
+            {integrationData.conflicts.map((conflict) => (
+              <article key={conflict.id} className="rounded-[1.4rem] border border-gold/25 bg-gold/8 p-4">
+                <p className="font-medium text-charcoal">{conflict.provider} · {conflict.conflictType}</p>
+                <p className="mt-1 text-sm text-charcoal/64">
+                  {conflict.fieldName ?? "Linked record"} · detected {formatOptionalDateTime(conflict.detectedAt)}
+                </p>
+                <form action={resolveIntegrationConflict} className="mt-3 flex flex-wrap gap-2">
+                  <input type="hidden" name="conflictId" value={conflict.id} />
+                  <Button type="submit" name="resolution" value="resolved" size="sm">Mark reviewed</Button>
+                  <Button type="submit" name="resolution" value="ignored" size="sm" variant="secondary">Ignore</Button>
+                </form>
+              </article>
+            ))}
+          </div>
+        ) : null}
+      </AdminSectionCard>
 
       <AdminSectionCard
         title="Launch readiness"

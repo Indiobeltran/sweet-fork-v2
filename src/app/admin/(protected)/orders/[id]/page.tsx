@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { addOrderNote, addOrderPayment, deleteOrder, updateOrderDetails, updateOrderPayment } from "@/app/admin/(protected)/orders/actions";
+import { addOrderNote, addOrderPayment, deleteOrder, sendSquareInvoice, updateOrderDetails, updateOrderPayment } from "@/app/admin/(protected)/orders/actions";
 import { OrderDeleteForm } from "@/components/admin/order-delete-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ import {
 } from "@/lib/admin/order-workflow";
 import { formatBusinessDate } from "@/lib/business-time";
 import { formatDate, toTitleCase } from "@/lib/utils";
+import { getIntegrationConfigurationStatus } from "@/lib/integrations/config";
 
 export const metadata = {
   title: "Order Detail",
@@ -365,6 +366,26 @@ function NoticeBanner({ notice }: { notice: string | undefined }) {
       className: "border-emerald-200 bg-emerald-50 text-emerald-900",
       text: "Payment record updated.",
     },
+    "square-invoice-disabled": {
+      className: "border-gold/25 bg-gold/12 text-charcoal",
+      text: "Square invoicing is not enabled yet. Review Integration settings.",
+    },
+    "square-invoice-error": {
+      className: "border-rose/24 bg-rose/10 text-charcoal",
+      text: "The Square invoice could not be created. No local payment was changed.",
+    },
+    "square-invoice-exists": {
+      className: "border-gold/25 bg-gold/12 text-charcoal",
+      text: "This order already has a linked Square invoice.",
+    },
+    "square-invoice-order-state": {
+      className: "border-gold/25 bg-gold/12 text-charcoal",
+      text: "Square invoices can be sent only while the order is in Quoted status.",
+    },
+    "square-invoice-sent": {
+      className: "border-emerald-200 bg-emerald-50 text-emerald-900",
+      text: "Square invoice published. Square will deliver the deposit and balance requests.",
+    },
   };
 
   const copy = copyByNotice[notice];
@@ -415,6 +436,7 @@ export default async function AdminOrderDetailPage({
     paymentStatus: detail.paymentStatus,
     status: detail.status,
   });
+  const squareConfiguration = getIntegrationConfigurationStatus().square;
 
   return (
     <div className="space-y-4">
@@ -507,6 +529,42 @@ export default async function AdminOrderDetailPage({
 
       <div className="space-y-4">
         <SectionCard id="payments" title="Payments">
+          <div className="mb-5 rounded-[1.5rem] border border-charcoal/10 bg-ivory/65 p-4">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/48">Square invoice</p>
+                <p className="mt-2 text-sm leading-6 text-charcoal/66">
+                  {detail.squareInvoiceUrl
+                    ? `${detail.squareInvoiceNumber ?? "Invoice"} · ${detail.squareInvoiceStatus ?? "Status pending"}`
+                    : "Create the deposit and event-date balance request only after reviewing this quoted order."}
+                </p>
+              </div>
+              {detail.squareInvoiceUrl ? (
+                <a
+                  href={detail.squareInvoiceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex min-h-10 items-center justify-center rounded-full border border-charcoal/12 bg-white px-4 text-sm font-semibold text-charcoal transition hover:border-charcoal/24"
+                >
+                  Open Square invoice
+                </a>
+              ) : (
+                <form action={sendSquareInvoice}>
+                  <input type="hidden" name="orderId" value={detail.id} />
+                  <input type="hidden" name="redirectTo" value={redirectTo} />
+                  <Button
+                    type="submit"
+                    disabled={detail.status !== "quoted" || !squareConfiguration.configured || !squareConfiguration.enabled}
+                  >
+                    Send Square invoice
+                  </Button>
+                </form>
+              )}
+            </div>
+            {!squareConfiguration.configured || !squareConfiguration.enabled ? (
+              <p className="mt-3 text-sm text-charcoal/58">Square remains disabled until credentials and the environment safety flag are configured.</p>
+            ) : null}
+          </div>
           <div className="space-y-4">
             <PaymentSummaryPanel detail={detail} />
             <SquareInvoicePanel detail={detail} />
@@ -1172,6 +1230,15 @@ export default async function AdminOrderDetailPage({
                     defaultValue={detail.fulfillmentNotes ?? ""}
                     placeholder="Parking notes, pickup timing, setup reminders, or delivery handoff details."
                   />
+                  <label className="mt-3 flex items-start gap-2 text-sm text-charcoal/70">
+                    <input
+                      className="mt-0.5 size-4 rounded border-charcoal/25 accent-gold"
+                      defaultChecked={detail.suppressFulfillmentReminder}
+                      name="suppressFulfillmentReminder"
+                      type="checkbox"
+                    />
+                    Skip the automatic 48-hour fulfillment reminder for this order.
+                  </label>
                 </div>
               </div>
 

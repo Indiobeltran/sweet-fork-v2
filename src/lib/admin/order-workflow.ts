@@ -40,6 +40,7 @@ export type OrderWorkflowMetadata = {
   designNotes: string | null;
   estimatedTotalAmount: number | null;
   fulfillmentNotes: string | null;
+  suppressFulfillmentReminder: boolean;
   squareInvoiceNumber: string | null;
   squareInvoiceStatus: string | null;
   squareInvoiceUrl: string | null;
@@ -59,6 +60,10 @@ function getNumberValue(record: JsonRecord, key: string) {
   const value = record[key];
 
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function getBooleanValue(record: JsonRecord, key: string) {
+  return record[key] === true;
 }
 
 function setOptionalNumber(record: JsonRecord, key: string, value: number | null | undefined) {
@@ -101,6 +106,7 @@ export function parseOrderWorkflowMetadata(metadata: Json): OrderWorkflowMetadat
       designNotes: null,
       estimatedTotalAmount: null,
       fulfillmentNotes: null,
+      suppressFulfillmentReminder: false,
       squareInvoiceNumber: null,
       squareInvoiceStatus: null,
       squareInvoiceUrl: null,
@@ -111,6 +117,7 @@ export function parseOrderWorkflowMetadata(metadata: Json): OrderWorkflowMetadat
     designNotes: getStringValue(record, "designNotes"),
     estimatedTotalAmount: getNumberValue(record, "estimatedTotalAmount"),
     fulfillmentNotes: getStringValue(record, "fulfillmentNotes"),
+    suppressFulfillmentReminder: getBooleanValue(record, "suppressFulfillmentReminder"),
     squareInvoiceNumber: getStringValue(record, "squareInvoiceNumber"),
     squareInvoiceStatus: getStringValue(record, "squareInvoiceStatus"),
     squareInvoiceUrl: getStringValue(record, "squareInvoiceUrl"),
@@ -126,6 +133,9 @@ export function mergeOrderWorkflowMetadata(
   setOptionalString(record, "designNotes", next.designNotes);
   setOptionalNumber(record, "estimatedTotalAmount", next.estimatedTotalAmount);
   setOptionalString(record, "fulfillmentNotes", next.fulfillmentNotes);
+  if (next.suppressFulfillmentReminder !== undefined) {
+    record.suppressFulfillmentReminder = next.suppressFulfillmentReminder;
+  }
   setOptionalString(record, "squareInvoiceNumber", next.squareInvoiceNumber);
   setOptionalString(record, "squareInvoiceStatus", next.squareInvoiceStatus);
   setOptionalString(record, "squareInvoiceUrl", next.squareInvoiceUrl);
