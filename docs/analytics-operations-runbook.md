@@ -56,8 +56,8 @@ Every command supports `--json` for machine-readable output. Reports accept
 | `npm run analytics:test` | Runs focused identifier, idempotency, date-range, sanitization, and URL-boundary tests. |
 | `npm run analytics:verify` | Reads the GA4 property and runs a minimal Data API report. Prints only property identity and success status. |
 | `npm run analytics:audit` | Reads property metadata, streams, key events, custom definitions, retention, reporting bounds, and requested-dimension duplicates. It does not mutate GA4. |
-| `npm run analytics:configure` | Dry-runs the five requested Event-scope custom dimensions and reports create/present/mismatch/conflict status. |
-| `npm run analytics:configure -- --apply` | Creates only missing requested dimensions, then re-reads and verifies them. It does not rename existing dimensions or change key events. |
+| `npm run analytics:configure` | Dry-runs the approved GA4 desired state: Mountain reporting timezone, `generate_lead` key event, and five Event-scope custom dimensions. |
+| `npm run analytics:configure -- --apply` | Applies only missing approved state, using a timezone-only update mask and create-if-absent resources, then freshly verifies protected property fields, retained key events, and dimensions. A repeated apply makes no changes. |
 | `npm run analytics:realtime` | Shows inquiry event names and counts from the recent Realtime window. Use `--minutes N` from 1 through 29. |
 | `npm run analytics:realtime -- --expect-lead` | Fails if no `generate_lead` is visible. `--expected-count 1` requires an exact count and `--fail-on-unexpected` rejects legacy or unknown inquiry event names. The command never submits an inquiry. |
 | `npm run analytics:funnel` | Reports `inquiry_started`, `inquiry_step_completed` by step, and `generate_lead`. |
@@ -106,7 +106,8 @@ standard reports after processing completes.
 ## Audit interpretation
 
 - `generate_lead key event: YES` means the Admin API currently returns that
-  event as a key event. The toolkit never creates, deletes, or changes it.
+  event exactly once with `ONCE_PER_EVENT` counting and no default monetary
+  value.
 - `already_present` means a custom dimension exists once with Event scope and
   the requested display name.
 - `display_name_mismatch` means the parameter exists once with Event scope but
@@ -115,6 +116,62 @@ standard reports after processing completes.
 - The Analytics Admin API used here does not expose the Search Console link.
   Verify that link in GA4 Admin; API access is independently tested with
   `search-console:verify`.
+
+## Approved GA4 property state
+
+On July 30, 2026, the Admin API verified and applied the following desired
+state to `properties/504065366`, display name `The Sweet Fork`:
+
+- Reporting timezone: `America/Denver`
+- Currency: `USD` (preserved)
+- Industry category: `FOOD_AND_DRINK` (preserved)
+- `generate_lead`: key event resource
+  `properties/504065366/keyEvents/15355822985`, counted
+  `ONCE_PER_EVENT`, with no default monetary value
+- Retained key events: `purchase`, `qualify_lead`, `close_convert_lead`, and
+  temporarily `inquiry_submitted`
+- Requested custom parameters: `step_id`, `step_name`, `field_id`,
+  `error_code`, and `form_version`, each present exactly once with Event scope
+
+The toolkit created `generate_lead` through the Admin API because the production
+application already emits GA4's recommended lead event only after persistence,
+while the audited property had not marked that event as a key event.
+`ONCE_PER_EVENT` keeps each confirmed event instance eligible as a lead; the
+application's persistence guard remains responsible for exact-once emission.
+No fallback value or currency is configured on the key-event resource.
+
+Mountain Time is the correct reporting boundary because The Sweet Fork operates
+in Centerville, Utah and the application business-time source of truth is
+`America/Denver`. The property was changed from `America/Los_Angeles` with an
+update mask containing only `time_zone`. Google documents that a reporting
+timezone change affects data going forward; it can temporarily cause a flat
+spot or spike around the time shift, and reports may refer to the old timezone
+until processing catches up. Historical data is not rewritten. See [Google's
+reporting-timezone
+guidance](https://support.google.com/analytics/answer/9744165).
+
+### Retiring `inquiry_submitted` after production QA
+
+`inquiry_submitted` remains a key event temporarily so the owner can compare it
+with `generate_lead` during controlled production QA. Do not retire it until:
+
+1. One controlled production inquiry appears exactly once in authenticated
+   admin.
+2. Tag Assistant and DebugView show exactly one privacy-safe `generate_lead`
+   after confirmed persistence.
+3. Realtime and processed GA4 reporting show the new key event without a
+   measurement regression.
+4. The comparison window is recorded in `HANDOFF.md`.
+
+After those checks, obtain a fresh Admin API audit, confirm the exact
+`inquiry_submitted` resource is still custom and deletable, and request explicit
+owner approval for retirement. Delete only that fixed key-event resource with
+the Admin API `properties.keyEvents.delete` method, then re-audit. This removes
+its key-event configuration; it must not create an event-edit rule, delete
+historical Analytics data, or modify the application event contract. The
+current configure command intentionally has no deletion path. Google documents
+the fixed-resource [key-event delete
+operation](https://developers.google.com/analytics/devguides/config/admin/v1/rest/v1alpha/properties.keyEvents/delete).
 
 ## Troubleshooting
 

@@ -9,7 +9,10 @@ import {
 } from "./google-client.mjs";
 import {
   desiredCustomDimensions,
+  desiredKeyEvent,
   planCustomDimensions,
+  planKeyEvent,
+  planProperty,
 } from "./configure-custom-dimensions.mjs";
 import {
   getDateRange,
@@ -112,6 +115,56 @@ test("plans requested dimensions idempotently", () => {
       { ...existing[0], displayName: "Duplicate" },
     ])[0].status,
     "duplicate",
+  );
+});
+
+test("plans generate_lead creation and detects unsafe existing conflicts", () => {
+  assert.deepEqual(planKeyEvent([]), {
+    ...desiredKeyEvent,
+    status: "create",
+    existing: [],
+  });
+  assert.equal(
+    planKeyEvent([
+      {
+        eventName: "generate_lead",
+        countingMethod: "ONCE_PER_EVENT",
+        defaultValue: null,
+      },
+    ]).status,
+    "already_present",
+  );
+  assert.equal(
+    planKeyEvent([
+      {
+        eventName: "generate_lead",
+        countingMethod: "ONCE_PER_SESSION",
+        defaultValue: null,
+      },
+    ]).status,
+    "counting_method_mismatch",
+  );
+  assert.equal(
+    planKeyEvent([
+      {
+        eventName: "generate_lead",
+        countingMethod: "ONCE_PER_EVENT",
+        defaultValue: { numericValue: 1, currencyCode: "USD" },
+      },
+    ]).status,
+    "default_value_mismatch",
+  );
+});
+
+test("plans only the approved property timezone update", () => {
+  assert.deepEqual(planProperty({ timeZone: "America/Los_Angeles" }), {
+    currentTimeZone: "America/Los_Angeles",
+    desiredTimeZone: "America/Denver",
+    status: "update",
+  });
+  assert.equal(
+    planProperty({ timeZone: "America/Denver" }).status,
+    "already_present",
   );
 });
 

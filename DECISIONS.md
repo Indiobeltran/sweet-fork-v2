@@ -2,6 +2,62 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
+## 2026-07-30 - Mark Persisted Leads As Key Events And Report In Mountain Time
+
+### Status
+
+Accepted
+
+### Context
+
+The local Admin API audit unambiguously identified The Sweet Fork property as
+`properties/504065366`, with USD currency and food-and-drink industry category.
+Although the application emits `generate_lead` only after confirmed inquiry
+persistence, the property did not contain that key event. Its reporting
+timezone was `America/Los_Angeles`, one hour behind the bakery's Centerville,
+Utah operations and the application's `America/Denver` business-time source of
+truth. The legacy `inquiry_submitted` key event still exists and has not yet
+been compared with `generate_lead` in controlled production QA.
+
+### Options Considered
+
+- Leave the property unchanged and compensate in reports.
+- Create `generate_lead`, immediately delete `inquiry_submitted`, and leave the
+  timezone unchanged.
+- Idempotently create only the missing `generate_lead` key event, change only
+  the reporting timezone to Mountain Time, and temporarily retain every
+  existing key event through production QA.
+
+### Decision
+
+Use the Admin API desired-state command to create `generate_lead` only when
+absent, with `ONCE_PER_EVENT` counting and no default monetary value. Set the
+property timezone to `America/Denver` using an update mask containing only
+`time_zone`. Preserve the property name, account, industry category, USD
+currency, service level, property type, and all other property settings.
+
+Preserve `purchase`, `qualify_lead`, `close_convert_lead`, and
+`inquiry_submitted`. Preserve all custom definitions, including the existing
+`step_name` display-name capitalization. `inquiry_submitted` remains temporary
+until an owner-controlled production inquiry proves that persistence, admin
+readback, DebugView, Realtime, exact-once behavior, and privacy protections all
+work together.
+
+### Consequences
+
+- New lead events are reportable as the intended primary GA4 key event.
+- GA4 daily reporting boundaries now align with the bakery's Mountain Time
+  operations and daylight-saving rules.
+- Google documents timezone changes as forward-only; the shift can create a
+  temporary flat spot or spike and reports may briefly use the prior timezone
+  while processing completes.
+- After successful production QA and explicit approval, retire only the freshly
+  audited `inquiry_submitted` key-event resource through
+  `properties.keyEvents.delete`, then re-audit. The toolkit deliberately does
+  not automate deletion in its desired-state command.
+- Historical Analytics data and the application event implementation are not
+  deleted or rewritten.
+
 ## 2026-07-30 - Keep Analytics Operations Local, Credential-Opaque, And Read-Only By Default
 
 ### Status
@@ -35,12 +91,13 @@ readability but may not read, print, copy, fixture, or commit credential
 contents.
 
 All operations are read-only by default. The only write command is the
-idempotent requested-dimension configuration, and it requires an explicit
-`--apply`. It creates only absent Event-scope parameters, reports display-name
-differences without renaming, blocks duplicate/scope/archive conflicts, and
-does not alter key events. Reports remain aggregate and exclude inquiry
-records, customer-entered content, inspiration URLs, and authentication
-material.
+idempotent approved desired-state configuration, and it requires an explicit
+`--apply`. It creates only absent approved Event-scope parameters and the
+approved `generate_lead` key event, updates only the approved timezone field,
+reports display-name differences without renaming, and blocks
+duplicate/scope/archive/configuration conflicts. Reports remain aggregate and
+exclude inquiry records, customer-entered content, inspiration URLs, and
+authentication material.
 
 ### Consequences
 

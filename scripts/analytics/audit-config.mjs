@@ -81,6 +81,8 @@ export async function auditAnalyticsConfig(argv = process.argv.slice(2)) {
     property: {
       currencyCode: property.currencyCode ?? "",
       displayName: property.displayName ?? "",
+      industryCategory: property.industryCategory ?? "",
+      name: property.name ?? "",
       propertyId: config.propertyId,
       timeZone: property.timeZone ?? "",
     },
@@ -93,7 +95,14 @@ export async function auditAnalyticsConfig(argv = process.argv.slice(2)) {
     })),
     keyEvents: keyEvents.map((event) => ({
       countingMethod: event.countingMethod ?? "",
+      custom: event.custom === true,
+      defaultValue: event.defaultValue ?? null,
+      defaultValueDisplay: event.defaultValue
+        ? `${event.defaultValue.numericValue ?? ""} ${event.defaultValue.currencyCode ?? ""}`.trim()
+        : "none",
+      deletable: event.deletable === true,
       eventName: event.eventName ?? "",
+      name: event.name ?? "",
     })),
     generateLeadIsKeyEvent,
     customDimensions: dimensionRows,
@@ -118,7 +127,9 @@ export async function auditAnalyticsConfig(argv = process.argv.slice(2)) {
       "Not exposed by the Google Analytics Admin API. Verify the link in the GA4 UI; Search Console API access is audited separately.",
   };
   const lines = [
-    `GA4 property: ${payload.property.displayName} (${payload.property.propertyId})`,
+    `GA4 property: ${payload.property.displayName} (${payload.property.name})`,
+    `Numeric property ID: ${payload.property.propertyId}`,
+    `Industry: ${payload.property.industryCategory}`,
     `Timezone: ${payload.property.timeZone}`,
     `Currency: ${payload.property.currencyCode}`,
     `Reporting data: ${payload.reportingDateRange.earliest ?? "none"} through ${payload.reportingDateRange.latest ?? "none"}`,
@@ -135,8 +146,12 @@ export async function auditAnalyticsConfig(argv = process.argv.slice(2)) {
     "",
     "Key events",
     ...formatRows(payload.keyEvents, [
+      { key: "name", label: "Resource" },
       { key: "eventName", label: "Event" },
       { key: "countingMethod", label: "Counting" },
+      { key: "custom", label: "Custom" },
+      { key: "deletable", label: "Deletable" },
+      { key: "defaultValueDisplay", label: "Default value" },
     ]),
     "",
     "Custom dimensions",
