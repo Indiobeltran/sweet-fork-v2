@@ -9,6 +9,13 @@ dist
 .eslintcache
 *.log
 
+# Local Google credentials must remain outside the repository.
+**/*service-account*.json
+**/google-credentials*.json
+**/google-service-credentials*.json
+**/application-default-credentials.json
+**/application_default_credentials.json
+
 .eslintcache
 tsconfig.tsbuildinfo
 tsconfig.typecheck.tsbuildinfo

@@ -83,3 +83,11 @@ See `.env.example`.
 - `npm run typecheck`
 - `npm run lint`
 - `npm run build`
+
+## Local analytics operations
+
+The repository includes local-only GA4 and Search Console verification,
+configuration, and reporting commands. Credentials remain outside the
+repository and commands are read-only by default. See
+[`docs/analytics-operations-runbook.md`](docs/analytics-operations-runbook.md)
+for authentication, command usage, security controls, and owner QA steps.

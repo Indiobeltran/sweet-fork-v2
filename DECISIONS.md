@@ -2,6 +2,57 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
+## 2026-07-30 - Keep Analytics Operations Local, Credential-Opaque, And Read-Only By Default
+
+### Status
+
+Accepted
+
+### Context
+
+The owner needs repeatable GA4 and Search Console audits, custom-dimension
+configuration, inquiry reporting, and production QA support. A dedicated
+service account and external local environment already exist. The credential
+must never enter the repository or a hosted runtime, and the work does not
+justify Google Cloud compute, billing, or a second operations platform.
+
+### Options Considered
+
+- Run ad hoc commands with manually copied credentials.
+- Deploy scheduled reporting or configuration code to a hosted Google Cloud
+  service.
+- Add a local toolkit that uses Google-supported Node.js clients and Application
+  Default Credentials, validates identifiers, defaults to reads, and gates the
+  narrow custom-dimension write behind an explicit flag.
+
+### Decision
+
+Keep analytics operations in local `.mjs` scripts using
+`@google-analytics/admin`, `@google-analytics/data`, and `googleapis`.
+Authentication is delegated to Google's client libraries through the
+externally configured credential path. Repository code may verify file
+readability but may not read, print, copy, fixture, or commit credential
+contents.
+
+All operations are read-only by default. The only write command is the
+idempotent requested-dimension configuration, and it requires an explicit
+`--apply`. It creates only absent Event-scope parameters, reports display-name
+differences without renaming, blocks duplicate/scope/archive conflicts, and
+does not alter key events. Reports remain aggregate and exclude inquiry
+records, customer-entered content, inspiration URLs, and authentication
+material.
+
+### Consequences
+
+- Operations require an approved local shell with the external environment
+  loaded; no analytics credential is exposed to the web app or CI.
+- No BigQuery, Cloud Run, Cloud Functions, Compute Engine, Cloud SQL, Vertex AI,
+  Gemini API, billing account, or paid hosted service is introduced.
+- JSON output supports future local automation without changing the security
+  boundary.
+- The owner must perform the controlled browser inquiry and DebugView check;
+  the toolkit will only read Realtime results.
+
 ## 2026-07-30 - Treat Only Persisted Inquiries As GA4 Leads
 
 ### Status

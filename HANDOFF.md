@@ -4,6 +4,76 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## Local Google Analytics and Search Console Operations Toolkit — 2026-07-30 MDT
+
+- **Task branch / starting commit**: `codex/google-analytics-ops-toolkit`,
+  created in a clean temporary worktree from `origin/main` at
+  `9ad412e844da104c05d66d17e74f8badc6943bd9`.
+- **Primary-checkout preservation**: The primary checkout remained on
+  `codex/inquiry-analytics-hardening` with its pre-existing modified and
+  untracked owner/admin work untouched. Nothing from that checkout was staged,
+  reset, cleaned, copied, or incorporated.
+- **Objective**: Provide a secure local GA4 Admin/Data and Search Console
+  operations toolkit, create only the four missing requested custom dimensions,
+  and document owner-controlled QA. No app, Supabase, production inquiry,
+  deployment, merge, Cloud API enablement, billing, or hosted-data change is in
+  scope.
+- **Authentication verification**: The external credential path was checked
+  for existence/readability without opening it. The numeric GA4 property and
+  Search Console property identifiers validated. Analytics Admin, Analytics
+  Data, Search Console site-list, Search Analytics, sitemap, and URL Inspection
+  read operations succeeded. The configured Search Console property is
+  accessible with `siteFullUser`.
+- **GA4 audit**: Property `The Sweet Fork` uses one web stream. Data retention
+  is two months with reset on activity. Reporting data was accessible from
+  `2025-09-06` through `2026-07-30`. No custom metrics exist. The Admin API does
+  not expose Search Console link state; the independent Search Console API
+  checks passed. The property timezone is currently `America/Los_Angeles`,
+  which was reported but not changed.
+- **Key-event discrepancy**: Contrary to the expected starting configuration,
+  the Admin API returned `purchase`, `close_convert_lead`, `qualify_lead`, and
+  `inquiry_submitted` as key events, but not `generate_lead`. The toolkit did
+  not create, delete, or modify any key event.
+- **Custom dimensions**: `step_name` already existed once with Event scope as
+  display name `Inquiry step name`; it was preserved and reported as a display
+  name mismatch. The idempotent apply created `step_id`, `field_id`,
+  `error_code`, and `form_version`. A post-write read verified all five
+  parameter names exist exactly once with Event scope and no requested
+  parameter duplicates.
+- **Implementation**: Local `.mjs` commands validate required environment
+  variables, fail with sanitized errors, use aggregate reports, default to
+  read-only behavior, offer `--json`, cap/paginate API work, and exclude
+  customer inquiry content and credentials. `analytics:configure` alone
+  supports writes and requires `--apply`.
+- **Security model**: Credentials and the environment loader remain under
+  `$HOME` and outside Git. Generic defensive credential filename patterns were
+  added to `.gitignore`. No credential content was read by task code or copied,
+  logged, staged, committed, or sent to another service.
+- **Commands and verification**:
+  - Focused toolkit tests passed `7/7`.
+  - The repository test suite passed `231/231`, then its integrated toolkit
+    test command passed `7/7`.
+  - `npm run lint`, `npm run typecheck`, and `npm run build` passed; the build
+    generated `26/26` static pages.
+  - `git diff --check` and JavaScript syntax checks passed.
+  - Live read-only execution passed for GA4 verify/audit/realtime/funnel/
+    validation/monthly and Search Console verify/report/sitemap/URL inspection.
+  - Git path and diff scans found no tracked Google credential JSON, credential
+    field/key fragments, task-added private home paths, Supabase/app changes, or
+    customer inquiry content.
+- **Current status / last completed work**: Implementation, the four approved
+  dimension creations, live API checks, documentation, repository gates, and
+  credential-safety scans are complete. The focused task commit is the only
+  remaining repo operation.
+- **Next exact task**: Have the owner restore `generate_lead` as a GA4 key event,
+  decide whether to correct the property timezone to `America/Denver`, and
+  perform one controlled production browser/DebugView QA inquiry. Review the
+  legacy `inquiry_submitted` key event separately; this task did not alter it.
+- **Production QA limitation**: No production inquiry was submitted and no
+  browser Tag Assistant or GA4 DebugView test was performed. Realtime command
+  capability was tested read-only with no event expected.
+- **Deployment status**: Not merged, pushed, or deployed.
+
 ## Inquiry Analytics Production Merge and Deployment — 2026-07-30 MDT
 
 - **Task branch and final task head**: `codex/inquiry-analytics-hardening` at `904637b28fff2a582f4d8913be6ab6dc0554723a`.
