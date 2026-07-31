@@ -4,6 +4,74 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## Analytics Operations Toolkit Integration and Deployment — 2026-07-30 MDT
+
+- **Toolkit branch and final head**:
+  `codex/google-analytics-ops-toolkit` at
+  `3b5735935c714fa387647a77fec1270b939d9b79`.
+- **Integration baseline**: After fetching, `origin/main` remained exactly at
+  the toolkit branch base,
+  `9ad412e844da104c05d66d17e74f8badc6943bd9`. No merge, rebase, conflict
+  resolution, or replacement task commit was required.
+- **Pull request**: GitHub PR `#9`, `Add secure local analytics operations
+  toolkit`. It was opened as a draft, passed all available Netlify and Vercel
+  checks, had no reviews or unresolved threads, was marked ready, and remained
+  cleanly mergeable.
+- **Merge method / commit**: Normal GitHub merge commit, without force merge,
+  admin override, or branch deletion. Merge commit and verified production-main
+  commit:
+  `aaac3d8f8d5514a3cc63cc3c5fd44bde8d58bdd6`.
+- **Included scope**: Local GA4 Admin/Data and Search Console scripts, exact
+  Google client development dependencies, npm commands, focused tests,
+  defensive credential ignore patterns, operations documentation, and
+  `HANDOFF.md` / `DECISIONS.md` records. No application source, Supabase,
+  Netlify configuration, hosted data, billing configuration, or Google Cloud
+  compute/paid-service code was included.
+- **Final clean-worktree gates**:
+  - `npm run analytics:test` passed `9/9`.
+  - `npm run analytics:verify`, `npm run analytics:audit`,
+    `npm run analytics:configure`, and `npm run search-console:verify` passed.
+  - The final configure dry run proposed zero changes and made zero changes.
+  - `npm test` passed `231/231`, followed by the integrated toolkit tests
+    passing `9/9`.
+  - `npm run lint`, `npm run typecheck`, and `npm run build` passed; the build
+    generated `26/26` static pages.
+  - `git diff --check origin/main...HEAD` and credential/private-path/scope
+    scans passed.
+- **Verified external analytics state**: GA4 property `properties/504065366`
+  remains `The Sweet Fork`, timezone `America/Denver`, currency `USD`.
+  `generate_lead` exists exactly once with `ONCE_PER_EVENT`; `step_id`,
+  `step_name`, `field_id`, `error_code`, and `form_version` each exist exactly
+  once with Event scope. Search Console property access and a minimal Search
+  Analytics query passed.
+- **Legacy key-event status**: `inquiry_submitted` remains temporarily
+  configured and was not modified or deleted. Retirement remains blocked on the
+  owner-controlled production inquiry/admin/DebugView verification described
+  in the operations runbook.
+- **Netlify production deployment**: Deploy ID
+  `6a6bebf0beab8a00083f7ffc`, state `ready`, production context, published
+  `2026-07-31T00:28:55.837Z`, commit ref
+  `aaac3d8f8d5514a3cc63cc3c5fd44bde8d58bdd6`. Netlify reported no build error,
+  no secret-scan matches, and no database migrations or snapshots.
+- **Read-only production smoke checks**:
+  - `https://thesweetfork.com/` returned HTTP `200` with the expected Sweet Fork
+    content marker.
+  - `https://thesweetfork.com/start-order` returned HTTP `200` with the
+    expected inquiry content marker.
+  - A cookie-free request to `https://thesweetfork.com/admin` returned HTTP
+    `307` with `Location: /admin/login`.
+- **Production verification limitation**: No production inquiry was submitted,
+  and no Tag Assistant, DebugView, authenticated inquiry readback, or
+  `generate_lead` delivery test was performed.
+- **Safety confirmation**: No additional GA4, Search Console, Google Cloud,
+  Supabase, Netlify, billing, hosted-data, or production configuration mutation
+  was made during integration. The service-account credential was not read,
+  printed, copied, staged, or committed. The primary checkout's unrelated
+  modified and untracked work remained untouched.
+- **Documentation workflow**: This post-merge record is isolated on
+  `codex/analytics-toolkit-integration-handoff` for a separate documentation-only
+  pull request; it was not committed directly to `main`.
+
 ## GA4 Desired-State Follow-Up — 2026-07-30 MDT
 
 - **Branch / starting commit**: `codex/google-analytics-ops-toolkit` at
