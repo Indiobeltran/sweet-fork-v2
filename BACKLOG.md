@@ -38,3 +38,19 @@ Use this backlog for agent-visible repo operations and public-site readiness wor
 - [ ] Add or identify a test command if automated tests are introduced.
 - [x] Capture screenshots or manual browser notes for visual changes.
 - [ ] Use PRs for task branches and integration-to-main promotion.
+
+## Repository Reconciliation Follow-ups
+
+- [ ] Review the disabled admin integrations foundation in the reconciliation
+  draft PR before merge.
+- [ ] Validate the integration migration in an approved non-production
+  Supabase environment before any hosted apply.
+- [ ] Configure and activate Square, Google Calendar, Resend, or Google Maps
+  only through separate owner-approved work.
+- [ ] Decide on the documented remote-branch deletion candidates; no remote
+  branch was deleted during local reconciliation.
+- [ ] Isolate removal of tracked `supabase/.temp/` metadata after deployment
+  assumptions are verified.
+- [ ] Correct the npm lockfile policy in a separate commit: track
+  `package-lock.json`, verify `npm ci`, and reconcile the current ignore rule
+  with `AGENTS.md` and `GATES.md`.

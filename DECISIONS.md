@@ -928,3 +928,43 @@ Defer transactional email delivery integration until the Netlify migration.
 - Avoids setting up unnecessary third-party accounts and environment secrets on Vercel that may change during the upcoming Netlify migration.
 - Keeps deployment dependencies lean.
 - Requires admin to manually poll the dashboard for new inquiries in the short term.
+
+## 2026-07-30 - Recover admin integrations as a disabled foundation
+
+### Status
+
+Accepted for review; migration unapplied
+
+### Context
+
+A mixed local commit combined a coherent admin integrations foundation with
+confidential production-like data, generated output, local tooling, and
+unrelated documentation. Inquiry analytics from the branch had already been
+merged separately. The mixed commit could not safely be merged, cherry-picked,
+or pushed.
+
+### Options Considered
+
+- Merge or cherry-pick the mixed commit.
+- Discard the entire branch.
+- Reconstruct only the reviewed, still-relevant source, migration, generated
+  types, environment template, and tests on current `main`.
+
+### Decision
+
+Reconstruct only the safe integration foundation on
+`codex/reconcile-inquiry-analytics-hardening`. Keep Square, Google Calendar,
+Resend, and Google Maps disabled by default and require both explicit
+environment configuration and enabled database state before provider activity.
+Keep credentials outside the database schema and repository. Do not apply the
+migration or activate providers as part of reconciliation.
+
+### Consequences
+
+- The feature can be reviewed without carrying confidential or unrelated blobs
+  into new history.
+- The migration and provider activation require separate approval and
+  environment-specific verification.
+- Existing inquiry analytics behavior remains unchanged.
+- The original mixed tip is retained only in a local archive branch that must
+  not be pushed.

@@ -4,6 +4,73 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## Git Reconciliation and Admin Integrations Recovery — 2026-07-30 MDT
+
+- **Current branch / objective**:
+  `codex/reconcile-inquiry-analytics-hardening`, created from
+  `origin/main` at `8b79ceb777adc5bf4fc8b7caade20499de3e3c90`.
+  Despite the historical branch name, the recovered work is a
+  disabled-by-default admin integrations foundation; inquiry analytics itself
+  was already merged in PR #7.
+- **Recovered commits**:
+  - `0ce504e` — safe source, migration, generated database types, admin UI/API,
+    Netlify functions, and empty environment-variable examples.
+  - `92784e2` — schema/Square tests and registration in the current test suite.
+- **Safety boundary**: The old mixed commit was never merged, cherry-picked,
+  checked out wholesale, or pushed. Its confidential production-like data,
+  machine-local metadata, agent artifacts, QA utilities, and generated output
+  were excluded. The original tip remains recoverable only through the local
+  archive branch
+  `archive/reconciliation-20260730/inquiry-analytics-hardening`; do not push
+  that archive.
+- **Integration behavior**: Square, Google Calendar, Resend, and Google Maps
+  remain disabled unless both environment configuration and the database
+  connection state explicitly enable them. The migration has not been applied
+  to any hosted database, and no provider credential or hosted integration was
+  configured.
+- **Repository cleanup**:
+  - local `main` was fast-forwarded from
+    `ce5780576cea8ed11dd288639cf4e7343abb5ff4` to
+    `8b79ceb777adc5bf4fc8b7caade20499de3e3c90`, matching `origin/main`;
+  - 57 graph-merged local branches and the three resolved unique original
+    branches were removed after verification;
+  - four local archive branches preserve the pre-reconciliation `main` and all
+    three original unique tips;
+  - three clean obsolete temporary worktrees were removed; the primary and
+    active reconciliation worktrees remain;
+  - no remote branch was deleted.
+- **Local-only material retained**:
+  - `scratch/git-reconciliation/` contains the detailed audit and per-file
+    classification;
+  - `scratch/pricing-calibration-site/` is a clean, independent repository
+    aligned with its own Sites remote and remains local rather than being
+    committed to this application;
+  - ignored gallery originals and processed media remain untouched.
+- **Verification completed**:
+  focused integration tests passed `5/5`; the full application suite passed
+  `236/236` plus analytics/search toolkit tests `10/10`; lint, typecheck, build,
+  `git diff --check`, and staged sensitive-data scans passed. `npm install`
+  warned that the local Node runtime is 25 while the project declares 24 and
+  reported 16 high-severity dependency findings; no automatic dependency fix
+  was attempted.
+- **Commands run**: read-only branch/path/patch comparisons; Supabase RLS and
+  CLI-convention review; selective path reconstruction; explicit `git add`
+  commands; focused/full tests; lint; typecheck; build; `git merge --ff-only
+  origin/main`; verified worktree removals; verified local branch deletions.
+- **Follow-ups / open decisions**:
+  1. Review the draft PR for this branch before any merge or migration.
+  2. Decide whether to apply the integration migration in a controlled
+     non-production environment; provider activation remains a separate owner
+     decision.
+  3. Approve or reject the separately documented remote-branch deletion
+     candidates.
+  4. In a separate maintenance commit, stop tracking `supabase/.temp/` only
+     after deployment assumptions are checked; current Supabase CLI init marks
+     that directory local.
+  5. In a separate verified dependency-policy commit, track
+     `package-lock.json` and use `npm ci`; the current docs say the lockfile is
+     authoritative while the root ignore rule excludes it.
+
 ## Legacy GA4 Key-Event Retirement — 2026-07-30 MDT
 
 - **Branch / starting commit**:
