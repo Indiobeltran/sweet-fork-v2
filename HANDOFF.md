@@ -4,6 +4,133 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## GA4 Desired-State Follow-Up — 2026-07-30 MDT
+
+- **Branch / starting commit**: `codex/google-analytics-ops-toolkit` at
+  `3b38545d6caceb31af3b19b523df34d2563c5872`, continuing in its clean
+  temporary worktree.
+- **Property identity**: The Admin API unambiguously verified
+  `properties/504065366`, display name `The Sweet Fork`, numeric ID
+  `504065366`, currency `USD`, and industry `FOOD_AND_DRINK`.
+- **Starting state**: Timezone `America/Los_Angeles`; key events were
+  `purchase`, `close_convert_lead`, `qualify_lead`, and
+  `inquiry_submitted`. `generate_lead` was absent. Resource names, counting
+  methods, custom/deletable status, and default values were captured before the
+  mutation.
+- **Dry run**: Proposed exactly two changes and made zero: update only
+  `time_zone` to `America/Denver`, and create `generate_lead` with
+  `ONCE_PER_EVENT`. It proposed no custom-dimension or existing-key-event
+  changes.
+- **First apply**: Made exactly the two approved changes. The created key-event
+  resource is `properties/504065366/keyEvents/15355822985`, counted
+  `ONCE_PER_EVENT`, custom/deletable, with no default value.
+- **Fresh verification**: Timezone is exactly `America/Denver`; name, industry,
+  USD currency, account, property/service types, and unrelated property fields
+  were preserved. `purchase`, `close_convert_lead`, `qualify_lead`, and
+  `inquiry_submitted` remain unchanged. All five requested custom parameter
+  names remain present exactly once with Event scope; `step_name` was not
+  renamed.
+- **Idempotency**: A second `analytics:configure -- --apply` proposed zero
+  changes and made zero changes.
+- **Timezone impact**: Mountain Time matches the Centerville, Utah operating
+  timezone and the application business-time contract. Google documents the
+  reporting change as forward-only; a temporary flat spot/spike or short
+  processing period using the prior timezone can occur.
+- **Temporary legacy key event**: `inquiry_submitted` remains at
+  `properties/504065366/keyEvents/15190855388`, `ONCE_PER_EVENT`, with its
+  existing `1 USD` default. It must remain until the owner completes controlled
+  production inquiry/admin/DebugView/Realtime QA. Retirement requires a fresh
+  resource audit and explicit approval; delete only that key-event resource and
+  re-audit. No deletion support was added to the configure command.
+- **Scope and safety**: No application, Supabase, Netlify, hosted-data,
+  deployment, billing, Cloud API enablement, or hosted-service change was made.
+  The external credential was not opened, printed, copied, staged, or committed.
+- **Final verification**:
+  - `npm run analytics:test` passed `9/9`.
+  - `npm run analytics:verify`, `npm run analytics:audit`, and the final
+    `npm run analytics:configure` dry run passed; the final dry run proposed and
+    made zero changes.
+  - `npm test` passed `231/231`, followed by the integrated toolkit tests
+    passing `9/9`.
+  - `npm run lint`, `npm run typecheck`, and `npm run build` passed; the build
+    generated `26/26` static pages.
+  - `git diff --check`, scope scans, tracked-credential scans, private-path
+    scans, and credential-fragment scans passed.
+- **Current status / next exact task**: Code, API configuration, documentation,
+  and all gates are complete. Commit the six focused follow-up files, then wait
+  for owner approval before any push, merge, deployment, production inquiry,
+  or `inquiry_submitted` retirement.
+
+## Local Google Analytics and Search Console Operations Toolkit — 2026-07-30 MDT
+
+- **Task branch / starting commit**: `codex/google-analytics-ops-toolkit`,
+  created in a clean temporary worktree from `origin/main` at
+  `9ad412e844da104c05d66d17e74f8badc6943bd9`.
+- **Primary-checkout preservation**: The primary checkout remained on
+  `codex/inquiry-analytics-hardening` with its pre-existing modified and
+  untracked owner/admin work untouched. Nothing from that checkout was staged,
+  reset, cleaned, copied, or incorporated.
+- **Objective**: Provide a secure local GA4 Admin/Data and Search Console
+  operations toolkit, create only the four missing requested custom dimensions,
+  and document owner-controlled QA. No app, Supabase, production inquiry,
+  deployment, merge, Cloud API enablement, billing, or hosted-data change is in
+  scope.
+- **Authentication verification**: The external credential path was checked
+  for existence/readability without opening it. The numeric GA4 property and
+  Search Console property identifiers validated. Analytics Admin, Analytics
+  Data, Search Console site-list, Search Analytics, sitemap, and URL Inspection
+  read operations succeeded. The configured Search Console property is
+  accessible with `siteFullUser`.
+- **GA4 audit**: Property `The Sweet Fork` uses one web stream. Data retention
+  is two months with reset on activity. Reporting data was accessible from
+  `2025-09-06` through `2026-07-30`. No custom metrics exist. The Admin API does
+  not expose Search Console link state; the independent Search Console API
+  checks passed. The property timezone is currently `America/Los_Angeles`,
+  which was reported but not changed.
+- **Key-event discrepancy**: Contrary to the expected starting configuration,
+  the Admin API returned `purchase`, `close_convert_lead`, `qualify_lead`, and
+  `inquiry_submitted` as key events, but not `generate_lead`. The toolkit did
+  not create, delete, or modify any key event.
+- **Custom dimensions**: `step_name` already existed once with Event scope as
+  display name `Inquiry step name`; it was preserved and reported as a display
+  name mismatch. The idempotent apply created `step_id`, `field_id`,
+  `error_code`, and `form_version`. A post-write read verified all five
+  parameter names exist exactly once with Event scope and no requested
+  parameter duplicates.
+- **Implementation**: Local `.mjs` commands validate required environment
+  variables, fail with sanitized errors, use aggregate reports, default to
+  read-only behavior, offer `--json`, cap/paginate API work, and exclude
+  customer inquiry content and credentials. `analytics:configure` alone
+  supports writes and requires `--apply`.
+- **Security model**: Credentials and the environment loader remain under
+  `$HOME` and outside Git. Generic defensive credential filename patterns were
+  added to `.gitignore`. No credential content was read by task code or copied,
+  logged, staged, committed, or sent to another service.
+- **Commands and verification**:
+  - Focused toolkit tests passed `7/7`.
+  - The repository test suite passed `231/231`, then its integrated toolkit
+    test command passed `7/7`.
+  - `npm run lint`, `npm run typecheck`, and `npm run build` passed; the build
+    generated `26/26` static pages.
+  - `git diff --check` and JavaScript syntax checks passed.
+  - Live read-only execution passed for GA4 verify/audit/realtime/funnel/
+    validation/monthly and Search Console verify/report/sitemap/URL inspection.
+  - Git path and diff scans found no tracked Google credential JSON, credential
+    field/key fragments, task-added private home paths, Supabase/app changes, or
+    customer inquiry content.
+- **Current status / last completed work**: Implementation, the four approved
+  dimension creations, live API checks, documentation, repository gates, and
+  credential-safety scans are complete. The focused task commit is the only
+  remaining repo operation.
+- **Next exact task**: Have the owner restore `generate_lead` as a GA4 key event,
+  decide whether to correct the property timezone to `America/Denver`, and
+  perform one controlled production browser/DebugView QA inquiry. Review the
+  legacy `inquiry_submitted` key event separately; this task did not alter it.
+- **Production QA limitation**: No production inquiry was submitted and no
+  browser Tag Assistant or GA4 DebugView test was performed. Realtime command
+  capability was tested read-only with no event expected.
+- **Deployment status**: Not merged, pushed, or deployed.
+
 ## Inquiry Analytics Production Merge and Deployment — 2026-07-30 MDT
 
 - **Task branch and final task head**: `codex/inquiry-analytics-hardening` at `904637b28fff2a582f4d8913be6ab6dc0554723a`.
