@@ -19,8 +19,9 @@ scheduled job, hosted runtime, database, or production-site dependency.
 - Reports contain aggregate GA4 and Search Console data only. They do not query
   inquiry records and do not log customer names, contact information, inquiry
   text, inspiration URLs, database identifiers, or authentication material.
-- `analytics:configure` is a dry run unless `--apply` is supplied. Every other
-  command is read-only.
+- `analytics:configure` and `analytics:retire-legacy` are dry runs unless
+  `--apply` is supplied. Every reporting, verification, and audit command is
+  read-only.
 
 Load the local environment in each new shell before using a command:
 
@@ -58,6 +59,8 @@ Every command supports `--json` for machine-readable output. Reports accept
 | `npm run analytics:audit` | Reads property metadata, streams, key events, custom definitions, retention, reporting bounds, and requested-dimension duplicates. It does not mutate GA4. |
 | `npm run analytics:configure` | Dry-runs the approved GA4 desired state: Mountain reporting timezone, `generate_lead` key event, and five Event-scope custom dimensions. |
 | `npm run analytics:configure -- --apply` | Applies only missing approved state, using a timezone-only update mask and create-if-absent resources, then freshly verifies protected property fields, retained key events, and dimensions. A repeated apply makes no changes. |
+| `npm run analytics:retire-legacy` | Dry-runs the one-time retirement of the legacy `inquiry_submitted` key-event configuration. It reports zero changes now that the approved retirement is complete. |
+| `npm run analytics:retire-legacy -- --apply` | Deletes only the uniquely audited, custom, deletable `inquiry_submitted` key-event resource. It blocks on property-identity, duplicate-resource, protected-key-event, or custom-dimension ambiguity and verifies that no unrelated configuration changed. |
 | `npm run analytics:realtime` | Shows inquiry event names and counts from the recent Realtime window. Use `--minutes N` from 1 through 29. |
 | `npm run analytics:realtime -- --expect-lead` | Fails if no `generate_lead` is visible. `--expected-count 1` requires an exact count and `--fail-on-unexpected` rejects legacy or unknown inquiry event names. The command never submits an inquiry. |
 | `npm run analytics:funnel` | Reports `inquiry_started`, `inquiry_step_completed` by step, and `generate_lead`. |
@@ -81,6 +84,13 @@ npm run search-console:report -- --days 28 --limit 100
 
 The owner controls the browser submission. Do not automate a production
 inquiry.
+
+The owner completed the controlled production QA on July 30, 2026 (MDT). One
+inquiry persisted, exactly one authenticated admin record appeared, and exactly
+one `generate_lead` appeared in both DebugView and Realtime. DebugView exposed
+no PII, customer free text, identifier, exact date, URL or URL component,
+filename, or link count. Mobile navigation and draft restoration also passed.
+The procedure below remains the repeatable process for future releases.
 
 1. Run `npm run analytics:realtime` to establish the recent baseline.
 2. Enable Tag Assistant/debug mode and open GA4 DebugView.
@@ -128,8 +138,8 @@ state to `properties/504065366`, display name `The Sweet Fork`:
 - `generate_lead`: key event resource
   `properties/504065366/keyEvents/15355822985`, counted
   `ONCE_PER_EVENT`, with no default monetary value
-- Retained key events: `purchase`, `qualify_lead`, `close_convert_lead`, and
-  temporarily `inquiry_submitted`
+- Final key events: `purchase`, `generate_lead`, `qualify_lead`, and
+  `close_convert_lead`
 - Requested custom parameters: `step_id`, `step_name`, `field_id`,
   `error_code`, and `form_version`, each present exactly once with Event scope
 
@@ -150,27 +160,24 @@ until processing catches up. Historical data is not rewritten. See [Google's
 reporting-timezone
 guidance](https://support.google.com/analytics/answer/9744165).
 
-### Retiring `inquiry_submitted` after production QA
+### Retired `inquiry_submitted` key-event configuration
 
-`inquiry_submitted` remains a key event temporarily so the owner can compare it
-with `generate_lead` during controlled production QA. Do not retire it until:
+After the successful production QA above, the owner explicitly approved
+retirement. On July 30, 2026 (MDT), a fresh Admin API audit found exactly one
+custom, deletable resource:
+`properties/504065366/keyEvents/15190855388`. The guarded cleanup command:
 
-1. One controlled production inquiry appears exactly once in authenticated
-   admin.
-2. Tag Assistant and DebugView show exactly one privacy-safe `generate_lead`
-   after confirmed persistence.
-3. Realtime and processed GA4 reporting show the new key event without a
-   measurement regression.
-4. The comparison window is recorded in `HANDOFF.md`.
+1. Proposed that single deletion and made no change in dry-run mode.
+2. Deleted only that fixed resource with
+   `properties.keyEvents.delete` in explicit apply mode.
+3. Freshly verified the four final key events and all five custom parameters.
+4. Proposed and made zero changes on the second dry run.
 
-After those checks, obtain a fresh Admin API audit, confirm the exact
-`inquiry_submitted` resource is still custom and deletable, and request explicit
-owner approval for retirement. Delete only that fixed key-event resource with
-the Admin API `properties.keyEvents.delete` method, then re-audit. This removes
-its key-event configuration; it must not create an event-edit rule, delete
-historical Analytics data, or modify the application event contract. The
-current configure command intentionally has no deletion path. Google documents
-the fixed-resource [key-event delete
+Deleting the key-event configuration did not delete or rewrite historical
+Analytics event data, create an event-edit rule, or change the application
+event contract. The cleanup command remains available as an idempotent audit
+and should not be repurposed for another event. Google documents the
+fixed-resource [key-event delete
 operation](https://developers.google.com/analytics/devguides/config/admin/v1/rest/v1alpha/properties.keyEvents/delete).
 
 ## Troubleshooting
@@ -226,8 +233,8 @@ These are owner-controlled Google Console actions, not toolkit commands.
 ### Reduce or remove product access
 
 - In GA4 Admin → Property access management, change the service account from
-  Editor to Viewer after configuration work is complete if future writes are
-  not needed.
+  Editor to Viewer now that the approved configuration and legacy cleanup are
+  complete, unless another explicitly approved write is planned.
 - In Search Console → Settings → Users and permissions, remove the service
   account to revoke its property access.
 - Removing Cloud project IAM alone does not necessarily remove the separate

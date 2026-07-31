@@ -2,6 +2,51 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
+## 2026-07-30 - Retire The Legacy Inquiry Key Event After Production QA
+
+### Status
+
+Accepted
+
+### Context
+
+Owner-controlled production QA confirmed that one inquiry persisted, exactly
+one authenticated admin record appeared, and exactly one `generate_lead`
+appeared in GA4 DebugView and Realtime. The observed analytics contained no PII,
+customer free text, identifier, exact date, URL or URL component, filename, or
+link count. Mobile navigation and draft restoration also passed. The temporary
+`inquiry_submitted` key event was therefore no longer needed as a parallel
+conversion.
+
+### Options Considered
+
+- Retain both key events indefinitely and accept duplicate lead semantics.
+- Delete or rewrite historical `inquiry_submitted` event data.
+- Delete only the uniquely audited legacy key-event configuration while
+  preserving historical data and every protected key event.
+
+### Decision
+
+Use a dedicated, dry-run-by-default Admin API command to delete only
+`properties/504065366/keyEvents/15190855388`, after proving it is the sole
+custom, deletable `inquiry_submitted` resource on the unambiguous Sweet Fork
+property. Preserve `purchase`, `generate_lead`, `qualify_lead`, and
+`close_convert_lead`, their counting/default-value settings, the property
+configuration, and all custom definitions. Keep the general desired-state
+configuration command non-destructive.
+
+### Consequences
+
+- The final key-event list has one inquiry conversion:
+  `generate_lead`, counted `ONCE_PER_EVENT`.
+- Historical `inquiry_submitted` Analytics events remain available; only their
+  key-event configuration was removed.
+- The cleanup command is idempotent and blocks if property identity, duplicate
+  resources, protected key events, or requested custom dimensions are
+  ambiguous.
+- The service account should now be downgraded from GA4 Editor to Viewer unless
+  another explicitly approved property mutation is planned.
+
 ## 2026-07-30 - Mark Persisted Leads As Key Events And Report In Mountain Time
 
 ### Status
