@@ -19,9 +19,9 @@ scheduled job, hosted runtime, database, or production-site dependency.
 - Reports contain aggregate GA4 and Search Console data only. They do not query
   inquiry records and do not log customer names, contact information, inquiry
   text, inspiration URLs, database identifiers, or authentication material.
-- `analytics:configure` and `analytics:retire-legacy` are dry runs unless
-  `--apply` is supplied. Every reporting, verification, and audit command is
-  read-only.
+- `analytics:configure`, `analytics:retire-legacy`, and
+  `analytics:retire-pageview-lead-rule` are dry runs unless `--apply` is
+  supplied. Every reporting, verification, and audit command is read-only.
 
 Load the local environment in each new shell before using a command:
 
@@ -56,18 +56,21 @@ Every command supports `--json` for machine-readable output. Reports accept
 |---|---|
 | `npm run analytics:test` | Runs focused identifier, idempotency, date-range, sanitization, and URL-boundary tests. |
 | `npm run analytics:verify` | Reads the GA4 property and runs a minimal Data API report. Prints only property identity and success status. |
-| `npm run analytics:audit` | Reads property metadata, streams, key events, custom definitions, retention, reporting bounds, and requested-dimension duplicates. It does not mutate GA4. |
+| `npm run analytics:audit` | Reads property metadata, streams, key events, custom definitions, event-create/edit rules, retention, reporting bounds, and requested-dimension duplicates. It flags any `page_view` to `generate_lead` rule and does not mutate GA4. |
 | `npm run analytics:configure` | Dry-runs the approved GA4 desired state: Mountain reporting timezone, `generate_lead` key event, and five Event-scope custom dimensions. |
 | `npm run analytics:configure -- --apply` | Applies only missing approved state, using a timezone-only update mask and create-if-absent resources, then freshly verifies protected property fields, retained key events, and dimensions. A repeated apply makes no changes. |
 | `npm run analytics:retire-legacy` | Dry-runs the one-time retirement of the legacy `inquiry_submitted` key-event configuration. It reports zero changes now that the approved retirement is complete. |
 | `npm run analytics:retire-legacy -- --apply` | Deletes only the uniquely audited, custom, deletable `inquiry_submitted` key-event resource. It blocks on property-identity, duplicate-resource, protected-key-event, or custom-dimension ambiguity and verifies that no unrelated configuration changed. |
+| `npm run analytics:retire-pageview-lead-rule` | Dry-runs retirement of the one fixed event-create rule that converts matching `page_view` events into `generate_lead`. It verifies the exact property, stream, rule resource, conditions, protected key events, and custom dimensions. |
+| `npm run analytics:retire-pageview-lead-rule -- --apply` | Deletes only that exact event-create rule after explicit approval, then verifies that the target is absent and every unrelated property, stream, key-event, dimension, create-rule, and edit-rule snapshot is unchanged. Historical events are preserved. |
+| `npm run analytics:campaign-link -- --platform facebook --campaign 2026-08-custom-cakes --placement post --destination https://thesweetfork.com/custom-cakes` | Builds a canonical Sweet Fork campaign URL using the approved Facebook/Instagram UTM taxonomy. Destination defaults to the homepage. |
 | `npm run analytics:realtime` | Shows inquiry event names and counts from the recent Realtime window. Use `--minutes N` from 1 through 29. |
 | `npm run analytics:realtime -- --expect-lead` | Fails if no `generate_lead` is visible. `--expected-count 1` requires an exact count and `--fail-on-unexpected` rejects legacy or unknown inquiry event names. The command never submits an inquiry. |
 | `npm run analytics:funnel` | Reports `inquiry_started`, `inquiry_step_completed` by step, and `generate_lead`. |
 | `npm run analytics:validation` | Reports errors by stable step, field, error code, form version, device, source/medium, users, and sessions. |
-| `npm run analytics:monthly` | Reports acquisition and `generate_lead` performance by source/medium, landing page, device, product category, budget bucket, and lead-time bucket. |
+| `npm run analytics:monthly` | Preserves raw acquisition rows, adds normalized tagged/untagged Facebook and Instagram totals, and reports only `form_version=inquiry_wizard_v3` events as verified leads. Unlabeled or other `generate_lead` events are listed separately as unverified events. |
 | `npm run search-console:verify` | Lists accessible-property metadata and runs a minimal Search Analytics query without printing search terms. |
-| `npm run search-console:report` | Reports queries and landing pages with clicks, impressions, CTR, average position, and a previous-period comparison. The default period ends three days ago. |
+| `npm run search-console:report` | Reports queries and landing pages with clicks, impressions, CTR, average position, and a previous-period comparison. Summary totals come from complete ungrouped rows and are not reduced by table limits; per-table truncation is reported separately. The default period ends three days ago. |
 | `npm run search-console:sitemap` | Lists submitted sitemaps, download/submission dates, pending state, warnings, and errors. |
 | `npm run search-console:inspect -- --url https://www.thesweetfork.com/` | Runs read-only URL Inspection for an HTTPS URL inside the configured property. |
 
@@ -77,8 +80,41 @@ Examples:
 npm run analytics:funnel -- --days 30
 npm run analytics:validation -- --start 2026-07-01 --end 2026-07-31
 npm run analytics:monthly -- --days 30 --json
+npm run analytics:campaign-link -- --platform instagram --campaign 2026-08-wedding-cakes --placement story --destination https://thesweetfork.com/wedding-cakes
 npm run search-console:report -- --days 28 --limit 100
 ```
+
+## Verified lead and campaign semantics
+
+- A verified inquiry lead is a `generate_lead` event with
+  `form_version=inquiry_wizard_v3`, the version emitted only after confirmed
+  inquiry persistence. Other `generate_lead` events remain visible as
+  unverified events and must not be described as customer leads.
+- Known Facebook and Instagram referral domains are grouped by platform.
+  `utm_medium=social` rows are tagged; referral-only rows are untagged. The raw
+  source/medium table is preserved for auditability.
+- Campaign names use `YYYY-MM-lowercase-kebab`; `utm_content` is one of `bio`,
+  `post`, `story`, or `reel`. Campaign destinations must be canonical HTTPS
+  URLs on `thesweetfork.com` without an existing query or fragment.
+- For August 1–14, 2026, the corrected live report found four verified events
+  and 179 unverified events created by the page-view rule. The first full period
+  after rule removal is the new conversion baseline; do not frame it as a pure
+  month-over-month improvement.
+
+### Page-view lead-rule retirement status
+
+On August 15, 2026, a live dry run matched exactly one target:
+`properties/504065366/dataStreams/12126159657/eventCreateRules/15350934572`.
+It created `generate_lead` from `page_view` plus a case-insensitive
+`page_location` match for `Thesweetfork.com`. The dry run proposed one deletion,
+made no changes, verified the surrounding configuration, and confirmed that
+historical event data would not be deleted. After explicit owner approval, the
+apply deleted only that fixed rule. A fresh audit retained `generate_lead` as
+an `ONCE_PER_EVENT` key event, returned zero event-create/edit rules, and
+reported a zero attention count. A final dry run proposed and made zero changes.
+The application's real submission event remains independent: it emits
+`generate_lead` with `form_version=inquiry_wizard_v3` only after the API returns
+explicit persistence confirmation.
 
 ## Production analytics QA
 
@@ -123,6 +159,9 @@ standard reports after processing completes.
 - `display_name_mismatch` means the parameter exists once with Event scope but
   has a different display name. The toolkit reports and preserves it.
 - Duplicate, archived, or scope conflicts block an apply operation.
+- `ATTENTION — page_view → generate_lead create rules` should be zero after the
+  approved cleanup. A nonzero count requires investigation before trusting
+  aggregate lead counts.
 - The Analytics Admin API used here does not expose the Search Console link.
   Verify that link in GA4 Admin; API access is independently tested with
   `search-console:verify`.

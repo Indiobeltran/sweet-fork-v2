@@ -7,13 +7,10 @@ import { getPublicProductPageData } from "@/lib/site/marketing";
 const slug = "sugar-cookies";
 
 export async function generateMetadata() {
-  const page = await getPublicProductPageData(slug);
-
   return buildMetadata({
-    title: page?.metadataTitle ?? "Sugar Cookies",
+    title: "Custom Sugar Cookies in Centerville, UT",
     description:
-      page?.metadataDescription ??
-      "Decorated sugar cookies for favors, gifting, and dessert tables in Centerville, Utah. Starting at $48 per dozen.",
+      "Order decorated sugar cookies for birthdays, showers, favors, and dessert tables in Centerville, Utah. Starting at $48 per dozen.",
     path: "/sugar-cookies",
   });
 }

@@ -13,6 +13,67 @@ import {
   runPaginatedAnalyticsReport,
 } from "./report-utils.mjs";
 
+export const verifiedInquiryFormVersion = "inquiry_wizard_v3";
+
+const socialSources = new Map([
+  ["facebook", "facebook"],
+  ["facebook.com", "facebook"],
+  ["m.facebook.com", "facebook"],
+  ["l.facebook.com", "facebook"],
+  ["lm.facebook.com", "facebook"],
+  ["instagram", "instagram"],
+  ["instagram.com", "instagram"],
+  ["l.instagram.com", "instagram"],
+]);
+
+export function classifySocialSourceMedium(sourceMedium) {
+  const [rawSource = "", rawMedium = ""] = String(sourceMedium)
+    .toLowerCase()
+    .split("/")
+    .map((value) => value.trim());
+  const platform = socialSources.get(rawSource);
+  if (!platform) return null;
+  if (rawMedium === "social") return { platform, attribution: "tagged" };
+  if (rawMedium === "referral") {
+    return { platform, attribution: "untagged" };
+  }
+  return null;
+}
+
+export function buildSocialSummary(rows) {
+  const totals = new Map();
+  for (const row of rows) {
+    const classification = classifySocialSourceMedium(row.sourceMedium);
+    if (!classification) continue;
+    const key = `${classification.platform}:${classification.attribution}`;
+    const existing = totals.get(key) ?? {
+      ...classification,
+      sessions: 0,
+      totalUsers: 0,
+      keyEvents: 0,
+    };
+    existing.sessions += Number(row.sessions ?? 0);
+    existing.totalUsers += Number(row.totalUsers ?? 0);
+    existing.keyEvents += Number(row.keyEvents ?? 0);
+    totals.set(key, existing);
+  }
+  return [...totals.values()].sort((left, right) =>
+    `${left.platform}:${left.attribution}`.localeCompare(
+      `${right.platform}:${right.attribution}`,
+    ),
+  );
+}
+
+export function classifyLeadRows(rows) {
+  return rows.map((row) => ({
+    ...row,
+    leadStatus:
+      row.formVersion === verifiedInquiryFormVersion
+        ? "verified"
+        : "unverified",
+  }));
+}
+
 export async function createMonthlyPerformanceReport(
   argv = process.argv.slice(2),
 ) {
@@ -52,6 +113,7 @@ export async function createMonthlyPerformanceReport(
           { name: "customEvent:product_category" },
           { name: "customEvent:budget_bucket" },
           { name: "customEvent:lead_time_bucket" },
+          { name: "customEvent:form_version" },
         ],
         metrics: [
           { name: "eventCount" },
@@ -82,14 +144,36 @@ export async function createMonthlyPerformanceReport(
     productCategory: row["customEvent:product_category"],
     budgetBucket: row["customEvent:budget_bucket"],
     leadTimeBucket: row["customEvent:lead_time_bucket"],
+    formVersion: row["customEvent:form_version"],
     leadCount: Number(row.eventCount),
     leadUsers: Number(row.totalUsers),
     leadSessions: Number(row.sessions),
   }));
+  const classifiedLeadRows = classifyLeadRows(leadRows);
+  const verifiedLeadRows = classifiedLeadRows.filter(
+    (row) => row.leadStatus === "verified",
+  );
+  const unverifiedLeadRows = classifiedLeadRows.filter(
+    (row) => row.leadStatus === "unverified",
+  );
+  const socialSummary = buildSocialSummary(summaryRows);
   const payload = {
     dateRange,
     siteSummary: summaryRows,
-    leadPerformance: leadRows,
+    socialSummary,
+    leadPerformance: classifiedLeadRows,
+    verifiedLeadPerformance: verifiedLeadRows,
+    unverifiedLeadEvents: unverifiedLeadRows,
+    leadSummary: {
+      verified: verifiedLeadRows.reduce(
+        (sum, row) => sum + row.leadCount,
+        0,
+      ),
+      unverified: unverifiedLeadRows.reduce(
+        (sum, row) => sum + row.leadCount,
+        0,
+      ),
+    },
     truncated: siteSummary.truncated || leadBreakdown.truncated,
   };
 
@@ -107,18 +191,43 @@ export async function createMonthlyPerformanceReport(
         { key: "keyEvents", label: "Key events" },
       ]),
       "",
-      "generate_lead performance",
-      ...formatRows(leadRows, [
+      "Social acquisition (normalized)",
+      ...formatRows(
+        socialSummary,
+        [
+          { key: "platform", label: "Platform" },
+          { key: "attribution", label: "Attribution" },
+          { key: "sessions", label: "Sessions" },
+          { key: "totalUsers", label: "Users" },
+          { key: "keyEvents", label: "Key events" },
+        ],
+        "No Facebook or Instagram acquisition rows.",
+      ),
+      "",
+      `Verified generate_lead performance (${verifiedInquiryFormVersion}): ${payload.leadSummary.verified}`,
+      ...formatRows(verifiedLeadRows, [
         { key: "sourceMedium", label: "Source / medium" },
         { key: "landingPage", label: "Landing page" },
         { key: "deviceCategory", label: "Device" },
         { key: "productCategory", label: "Product" },
         { key: "budgetBucket", label: "Budget" },
         { key: "leadTimeBucket", label: "Lead time" },
+        { key: "formVersion", label: "Form version" },
         { key: "leadCount", label: "Leads" },
         { key: "leadUsers", label: "Users" },
         { key: "leadSessions", label: "Sessions" },
-      ]),
+      ], "No verified generate_lead events."),
+      "",
+      `Unverified generate_lead events: ${payload.leadSummary.unverified}`,
+      ...formatRows(unverifiedLeadRows, [
+        { key: "sourceMedium", label: "Source / medium" },
+        { key: "landingPage", label: "Landing page" },
+        { key: "deviceCategory", label: "Device" },
+        { key: "formVersion", label: "Form version" },
+        { key: "leadCount", label: "Events" },
+        { key: "leadUsers", label: "Users" },
+        { key: "leadSessions", label: "Sessions" },
+      ], "No unverified generate_lead events."),
       payload.truncated ? `Output limited to ${maxRows} rows per section.` : "",
     ].filter((line, index, all) => line || all[index - 1] !== ""),
   });

@@ -20,6 +20,17 @@ import {
   percentageChange,
 } from "./report-utils.mjs";
 import { planLegacyKeyEventRetirement } from "./retire-legacy-key-event.mjs";
+import {
+  buildSocialSummary,
+  classifyLeadRows,
+  classifySocialSourceMedium,
+} from "./monthly-performance-report.mjs";
+import { buildCampaignLink } from "./build-campaign-link.mjs";
+import {
+  approvedPageviewLeadRuleResource,
+  isPageviewToLeadRule,
+  planPageviewLeadRuleRetirement,
+} from "./retire-pageview-lead-rule.mjs";
 
 const validEnvironment = {
   GA4_PROPERTY_ID: "123456789",
@@ -207,6 +218,180 @@ test("plans only one fixed legacy key-event retirement", () => {
       propertyName,
     ).status,
     "invalid_resource_name",
+  );
+});
+
+test("plans only the approved page-view lead-rule retirement", () => {
+  const streamName =
+    "properties/504065366/dataStreams/12126159657";
+  const approvedRule = {
+    name: approvedPageviewLeadRuleResource,
+    destinationEvent: "generate_lead",
+    sourceCopyParameters: false,
+    eventConditions: [
+      {
+        field: "event_name",
+        comparisonType: "EQUALS",
+        value: "page_view",
+        negated: false,
+      },
+      {
+        field: "page_location",
+        comparisonType: "CONTAINS_CASE_INSENSITIVE",
+        value: "Thesweetfork.com",
+        negated: false,
+      },
+    ],
+    parameterMutations: [],
+  };
+
+  assert.deepEqual(planPageviewLeadRuleRetirement([], streamName), {
+    status: "already_absent",
+    resourceName: null,
+    existing: [],
+  });
+  assert.equal(
+    planPageviewLeadRuleRetirement([approvedRule], streamName).status,
+    "delete",
+  );
+  assert.equal(
+    planPageviewLeadRuleRetirement(
+      [approvedRule, { ...approvedRule, name: `${streamName}/eventCreateRules/other` }],
+      streamName,
+    ).status,
+    "ambiguous",
+  );
+  assert.equal(
+    planPageviewLeadRuleRetirement(
+      [{ ...approvedRule, name: `${streamName}/eventCreateRules/wrong` }],
+      streamName,
+    ).status,
+    "invalid_resource_name",
+  );
+  assert.equal(
+    planPageviewLeadRuleRetirement(
+      [{ ...approvedRule, sourceCopyParameters: true }],
+      streamName,
+    ).status,
+    "unexpected_rule_shape",
+  );
+  assert.equal(
+    planPageviewLeadRuleRetirement(
+      [
+        {
+          ...approvedRule,
+          eventConditions: approvedRule.eventConditions.map((condition) =>
+            condition.field === "page_location"
+              ? { ...condition, value: "example.com" }
+              : condition,
+          ),
+        },
+      ],
+      streamName,
+    ).status,
+    "unexpected_rule_shape",
+  );
+  assert.equal(isPageviewToLeadRule(approvedRule), true);
+  assert.equal(
+    isPageviewToLeadRule({ ...approvedRule, destinationEvent: "purchase" }),
+    false,
+  );
+});
+
+test("separates verified inquiry leads from unverified generate_lead events", () => {
+  assert.deepEqual(
+    classifyLeadRows([
+      { formVersion: "inquiry_wizard_v3", leadCount: 2 },
+      { formVersion: "(not set)", leadCount: 10 },
+    ]).map(({ leadStatus }) => leadStatus),
+    ["verified", "unverified"],
+  );
+});
+
+test("normalizes tagged and referral-only Facebook and Instagram traffic", () => {
+  assert.deepEqual(classifySocialSourceMedium("facebook / social"), {
+    platform: "facebook",
+    attribution: "tagged",
+  });
+  assert.deepEqual(classifySocialSourceMedium("lm.facebook.com / referral"), {
+    platform: "facebook",
+    attribution: "untagged",
+  });
+  assert.equal(classifySocialSourceMedium("google / organic"), null);
+  assert.deepEqual(
+    buildSocialSummary([
+      {
+        sourceMedium: "facebook.com / referral",
+        sessions: 2,
+        totalUsers: 2,
+        keyEvents: 0,
+      },
+      {
+        sourceMedium: "m.facebook.com / referral",
+        sessions: 3,
+        totalUsers: 3,
+        keyEvents: 1,
+      },
+      {
+        sourceMedium: "instagram / social",
+        sessions: 4,
+        totalUsers: 3,
+        keyEvents: 2,
+      },
+    ]),
+    [
+      {
+        platform: "facebook",
+        attribution: "untagged",
+        sessions: 5,
+        totalUsers: 5,
+        keyEvents: 1,
+      },
+      {
+        platform: "instagram",
+        attribution: "tagged",
+        sessions: 4,
+        totalUsers: 3,
+        keyEvents: 2,
+      },
+    ],
+  );
+});
+
+test("builds constrained Sweet Fork social campaign links", () => {
+  assert.deepEqual(
+    buildCampaignLink({
+      platform: "instagram",
+      campaign: "2026-08-wedding-cakes",
+      placement: "story",
+      destination: "https://thesweetfork.com/wedding-cakes",
+    }),
+    {
+      url: "https://thesweetfork.com/wedding-cakes?utm_source=instagram&utm_medium=social&utm_campaign=2026-08-wedding-cakes&utm_content=story",
+      platform: "instagram",
+      campaign: "2026-08-wedding-cakes",
+      placement: "story",
+      destination: "https://thesweetfork.com/wedding-cakes",
+    },
+  );
+  assert.throws(
+    () =>
+      buildCampaignLink({
+        platform: "facebook",
+        campaign: "August Sale",
+        placement: "post",
+      }),
+    /YYYY-MM/,
+  );
+  assert.throws(
+    () =>
+      buildCampaignLink({
+        platform: "facebook",
+        campaign: "2026-08-cakes",
+        placement: "post",
+        destination: "https://www.thesweetfork.com/?existing=true",
+      }),
+    /https:\/\/thesweetfork\.com/,
   );
 });
 

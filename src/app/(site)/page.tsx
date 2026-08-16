@@ -14,9 +14,9 @@ import type { GalleryItem } from "@/types/domain";
 
 export async function generateMetadata() {
   return buildMetadata({
-    title: "Custom Cakes & Desserts in Centerville, Utah",
+    title: "Custom Cakes & Desserts in Centerville, UT",
     description:
-      "Custom cakes, wedding cakes, cupcakes, macarons, sugar cookies, and DIY kits crafted in Centerville, Utah with a polished, boutique finish.",
+      "Order custom cakes, cupcakes, sugar cookies, macarons, and wedding cakes from The Sweet Fork in Centerville, Utah. Local pickup and select delivery.",
     path: "/",
   });
 }

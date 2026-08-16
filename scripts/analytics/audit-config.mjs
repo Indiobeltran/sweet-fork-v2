@@ -8,6 +8,11 @@ import {
   writeOutput,
 } from "./google-client.mjs";
 import { analyticsRowsToObjects } from "./report-utils.mjs";
+import {
+  isPageviewToLeadRule,
+  snapshotEventCreateRule,
+  snapshotEventEditRule,
+} from "./retire-pageview-lead-rule.mjs";
 
 const desiredParameters = [
   "step_id",
@@ -55,6 +60,19 @@ export async function auditAnalyticsConfig(argv = process.argv.slice(2)) {
   const [retention] = await admin.getDataRetentionSettings({
     name: `${config.propertyName}/dataRetentionSettings`,
   });
+  const ruleRecords = await Promise.all(
+    streams.map(async (stream) => {
+      const [[eventCreateRules], [eventEditRules]] = await Promise.all([
+        admin.listEventCreateRules({ parent: stream.name }),
+        admin.listEventEditRules({ parent: stream.name }),
+      ]);
+      return { eventCreateRules, eventEditRules };
+    }),
+  );
+  const eventCreateRules = ruleRecords.flatMap(
+    (record) => record.eventCreateRules,
+  );
+  const eventEditRules = ruleRecords.flatMap((record) => record.eventEditRules);
   const [earliest, latest] = await Promise.all([
     getBoundaryDate(data, config.propertyName, false),
     getBoundaryDate(data, config.propertyName, true),
@@ -77,6 +95,7 @@ export async function auditAnalyticsConfig(argv = process.argv.slice(2)) {
   const generateLeadIsKeyEvent = keyEvents.some(
     (event) => event.eventName === "generate_lead",
   );
+  const pageviewLeadRules = eventCreateRules.filter(isPageviewToLeadRule);
   const payload = {
     property: {
       currencyCode: property.currencyCode ?? "",
@@ -113,6 +132,14 @@ export async function auditAnalyticsConfig(argv = process.argv.slice(2)) {
       parameterName: metric.parameterName ?? "",
       scope: metric.scope ?? "",
     })),
+    eventCreateRules: eventCreateRules.map(snapshotEventCreateRule),
+    eventEditRules: eventEditRules.map(snapshotEventEditRule),
+    attention: {
+      pageviewToGenerateLeadRuleCount: pageviewLeadRules.length,
+      pageviewToGenerateLeadRuleResources: pageviewLeadRules.map(
+        (rule) => rule.name ?? "",
+      ),
+    },
     duplicateParameters,
     dataRetention: {
       eventDataRetention: retention.eventDataRetention ?? "",
@@ -172,6 +199,33 @@ export async function auditAnalyticsConfig(argv = process.argv.slice(2)) {
         { key: "measurementUnit", label: "Unit" },
       ],
       "No custom metrics.",
+    ),
+    "",
+    "Event-create rules",
+    ...formatRows(
+      payload.eventCreateRules,
+      [
+        { key: "name", label: "Resource" },
+        { key: "destinationEvent", label: "Destination event" },
+        { key: "sourceCopyParameters", label: "Copy source parameters" },
+      ],
+      "No event-create rules.",
+    ),
+    "",
+    "Event-edit rules",
+    ...formatRows(
+      payload.eventEditRules,
+      [
+        { key: "name", label: "Resource" },
+        { key: "displayName", label: "Display name" },
+        { key: "processingOrder", label: "Processing order" },
+      ],
+      "No event-edit rules.",
+    ),
+    "",
+    `ATTENTION — page_view → generate_lead create rules: ${payload.attention.pageviewToGenerateLeadRuleCount}`,
+    ...payload.attention.pageviewToGenerateLeadRuleResources.map(
+      (resource) => `- ${resource}`,
     ),
     "",
     `Desired-dimension duplicates: ${duplicateParameters.length}`,

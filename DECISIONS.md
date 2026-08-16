@@ -2,6 +2,65 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
+## 2026-08-15 - Remove The Page-View Lead Rule And Require Verified Inquiry Semantics
+
+### Status
+
+Accepted and applied
+
+### Context
+
+The monthly SEO review exposed far more `generate_lead` events than persisted
+inquiries. A live Admin API audit found one event-create rule,
+`properties/504065366/dataStreams/12126159657/eventCreateRules/15350934572`,
+that creates `generate_lead` from `page_view` when `page_location` contains
+`Thesweetfork.com`. For August 1–14, this produced 179 unlabeled events while
+four events carried the deployed `inquiry_wizard_v3` contract. The same live
+period showed four validation events, all with step, field, error-code, form
+version, and device labels, so the prior missing diagnostic-label concern is
+not current.
+
+Search reporting also derived totals from capped query tables, product snippet
+copy could be overridden by database content, and Facebook/Instagram referrals
+were fragmented across raw domains.
+
+### Options Considered
+
+- Keep the event-create rule and compensate manually in every report.
+- Rewrite or delete historical Analytics events.
+- Guardedly delete only the exact event-create rule, preserve history, and
+  make reporting semantics explicit in code.
+
+### Decision
+
+Use a dry-run-by-default Admin API command that deletes only the exact audited
+rule after verifying its full condition shape, property, data stream, key
+events, and custom dimensions. Require `form_version=inquiry_wizard_v3` before
+labeling a `generate_lead` event as a verified inquiry lead; report all other
+instances separately as unverified events. Do not delete historical event data.
+
+Compute Search Console summaries from ungrouped total rows, independently of
+capped query/page tables. Keep the five priority route snippets code-owned.
+Generate Facebook and Instagram campaign links with `utm_medium=social`, a
+`YYYY-MM-lowercase-kebab` campaign name, and `bio|post|story|reel` content;
+normalize known referral domains while retaining the raw acquisition table.
+
+### Consequences
+
+- Historical contaminated events remain visible but are not called customer
+  leads in the monthly report.
+- July 30 onward cannot support a clean conversion comparison until the rule is
+  removed; the first full post-removal period is the new measured baseline.
+- The general GA4 audit now flags any `page_view` to `generate_lead` create
+  rule so the configuration cannot remain invisible to future reviews.
+- Applying the deletion remains a production mutation and requires explicit
+  action-time owner approval after reviewing the dry run. The owner approved
+  it on August 15, 2026 after confirming that persisted inquiry submissions
+  would remain captured. The guarded command deleted the one fixed rule, a
+  fresh audit returned zero event-create/edit rules and retained
+  `generate_lead` as an `ONCE_PER_EVENT` key event, and the follow-up dry run
+  proposed zero changes.
+
 ## 2026-07-30 - Retire The Legacy Inquiry Key Event After Production QA
 
 ### Status

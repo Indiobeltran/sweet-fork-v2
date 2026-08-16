@@ -7,13 +7,10 @@ import { getPublicProductPageData } from "@/lib/site/marketing";
 const slug = "cupcakes";
 
 export async function generateMetadata() {
-  const page = await getPublicProductPageData(slug);
-
   return buildMetadata({
-    title: page?.metadataTitle ?? "Cupcakes",
+    title: "Custom Cupcakes in Centerville, UT",
     description:
-      page?.metadataDescription ??
-      "Custom cupcakes for showers, birthdays, and dessert tables in Centerville, Utah. Starting at $36 per dozen.",
+      "Order custom cupcakes for birthdays, showers, weddings, and dessert tables in Centerville, Utah. Starting at $36 per dozen.",
     path: "/cupcakes",
   });
 }
