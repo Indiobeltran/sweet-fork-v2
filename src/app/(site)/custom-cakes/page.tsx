@@ -7,13 +7,10 @@ import { getPublicProductPageData } from "@/lib/site/marketing";
 const slug = "custom-cakes";
 
 export async function generateMetadata() {
-  const page = await getPublicProductPageData(slug);
-
   return buildMetadata({
-    title: page?.metadataTitle ?? "Custom Cakes",
+    title: "Custom Cakes in Centerville, UT",
     description:
-      page?.metadataDescription ??
-      "Handcrafted custom cakes for birthdays, weddings, and celebrations in Centerville, Utah. Celebration cakes start at $80.",
+      "Order custom birthday and celebration cakes baked from scratch in Centerville, Utah. Starting at $80, with local pickup and select delivery.",
     path: "/custom-cakes",
   });
 }

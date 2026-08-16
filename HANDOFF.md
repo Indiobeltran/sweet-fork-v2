@@ -4,6 +4,72 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## SEO And Analytics Remediation — 2026-08-15 MDT
+
+- **Branch / worktree / base**: `codex/seo-analytics-remediation` in
+  `/Users/indiobeltran/.codex/worktrees/seo-analytics-remediation`, based on
+  `origin/main` at `8b79ceb`. The owner authorized committing, publishing, and
+  deploying this task to `main`. The primary `main` checkout and its unrelated
+  modified `HANDOFF.md` plus untracked `output/` and `tmp/` were intentionally
+  preserved.
+- **Objective**: Implement the August SEO-review actions: correct local-search
+  snippets, make inquiry diagnostics and lead semantics trustworthy, remove
+  the bad GA4 page-view lead rule safely, correct Search Console totals, and
+  consolidate social campaign attribution.
+- **Completed locally**: Added code-owned metadata for the homepage, custom
+  cakes, sugar cookies, cupcakes, and wedding cakes; a constrained Facebook /
+  Instagram campaign-link CLI; raw-plus-normalized social reporting; verified
+  versus unverified lead reporting; complete ungrouped Search Console totals;
+  per-table truncation flags; event-create/edit rule audit coverage; and a
+  fixed-resource, dry-run-by-default event-rule retirement command.
+- **Live findings**: The August 1–14 monthly report now distinguishes four
+  verified `inquiry_wizard_v3` lead events from 179 unverified events. The
+  validation report returned four rows and every row included `step_id`,
+  `field_id`, `error_code`, `form_version=inquiry_wizard_v3`, device, and
+  source/medium, confirming the old missing-label concern is no longer current.
+  Social acquisition normalized to five untagged Facebook sessions and seven
+  untagged Instagram sessions. Search Console complete totals were 37 clicks,
+  1,318 impressions, 2.81% CTR, and 22.62 average position for August 1–14.
+- **GA4 target and dry run**: The live audit found exactly one
+  `page_view` to `generate_lead` event-create rule:
+  `properties/504065366/dataStreams/12126159657/eventCreateRules/15350934572`.
+  The guarded dry run matched its exact two-condition shape, proposed one
+  deletion, made zero changes, and verified the property, stream
+  `G-3FG4VD58VP`, protected key events, custom dimensions, and unrelated rules.
+  Historical event data is not part of the deletion.
+- **Applied external cleanup**: After the owner explicitly approved the exact
+  deletion and confirmed that real inquiry submissions must remain captured,
+  `npm run analytics:retire-pageview-lead-rule -- --apply` deleted only
+  `properties/504065366/dataStreams/12126159657/eventCreateRules/15350934572`.
+  The command verified the target absent and all protected surrounding state
+  unchanged. A fresh audit returned zero event-create/edit rules, attention
+  count zero, and retained `generate_lead` as an `ONCE_PER_EVENT` key event.
+  The final dry run proposed and made zero changes. Historical event data was
+  not deleted.
+- **Inquiry capture remains active**: The application still emits
+  `generate_lead` with `form_version=inquiry_wizard_v3` only after the inquiry
+  API returns explicit `persisted: true`. Existing contract tests cover success,
+  failure, retry, and duplicate prevention. The removed property rule was not
+  part of this application submission path.
+- **Verification completed**: `npm run analytics:test` passed 15/15; `npm run
+  lint`, `npm run typecheck`, `npm test` (231/231 plus 15/15 toolkit tests),
+  `npm run build` (26/26 static pages), and `git diff --check` passed. Live
+  read-only audit, monthly report, validation report, Search Console report,
+  redirect checks, and the guarded deletion dry run passed. Built HTML contains
+  the five exact titles, descriptions, and apex canonical URLs. The deployed
+  site still serves the prior metadata until these source changes are reviewed,
+  merged, and deployed.
+- **Known issue / baseline rule**: Historical `generate_lead` totals from the
+  rule-contaminated period are not valid conversion counts. Preserve them, mark
+  them unverified, and use the first full post-removal period as the new
+  measured baseline. Search Console still reports historical HTTP/`www` URLs,
+  while live checks confirm the HTTP and `www` homepage variants 301 toward the
+  HTTPS apex.
+- **Publishing authorization**: On August 15, 2026, the owner explicitly asked
+  to deploy the completed task to `main`. Publish through the scoped task branch
+  and normal GitHub PR protections; do not push directly to `main`. No Search
+  Console mutation is part of the deployment.
+
 ## Legacy GA4 Key-Event Retirement — 2026-07-30 MDT
 
 - **Branch / starting commit**:

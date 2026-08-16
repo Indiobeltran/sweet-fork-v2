@@ -14,23 +14,13 @@ import {
   querySearchConsoleRows,
 } from "../analytics/report-utils.mjs";
 
-function summarizeRows(rows) {
-  const clicks = rows.reduce((sum, row) => sum + Number(row.clicks ?? 0), 0);
-  const impressions = rows.reduce(
-    (sum, row) => sum + Number(row.impressions ?? 0),
-    0,
-  );
-  const weightedPosition = rows.reduce(
-    (sum, row) =>
-      sum + Number(row.position ?? 0) * Number(row.impressions ?? 0),
-    0,
-  );
-
+export function summarizeSearchConsoleTotalRows(rows) {
+  const row = rows[0] ?? {};
   return {
-    clicks,
-    impressions,
-    ctr: impressions === 0 ? 0 : clicks / impressions,
-    position: impressions === 0 ? 0 : weightedPosition / impressions,
+    clicks: Number(row.clicks ?? 0),
+    impressions: Number(row.impressions ?? 0),
+    ctr: Number(row.ctr ?? 0),
+    position: Number(row.position ?? 0),
   };
 }
 
@@ -64,6 +54,19 @@ async function queryDimension(
   );
 }
 
+async function queryTotals(searchConsole, siteUrl, dateRange) {
+  const response = await searchConsole.searchanalytics.query({
+    siteUrl,
+    requestBody: {
+      ...dateRange,
+      dataState: "final",
+      aggregationType: "auto",
+      rowLimit: 1,
+    },
+  });
+  return response.data.rows ?? [];
+}
+
 export async function createSearchPerformanceReport(
   argv = process.argv.slice(2),
 ) {
@@ -75,7 +78,13 @@ export async function createSearchPerformanceReport(
   });
   const config = await loadGoogleConfig();
   const searchConsole = createSearchConsoleClient();
-  const [currentQueries, currentPages, previousQueries] = await Promise.all([
+  const [
+    currentQueries,
+    currentPages,
+    previousQueries,
+    currentTotalRows,
+    previousTotalRows,
+  ] = await Promise.all([
     queryDimension(
       searchConsole,
       config.siteUrl,
@@ -97,9 +106,11 @@ export async function createSearchPerformanceReport(
       "query",
       limit,
     ),
+    queryTotals(searchConsole, config.siteUrl, periods.current),
+    queryTotals(searchConsole, config.siteUrl, periods.previous),
   ]);
-  const currentSummary = summarizeRows(currentQueries.rows);
-  const previousSummary = summarizeRows(previousQueries.rows);
+  const currentSummary = summarizeSearchConsoleTotalRows(currentTotalRows);
+  const previousSummary = summarizeSearchConsoleTotalRows(previousTotalRows);
   const comparison = {
     clicksPercent: percentageChange(
       currentSummary.clicks,
@@ -115,6 +126,11 @@ export async function createSearchPerformanceReport(
   };
   const queryRows = publicRows(currentQueries.rows, "query");
   const pageRows = publicRows(currentPages.rows, "page");
+  const truncation = {
+    currentQueries: currentQueries.truncated,
+    currentPages: currentPages.truncated,
+    previousQueries: previousQueries.truncated,
+  };
   const payload = {
     periods,
     currentSummary,
@@ -122,10 +138,8 @@ export async function createSearchPerformanceReport(
     comparison,
     queries: queryRows,
     landingPages: pageRows,
-    truncated:
-      currentQueries.truncated ||
-      currentPages.truncated ||
-      previousQueries.truncated,
+    truncation,
+    truncated: Object.values(truncation).some(Boolean),
   };
   const formatPercent = (value) =>
     value === null ? "new" : `${value.toFixed(1)}%`;

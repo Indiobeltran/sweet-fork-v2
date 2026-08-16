@@ -16,6 +16,8 @@
     "analytics:audit": "node scripts/analytics/audit-config.mjs",
     "analytics:configure": "node scripts/analytics/configure-custom-dimensions.mjs",
     "analytics:retire-legacy": "node scripts/analytics/retire-legacy-key-event.mjs",
+    "analytics:retire-pageview-lead-rule": "node scripts/analytics/retire-pageview-lead-rule.mjs",
+    "analytics:campaign-link": "node scripts/analytics/build-campaign-link.mjs",
     "analytics:realtime": "node scripts/analytics/realtime-check.mjs",
     "analytics:funnel": "node scripts/analytics/inquiry-funnel-report.mjs",
     "analytics:validation": "node scripts/analytics/validation-diagnostics-report.mjs",

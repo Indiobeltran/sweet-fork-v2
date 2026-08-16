@@ -7,13 +7,10 @@ import { getPublicProductPageData } from "@/lib/site/marketing";
 const slug = "wedding-cakes";
 
 export async function generateMetadata() {
-  const page = await getPublicProductPageData(slug);
-
   return buildMetadata({
-    title: page?.metadataTitle ?? "Wedding Cakes",
+    title: "Wedding Cakes in Northern Utah",
     description:
-      page?.metadataDescription ??
-      "Wedding cakes for Northern Utah celebrations, starting at $300 with companion desserts available by inquiry.",
+      "Plan a custom wedding cake for Northern Utah celebrations, with Centerville pickup and select local delivery. Wedding cakes start at $300.",
     path: "/wedding-cakes",
   });
 }
