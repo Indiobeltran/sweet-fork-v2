@@ -6,39 +6,72 @@
 
 ## Batch 1 And Batch 2 Production Release — 2026-10-21
 
-- **Authorization / current objective**: Owner explicitly approved committing
-  Batch 2, reconciling primary `main`, pushing production, removing the temporary
-  worktree, and verifying live routes. This supersedes earlier no-publication
-  status notes; normal no-push-without-approval rules still apply to future work.
-- **Checkpoints**: Batch 1 `fa2fd5b`; Batch 2 `d3b45f0`. Release preparation is on
-  `codex/analytics-batch-one`; primary starts at `8b79ceb`, while fresh
-  `origin/main` remains `b3fd3e0` with no divergence from the task branch.
+- **Current branch / objective / status**: Primary checkout
+  `/Users/indiobeltran/Projects/sweet-fork-v2` is on `main`. The owner-authorized
+  Batch 1/2 release is complete and live. No implementation or release work
+  remains in progress. This supersedes all historical unstaged/no-publication
+  notes below; future pushes still require new owner authorization.
+- **Checkpoints / synchronization**: Batch 1 `fa2fd5b`; Batch 2 `d3b45f0`;
+  preserved primary notes `d43f044`; build-scope repair `543a794`. Primary was
+  fast-forwarded from `8b79ceb`, including production baseline `b3fd3e0`, and
+  pushed to `origin/main`. Final handoff documentation is committed separately
+  with CI/deploy skip markers because it changes no application files.
 - **Preservation completed**: Primary documentation diffs were inspected. The
   monitoring-account decision, corresponding handoff, and weekly owner briefing
   were merged here/into DECISIONS verbatim. Original full documents and untracked
   artifact inventories are backed up in `/tmp/sweet-fork-release-preservation.json`.
-  Existing `output/` (11 files) and `tmp/` (3,222 files) must remain unchanged.
-- **Verification basis**: Approved Batch 2 passed 304 tests, lint, typecheck,
-  production build, 378 local HTTP assertions, and desktop/mobile browser checks.
-  No application source changes are part of release preparation.
+  Existing `output/` (11 files) and `tmp/` (3,222 files) were verified unchanged
+  by path/size/mtime inventories after release. Tracked files and index are clean;
+  these two original untracked artifact directories remain intentionally present.
+- **Primary quality gates**: `npm test` passed 281 application tests plus 23
+  analytics/Search Console tests (304 total, zero failures/skips). `npm run lint`
+  and `npm run typecheck` passed. Final `npm run build` passed and generated all
+  26 static pages. Approved Batch 2's local HTTP/browser verification remains
+  documented below; the release did not change public UI or runtime logic.
 - **Primary build repair**: The first primary build compiled the app but failed
   type validation on the existing ignored Cloudflare prototype under `scratch/`.
   `tsconfig.json` now explicitly includes application/configuration/generated
   Next types, matching normal typecheck scope without disabling checks or moving
-  user files. This configuration-only repair is checkpointed separately; rerun
-  the primary build before push. Tests (304), lint, and normal typecheck already
-  passed in primary before this repair.
-- **Next exact tasks / commands still needed**: Commit preservation notes on the
-  task branch; restore only the backed-up, fully merged primary docs; use
-  `git merge --ff-only`; verify primary and rerun release gates; archive the
-  attached temporary worktree; `git push origin main`; confirm Netlify publishes
-  the release commit; run `/tmp/sweet-fork-batch2-seo-check.py` against the live
-  apex origin. Record final deploy/HTTP outcomes below before closing the task.
-- **Files changed / open decisions**: Only HANDOFF and DECISIONS changed during
-  release preparation. No open implementation decision. Sitemap dates stay
-  omitted until accurate content timestamps exist. Production catalog metadata
-  fields are not consumed by the six product route metadata exports, so public
-  snippet correctness does not depend on synchronizing those stored fields.
+  user files. Independent review confirmed all 225 tracked TypeScript files and
+  generated route types remain checked; only 12 unrelated scratch files leave
+  compiler entrypoints. Base-config `tsc` and the repeated primary build passed.
+- **Production deployment**: Netlify deploy `6ad8bc896bd7f86ce5b27c3c` published
+  commit `543a794706cbec62c57d7d1b991846e9ef357ea1` on `main` at
+  `2026-10-21T13:24:10.820Z`. Connector state is ready with no deployment error.
+  Git CD triggered correctly; no manual deploy, rollback, environment mutation,
+  database change, or GA4 configuration change was needed. A legacy Vercel
+  integration also reported deployment status but is not the verified apex host.
+- **Live HTTP verification**: `/tmp/sweet-fork-batch2-seo-check.py
+  https://thesweetfork.com` passed **384/384 assertions**. All 15 public routes
+  returned 200 and matched their expected unique titles/descriptions, one brand
+  suffix, and apex canonical/social URLs. Homepage and six product routes expose
+  the shared Bakery identity/menu, logo plus photograph, structured service areas,
+  locality-only address, and current pricing (`$25 and up; custom cakes from $80`).
+  Gallery introductions/links and allergen guardrails passed. `/__forms.html`
+  serves robots noindex. `/sitemap.xml` contains exactly 15 public URLs with no
+  fabricated `lastmod`; reliable content timestamps are not yet tracked, so dates
+  remain omitted as approved in Batch 1. Robots exclusions and sitemap origin pass.
+  No managed-value drift was found. All six product route snippets are code-owned;
+  catalog names/descriptions do not need synchronization to make public SEO match.
+- **Cleanup / artifacts**: The app archive request returned queued; after checking
+  the worktree was clean and its only ignored files were build caches/dependency
+  links, `git worktree remove` completed without force. The temporary
+  `analytics-batch-one/sweet-fork-v2` directory is absent from disk and Git's
+  worktree list; all commits remain reachable. Other worktrees were left alone.
+  Verification output lives in `/tmp/sweet-fork-production-verification.txt` and
+  `.json`; test log is `/tmp/sweet-fork-release-tests.log`. These are temporary
+  files outside the user's existing repo `tmp/` and `output/`.
+- **Files changed / commands / known limits**: Release-only changes are HANDOFF,
+  DECISIONS, and the small `tsconfig.json` scope repair. Commands included status/
+  diff/history inspection, fetch, scoped add/commit, fast-forward-only merge,
+  release quality gates, worktree removal, push, and read-only HTTP assertions.
+  No real inquiry, JavaScript analytics collection, physical touch test, or
+  production performance benchmark was run. Existing lockfile tracking limitations
+  remain documented below; no dependencies changed.
+- **Next exact task / open decisions**: No remaining release command or open
+  implementation question. Optional next owner-controlled task is GA4 Tag
+  Assistant/DebugView verification and a deliberate QA inquiry, with separate
+  authorization. Do not create test inquiries as part of passive verification.
 
 ## Dedicated Grok Bot Admin Monitoring Account Setup — 2026-09-19 MDT
 
