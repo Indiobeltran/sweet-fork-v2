@@ -2,6 +2,40 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
+## 2026-10-21 - Scope Production Type Checking To Application Sources
+
+### Status
+
+Accepted release-gate repair.
+
+### Context
+
+After the authorized fast-forward, tests, lint, and `npm run typecheck` passed
+in primary, but `npm run build` picked up an existing ignored Cloudflare project
+at `scratch/pricing-calibration-site/db/index.ts` through the base config's
+repository-wide TypeScript glob. The clean task worktree had built successfully
+because that unrelated local project was absent.
+
+### Options Considered
+
+- Move/delete the user's scratch project or bypass build type checking.
+- Use explicit application/configuration includes, retaining generated Next types.
+
+### Decision
+
+Align `tsconfig.json` source discovery with `tsconfig.typecheck.json`: include
+`src/**/*.ts`, `src/**/*.tsx`, root middleware/framework/Tailwind configs,
+`next-env.d.ts`, and `.next/types/**/*.ts`. Preserve strict compiler settings and
+all tracked application TypeScript entrypoints. Do not change ignored artifacts
+or disable type validation. Commit this small configuration repair on the task
+branch, fast-forward primary, and repeat the failed production build there.
+
+### Consequences
+
+Production builds and the explicit typecheck cover the same application source
+scope, with generated route checks additionally retained for the build. Unrelated
+local report/prototype TypeScript no longer changes production build behavior.
+
 ## 2026-10-21 - Authorized Batch 1 And Batch 2 Production Release
 
 ### Status

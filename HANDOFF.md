@@ -21,6 +21,13 @@
 - **Verification basis**: Approved Batch 2 passed 304 tests, lint, typecheck,
   production build, 378 local HTTP assertions, and desktop/mobile browser checks.
   No application source changes are part of release preparation.
+- **Primary build repair**: The first primary build compiled the app but failed
+  type validation on the existing ignored Cloudflare prototype under `scratch/`.
+  `tsconfig.json` now explicitly includes application/configuration/generated
+  Next types, matching normal typecheck scope without disabling checks or moving
+  user files. This configuration-only repair is checkpointed separately; rerun
+  the primary build before push. Tests (304), lint, and normal typecheck already
+  passed in primary before this repair.
 - **Next exact tasks / commands still needed**: Commit preservation notes on the
   task branch; restore only the backed-up, fully merged primary docs; use
   `git merge --ff-only`; verify primary and rerun release gates; archive the
