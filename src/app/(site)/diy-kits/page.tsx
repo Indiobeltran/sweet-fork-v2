@@ -7,12 +7,9 @@ import { getPublicProductPageData } from "@/lib/site/marketing";
 const slug = "diy-kits";
 
 export async function generateMetadata() {
-  const page = await getPublicProductPageData(slug);
-
   return buildMetadata({
-    title: page?.metadataTitle ?? "DIY Kits",
+    title: "DIY Decorating Kits in Centerville, Utah",
     description:
-      page?.metadataDescription ??
       "DIY decorating kits for parties, gifting, classrooms, and family activities in Centerville, Utah. Starting at $25.",
     path: "/diy-kits",
   });

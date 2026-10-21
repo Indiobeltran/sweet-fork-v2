@@ -45,6 +45,8 @@ export function InquiryCta({
           <p className="max-w-xl text-sm leading-7 text-ivory/72">{description}</p>
           <SitePrimaryCta
             href={cta.href}
+            inquiryLocation={slug ? "product_final_cta" : "site_final_cta"}
+            inquiryProductCategory={productCategory}
             label={cta.label}
             subtext={showSubtext ? cta.subtext : undefined}
             buttonClassName="bg-ivory text-charcoal hover:bg-white sm:w-full"

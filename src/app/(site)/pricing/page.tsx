@@ -7,7 +7,7 @@ import { buildMetadata } from "@/lib/seo";
 
 export async function generateMetadata() {
   return buildMetadata({
-    title: "Pricing",
+    title: "Custom Cake & Dessert Pricing",
     description:
       "A starting-price investment guide for custom cakes, wedding cakes, cupcakes, sugar cookies, macarons, and DIY kits in Centerville, Utah.",
     path: "/pricing",

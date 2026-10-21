@@ -5,6 +5,9 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 import { trackAnalyticsEvent } from "@/lib/analytics/client";
+import { getProductCategory } from "@/lib/analytics/events";
+import { InquiryCtaLink } from "@/components/site/inquiry-cta-link";
+import { getGalleryInquiryContext, saveGalleryInquirySelection } from "@/lib/inquiries/gallery-context";
 import {
   getAdjacentInteractiveIndex,
   getGalleryFilterCategory as getFilterCategory,
@@ -46,6 +49,7 @@ export function GalleryGrid({
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const activeItem = activeIndex === null ? null : filteredItems[activeIndex] ?? null;
+  const activeInquiryContext = activeItem ? getGalleryInquiryContext(activeItem) : null;
   const titleId = `${dialogId}-title`;
   const descriptionId = `${dialogId}-description`;
   const interactiveIndexes = useMemo(
@@ -457,6 +461,22 @@ export function GalleryGrid({
                     <p id={descriptionId} className="text-sm leading-relaxed text-ivory/80">
                       {activeItem.alt}
                     </p>
+                  </div>
+                  <div className="border-t border-white/10 pt-4">
+                    <p className="text-sm leading-6 text-ivory/75">
+                      Let this be a starting point. We can adapt the colors and details to your celebration.
+                    </p>
+                    <InquiryCtaLink
+                      href="/start-order"
+                      ctaLocation="gallery_design"
+                      productCategory={activeInquiryContext ? getProductCategory(activeInquiryContext.productType) : undefined}
+                      onClick={() => {
+                        if (activeInquiryContext) saveGalleryInquirySelection(activeInquiryContext.id);
+                      }}
+                      className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-ivory px-5 py-3 text-sm font-semibold text-charcoal transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold"
+                    >
+                      {activeInquiryContext ? "Request a similar design" : "Request a Quote"}
+                    </InquiryCtaLink>
                   </div>
                 </div>
               </div>

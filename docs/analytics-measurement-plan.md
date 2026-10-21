@@ -64,6 +64,7 @@ Never send:
 
 | Event name | Business question | Trigger | Allowed parameters | Excluded parameters | Automatic or custom | Key event? | Implementation location | Verification method | Reporting use |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `inquiry_cta_clicked` | Which inquiry paths generate interest? | Intentional navigation through a tracked inquiry CTA | `cta_location`, `page_path`, optional `product_category` | destination queries, gallery IDs/titles, inspiration links, customer data | Custom | No | Shared `InquiryCtaLink`, header, heroes, final/product/sticky/gallery CTAs | Click each placement and verify one common event | Compare source-route and placement effectiveness |
 | `product_viewed` | Which offering pages attract serious interest? | Product page viewed once per client route view | `product_category`, `product_slug`, `page_path` | product names from user input, IDs | Custom | No | `src/components/analytics/product-analytics.tsx` | Browser network/debug check on product routes | Offering interest |
 | `product_cta_clicked` | Which product CTAs drive inquiry starts? | Product CTA click | `product_category`, `product_slug`, `cta_location`, `page_path` | customer data, quote values | Custom | No | `SitePrimaryCta`, `StickyProductCta`, product templates | Click CTA and inspect GA request | CTA performance |
 | `wedding_consultation_started` | Are wedding cake visitors taking a lead action? | Wedding-cake CTA click | `product_category`, `product_slug`, `cta_location`, `page_path` | customer data | Custom | Optional secondary | Product CTAs for `/wedding-cakes` | Click wedding CTA and inspect GA request | Wedding lead signal |
@@ -80,6 +81,23 @@ Never send:
 | `inquiry_submission_error` | Are real submission attempts failing? | Failed or unavailable submission attempt | `error_category`, `page_path` | raw error, payload, identifiers | Custom | No | Inquiry wizard | Force failed submission in controlled QA | Reliability alert |
 | `generate_lead` | How many confirmed leads were received? | API returns an explicit `persisted: true` response after all required Supabase inquiry records are saved | `form_version`, `budget_bucket`, `delivery_method`, `has_inspiration_links`, `lead_time_bucket`, `page_path`, `product_category`, `selected_product_count` | reference code, inquiry ID, exact date, contact data, inspiration URL/domain/path/query, link count, all free text | GA4 recommended custom emission | Yes | Inquiry wizard after successful persistence response | Submit one QA inquiry and confirm one database/admin record plus one DebugView event | Primary conversion |
 | `contact_method_clicked` | Which contact paths get used? | Footer phone/email/Instagram click | `contact_method` | actual phone/email/URL | Custom | No | `src/components/site/site-footer.tsx` | Click contact links | Contact preference |
+
+## Inquiry CTA and gallery context
+
+- `inquiry_cta_clicked` accepts only these `cta_location` values:
+  `header_desktop`, `header_mobile`, `header_mobile_menu`, `page_hero`,
+  `home_hero`, `home_process`, `product_hero`, `product_final_cta`,
+  `product_sticky_cta`, `site_final_cta`, `gallery_hero`, `gallery_design`.
+- The common event contains only the public source route, placement, and optional
+  product category. It is emitted once per intentional click; canceled or
+  non-inquiry navigation is excluded. Existing product/wedding click events
+  remain separate for historical continuity; do not sum them with the common
+  event as though they represented additional visitors.
+- A gallery design selection stores only its public gallery ID in session
+  storage. The inquiry resolves it against public gallery/catalog data and asks
+  the visitor to apply it; it does not overwrite an existing draft. The selected
+  title/category can become inquiry context, but the ID/title/notes never enter
+  analytics. Unknown/stale IDs and unavailable browser storage fail safely.
 
 ## Dispatch and visibility semantics
 

@@ -4,10 +4,11 @@ import { PublicPageHero } from "@/components/site/public-page-hero";
 import { getInquiryCtaBySlug } from "@/lib/site/cta";
 import { getPublicFaqItems } from "@/lib/site/marketing";
 import { buildMetadata } from "@/lib/seo";
+import { serializeJsonLd } from "@/lib/public-seo";
 
 export async function generateMetadata() {
   return buildMetadata({
-    title: "FAQ",
+    title: "Cake Ordering & Delivery FAQs",
     description:
       "Common questions about ordering, pricing, delivery, policies, and lead times for The Sweet Fork in Centerville, Utah.",
     path: "/faq",
@@ -33,7 +34,7 @@ export default async function FaqPage() {
 
   return (
     <div>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
       <PublicPageHero
         eyebrow="FAQ"
         title="Answers to the questions clients ask before requesting a quote."

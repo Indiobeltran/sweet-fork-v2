@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { describe, it } from "node:test";
 
 // @ts-expect-error Node's strip-types test runner needs the .ts extension.
-import { createWizardDraft, getPaletteState, hasMeaningfulWizardValues, isEditableFormTarget, parseWizardDraft, serializePaletteSelection } from "./wizard-state.ts";
+import { canApplyPaletteEdit, createWizardDraft, getPaletteDetailsCapacity, getPaletteState, hasMeaningfulWizardValues, isEditableFormTarget, parseWizardDraft, serializePaletteSelection } from "./wizard-state.ts";
 // @ts-expect-error Node's strip-types test runner needs the .ts extension.
 import { sanitizeTextValue } from "../../lib/validations/text.ts";
 // @ts-expect-error Node's strip-types test runner needs the .ts extension.
@@ -189,6 +189,13 @@ describe("wizard draft state", () => {
 });
 
 describe("URL-only inspiration references", () => {
+  it("normalizes bare social addresses and keeps unsupported protocols invalid", () => {
+    const links = normalizeInspirationLinks(["www.instagram.com/p/example/", "pin.it/example", "javascript:alert(1)", "ftp://example.com/image.jpg"]);
+    assert.equal(links[0], "https://www.instagram.com/p/example/");
+    assert.equal(links[1], "https://pin.it/example");
+    assert.equal(getInvalidInspirationLinkIndex(links), 2);
+    assert.equal(getInvalidInspirationLinkIndex([links[3]]), 0);
+  });
   it("normalizes practical bare domains while preserving explicit URLs", () => {
     assert.deepEqual(
       normalizeInspirationLinks([
@@ -224,6 +231,39 @@ describe("URL-only inspiration references", () => {
   it("keeps the optional field empty and bounds link count", () => {
     assert.deepEqual(normalizeInspirationLinks([]), []);
     assert.equal(MAX_INSPIRATION_LINKS, 6);
+  });
+});
+
+describe("palette character guidance", () => {
+  it("accounts for selected labels and separators within item and overall limits", () => {
+    for (const limit of [150, 160]) {
+      for (const selection of [[], ["blue"], ["pink-red", "neutrals"], ["custom"]]) {
+        const capacity = getPaletteDetailsCapacity(selection, limit);
+        const serialized = serializePaletteSelection(selection.length ? selection : ["custom"], "x".repeat(capacity));
+        assert.equal(serialized?.length, limit);
+      }
+    }
+  });
+
+  it("never offers negative room when selected labels exhaust the limit", () => {
+    assert.equal(getPaletteDetailsCapacity(["orange-yellow", "black-white"], 5), 0);
+  });
+
+  it("allows legacy over-limit notes to be shortened without truncating or trapping the editor", () => {
+    const legacy = "x".repeat(160);
+    const shorterDetails = legacy.slice(1);
+    assert.equal(canApplyPaletteEdit({
+      currentValue: legacy, nextValue: `Custom - ${shorterDetails}`,
+      currentDetails: legacy, nextDetails: shorterDetails, maxLength: 160,
+    }), true);
+    assert.equal(canApplyPaletteEdit({
+      currentValue: `Blue - ${legacy}`, nextValue: `Custom - ${legacy}`,
+      currentDetails: legacy, nextDetails: legacy, maxLength: 160,
+    }), false);
+    assert.equal(canApplyPaletteEdit({
+      currentValue: `Blue, Neutrals - ${legacy}`, nextValue: `Blue - ${legacy}`,
+      currentDetails: legacy, nextDetails: legacy, maxLength: 160,
+    }), true);
   });
 });
 

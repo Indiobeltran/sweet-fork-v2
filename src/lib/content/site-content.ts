@@ -1,9 +1,29 @@
 import type { GalleryItem, ProductPageContent, ProductType } from "@/types/domain";
 
+import { bakeryAllergenDisclosure } from "./allergen-policy";
+
 type ProductPageCopyOverrides = {
   finalCtaTitle?: string;
   heroEyebrow?: string;
 };
+
+export const localServiceAreaCopy =
+  "Based in Centerville, I create custom cakes and desserts for celebrations in Bountiful, Farmington, Kaysville, and across Davis County. Pickup is arranged after booking, and delivery is quoted for your location.";
+
+export function getHomepageInquiryReassurance(matrix: ReadonlyArray<{
+  product: string;
+  slug?: string;
+  startingAt: string;
+  leadTime: string;
+}>) {
+  const cake = matrix.find((item) => item.slug === "custom-cakes" || item.product === "Custom Cakes");
+  const cookies = matrix.find((item) => item.slug === "sugar-cookies" || item.product === "Sugar Cookies");
+  return [
+    cake ? `Custom cakes from ${cake.startingAt}, typically ${cake.leadTime} notice.` : "",
+    cookies ? `Decorated cookies from ${cookies.startingAt} per dozen.` : "",
+    "Busy weekends can book earlier; each order is quoted individually.",
+  ].filter(Boolean).join(" ");
+}
 
 export const siteConfig = {
   name: "The Sweet Fork",
@@ -39,11 +59,11 @@ export const productPageContent: Record<string, ProductPageContent & ProductPage
   "custom-cakes": {
     slug: "custom-cakes",
     shortTitle: "Custom Cakes",
-    title: "Custom cakes baked from scratch for birthdays, showers, and milestone celebrations.",
+    title: "Custom cakes, baked from scratch in Centerville.",
     eyebrow: "Custom Cakes",
     heroEyebrow: "What goes into every cake",
     intro:
-      "I design each cake around your gathering, guest count, color palette, and flavors, then finish it with details like hand-piped borders, textured buttercream, fresh fruit, or florals.",
+      "I design each cake for birthdays, showers, and milestone celebrations across Davis County, with your guest count, colors, and flavors in mind. Hand-piped borders, textured buttercream, fresh fruit, or florals make it yours.",
     heroStatement: "From-scratch cake layers, real butter buttercream, and one baker from first sketch to final box.",
     finalCtaTitle: "Ready to request a quote for custom cakes?",
     heroImage: {
@@ -182,11 +202,11 @@ export const productPageContent: Record<string, ProductPageContent & ProductPage
   "sugar-cookies": {
     slug: "sugar-cookies",
     shortTitle: "Sugar Cookies",
-    title: "Decorated sugar cookies styled for favors, gifting, and dessert tables.",
+    title: "Custom sugar cookies, made in Centerville for your celebration.",
     eyebrow: "Decorated sugar cookies",
     heroEyebrow: "What goes into every cookie order",
     intro:
-      "Buttercream sugar cookies are designed to feel personal, whether they are headed to a shower, a birthday table, or an event welcome box.",
+      "I make buttercream sugar cookies in Centerville for birthdays, showers, favors, and gifting across Davis County. Each set brings your colors, theme, and little personal details to the table.",
     finalCtaTitle: "Ready to request a quote for sugar cookies?",
     heroStatement: "Ideal for custom themes, favor sets, and coordinated dessert-table details.",
     heroImage: {
@@ -221,7 +241,7 @@ export const productPageContent: Record<string, ProductPageContent & ProductPage
       {
         question: "Can you ship cookies, or is it pickup and delivery?",
         answer:
-          "Decorated cookies are made for local pickup in Centerville and local delivery across Davis, Salt Lake, and nearby Weber County. I do not currently ship cookies, so favors and gift sets are arranged for local pickup or delivery.",
+          "Decorated cookies are available for pickup in Centerville and quoted local delivery to Bountiful, Farmington, Kaysville, and other Davis County communities. Nearby Salt Lake and Weber County delivery can be discussed. I do not ship cookies.",
       },
     ],
   },
@@ -246,6 +266,7 @@ export const productPageContent: Record<string, ProductPageContent & ProductPage
     availabilityNote: "Most macaron orders need 1 to 2 weeks notice and begin with a one-dozen minimum.",
     detailBullets: [
       "Minimum order is 1 dozen, available as assorted or single flavors.",
+      `Macarons are almond-flour-based. ${bakeryAllergenDisclosure}`,
       "Assortments suit gift boxes, dessert tables, and party favors for showers, weddings, and local events.",
       "Most macaron orders need 1 to 2 weeks notice.",
       "Custom colors and flavor pairings can be discussed for weddings, gifting, and coordinated dessert styling.",
@@ -329,9 +350,8 @@ export const homeExperiencePillars = [
     description: "I take a limited number of orders each week so every cake, dessert table, and pickup window gets my full attention.",
   },
   {
-    title: "Serving Northern Utah",
-    description:
-      "Based in Centerville, with pickup available locally and delivery offered across Davis, Salt Lake, and nearby Weber County communities. Baked goods are currently available for local pickup or local delivery only. I do not currently ship desserts.",
+    title: "Centerville & Davis County",
+    description: localServiceAreaCopy,
   },
 ];
 
@@ -462,9 +482,8 @@ export const faqItems = [
       "Available flavors include vanilla, chocolate, red velvet, lemon, strawberry, funfetti, carrot, almond, and coconut, with some custom flavors available on request.",
   },
   {
-    question: "Can you accommodate dietary restrictions?",
-    answer:
-      "Some dietary needs can be discussed, but everything is made in a home kitchen that processes common allergens, so allergen-free products cannot be guaranteed.",
+    question: "What should I know about ingredients and allergens?",
+    answer: bakeryAllergenDisclosure,
   },
   {
     question: "Are you a licensed bakery?",
@@ -656,8 +675,7 @@ export const termsSections = [
   {
     title: "Allergen notice",
     points: [
-      "All products are prepared in a home kitchen that processes common allergens including wheat, eggs, milk, soy, tree nuts, and peanuts. Cross-contamination is possible.",
-      "Customers with severe allergies should contact me before ordering.",
+      bakeryAllergenDisclosure,
     ],
   },
   {

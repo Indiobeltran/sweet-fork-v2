@@ -7,12 +7,9 @@ import { getPublicProductPageData } from "@/lib/site/marketing";
 const slug = "macarons";
 
 export async function generateMetadata() {
-  const page = await getPublicProductPageData(slug);
-
   return buildMetadata({
-    title: page?.metadataTitle ?? "Macarons",
+    title: "Macarons in Centerville, Utah",
     description:
-      page?.metadataDescription ??
       "Custom macarons for gifting, dessert tables, and events in Centerville, Utah. Starting at $30 per dozen.",
     path: "/macarons",
   });

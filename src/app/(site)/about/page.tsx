@@ -7,7 +7,7 @@ import { buildMetadata } from "@/lib/seo";
 
 export async function generateMetadata() {
   return buildMetadata({
-    title: "About",
+    title: "About Our Centerville Home Bakery",
     description:
       "Learn about The Sweet Fork, a small custom bakery in Centerville, Utah specializing in handcrafted cakes, cupcakes, macarons, and decorated cookies.",
     path: "/about",

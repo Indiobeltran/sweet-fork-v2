@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { InquiryCtaLink } from "@/components/site/inquiry-cta-link";
 import { defaultInquiryCta } from "@/lib/site/cta";
 import { cn } from "@/lib/utils";
 
@@ -143,23 +144,25 @@ export function SiteHeader({
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <Link
+          <InquiryCtaLink
             href={defaultInquiryCta.href}
+            ctaLocation="header_desktop"
             aria-current={pathname === defaultInquiryCta.href ? "page" : undefined}
             className="inline-flex h-12 items-center justify-center rounded-full bg-charcoal px-5 text-sm font-semibold tracking-[0.02em] text-ivory shadow-[0_16px_34px_rgba(44,36,27,0.16)] transition duration-200 hover:-translate-y-0.5 hover:bg-charcoal/92"
           >
             {defaultInquiryCta.label}
-          </Link>
+          </InquiryCtaLink>
         </div>
 
         <div className="flex items-center gap-2 lg:hidden">
-          <Link
+          <InquiryCtaLink
             href={defaultInquiryCta.href}
+            ctaLocation="header_mobile"
             aria-current={pathname === defaultInquiryCta.href ? "page" : undefined}
             className="inline-flex h-10 items-center justify-center rounded-full border border-charcoal/16 bg-white px-4 text-sm font-medium text-charcoal transition hover:border-charcoal/28 hover:bg-white/95"
           >
             Request a Quote
-          </Link>
+          </InquiryCtaLink>
           <button
             type="button"
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-charcoal/16 bg-white text-charcoal transition hover:border-charcoal/28 hover:bg-white/95"
@@ -230,13 +233,14 @@ export function SiteHeader({
               </nav>
             </div>
 
-            <Link
+            <InquiryCtaLink
               href={defaultInquiryCta.href}
+              ctaLocation="header_mobile_menu"
               className="mt-6 inline-flex min-h-14 w-full items-center justify-center rounded-full bg-charcoal px-5 py-4 text-center text-sm font-semibold tracking-[0.02em] text-ivory shadow-soft transition duration-200 active:scale-[0.985]"
               onClick={() => setOpen(false)}
             >
               {defaultInquiryCta.label}
-            </Link>
+            </InquiryCtaLink>
           </div>
         </div>
       </div>

@@ -8,9 +8,9 @@ const slug = "wedding-cakes";
 
 export async function generateMetadata() {
   return buildMetadata({
-    title: "Wedding Cakes in Northern Utah",
+    title: "Wedding Cakes in Davis County, Utah",
     description:
-      "Plan a custom wedding cake for Northern Utah celebrations, with Centerville pickup and select local delivery. Wedding cakes start at $300.",
+      "Custom wedding cakes for Bountiful, Farmington, Kaysville and Davis County celebrations. From $300, with Centerville pickup and select delivery.",
     path: "/wedding-cakes",
   });
 }

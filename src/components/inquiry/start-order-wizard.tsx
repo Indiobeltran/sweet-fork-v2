@@ -73,7 +73,14 @@ import {
   type InquiryFormValues,
 } from "@/lib/validations/inquiry";
 import { submitInquiryRequest } from "@/lib/inquiries/client-submit";
-import { MAX_INSPIRATION_LINKS_TEXT_LENGTH } from "@/lib/validations/inspiration-links";
+import { MAX_INSPIRATION_LINKS, MAX_INSPIRATION_LINKS_TEXT_LENGTH, normalizeInspirationLinks } from "@/lib/validations/inspiration-links";
+import { MAX_COLOR_PALETTE_LENGTH, MAX_INSPIRATION_NOTES_LENGTH, MAX_ITEM_COLOR_PALETTE_LENGTH } from "@/lib/validations/inquiry-limits";
+import {
+  applyGalleryInquiryContext,
+  clearGalleryInquirySelection,
+  readGalleryInquirySelection,
+  type GalleryInquiryContext,
+} from "@/lib/inquiries/gallery-context";
 import type { InquiryProductItem, ProductType } from "@/types/domain";
 import {
   findStepForErrors,
@@ -89,8 +96,10 @@ import {
 } from "@/components/inquiry/wizard-helpers";
 import {
   colorPaletteOptions,
+  canApplyPaletteEdit,
   createWizardDraft,
   getPaletteState,
+  getPaletteDetailsCapacity,
   hasMeaningfulWizardValues,
   parseWizardDraft,
   serializePaletteSelection,
@@ -114,6 +123,7 @@ type StartOrderWizardProps = {
   featureFlags: InquiryFeatureFlags;
   submissionAvailable: boolean;
   submissionUnavailableMessage?: string;
+  galleryContexts: GalleryInquiryContext[];
 };
 
 function readInitialWizardDraft(): WizardDraft | null {
@@ -165,24 +175,41 @@ function ColorPaletteSelector({
   onChange,
   fieldRef,
   error,
+  maxLength,
 }: {
   idPrefix: string;
   value?: string;
   onChange: (value: string | undefined) => void;
   fieldRef?: (element: HTMLElement | null) => void;
   error?: string;
+  maxLength: number;
 }) {
+  const [limitMessage, setLimitMessage] = useState<string | undefined>();
   const state = getPaletteState(value);
   const helpId = `${idPrefix}-palette-help`;
+  const countId = `${idPrefix}-palette-count`;
   const errorId = getErrorDescriptionId(`${idPrefix}-palette`);
   const detailsId = `${idPrefix}-palette-details`;
   const selectedNoPreference = state.selectedValues.includes("no-preference");
+  const count = value?.length ?? 0;
+  const lengthError = count > maxLength
+    ? `Please shorten the palette to ${maxLength} characters, including selected color names.`
+    : limitMessage;
+  const displayedError = error ?? lengthError;
 
   const updatePalette = (
     selectedValues: ColorPaletteValue[],
     customDetails: string,
   ) => {
-    onChange(serializePaletteSelection(selectedValues, customDetails));
+    const nextValue = serializePaletteSelection(selectedValues, customDetails);
+    // Preserve existing draft text; allow it to be shortened even if it starts
+    // over the limit. Never silently truncate details to make another label fit.
+    if (!canApplyPaletteEdit({ currentValue: value, nextValue, currentDetails: state.customDetails, nextDetails: customDetails, maxLength })) {
+      setLimitMessage(`Keep the palette to ${maxLength} characters in total. Shorten the details before adding another color.`);
+      return;
+    }
+    setLimitMessage(undefined);
+    onChange(nextValue);
   };
 
   return (
@@ -195,10 +222,10 @@ function ColorPaletteSelector({
       <div
         role="group"
         aria-labelledby={`${idPrefix}-palette-label`}
-        aria-describedby={getDescribedBy(helpId, error && errorId)}
+        aria-describedby={getDescribedBy(helpId, countId, displayedError && errorId)}
         className={cn(
           "flex flex-wrap gap-2 rounded-[1.35rem] border border-charcoal/8 bg-cream/40 p-2",
-          error && "border-rose-300 bg-rose-50/70",
+          displayedError && "border-rose-300 bg-rose-50/70",
         )}
       >
         {colorPaletteOptions.map((option, index) => {
@@ -229,12 +256,13 @@ function ColorPaletteSelector({
           );
         })}
       </div>
-      <InlineError id={errorId} message={error} />
+      <InlineError id={errorId} message={displayedError} />
       <div>
         <Label htmlFor={detailsId}>Specific colors or palette details (optional)</Label>
         <Textarea
           id={detailsId}
           value={selectedNoPreference ? "" : state.customDetails}
+          maxLength={getPaletteDetailsCapacity(state.selectedValues, maxLength)}
           onChange={(event) => {
             const details = event.target.value;
             const nextSelection = state.selectedValues.filter(
@@ -249,8 +277,12 @@ function ColorPaletteSelector({
           placeholder="Specific tones, venue colors, invitation palette, or anything to avoid"
           className="min-h-[104px]"
           disabled={selectedNoPreference}
-          aria-describedby={helpId}
+          aria-describedby={getDescribedBy(helpId, countId, displayedError && errorId)}
+          aria-invalid={Boolean(displayedError)}
         />
+        <p id={countId} className="mt-2 text-xs leading-6 text-charcoal/65">
+          {count} of {maxLength} characters, including selected color names. Longer design ideas belong in the inspiration notes.
+        </p>
       </div>
     </div>
   );
@@ -262,11 +294,15 @@ export function StartOrderWizard({
   featureFlags,
   submissionAvailable,
   submissionUnavailableMessage,
+  galleryContexts,
 }: StartOrderWizardProps) {
   const [startedAt] = useState(() => Date.now());
   const [currentStep, setCurrentStep] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
   const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
+  const [galleryContext, setGalleryContext] = useState<GalleryInquiryContext | null>(null);
+  const [galleryContextAdded, setGalleryContextAdded] = useState(false);
+  const [galleryContextMessage, setGalleryContextMessage] = useState("");
   const [activeItemType, setActiveItemType] = useState<ProductType | null>(null);
   const [values, setValues] = useState<InquiryFormValues>(
     createEmptyInquiryValues,
@@ -315,6 +351,10 @@ export function StartOrderWizard({
 
     setHasRestoredDraft(true);
   }, []);
+
+  useEffect(() => {
+    setGalleryContext(readGalleryInquirySelection(galleryContexts));
+  }, [galleryContexts]);
 
   useEffect(() => {
     if (selectedItems.length === 0) {
@@ -469,6 +509,23 @@ export function StartOrderWizard({
         page_path: "/start-order",
       }),
     );
+  };
+
+  const addGalleryInspiration = () => {
+    if (!galleryContext) return;
+    const result = applyGalleryInquiryContext(values, galleryContext, createDefaultInquiryItem(galleryContext.productType));
+    if (result.status === "notes_full") {
+      setGalleryContextMessage(`Your ${galleryContext.productLabel.toLowerCase()} inspiration notes are full. Shorten them in Customize Items before adding this design.`);
+      return;
+    }
+    if (result.status === "added") {
+      trackInquiryStarted();
+      setValues(result.values);
+      setActiveItemType((current) => current ?? galleryContext.productType);
+    }
+    clearGalleryInquirySelection();
+    setGalleryContextAdded(true);
+    setGalleryContextMessage(`Included in your ${galleryContext.productLabel.toLowerCase()} inspiration notes. You can adjust the details in Customize Items.`);
   };
 
   const setFieldValue = <Key extends keyof InquiryFormValues>(
@@ -1137,6 +1194,29 @@ export function StartOrderWizard({
                 </div>
                 {hasStarted ? <div className="lg:w-[18rem] lg:flex-none">{currentStepPanel}</div> : null}
               </div>
+
+              {galleryContext ? (
+                <div className="rounded-[1.4rem] border border-gold/25 bg-cream/60 px-4 py-4 sm:px-5">
+                  <p className="eyebrow-label">Your gallery inspiration · {galleryContext.productLabel}</p>
+                  <p className="mt-2 font-serif text-2xl leading-tight text-charcoal">{galleryContext.title}</p>
+                  <p className="mt-2 text-sm leading-6 text-charcoal/70">
+                    Add this reference to your inquiry, then tell us what you would like to make your own.
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <Button type="button" onClick={addGalleryInspiration} disabled={galleryContextAdded}>
+                      {galleryContextAdded ? "Added to your inquiry" : "Add this inspiration"}
+                    </Button>
+                    <button type="button" className="min-h-11 rounded-full px-3 text-sm text-charcoal/70 underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold/60" onClick={() => {
+                      clearGalleryInquirySelection();
+                      setGalleryContext(null);
+                      setGalleryContextMessage("");
+                    }}>
+                      Dismiss
+                    </button>
+                  </div>
+                  <p role="status" className="mt-2 text-sm leading-6 text-charcoal/75">{galleryContextMessage}</p>
+                </div>
+              ) : null}
 
               {!submissionAvailable ? (
                 <div className="rounded-[1.4rem] border border-gold/28 bg-gold/10 px-4 py-3 text-sm leading-6 text-charcoal/72">
@@ -1990,6 +2070,7 @@ export function StartOrderWizard({
                     <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
                       <ColorPaletteSelector
                         idPrefix={`${activeItem.productType}-item`}
+                        maxLength={MAX_ITEM_COLOR_PALETTE_LENGTH}
                         value={activeItem.colorPalette}
                         onChange={(nextValue) =>
                           updateOrderItem(activeItem.productType, {
@@ -2099,7 +2180,7 @@ export function StartOrderWizard({
                         id={`${activeItem.productType}-inspiration`}
                         ref={registerFieldRef(itemPath(activeItem.productType, "inspirationNotes"))}
                         value={activeItem.inspirationNotes ?? ""}
-                        maxLength={1200}
+                        maxLength={MAX_INSPIRATION_NOTES_LENGTH}
                         onChange={(event) =>
                           updateOrderItem(activeItem.productType, {
                             inspirationNotes: event.target.value,
@@ -2111,12 +2192,14 @@ export function StartOrderWizard({
                           getFieldErrorClass(errors[itemPath(activeItem.productType, "inspirationNotes")]),
                         )}
                         aria-invalid={Boolean(errors[itemPath(activeItem.productType, "inspirationNotes")])}
-                        aria-describedby={
-                          errors[itemPath(activeItem.productType, "inspirationNotes")]
-                            ? getErrorDescriptionId(itemPath(activeItem.productType, "inspirationNotes"))
-                            : undefined
-                        }
+                        aria-describedby={getDescribedBy(
+                          `${activeItem.productType}-inspiration-count`,
+                          errors[itemPath(activeItem.productType, "inspirationNotes")] && getErrorDescriptionId(itemPath(activeItem.productType, "inspirationNotes")),
+                        )}
                       />
+                      <p id={`${activeItem.productType}-inspiration-count`} className="mt-2 text-xs leading-6 text-charcoal/65">
+                        {activeItem.inspirationNotes?.length ?? 0} of {MAX_INSPIRATION_NOTES_LENGTH} characters.
+                      </p>
                       <InlineError
                         id={getErrorDescriptionId(itemPath(activeItem.productType, "inspirationNotes"))}
                         message={errors[itemPath(activeItem.productType, "inspirationNotes")]}
@@ -2143,6 +2226,7 @@ export function StartOrderWizard({
 
                 <ColorPaletteSelector
                   idPrefix="overall"
+                  maxLength={MAX_COLOR_PALETTE_LENGTH}
                   value={values.colorPalette}
                   onChange={(nextValue) => setFieldValue("colorPalette", nextValue)}
                   fieldRef={registerFieldRef("colorPalette")}
@@ -2162,7 +2246,8 @@ export function StartOrderWizard({
                         Paste links to any cakes, cookies, colors, themes, or designs that inspire
                         you. Pinterest, Instagram, Google Drive, Dropbox, bakery sites, and other
                         publicly accessible links are welcome. Please separate multiple links with
-                        a new line.
+                        a new line. Add up to {MAX_INSPIRATION_LINKS} links; a website address without https:// is okay.
+                        Make sure shared boards and files can be opened without signing in.
                       </p>
                       {featureFlags.linkFallbackEnabled ? (
                         <Textarea
@@ -2181,6 +2266,7 @@ export function StartOrderWizard({
                           )}
                           aria-describedby={getDescribedBy(
                             "inspiration-links-help",
+                            "inspiration-links-count",
                             errors.inspirationLinks &&
                               getErrorDescriptionId("inspirationLinks"),
                           )}
@@ -2192,6 +2278,11 @@ export function StartOrderWizard({
                           instead.
                         </p>
                       )}
+                      {featureFlags.linkFallbackEnabled ? (
+                        <p id="inspiration-links-count" className="mt-2 text-xs leading-6 text-charcoal/65">
+                          {normalizeInspirationLinks(values.inspirationLinks).length} of {MAX_INSPIRATION_LINKS} links added.
+                        </p>
+                      ) : null}
                       <InlineError
                         id={getErrorDescriptionId("inspirationLinks")}
                         message={errors.inspirationLinks}
@@ -2201,14 +2292,14 @@ export function StartOrderWizard({
 
                   <div>
                     <Label htmlFor="inspiration-text">Style notes</Label>
-                    <p className="mt-1 mb-3 text-sm leading-7 text-charcoal/60">
+                    <p id="inspiration-text-help" className="mt-1 mb-3 text-sm leading-7 text-charcoal/60">
                       Tell us about colors, themes, florals, textures, favorite designs, or anything you want us to know.
                     </p>
                     <Textarea
                       id="inspiration-text"
                       ref={registerFieldRef("inspirationText")}
                       value={values.inspirationText ?? ""}
-                      maxLength={1200}
+                      maxLength={MAX_INSPIRATION_NOTES_LENGTH}
                       onChange={(event) =>
                         setFieldValue("inspirationText", event.target.value)
                       }
@@ -2217,13 +2308,12 @@ export function StartOrderWizard({
                         "min-h-[180px]",
                         getFieldErrorClass(errors.inspirationText),
                       )}
-                      aria-describedby={
-                        errors.inspirationText
-                          ? getErrorDescriptionId("inspirationText")
-                          : undefined
-                      }
+                      aria-describedby={getDescribedBy("inspiration-text-help", "inspiration-text-count", errors.inspirationText && getErrorDescriptionId("inspirationText"))}
                       aria-invalid={Boolean(errors.inspirationText)}
                     />
+                    <p id="inspiration-text-count" className="mt-2 text-xs leading-6 text-charcoal/65">
+                      {values.inspirationText?.length ?? 0} of {MAX_INSPIRATION_NOTES_LENGTH} characters.
+                    </p>
                     <InlineError
                       id={getErrorDescriptionId("inspirationText")}
                       message={errors.inspirationText}

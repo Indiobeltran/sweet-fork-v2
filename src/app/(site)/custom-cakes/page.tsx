@@ -8,9 +8,9 @@ const slug = "custom-cakes";
 
 export async function generateMetadata() {
   return buildMetadata({
-    title: "Custom Cakes in Centerville, UT",
+    title: "Custom Cakes in Davis County, Utah",
     description:
-      "Order custom birthday and celebration cakes baked from scratch in Centerville, Utah. Starting at $80, with local pickup and select delivery.",
+      "From-scratch custom cakes for Davis County celebrations. Starting at $80, with Centerville pickup and select local delivery. Request a quote.",
     path: "/custom-cakes",
   });
 }

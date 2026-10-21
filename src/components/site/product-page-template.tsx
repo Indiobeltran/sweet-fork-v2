@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 
 import { ProductAnalytics } from "@/components/analytics/product-analytics";
@@ -8,9 +9,16 @@ import { SectionHeading } from "@/components/site/section-heading";
 import { SitePrimaryCta } from "@/components/site/site-primary-cta";
 import { StickyProductCta } from "@/components/site/sticky-product-cta";
 import { getProductCategory } from "@/lib/analytics/events";
-import { getPublicEnv } from "@/lib/env";
 import { siteConfig } from "@/lib/content/site-content";
+import {
+  bakeryServiceArea,
+  buildBakeryJsonLd,
+  buildCanonicalUrl,
+  canonicalSiteUrl,
+  serializeJsonLd,
+} from "@/lib/public-seo";
 import { getInquiryCtaBySlug } from "@/lib/site/cta";
+import { getPublicPricingData } from "@/lib/site/marketing";
 import type { GalleryItem, ProductPageContent } from "@/types/domain";
 
 type ProductPageTemplateProps = {
@@ -19,15 +27,17 @@ type ProductPageTemplateProps = {
     heroEyebrow?: string;
   };
   showcaseItems?: GalleryItem[];
+  localContext?: ReactNode;
 };
 
-export function ProductPageTemplate({
+export async function ProductPageTemplate({
   content,
   showcaseItems = [],
+  localContext,
 }: ProductPageTemplateProps) {
   const cta = getInquiryCtaBySlug(content.slug);
-  const { siteUrl } = getPublicEnv();
-  const pageUrl = new URL(`/${content.slug}`, siteUrl).toString();
+  const pricing = await getPublicPricingData();
+  const pageUrl = buildCanonicalUrl(`/${content.slug}`);
   const galleryHref = "/gallery";
   const hasShowcaseItems = showcaseItems.length > 0;
   const productCategory = getProductCategory(content.slug);
@@ -36,27 +46,13 @@ export function ProductPageTemplate({
     "@type": "Service",
     name: `${content.shortTitle} by ${siteConfig.name}`,
     description: content.intro,
-    areaServed: [
-      "Centerville",
-      "Davis County",
-      "Salt Lake County",
-      "Weber County",
-      "Northern Utah",
-    ],
-    image: new URL(content.heroImage.src, siteUrl).toString(),
-    provider: {
-      "@type": "Bakery",
-      name: siteConfig.name,
-      url: siteUrl,
-      telephone: siteConfig.phone,
-      email: siteConfig.email,
-      address: {
-        "@type": "PostalAddress",
-        addressCountry: "US",
-        addressLocality: "Centerville",
-        addressRegion: "UT",
-      },
-    },
+    areaServed: bakeryServiceArea,
+    image: new URL(content.heroImage.src, canonicalSiteUrl).toString(),
+    provider: buildBakeryJsonLd({
+      site: siteConfig,
+      heroImageUrl: content.heroImage.src,
+      pricing: pricing.matrix,
+    }),
     url: pageUrl,
   };
 
@@ -65,7 +61,7 @@ export function ProductPageTemplate({
       <ProductAnalytics slug={content.slug} />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(serviceJsonLd) }}
       />
       <section className="relative overflow-hidden border-b border-charcoal/8 bg-paper">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/35 to-transparent" />
@@ -81,6 +77,7 @@ export function ProductPageTemplate({
               </p>
             </div>
             <SitePrimaryCta
+              inquiryLocation="product_hero"
               href={cta.href}
               label={cta.label}
               subtext={cta.subtext}
@@ -225,6 +222,8 @@ export function ProductPageTemplate({
           )}
         </div>
       </section>
+
+      {localContext}
 
       <section className="border-y border-charcoal/8 bg-cream/70 py-16 md:py-20">
         <div className="section-shell grid gap-10 lg:grid-cols-[0.92fr_1.08fr] lg:items-start">

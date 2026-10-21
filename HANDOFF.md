@@ -4,6 +4,112 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## Batch 2 Metadata, Schema, Gallery, And Conversion UX — 2026-10-21
+
+- **Current branch / worktree**: `codex/analytics-batch-one` in
+  `/Users/indiobeltran/.codex/worktrees/analytics-batch-one/sweet-fork-v2`.
+  Batch 1 is checkpointed in local commit `fa2fd5b`
+  (`fix(analytics,seo): implement GA4 event queue, reporting fixes, and technical SEO cleanup`).
+  Batch 2 is complete and **unstaged**, with an empty index. No push, merge,
+  deployment, or second commit was performed. This status supersedes the
+  pre-checkpoint Batch 1 status in the historical section below.
+- **Objective / last completed work**: Implement the owner's seven approved
+  Batch 2 items against production baseline `b3fd3e0`, preserving its existing
+  metadata remediation. That baseline already updated custom/wedding/cookie
+  snippets and apex canonicals; the requested title/description refinements are
+  layered onto those changes. The original primary checkout remains at
+  `8b79ceb`, zero commits ahead and two behind that production baseline.
+  No implementation is in progress. Next exact task: review the unstaged Batch 2
+  diff; stage/commit or publish only on a new explicit owner instruction.
+- **Metadata / schema**: Eight requested titles and two descriptions updated;
+  absolute route titles prevent the layout appending a second brand suffix.
+  Managed repeated suffixes are normalized. Canonical/social/sitemap/robots
+  identity is fixed to `https://thesweetfork.com`, including malformed double-slash
+  path protection. Homepage and product Service providers use shared Bakery
+  `@id`, lowercase `hasMenu`, current public pricing, logo plus the rendered
+  approved photograph, structured cities/counties, and locality-only address.
+  No street address or ZIP is emitted. Existing FAQPage remains, with safe JSON
+  serialization and the same displayed policy; **no new FAQ schema** was added.
+- **Content / policy**: Homepage service-area copy names Centerville and Davis
+  County communities; nearby inquiry reassurance derives starting prices and
+  cake lead time from the pricing guide. Cookie copy and links connect local
+  occasions to gallery, pricing, and ordering. Macarons are almond-flour-based;
+  the shared home-kitchen disclosure names wheat, eggs, dairy, nuts, soy, and
+  peanuts, and excludes celiac disease/severe allergies. Static and managed
+  ingredient/dietary FAQ answers use this policy. No gluten-free marketing or
+  targeting was introduced. A read-only query verified 14 published FAQ records,
+  one dietary-policy record, and no gluten mentions; no records were changed.
+- **CTA / gallery / inquiry**: Header, page/product heroes, homepage, shared
+  final/sticky CTAs, and gallery use `inquiry_cta_clicked` with 12 bounded source
+  locations, an allowlisted source page path, and optional product category.
+  Existing product/wedding events remain for continuity; reports must not sum
+  them with the common event as independent clicks. Six server-rendered gallery
+  category introductions link to product pages. The lightbox's similar-design
+  CTA stores only a bounded public ID for this browser session. The wizard
+  resolves it against server-approved gallery/catalog content and asks the
+  visitor to add it, preserving existing draft answers and notes. No gallery ID,
+  title, inspiration URL, or customer detail enters the common CTA event.
+  Palette counters include selected labels; shared 150/160-character limits
+  prevent avoidable errors while allowing old oversized drafts to be shortened.
+  Inspiration guidance explains six public links and existing missing-HTTPS
+  normalization. Shared server validation remains strict.
+- **Files created**: `src/lib/public-seo.ts` and `.test.ts`;
+  `src/lib/content/allergen-policy.ts` and `.test.ts`;
+  `src/lib/inquiries/gallery-context.ts` and `.test.ts`;
+  `src/lib/validations/inquiry-limits.ts`;
+  `src/components/site/inquiry-cta-link.tsx`.
+- **Files changed**: `src/lib/seo.ts`, `src/lib/site/marketing.ts`,
+  `src/lib/content/site-content.ts`, analytics events and tests, inquiry validation;
+  homepage, about, custom-cakes, wedding-cakes, diy-kits, macarons, pricing, faq,
+  gallery, sugar-cookies, and start-order route files; sitemap and robots;
+  site header, public-page hero, primary/final/sticky CTAs, product template,
+  gallery grid; inquiry wizard and wizard-state helpers/tests; `package.json`
+  test registration; `docs/analytics-measurement-plan.md`; `DECISIONS.md`; this file.
+  No dependencies, public routes, admin behavior, or submission endpoint changed.
+- **Commands / automated verification**: `git status --short`, `git diff`,
+  revision/source inspection, and scoped Batch 1 stage/commit completed first.
+  `npm test` passed **281/281 application tests and 23/23 analytics/Search Console
+  tests (304 total; no failures or skips)**. `npm run lint`, `npm run typecheck`,
+  and `npm run build` passed; build generated **26/26 static pages**. The build
+  and local server inherited the existing primary `.env.local` via Node's
+  `--env-file` loader without copying or printing credentials. An initial
+  `NODE_OPTIONS=--env-file` attempt was rejected by Node before build execution;
+  direct loader invocation succeeded. Non-fatal webpack cache serialization
+  warnings remain. The shared-limit consolidation also passed its focused
+  six tests and ESLint. `git diff --check` passed.
+- **Independent review / HTTP verification**: Review caught and fixed repeated
+  managed title suffixes, apex-origin escape for double-slash paths, and a legacy
+  palette draft recovery edge case. The configured production server on
+  `127.0.0.1:3015` passed **378/378 read-only HTTP assertions across all 15 public
+  routes**: exact target snippets, unique titles/descriptions, one brand suffix,
+  apex social/canonical URLs, seven matching Bakery price ranges (`$25 and up;
+  custom cakes from $80`), imagery/service areas/address privacy, gallery SSR
+  content, sitemap/robots, and forms noindex. Check script is temporary at
+  `/tmp/sweet-fork-batch2-seo-check.py` (outside the repository).
+- **Local browser verification**: Desktop and 390px mobile checks passed for
+  header/menu navigation, homepage reassurance, local cookie links, gallery
+  filters, keyboard destination changes, visible/reachable similar-design CTA,
+  Escape focus restoration, and FAQ expansion/keyboard movement. Gallery context
+  preserved a saved celebration/guest-count draft, selected Sugar Cookies, and
+  added the correct image title to item notes. Required-date validation, a future
+  date, all five steps through Review, palette counters, and bare Instagram/
+  Pinterest links worked. No horizontal overflow on checked mobile homepage,
+  gallery, or inquiry views; no captured console warnings/errors. Temporary tab
+  closed, viewport reset, and local server stopped. No inquiry was submitted.
+- **Preservation**: Original primary `DECISIONS.md` and `HANDOFF.md` SHA-256 hashes
+  still match the pre-work snapshots. Original `output/` (11 files) and `tmp/`
+  (3,222 files) path/size/mtime inventories also match exactly. Their original
+  modified/untracked status is unchanged; nothing was reverted or staged there.
+- **Assumptions / limits / open questions**: Existing approved hero/media and
+  current pricing are authoritative; gallery context is session-scoped and
+  degrades safely if storage is disabled. No open implementation decision.
+  No production GA4 delivery, real inquiry persistence, physical touch-swipe,
+  full accessibility audit, or performance benchmark was exercised. Repository
+  still ignores/untracks its lockfile; existing compatible installed dependencies
+  were reused without dependency changes. Commands still needed after owner
+  approval: scoped Batch 2 checkpoint/release gates as appropriate, then deployed
+  metadata and GA4 Tag Assistant/DebugView checks with owner-controlled inquiry QA.
+
 ## Batch 1 Analytics Plumbing, Reporting, And Technical SEO — 2026-10-21 MDT
 
 - **Current branch / worktree**: `codex/analytics-batch-one` in

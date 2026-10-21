@@ -1,5 +1,8 @@
+import Link from "next/link";
+
 import { GalleryGrid } from "@/components/site/gallery-grid";
 import { InquiryCta } from "@/components/site/inquiry-cta";
+import { InquiryCtaLink } from "@/components/site/inquiry-cta-link";
 import { Badge } from "@/components/ui/badge";
 import { getInquiryCtaBySlug } from "@/lib/site/cta";
 import { getGalleryItemsForPlacement } from "@/lib/site/marketing";
@@ -7,7 +10,7 @@ import { buildMetadata } from "@/lib/seo";
 
 export async function generateMetadata() {
   return buildMetadata({
-    title: "Gallery",
+    title: "Cake & Cookie Gallery in Davis County",
     description:
       "Browse The Sweet Fork gallery for custom cakes, cupcakes, macarons, cookies, and dessert details from recent orders.",
     path: "/gallery",
@@ -31,8 +34,8 @@ export default async function GalleryPage() {
                   Custom cakes and desserts created for recent celebrations.
                 </h1>
                 <p className="max-w-2xl text-base leading-7 text-charcoal/74 sm:text-lg">
-                  Browse recent work across birthdays, weddings, showers, gifting
-                  moments, and dessert tables.
+                  Explore custom cakes, decorated sugar cookies, and dessert-table
+                  details made in Centerville for Davis County celebrations.
                 </p>
               </div>
             </div>
@@ -41,18 +44,51 @@ export default async function GalleryPage() {
               <p className="mt-2 text-sm leading-6 text-charcoal/68">
                 Serving Davis, Salt Lake, and nearby Weber County celebrations.
               </p>
-              <a
+              <InquiryCtaLink
                 href={defaultCta.href}
+                ctaLocation="gallery_hero"
                 className="mt-4 inline-flex text-sm font-semibold uppercase tracking-[0.16em] text-charcoal transition hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/50"
               >
                 {defaultCta.label}
-              </a>
+              </InquiryCtaLink>
             </div>
           </div>
         </div>
       </section>
       <section className="section-shell pb-14 pt-5 sm:pt-7 md:pb-18 md:pt-8">
+        <h2 className="sr-only">Recent cakes and desserts</h2>
         <GalleryGrid items={galleryItems} priorityCount={1} />
+      </section>
+      <section className="border-y border-charcoal/8 bg-cream/55 py-12 sm:py-16" aria-labelledby="gallery-directions">
+        <div className="section-shell">
+          <h2 id="gallery-directions" className="font-serif text-4xl leading-tight tracking-[-0.03em] text-charcoal">
+            Find a starting point for your celebration.
+          </h2>
+          <p className="mt-4 max-w-3xl text-base leading-8 text-charcoal/70">
+            A gallery design is inspiration for your own order. Explore the options below,
+            then share the details you love. Pickup is in Centerville, with select delivery
+            for celebrations in Bountiful, Farmington, Kaysville, and nearby communities.
+          </p>
+          <div className="mt-8 grid gap-x-10 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { href: "/custom-cakes", title: "Custom cakes", detail: "Buttercream finishes, playful details, and personal touches for birthdays, showers, and milestones." },
+              { href: "/wedding-cakes", title: "Wedding cakes", detail: "Refined finishes and thoughtful details shaped around your wedding colors and celebration." },
+              { href: "/sugar-cookies", title: "Decorated sugar cookies", detail: "Coordinated colors and designs for favors, gifting, and a place on the dessert table." },
+              { href: "/cupcakes", title: "Cupcakes", detail: "Individual treats with buttercream details that tie the dessert table together." },
+              { href: "/macarons", title: "Macarons", detail: "Small bites and coordinated color palettes for celebrations and thoughtful gifts." },
+              { href: "/diy-kits", title: "DIY decorating kits", detail: "A hands-on decorating activity to share with family, friends, or party guests." },
+            ].map((category) => (
+              <div key={category.href} className="border-t border-charcoal/12 pt-5">
+                <h3 className="font-serif text-2xl text-charcoal">
+                  <Link href={category.href} className="underline decoration-gold/50 underline-offset-4 transition hover:text-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold/60">
+                    {category.title}
+                  </Link>
+                </h3>
+                <p className="mt-3 text-sm leading-7 text-charcoal/70">{category.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
       <InquiryCta
         title="Have a direction in mind after browsing?"

@@ -2,7 +2,7 @@ import "server-only";
 
 import type { Metadata } from "next";
 
-import { getPublicEnv } from "@/lib/env";
+import { buildBrandedTitle, buildCanonicalUrl, canonicalSiteUrl } from "@/lib/public-seo";
 import { getPublicSeoData } from "@/lib/site/marketing";
 
 const socialImageSize = {
@@ -11,11 +11,11 @@ const socialImageSize = {
 } as const;
 
 const routeTitleOverrides: Record<string, string> = {
-  "/about": "About The Sweet Fork",
-  "/faq": "The Sweet Fork FAQ",
-  "/gallery": "Cake & Dessert Gallery",
+  "/about": "About Our Centerville Home Bakery",
+  "/faq": "Cake Ordering & Delivery FAQs",
+  "/gallery": "Cake & Cookie Gallery in Davis County",
   "/how-to-order": "How To Order",
-  "/pricing": "Custom Cake Pricing Guide",
+  "/pricing": "Custom Cake & Dessert Pricing",
   "/privacy": "Privacy Policy",
   "/terms": "Order Terms & Policies",
 };
@@ -33,10 +33,6 @@ type PageMetadataInput = {
   path: string;
   title: string;
 };
-
-function getCanonicalUrl(path: string, siteUrl: string) {
-  return new URL(path, siteUrl).toString();
-}
 
 function getResolvedTitle(path: string, title: string) {
   return routeTitleOverrides[path] ?? title;
@@ -61,7 +57,7 @@ function buildSocialImage({
   title: string;
 }): SocialImage {
   return {
-    alt: `${title} | ${siteName}`,
+    alt: buildBrandedTitle(title, siteName),
     height: socialImageSize.height,
     url: getSocialImageUrl(path, title),
     width: socialImageSize.width,
@@ -69,7 +65,7 @@ function buildSocialImage({
 }
 
 export async function buildRootMetadata(): Promise<Metadata> {
-  const { siteUrl } = getPublicEnv();
+  const siteUrl = canonicalSiteUrl;
   const seo = await getPublicSeoData();
   const rootSocialImage = buildSocialImage({
     path: "/",
@@ -135,11 +131,12 @@ export async function buildMetadata({
   image,
   path,
 }: PageMetadataInput): Promise<Metadata> {
-  const { siteUrl } = getPublicEnv();
+  const siteUrl = canonicalSiteUrl;
   const seo = await getPublicSeoData();
   const resolvedTitle = getResolvedTitle(path, title);
   const resolvedDescription = description ?? seo.defaultDescription;
-  const canonicalUrl = getCanonicalUrl(path, siteUrl);
+  const canonicalUrl = buildCanonicalUrl(path);
+  const brandedTitle = buildBrandedTitle(resolvedTitle, seo.titleSuffix);
   const resolvedImage =
     image ??
     buildSocialImage({
@@ -153,14 +150,14 @@ export async function buildMetadata({
     applicationName: seo.siteName,
     creator: seo.siteName,
     publisher: seo.siteName,
-    title: resolvedTitle,
+    title: { absolute: brandedTitle },
     category: "food",
     description: resolvedDescription,
     alternates: {
       canonical: canonicalUrl,
     },
     openGraph: {
-      title: `${resolvedTitle} | ${seo.titleSuffix}`,
+      title: brandedTitle,
       description: resolvedDescription,
       url: canonicalUrl,
       type: "website",
@@ -169,7 +166,7 @@ export async function buildMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: `${resolvedTitle} | ${seo.titleSuffix}`,
+      title: brandedTitle,
       description: resolvedDescription,
       images: [resolvedImage.url],
     },

@@ -2,6 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 
+import { applyPublicAllergenPolicy } from "@/lib/content/allergen-policy";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createPublicDataClient } from "@/lib/supabase/public";
 import { defaultPricingBaseline } from "@/lib/pricing";
@@ -183,6 +184,7 @@ export type PublicFaqItem = {
 };
 
 export type PricingMatrixItem = {
+  slug?: string;
   leadTime: string;
   product: string;
   rule: string;
@@ -1687,7 +1689,7 @@ export async function getPublicTestimonials() {
 
 export async function getPublicFaqItems(): Promise<PublicFaqItem[]> {
   if (!isSupabaseConfigured()) {
-    return staticFaqItems;
+    return applyPublicAllergenPolicy(staticFaqItems);
   }
 
   const admin = createAdminClient();
@@ -1703,13 +1705,13 @@ export async function getPublicFaqItems(): Promise<PublicFaqItem[]> {
       logPublicDataFallback("Unable to load public FAQs.", error);
     }
 
-    return staticFaqItems;
+    return applyPublicAllergenPolicy(staticFaqItems);
   }
 
-  return data.map((item) => ({
+  return applyPublicAllergenPolicy(data.map((item) => ({
     answer: item.answer,
     question: item.question,
-  }));
+  })));
 }
 
 export async function getHomePageData(): Promise<HomePageData> {
@@ -1844,6 +1846,7 @@ export async function getPublicPricingData(): Promise<{
       currentPrices.get(`${product.id}:starting`);
 
     return {
+      slug: product.slug,
       leadTime: getFallbackLeadTime(product.product_type),
       product: product.name,
       rule: baseRow?.notes ?? getFallbackPricingRule(product.product_type),

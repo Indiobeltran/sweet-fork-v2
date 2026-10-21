@@ -1,14 +1,12 @@
 import type { MetadataRoute } from "next";
 
-import { getPublicEnv } from "@/lib/env";
+import { buildCanonicalUrl, canonicalSiteUrl } from "@/lib/public-seo";
 
 export const revalidate = 3600;
 
 export default function robots(): MetadataRoute.Robots {
-  const { siteUrl } = getPublicEnv();
-
   return {
-    host: siteUrl,
+    host: canonicalSiteUrl,
     rules: [
       {
         allow: "/",
@@ -16,6 +14,6 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: "*",
       },
     ],
-    sitemap: `${siteUrl}/sitemap.xml`,
+    sitemap: buildCanonicalUrl("/sitemap.xml"),
   };
 }

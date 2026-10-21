@@ -283,6 +283,29 @@ export function serializePaletteSelection(
     : labelText;
 }
 
+export function getPaletteDetailsCapacity(selectedValues: readonly string[], maxLength: number) {
+  const selection = selectedValues.length > 0 ? selectedValues : ["custom"];
+  const withOneCharacter = serializePaletteSelection(selection, "x") ?? "x";
+  return Math.max(0, maxLength - (withOneCharacter.length - 1));
+}
+
+export function canApplyPaletteEdit({
+  currentValue,
+  nextValue,
+  currentDetails,
+  nextDetails,
+  maxLength,
+}: {
+  currentValue?: string;
+  nextValue?: string;
+  currentDetails: string;
+  nextDetails: string;
+  maxLength: number;
+}) {
+  const nextLength = nextValue?.length ?? 0;
+  return nextLength <= maxLength || nextLength < (currentValue?.length ?? 0) || nextDetails.length < currentDetails.length;
+}
+
 export function getPaletteState(value: string | null | undefined): PaletteState {
   const text = value ?? "";
 

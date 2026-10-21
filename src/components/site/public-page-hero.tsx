@@ -35,7 +35,7 @@ export function PublicPageHero({
             <p className="max-w-2xl text-base leading-8 text-charcoal/76 sm:text-lg">{description}</p>
           </div>
           {cta ? (
-            <SitePrimaryCta href={cta.href} label={cta.label} subtext={cta.subtext} />
+            <SitePrimaryCta href={cta.href} label={cta.label} subtext={cta.subtext} inquiryLocation="page_hero" />
           ) : null}
         </div>
         <div className="luxury-panel section-reveal p-7 sm:p-8">

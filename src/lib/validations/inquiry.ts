@@ -6,6 +6,7 @@ import {
   productTypes,
 } from "@/types/domain";
 import { BUSINESS_TIME_ZONE } from "@/lib/business-time";
+import { MAX_COLOR_PALETTE_LENGTH, MAX_INSPIRATION_NOTES_LENGTH, MAX_ITEM_COLOR_PALETTE_LENGTH } from "@/lib/validations/inquiry-limits";
 import {
   sanitizeOptionalTextValue,
   sanitizeTextValue,
@@ -144,7 +145,7 @@ export const inquiryItemSchema = z
     servings: z.coerce.number().int().min(1).max(500).optional(),
     flavorNotes: trimmedOptionalString(600),
     designNotes: trimmedOptionalString(1200),
-    inspirationNotes: trimmedOptionalString(1200),
+    inspirationNotes: trimmedOptionalString(MAX_INSPIRATION_NOTES_LENGTH),
     sizeLabel: trimmedOptionalString(80),
     tiers: z.coerce.number().int().min(1).max(6).optional(),
     shape: z.enum(["round", "heart", "sheet", "tiered", "mini", "assorted"]).optional(),
@@ -155,7 +156,7 @@ export const inquiryItemSchema = z
     kitCount: z.coerce.number().int().min(1).max(40).optional(),
     weddingServings: z.coerce.number().int().min(20).max(600).optional(),
     topperText: trimmedOptionalString(240),
-    colorPalette: trimmedOptionalString(150),
+    colorPalette: trimmedOptionalString(MAX_ITEM_COLOR_PALETTE_LENGTH),
   })
   .superRefine((value, ctx) => {
     if (
@@ -260,7 +261,7 @@ export const inquiryItemDetailsSchema = z.object({
 });
 
 export const inquiryInspirationSchema = z.object({
-  colorPalette: trimmedOptionalString(160),
+  colorPalette: trimmedOptionalString(MAX_COLOR_PALETTE_LENGTH),
   inspirationLinks: z
     .array(z.string())
     .max(MAX_INSPIRATION_LINKS, `Add no more than ${MAX_INSPIRATION_LINKS} inspiration links.`)
@@ -274,7 +275,7 @@ export const inquiryInspirationSchema = z.object({
         });
       }
     }),
-  inspirationText: trimmedOptionalString(1200),
+  inspirationText: trimmedOptionalString(MAX_INSPIRATION_NOTES_LENGTH),
 });
 
 export const inquiryContactSchema = z.object({

@@ -26,7 +26,40 @@ export const inquiryValidationErrorCodes = [
 export type InquiryValidationErrorCode =
   (typeof inquiryValidationErrorCodes)[number];
 
+export const inquiryCtaLocations = [
+  "header_desktop",
+  "header_mobile",
+  "header_mobile_menu",
+  "page_hero",
+  "home_hero",
+  "home_process",
+  "product_hero",
+  "product_final_cta",
+  "product_sticky_cta",
+  "site_final_cta",
+  "gallery_hero",
+  "gallery_design",
+] as const;
+export type InquiryCtaLocation = (typeof inquiryCtaLocations)[number];
+
+export const inquiryCtaProductCategories = [
+  "custom_cakes", "wedding_cakes", "sugar_cookies", "cupcakes", "macarons", "diy_kits",
+] as const;
+
+const inquiryCtaLocationSet = new Set<string>(inquiryCtaLocations);
+const inquiryCtaProductCategorySet = new Set<string>(inquiryCtaProductCategories);
+const publicInquiryCtaPagePaths = new Set([
+  "/", "/custom-cakes", "/wedding-cakes", "/cupcakes", "/sugar-cookies",
+  "/macarons", "/diy-kits", "/pricing", "/how-to-order", "/gallery", "/faq",
+  "/about", "/start-order", "/terms", "/privacy",
+]);
+
+export function isInquiryCtaLocation(value: unknown): value is InquiryCtaLocation {
+  return typeof value === "string" && inquiryCtaLocationSet.has(value);
+}
+
 export const analyticsEventNames = [
+  "inquiry_cta_clicked",
   "product_viewed",
   "product_cta_clicked",
   "pricing_section_viewed",
@@ -585,6 +618,26 @@ export function buildAnalyticsEventPayload(
     return null;
   }
 
+  // Inquiry CTA attribution has a narrower contract than legacy events: no
+  // arbitrary location labels, product slugs, item IDs, URLs or customer text.
+  if (eventName === "inquiry_cta_clicked") {
+    const pagePath = typeof params.page_path === "string" &&
+      params.page_path.startsWith("/") && !params.page_path.startsWith("//")
+      ? normalizeAnalyticsPagePath(params.page_path)
+      : "";
+    if (!isInquiryCtaLocation(params.cta_location) || !publicInquiryCtaPagePaths.has(pagePath)) {
+      return null;
+    }
+    const safeParams: AnalyticsParams = {
+      cta_location: params.cta_location,
+      page_path: pagePath,
+    };
+    if (typeof params.product_category === "string" && inquiryCtaProductCategorySet.has(params.product_category)) {
+      safeParams.product_category = params.product_category;
+    }
+    return { eventName, params: safeParams };
+  }
+
   const safeParams = Object.entries(params).reduce<AnalyticsParams>(
     (accumulator, [key, value]) => {
       if (!allowedParamKeys.has(key as AnalyticsParamKey)) {
@@ -653,6 +706,60 @@ export function buildAnalyticsEventPayload(
     eventName,
     params: safeParams,
   };
+}
+
+export function emitInquiryCtaClick({
+  href,
+  pathname,
+  ctaLocation,
+  productCategory,
+  legacyEvent,
+  legacyParams,
+  emit,
+}: {
+  href: string;
+  pathname: string;
+  ctaLocation: InquiryCtaLocation;
+  productCategory?: string;
+  legacyEvent?: AnalyticsEventName;
+  legacyParams?: AnalyticsParams;
+  emit: AnalyticsEventEmitter;
+}) {
+  // Only explicit same-site inquiry destinations qualify; never copy href or
+  // its query context into analytics. Source attribution comes from the click.
+  let isInquiryDestination = false;
+  try {
+    const destination = new URL(href, "https://thesweetfork.com");
+    isInquiryDestination = destination.origin === "https://thesweetfork.com" &&
+      destination.pathname.replace(/\/+$/, "") === "/start-order";
+  } catch {
+    // Malformed links cannot create inquiry attribution.
+  }
+
+  let accepted = false;
+  if (isInquiryDestination) {
+    const payload = buildAnalyticsEventPayload("inquiry_cta_clicked", {
+      cta_location: ctaLocation,
+      page_path: pathname,
+      product_category: productCategory,
+    });
+    if (payload) {
+      accepted = acceptAnalyticsMilestone(() => emit(payload.eventName, payload.params));
+    }
+  }
+
+  // Preserve established product/wedding diagnostics, but never emit the new
+  // common event twice when a caller also selects it as its legacy event.
+  if (legacyEvent && legacyEvent !== "inquiry_cta_clicked") {
+    const payload = buildAnalyticsEventPayload(legacyEvent, {
+      ...legacyParams,
+      page_path: normalizeAnalyticsPagePath(pathname),
+    });
+    if (payload) {
+      acceptAnalyticsMilestone(() => emit(payload.eventName, payload.params));
+    }
+  }
+  return accepted;
 }
 
 export function getProductCategory(productType: ProductType | string) {

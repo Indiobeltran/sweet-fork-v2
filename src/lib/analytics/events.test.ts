@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 // @ts-expect-error Node's strip-types test runner needs the .ts extension.
-import { INQUIRY_FORM_VERSION, buildAnalyticsEventPayload, consumeInquiryStarted, consumeInquiryStepCompleted, consumeInquiryStepViewed, createInquiryAnalyticsSession, emitGenerateLeadAfterPersistence, getAnalyticsRuntimeState, getBudgetBucket, getInquiryFieldId, getInquiryValidationErrorCode, getLeadTimeBucket, getProductCategory, isAnalyticsEventName } from "./events.ts";
+import { emitInquiryCtaClick, inquiryCtaLocations, inquiryCtaProductCategories, INQUIRY_FORM_VERSION, buildAnalyticsEventPayload, consumeInquiryStarted, consumeInquiryStepCompleted, consumeInquiryStepViewed, createInquiryAnalyticsSession, emitGenerateLeadAfterPersistence, getAnalyticsRuntimeState, getBudgetBucket, getInquiryFieldId, getInquiryValidationErrorCode, getLeadTimeBucket, getProductCategory, isAnalyticsEventName } from "./events.ts";
 
 describe("analytics event allowlist", () => {
   it("accepts approved phase 1 events and rejects unknown names", () => {
@@ -355,5 +355,128 @@ describe("analytics bucketing helpers", () => {
     assert.equal(getLeadTimeBucket("2026-07-25", new Date("2026-07-02T12:00:00-06:00")), "2_4_weeks");
     assert.equal(getLeadTimeBucket("2026-08-20", new Date("2026-07-02T12:00:00-06:00")), "over_4_weeks");
     assert.equal(getLeadTimeBucket("", new Date("2026-07-02T12:00:00-06:00")), "unknown");
+  });
+});
+
+
+describe("inquiry CTA attribution", () => {
+  it("accepts every bounded placement and reports the sanitized source page", () => {
+    for (const location of inquiryCtaLocations) {
+      assert.deepEqual(buildAnalyticsEventPayload("inquiry_cta_clicked", {
+        cta_location: location,
+        page_path: "/gallery?customer_email=private@example.com#private",
+        gallery_item_id: "private-reference-id",
+        inspiration_url: "https://private.example/photo.jpg",
+        product_slug: "private customer wording",
+        gallery_position: 3,
+      }), {
+        eventName: "inquiry_cta_clicked",
+        params: { cta_location: location, page_path: "/gallery" },
+      });
+    }
+  });
+
+  it("allows only defined product categories on the common CTA event", () => {
+    for (const category of inquiryCtaProductCategories) {
+      assert.deepEqual(buildAnalyticsEventPayload("inquiry_cta_clicked", {
+        cta_location: "product_hero", page_path: "/custom-cakes", product_category: category,
+      })?.params, {
+        cta_location: "product_hero", page_path: "/custom-cakes", product_category: category,
+      });
+    }
+    for (const category of ["customer@example.com", "other", "constructor", 12]) {
+      assert.deepEqual(buildAnalyticsEventPayload("inquiry_cta_clicked", {
+        cta_location: "product_hero", page_path: "/custom-cakes", product_category: category,
+      })?.params, { cta_location: "product_hero", page_path: "/custom-cakes" });
+    }
+  });
+
+  it("rejects arbitrary placement labels and private or non-path sources", () => {
+    for (const location of ["customer@example.com", "constructor", undefined]) {
+      assert.equal(buildAnalyticsEventPayload("inquiry_cta_clicked", {
+        cta_location: location, page_path: "/gallery",
+      }), null);
+    }
+    for (const pathname of ["/admin/inquiries", "/customer@example.com", "https://private.example/gallery", "//private.example/gallery", undefined]) {
+      assert.equal(buildAnalyticsEventPayload("inquiry_cta_clicked", {
+        cta_location: "gallery_design", page_path: pathname,
+      }), null);
+    }
+  });
+
+  it("tracks one common event per click without copying destination context", () => {
+    const events: Array<{ eventName: string; params: unknown }> = [];
+    const input = {
+      href: "/start-order?gallery=private-reference&customer_email=private@example.com",
+      pathname: "/gallery?filter=private#private",
+      ctaLocation: "gallery_design" as const,
+      productCategory: "sugar_cookies",
+      emit: (eventName: Parameters<typeof buildAnalyticsEventPayload>[0], params?: Parameters<typeof emitInquiryCtaClick>[0]["legacyParams"]) => {
+        events.push({ eventName, params });
+        return true;
+      },
+    };
+    assert.equal(emitInquiryCtaClick(input), true);
+    assert.deepEqual(events, [{
+      eventName: "inquiry_cta_clicked",
+      params: { cta_location: "gallery_design", page_path: "/gallery", product_category: "sugar_cookies" },
+    }]);
+    assert.equal(JSON.stringify(events).includes("private"), false);
+    // A separate deliberate click remains a separate interaction.
+    emitInquiryCtaClick(input);
+    assert.equal(events.length, 2);
+  });
+
+  it("preserves one legacy wedding event while standardizing source attribution", () => {
+    const events: Array<{ eventName: string; params: unknown }> = [];
+    emitInquiryCtaClick({
+      href: "/start-order",
+      pathname: "/wedding-cakes",
+      ctaLocation: "product_hero",
+      productCategory: "wedding_cakes",
+      legacyEvent: "wedding_consultation_started",
+      legacyParams: {
+        cta_location: "product_hero", product_category: "wedding_cakes",
+        product_slug: "wedding-cakes", page_path: "/start-order",
+      },
+      emit: (eventName, params) => { events.push({ eventName, params }); return true; },
+    });
+    assert.deepEqual(events, [
+      { eventName: "inquiry_cta_clicked", params: { cta_location: "product_hero", page_path: "/wedding-cakes", product_category: "wedding_cakes" } },
+      { eventName: "wedding_consultation_started", params: { cta_location: "product_hero", product_category: "wedding_cakes", product_slug: "wedding-cakes", page_path: "/wedding-cakes" } },
+    ]);
+  });
+
+  it("does not double emit when a caller also specifies the common event", () => {
+    const events: string[] = [];
+    emitInquiryCtaClick({
+      href: "/start-order", pathname: "/", ctaLocation: "home_hero",
+      legacyEvent: "inquiry_cta_clicked",
+      emit: (eventName) => { events.push(eventName); return true; },
+    });
+    assert.deepEqual(events, ["inquiry_cta_clicked"]);
+  });
+
+  it("does not call ordinary page or external links inquiry clicks", () => {
+    const events: string[] = [];
+    for (const href of ["/gallery", "/start-order-not", "https://preview.vercel.app/start-order", "mailto:customer@example.com", "javascript:alert(1)", "http://["]) {
+      assert.equal(emitInquiryCtaClick({
+        href, pathname: "/", ctaLocation: "home_hero",
+        emit: (eventName) => { events.push(eventName); return true; },
+      }), false);
+    }
+    assert.deepEqual(events, []);
+  });
+
+  it("keeps failed analytics nonblocking and does not claim acceptance", () => {
+    assert.equal(emitInquiryCtaClick({
+      href: "/start-order", pathname: "/", ctaLocation: "header_mobile",
+      legacyEvent: "product_cta_clicked",
+      emit: () => { throw new Error("blocked analytics"); },
+    }), false);
+    assert.equal(emitInquiryCtaClick({
+      href: "/start-order", pathname: "/", ctaLocation: "header_mobile",
+      emit: () => false,
+    }), false);
   });
 });

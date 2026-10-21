@@ -2,6 +2,58 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
+## 2026-10-21 - Batch 2 Local SEO, Inquiry Context, And Allergen Policy
+
+### Status
+
+Accepted for local implementation. Batch 1 checkpoint commit authorized;
+Batch 2 remains unstaged. No push or deployment authorized.
+
+### Context
+
+The owner approved the remaining audit recommendations after Batch 1. The
+production baseline b3fd3e0 already includes custom/wedding/cookie metadata
+updates, so Batch 2 refines the requested eight routes without reverting those
+fixes. Managed FAQ and pricing data can override fallback copy.
+
+### Options Considered
+
+- Edit fallback metadata only, leaving managed names and layout suffixes ambiguous.
+- Put gallery titles and user-editable inspiration notes in URL parameters.
+- Keep public SEO identity and allergen policy code-owned; resolve public gallery
+  IDs to verified context and reuse the pricing guide's current data.
+
+### Decision
+
+Checkpoint Batch 1 locally as `fa2fd5b` on `codex/analytics-batch-one`.
+Use a fixed `https://thesweetfork.com` canonical origin and one shared Bakery ID,
+with explicit route titles, one brand suffix, lowercase `hasMenu`, structured
+service areas, approved imagery, and a priceRange derived from public pricing.
+Preserve local home-address privacy and existing FAQ schema without adding new
+schema types or FAQ rich-result work. The Schema.org [hasMenu definition](https://schema.org/hasMenu)
+and [Bakery vocabulary](https://schema.org/Bakery) were checked for supported fields.
+Add local cake/cookie copy and discreet pricing/lead-time guidance while retaining
+managed content and active-product visibility elsewhere.
+Standardize inquiry CTA events with bounded source locations and product categories;
+preserve existing product/wedding events for continuity. Gallery references stay
+in session-only storage as public IDs, resolved against public gallery content;
+visitors explicitly apply inspiration so saved answers are not overwritten.
+Improve palette/URL guidance without weakening shared server validation.
+Public ingredient/dietary FAQ answers use the shared-kitchen policy even if older
+managed copy conflicts. Macarons may be described as almond-flour-based, never
+marketed as gluten-free. Products are not suitable for celiac disease or severe
+allergies. No customer data, gallery IDs, or inspiration URLs enter analytics.
+
+### Consequences
+
+- Original primary-checkout work remains untouched; all new code stays in the
+  same isolated worktree after the local Batch 1 checkpoint.
+- No database content, schema, auth, account settings, or dependencies change.
+- Prices and schema share the public pricing source; gallery context requires
+  the same browser session and fails safely when storage is unavailable.
+- Helpful FAQ text remains visible; no search feature or ranking is promised.
+- Production delivery/GA4 collection verification follows an approved deployment.
+
 ## 2026-10-21 - Batch 1 Analytics Reliability And Technical SEO
 
 ### Status

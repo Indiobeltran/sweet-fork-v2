@@ -3,13 +3,14 @@ import Link from "next/link";
 
 import { HomeGalleryCarousel } from "@/components/site/home-gallery-carousel";
 import { InquiryCta } from "@/components/site/inquiry-cta";
+import { InquiryCtaLink } from "@/components/site/inquiry-cta-link";
 import { SectionHeading } from "@/components/site/section-heading";
 import { SitePrimaryCta } from "@/components/site/site-primary-cta";
 import { TestimonialCarousel } from "@/components/site/testimonial-carousel";
-import { getPublicEnv } from "@/lib/env";
-import { siteConfig } from "@/lib/content/site-content";
+import { getHomepageInquiryReassurance, localServiceAreaCopy, siteConfig } from "@/lib/content/site-content";
 import { buildMetadata } from "@/lib/seo";
-import { getHomePageData } from "@/lib/site/marketing";
+import { buildBakeryJsonLd, serializeJsonLd } from "@/lib/public-seo";
+import { getHomePageData, getPublicPricingData } from "@/lib/site/marketing";
 import type { GalleryItem } from "@/types/domain";
 
 export async function generateMetadata() {
@@ -61,8 +62,7 @@ function CuratedImage({
 }
 
 export default async function HomePage() {
-  const data = await getHomePageData();
-  const { siteUrl } = getPublicEnv();
+  const [data, pricing] = await Promise.all([getHomePageData(), getPublicPricingData()]);
   const hasExplicitHero = !!data.heroImage;
   const heroGalleryItem =
     data.heroImage ??
@@ -80,37 +80,17 @@ export default async function HomePage() {
   const featuredTestimonial = data.testimonials[0] ?? null;
   const secondaryCtaHref = data.hero.settings.secondaryCtaHref ?? "/gallery";
   const secondaryCtaLabel = data.hero.settings.secondaryCtaLabel ?? "Explore the Gallery";
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Bakery",
-    name: siteConfig.name,
-    description: siteConfig.description,
-    url: siteUrl,
-    image: `${siteUrl}/brand/logo-social.jpg`,
-    telephone: siteConfig.phone,
-    email: siteConfig.email,
-    address: {
-      "@type": "PostalAddress",
-      addressCountry: "US",
-      addressLocality: "Centerville",
-      addressRegion: "UT",
-    },
-    areaServed: [
-      "Centerville",
-      "Davis County",
-      "Salt Lake County",
-      "Weber County",
-      "Northern Utah",
-    ],
-    sameAs: [`https://www.instagram.com/${siteConfig.instagram}/`],
-    servesCuisine: "Desserts",
-  };
+  const jsonLd = buildBakeryJsonLd({
+    site: siteConfig,
+    heroImageUrl: heroGalleryItem?.imageUrl,
+    pricing: pricing.matrix,
+  });
 
   return (
     <div>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <section className="grain-surface relative overflow-hidden border-b border-charcoal/7 bg-paper">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/35 to-transparent" />
@@ -127,12 +107,13 @@ export default async function HomePage() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link
+              <InquiryCtaLink
+                ctaLocation="home_hero"
                 href={data.hero.settings.primaryCtaHref ?? "/start-order"}
                 className="inline-flex min-h-14 w-full items-center justify-center rounded-full bg-charcoal px-6 py-4 text-center text-sm font-semibold tracking-[0.02em] text-ivory shadow-[0_18px_38px_rgba(44,36,27,0.16)] transition duration-200 hover:-translate-y-0.5 hover:bg-charcoal/92 active:scale-[0.985] sm:w-auto"
               >
                 {data.hero.settings.primaryCtaLabel ?? "Request a Quote"}
-              </Link>
+              </InquiryCtaLink>
               <Link
                 href={secondaryCtaHref}
                 className="inline-flex min-h-14 w-full items-center justify-center rounded-full border border-charcoal/10 bg-white/86 px-6 py-4 text-center text-sm font-semibold tracking-[0.02em] text-charcoal shadow-[0_12px_28px_rgba(44,36,27,0.055)] transition duration-200 hover:-translate-y-0.5 hover:border-charcoal/20 hover:bg-white active:scale-[0.985] sm:w-auto"
@@ -140,9 +121,13 @@ export default async function HomePage() {
                 {secondaryCtaLabel}
               </Link>
             </div>
-            <p className="text-sm leading-6 text-charcoal/60">
-              Inquiry takes 2-3 minutes. No commitment required.
-            </p>
+            <div className="max-w-xl space-y-1.5 text-sm leading-6 text-charcoal/70">
+              <p>Inquiry takes 2–3 minutes. No commitment required.</p>
+              <p>{getHomepageInquiryReassurance(pricing.matrix)}</p>
+              <Link href="/pricing" className="inline-block underline decoration-gold/70 underline-offset-4 hover:text-charcoal">
+                View the pricing guide
+              </Link>
+            </div>
 
             <div className="hidden gap-2.5 sm:grid sm:grid-cols-3">
               {data.hero.items.map((item) => (
@@ -191,7 +176,7 @@ export default async function HomePage() {
           <SectionHeading
             eyebrow="Signature offerings"
             title="Explore desserts for your celebration"
-            description="Explore the cakes, cookies, cupcakes, macarons, and wedding desserts available for local celebrations."
+            description={localServiceAreaCopy}
           />
         </div>
 
@@ -253,6 +238,7 @@ export default async function HomePage() {
             </div>
             <SitePrimaryCta
               href="/start-order"
+              inquiryLocation="home_process"
               label="Request a Quote"
               buttonClassName="bg-ivory text-charcoal hover:bg-white sm:w-full lg:w-auto"
               className="max-w-xl"
