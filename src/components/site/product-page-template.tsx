@@ -177,7 +177,7 @@ export function ProductPageTemplate({
               aria-label={`${content.shortTitle} example photos`}
               role="list"
             >
-              {showcaseItems.map((item, index) => (
+              {showcaseItems.map((item) => (
                 <article
                   key={item.id}
                   className="group w-[72vw] max-w-[18rem] shrink-0 snap-start overflow-hidden rounded-[1.55rem] border border-charcoal/8 bg-white shadow-soft transition hover:-translate-y-1 hover:border-gold/24 sm:w-[18rem] lg:w-auto lg:max-w-none"
@@ -194,7 +194,6 @@ export function ProductPageTemplate({
                       style={{
                         objectPosition: item.objectPosition ?? "center center",
                       }}
-                      priority={index < 2}
                     />
                     <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(48,39,33,0.02),rgba(48,39,33,0.12)_58%,rgba(48,39,33,0.58))]" />
                     <span className="absolute bottom-3 left-3 rounded-full border border-white/16 bg-charcoal/72 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-ivory">

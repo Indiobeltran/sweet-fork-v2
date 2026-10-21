@@ -10,19 +10,21 @@ type ProductAnalyticsProps = {
 };
 
 export function ProductAnalytics({ slug }: ProductAnalyticsProps) {
-  const trackedRef = useRef(false);
+  const trackedSlugRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (trackedRef.current) {
+    if (trackedSlugRef.current === slug) {
       return;
     }
 
-    trackedRef.current = true;
-    trackAnalyticsEvent("product_viewed", {
+    const accepted = trackAnalyticsEvent("product_viewed", {
       page_path: `/${slug}`,
       product_category: getProductCategory(slug),
       product_slug: slug,
     });
+    if (accepted) {
+      trackedSlugRef.current = slug;
+    }
   }, [slug]);
 
   return null;

@@ -1,10 +1,15 @@
 "use client";
 
-import { type TouchEvent, useEffect, useId, useMemo, useRef, useState } from "react";
+import { type TouchEvent, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 import { trackAnalyticsEvent } from "@/lib/analytics/client";
+import {
+  getAdjacentInteractiveIndex,
+  getGalleryFilterCategory as getFilterCategory,
+  getGalleryItemAnalyticsParams,
+} from "@/components/site/gallery-analytics";
 import type { GalleryItem } from "@/types/domain";
 import { cn } from "@/lib/utils";
 
@@ -19,56 +24,6 @@ const GALLERY_CARD_SIZES =
 const GALLERY_MODAL_SIZES =
   "(max-width: 1024px) calc(100vw - 2.5rem), (max-width: 1280px) calc(100vw - 24rem), 820px";
 
-function getAdjacentInteractiveIndex(
-  current: number | null,
-  interactiveIndexes: number[],
-  direction: "next" | "previous",
-) {
-  if (current === null || interactiveIndexes.length === 0) {
-    return current;
-  }
-
-  const currentInteractiveIndex = interactiveIndexes.indexOf(current);
-
-  if (currentInteractiveIndex === -1) {
-    return interactiveIndexes[0] ?? null;
-  }
-
-  if (direction === "next") {
-    return interactiveIndexes[
-      (currentInteractiveIndex + 1) % interactiveIndexes.length
-    ] ?? null;
-  }
-
-  return interactiveIndexes[
-    (currentInteractiveIndex - 1 + interactiveIndexes.length) %
-      interactiveIndexes.length
-  ] ?? null;
-}
-
-function getFilterCategory(category: string): string {
-  const normalized = category.toLowerCase().replace(/[-_]+/g, " ").trim();
-  if (normalized === "custom cake" || normalized === "custom cakes" || normalized === "celebration" || normalized === "celebrations") {
-    return "Custom Cakes";
-  }
-  if (normalized === "sugar cookies" || normalized === "sugar cookie") {
-    return "Sugar Cookies";
-  }
-  if (normalized === "macarons" || normalized === "macaron") {
-    return "Macarons";
-  }
-  if (normalized === "cupcakes" || normalized === "cupcake") {
-    return "Cupcakes";
-  }
-  if (normalized === "wedding cake" || normalized === "wedding cakes") {
-    return "Wedding Cakes";
-  }
-  if (normalized === "diy kits" || normalized === "diy kit") {
-    return "DIY Kits";
-  }
-  return category;
-}
-
 export function GalleryGrid({
   items,
   compact = false,
@@ -76,6 +31,7 @@ export function GalleryGrid({
 }: GalleryGridProps) {
   const [activeCategory, setActiveCategory] = useState<string>("All");
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const activeIndexRef = useRef<number | null>(null);
 
   const filteredItems = useMemo(() => {
     if (activeCategory === "All") {
@@ -106,7 +62,8 @@ export function GalleryGrid({
   const activeImagePosition =
     activeIndex === null ? null : interactiveIndexes.indexOf(activeIndex) + 1;
 
-  const closeItem = (indexToFocus = activeIndex) => {
+  const closeItem = useCallback((indexToFocus = activeIndexRef.current) => {
+    activeIndexRef.current = null;
     setActiveIndex(null);
 
     if (indexToFocus === null) {
@@ -116,7 +73,35 @@ export function GalleryGrid({
     window.requestAnimationFrame(() => {
       triggerRefs.current[indexToFocus]?.focus();
     });
-  };
+  }, []);
+
+  const navigateItem = useCallback((direction: "next" | "previous") => {
+    const destinationIndex = getAdjacentInteractiveIndex(
+      activeIndexRef.current,
+      interactiveIndexes,
+      direction,
+    );
+    if (destinationIndex === null || destinationIndex === activeIndexRef.current) {
+      return;
+    }
+
+    const destinationItem = filteredItems[destinationIndex];
+    if (!destinationItem?.imageUrl) {
+      return;
+    }
+
+    activeIndexRef.current = destinationIndex;
+    setActiveIndex(destinationIndex);
+    trackAnalyticsEvent(
+      "gallery_item_navigated",
+      getGalleryItemAnalyticsParams(
+        destinationItem,
+        interactiveIndexes.indexOf(destinationIndex) + 1,
+        "/gallery",
+        "gallery_lightbox",
+      ),
+    );
+  }, [filteredItems, interactiveIndexes]);
 
   useEffect(() => {
     if (activeIndex === null) {
@@ -131,27 +116,17 @@ export function GalleryGrid({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setActiveIndex((current) => {
-          if (current !== null) {
-            window.requestAnimationFrame(() => {
-              triggerRefs.current[current]?.focus();
-            });
-          }
-
-          return null;
-        });
+        closeItem();
       }
 
       if (event.key === "ArrowRight") {
-        setActiveIndex((current) =>
-          getAdjacentInteractiveIndex(current, interactiveIndexes, "next"),
-        );
+        event.preventDefault();
+        navigateItem("next");
       }
 
       if (event.key === "ArrowLeft") {
-        setActiveIndex((current) =>
-          getAdjacentInteractiveIndex(current, interactiveIndexes, "previous"),
-        );
+        event.preventDefault();
+        navigateItem("previous");
       }
 
       if (event.key === "Tab") {
@@ -193,7 +168,7 @@ export function GalleryGrid({
       document.body.style.overflow = originalOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [activeIndex, interactiveIndexes]);
+  }, [activeIndex, closeItem, navigateItem]);
 
   const openItem = (index: number) => {
     if (!filteredItems[index]?.imageUrl) {
@@ -201,37 +176,22 @@ export function GalleryGrid({
     }
 
     const item = filteredItems[index];
-    trackAnalyticsEvent("gallery_item_viewed", {
-      gallery_category: getFilterCategory(item.category).toLowerCase().replace(/\s+/g, "_"),
-      gallery_position: index + 1,
-      page_path: "/gallery",
-    });
+    trackAnalyticsEvent(
+      "gallery_item_viewed",
+      getGalleryItemAnalyticsParams(
+        item,
+        interactiveIndexes.indexOf(index) + 1,
+        "/gallery",
+        "gallery_grid",
+      ),
+    );
+    activeIndexRef.current = index;
     setActiveIndex(index);
   };
 
   const showGalleryControls = interactiveIndexes.length > 1 && activeIndex !== null;
-  const showPreviousItem = () => {
-    trackAnalyticsEvent("gallery_item_navigated", {
-      gallery_category: activeItem
-        ? getFilterCategory(activeItem.category).toLowerCase().replace(/\s+/g, "_")
-        : undefined,
-      page_path: "/gallery",
-    });
-    setActiveIndex((current) =>
-      getAdjacentInteractiveIndex(current, interactiveIndexes, "previous"),
-    );
-  };
-  const showNextItem = () => {
-    trackAnalyticsEvent("gallery_item_navigated", {
-      gallery_category: activeItem
-        ? getFilterCategory(activeItem.category).toLowerCase().replace(/\s+/g, "_")
-        : undefined,
-      page_path: "/gallery",
-    });
-    setActiveIndex((current) =>
-      getAdjacentInteractiveIndex(current, interactiveIndexes, "next"),
-    );
-  };
+  const showPreviousItem = () => navigateItem("previous");
+  const showNextItem = () => navigateItem("next");
   const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
     const touch = event.touches[0];
 
@@ -302,6 +262,7 @@ export function GalleryGrid({
                   });
                 }
                 setActiveCategory(category.key);
+                activeIndexRef.current = null;
                 setActiveIndex(null);
               }}
               className={cn(

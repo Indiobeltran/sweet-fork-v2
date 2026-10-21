@@ -67,11 +67,11 @@ Never send:
 | `product_viewed` | Which offering pages attract serious interest? | Product page viewed once per client route view | `product_category`, `product_slug`, `page_path` | product names from user input, IDs | Custom | No | `src/components/analytics/product-analytics.tsx` | Browser network/debug check on product routes | Offering interest |
 | `product_cta_clicked` | Which product CTAs drive inquiry starts? | Product CTA click | `product_category`, `product_slug`, `cta_location`, `page_path` | customer data, quote values | Custom | No | `SitePrimaryCta`, `StickyProductCta`, product templates | Click CTA and inspect GA request | CTA performance |
 | `wedding_consultation_started` | Are wedding cake visitors taking a lead action? | Wedding-cake CTA click | `product_category`, `product_slug`, `cta_location`, `page_path` | customer data | Custom | Optional secondary | Product CTAs for `/wedding-cakes` | Click wedding CTA and inspect GA request | Wedding lead signal |
-| `pricing_section_viewed` | Do visitors reach pricing context before inquiring? | Pricing section crosses visibility threshold | `page_path`, `cta_location` | scroll depth, user ID | Custom | No | `src/components/analytics/visibility-analytics.tsx` on `/pricing` | Scroll pricing into view | Pricing engagement |
+| `pricing_section_viewed` | Do visitors reach pricing context before inquiring? | Actual pricing-guide section enters the viewport with positive visible area | `page_path`, `cta_location` | scroll depth, user ID | Custom | No | `src/components/analytics/visibility-analytics.tsx` on `/pricing` | Scroll pricing into view | Pricing engagement |
 | `faq_opened` | Are visitors seeking policy/process details? | FAQ detail opens | `page_path` | question text, visitor data | Custom | No | `src/components/site/faq-list.tsx` | Open FAQ item | Objection handling |
 | `gallery_filter_used` | Which gallery categories are useful? | User changes gallery filter | `gallery_category`, `page_path` | filenames, URLs, media IDs | Custom | No | `src/components/site/gallery-grid.tsx` | Change filter | Inspiration category demand |
-| `gallery_item_viewed` | Are users opening larger examples? | Gallery lightbox opens | `gallery_category`, `gallery_position`, `page_path` | image URL, filename, media ID | Custom | No | `src/components/site/gallery-grid.tsx` | Open lightbox | Gallery engagement |
-| `gallery_item_navigated` | Do users browse within the lightbox? | Next/previous lightbox navigation | `gallery_category`, `page_path` | image URL, filename, media ID | Custom | No | `src/components/site/gallery-grid.tsx` | Navigate lightbox | Deeper gallery engagement |
+| `gallery_item_viewed` | Are users opening or following gallery examples? | Gallery lightbox opens, or a homepage gallery card/link is clicked | `gallery_category`, `gallery_position`, `page_path`, `cta_location` | image URL, filename, media ID | Custom | No | Gallery grid and homepage carousel | Open lightbox or homepage gallery link | Gallery engagement; segment by `cta_location` |
+| `gallery_item_navigated` | Do users manually browse examples? | Keyboard/button/swipe lightbox navigation or manual homepage carousel controls; excludes autoplay | `gallery_category`, `gallery_position`, `page_path`, `cta_location` | image URL, filename, media ID | Custom | No | Gallery grid and homepage carousel | Navigate with arrows, buttons, swipe, or carousel dots | Destination example engagement |
 | `inquiry_started` | How many visitors meaningfully begin the inquiry? | First form value or selection change, never page load alone | `form_version`, `page_path` | field values | Custom | No | `src/components/inquiry/start-order-wizard.tsx` | Change the first field | Funnel start |
 | `inquiry_step_viewed` | Where do users progress in the wizard? | Step first viewed in a mounted inquiry session | `form_version`, `step_id`, `step_name`, `step_number`, `page_path` | field values | Custom | No | Inquiry wizard | Navigate steps | Funnel visualization |
 | `inquiry_step_completed` | Where do users successfully pass validation? | First successful validated forward progression for that step per inquiry session | `form_version`, `step_id`, `step_name`, `step_number`, `lead_time_bucket`, `budget_bucket`, `delivery_method`, `selected_product_count`, `has_inspiration_links`, `page_path` | exact date, notes, ZIP, inspiration URL/domain/path/query, link count | Custom | No | Inquiry wizard | Move forward after validation, then go back and repeat | Diagnostic step completion only; not a conversion |
@@ -80,6 +80,31 @@ Never send:
 | `inquiry_submission_error` | Are real submission attempts failing? | Failed or unavailable submission attempt | `error_category`, `page_path` | raw error, payload, identifiers | Custom | No | Inquiry wizard | Force failed submission in controlled QA | Reliability alert |
 | `generate_lead` | How many confirmed leads were received? | API returns an explicit `persisted: true` response after all required Supabase inquiry records are saved | `form_version`, `budget_bucket`, `delivery_method`, `has_inspiration_links`, `lead_time_bucket`, `page_path`, `product_category`, `selected_product_count` | reference code, inquiry ID, exact date, contact data, inspiration URL/domain/path/query, link count, all free text | GA4 recommended custom emission | Yes | Inquiry wizard after successful persistence response | Submit one QA inquiry and confirm one database/admin record plus one DebugView event | Primary conversion |
 | `contact_method_clicked` | Which contact paths get used? | Footer phone/email/Instagram click | `contact_method` | actual phone/email/URL | Custom | No | `src/components/site/site-footer.tsx` | Click contact links | Contact preference |
+
+## Dispatch and visibility semantics
+
+- Custom events are accepted only in the production environment, with a configured
+  measurement ID, on an allowed production hostname, outside admin routes.
+- Before `gtag` is ready, up to 50 sanitized events wait in a memory-only FIFO
+  queue. The provider flushes after initialization. Overflow rejects the newest
+  event; it does not evict an already accepted milestone. Nothing is persisted.
+- A milestone is consumed only after the dispatcher accepts it for immediate
+  dispatch or queueing. Acceptance is not proof of GA4 delivery: blockers,
+  navigation, and network failure can still prevent collection.
+- Queued events are cleared when the runtime becomes ineligible or the
+  measurement ID changes. Custom `page_path` excludes query strings/fragments.
+  Dispatch derives a trusted `page_location` from the allowed hostname and
+  sanitized source path captured at acceptance, preserving attribution if the
+  visitor navigates before initialization; caller-provided URLs are not accepted.
+- Gallery navigation describes the destination category and one-based position
+  among image-bearing items in the current filter. `cta_location` distinguishes
+  lightbox navigation from homepage controls and gallery-link clicks. Homepage
+  link clicks are referral intent, not proof that a lightbox was opened. The
+  generic gallery link omits category and position because no image was chosen.
+- Pricing visibility observes `#pricing-guide` itself, once accepted per mount.
+  It requires positive visible area and at least a 0.001 intersection ratio
+  inside a viewport inset 80px at the bottom;
+  it does not imply reading time or a percentage of the entire tall section.
 
 ## Phase 2 Candidates
 

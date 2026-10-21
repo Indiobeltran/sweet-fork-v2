@@ -4,6 +4,99 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## Batch 1 Analytics Plumbing, Reporting, And Technical SEO — 2026-10-21 MDT
+
+- **Current branch / worktree**: `codex/analytics-batch-one` in
+  `/Users/indiobeltran/.codex/worktrees/analytics-batch-one/sweet-fork-v2`, based on
+  `b3fd3e09aa174503296fa0f6b8af097d3c8b4eac`. All task changes are unstaged;
+  nothing has been committed, pushed, merged, or deployed.
+- **Objective / status**: The owner's approved Batch 1 is implemented and
+  verified locally. No implementation work remains in progress. Next exact task:
+  review this worktree's diff; commit/publish only after explicit instruction.
+- **Production baseline**: Fresh remote `main` and Netlify's published production
+  deploy `6a810ed13deb9900080d757e` both resolve to `b3fd3e0` (published
+  August 16, 2026 UTC). The primary checkout is `main` at `8b79ceb`, zero commits
+  ahead and two behind production. Missing `885472d` and its merge `b3fd3e0`
+  explain the local/live metadata mismatch. This task preserves the already
+  deployed route-owned snippets, apex canonicals, verified-lead separation,
+  social normalization, and independently fetched Search Console totals.
+- **Preserved original work**: Primary-checkout `git status` remains modified
+  `DECISIONS.md`, modified `HANDOFF.md`, untracked `output/`, and untracked `tmp/`.
+  The two document SHA-256 hashes and output/tmp inventories (11 / 3,222 files,
+  paths, sizes, and nanosecond modification times) match the pre-work snapshots.
+  No unrelated work was moved, overwritten, staged, or reverted.
+- **Analytics implementation**: A sanitized, production-host/environment/ID-gated,
+  memory-only FIFO holds at most 50 events until initialization. It rejects new
+  arrivals at capacity, preserves accepted events, clears across disabled
+  boundaries, and cannot replay a flushed batch. Milestones consume guards only
+  on dispatch/queue acceptance. Captured, trusted source `page_location` keeps
+  queued attribution correct across navigation without copying query/hash data
+  or accepting caller-provided URLs. Initial page-view ownership is unchanged.
+- **Reporting implementation**: Monthly, inquiry-event, and validation reports
+  filter every request to exact `thesweetfork.com`; defaults read the GA4
+  property timezone and use completed calendar days. Explicit date ranges stay
+  exact. Inquiry output explicitly reports independent event/step counts, not
+  sequenced abandonment. Search Console totals explicitly request final web
+  data with empty dimensions and `byProperty`, independently of capped tables.
+- **SEO and interaction implementation**: Forms blueprint is noindex; sitemap
+  omits untracked modification dates. Product examples are lazy-loaded and the
+  gallery preloads only its first content image. The existing shared header-logo
+  preload is preserved. Camera filenames cannot become fallback gallery alt text.
+  Gallery keyboard/button/swipe navigation measures the destination; homepage
+  manual controls are tracked and autoplay is not. The generic gallery link
+  omits image category/position. Pricing observes the real `#pricing-guide`
+  section using a minimum 0.001 threshold, avoiding zero-area edge-contact loss.
+- **Files changed**: `src/lib/analytics/{client,events}.ts` and their tests;
+  analytics provider/product/visibility components; inquiry wizard milestone
+  call sites; gallery grid and homepage carousel; product page template;
+  gallery/pricing routes; sitemap; marketing image fallback; forms blueprint;
+  analytics monthly/funnel/validation/report-utils scripts and toolkit tests;
+  Search Console report and toolkit tests; `package.json` test registration;
+  analytics measurement plan/runbook; `DECISIONS.md`; this handoff.
+- **Files created**: `src/lib/site/gallery-text.ts` and `.test.ts`;
+  `src/components/site/gallery-analytics.ts` and `.test.ts`;
+  `src/components/analytics/visibility-analytics-observer.ts` and `.test.ts`.
+  No dependency declarations were added or changed.
+- **Commands / verification**: Inspected `git status`, `git diff`, revision
+  history, remote main, and published Netlify metadata before editing. Final
+  `npm test` passed **254/254 application tests plus 23/23 analytics/Search
+  Console toolkit tests** (277 total, zero failures/skips). `npm run lint`,
+  `npm run typecheck`, `npm run build` (26/26 static pages), and
+  `git diff --check` passed. Focused independent reviews caught and fixed
+  cross-route queued attribution and the visibility edge-contact case.
+- **Live read-only report checks**: Monthly, inquiry-event, validation, and
+  Search Console report functions succeeded with `--days 7 --limit 1 --json`.
+  GA4 returned October 14–20 in `America/Denver` with production hostname;
+  inquiry output reports `sequenced: false`. Search Console returned October
+  11–17 versus October 4–10, retaining the Pacific three-day lag. No account
+  settings, stored data, or production inquiry were changed.
+- **Local HTTP/browser verification**: Production server on 127.0.0.1:3015
+  returned successful homepage/product/gallery/pricing/inquiry/forms responses;
+  canonical/title checks passed, forms noindex is present, sitemap has 15 public
+  URLs and no fabricated lastmod, and product/gallery have one content-image
+  preload each. Browser checks passed for gallery keyboard and next-button
+  destinations, Escape focus restoration, manual homepage next/dot controls,
+  mobile menu, pricing section geometry (390px width, no horizontal overflow),
+  and mobile inquiry validation, future date, progression to step 2, and Back
+  retaining answers. No console warnings/errors were captured in that flow.
+- **Verification limits / known issues**: Local build used fallback content
+  without Supabase configuration; successful production persistence and GA4
+  delivery were not exercised. Dispatch acceptance is not delivery confirmation.
+  No physical touch-swipe test or full accessibility/performance audit was run.
+  `npm ci --ignore-scripts --no-audit --no-fund` could not run because the repo
+  ignores/untracks `package-lock.json`; an ignored node_modules symlink reused
+  installed compatible dependencies (Next 15.5.23, React 19.2.8, Node 24.20.0).
+  The agent-browser CLI lacked its documented `skills get core` command, so
+  browser checks used the integrated browser. Build had non-fatal webpack cache
+  serialization warnings. These are not test failures.
+- **Decisions / assumptions / open questions**: Omit lastmod until reliable
+  content dates exist; exact apex filtering follows production redirects;
+  report property timezone is read rather than assumed. No unresolved code
+  decision. A tracked lockfile is a separate workflow follow-up. Commands still
+  needed only after publishing approval: release gates as appropriate, then
+  owner-controlled production Tag Assistant/DebugView verification (including
+  one deliberate QA inquiry) and deployed SEO checks.
+
 ## SEO And Analytics Remediation — 2026-08-15 MDT
 
 - **Branch / worktree / base**: `codex/seo-analytics-remediation` in

@@ -9,21 +9,29 @@ import {
   writeOutput,
 } from "./google-client.mjs";
 import {
-  getDateRange,
+  getAnalyticsReportingPeriod,
+  productionHostFilter,
+  productionHostname,
   runPaginatedAnalyticsReport,
 } from "./report-utils.mjs";
 
 export async function createValidationDiagnosticsReport(
   argv = process.argv.slice(2),
+  dependencies = {},
 ) {
   const options = parseArguments(argv);
-  const dateRange = getDateRange(options);
   const maxRows = getIntegerOption(options, "limit", 1_000, {
     minimum: 1,
     maximum: 10_000,
   });
-  const config = await loadGoogleConfig();
-  const { data } = createAnalyticsClients();
+  const config = await (dependencies.loadConfig ?? loadGoogleConfig)();
+  const { admin, data } = (dependencies.createClients ?? createAnalyticsClients)();
+  const { dateRange, timeZone } = await getAnalyticsReportingPeriod(
+    admin,
+    config.propertyName,
+    options,
+    dependencies.now,
+  );
   const report = await runPaginatedAnalyticsReport(
     data,
     {
@@ -42,7 +50,7 @@ export async function createValidationDiagnosticsReport(
         { name: "totalUsers" },
         { name: "sessions" },
       ],
-      dimensionFilter: {
+      dimensionFilter: productionHostFilter({
         filter: {
           fieldName: "eventName",
           stringFilter: {
@@ -50,7 +58,7 @@ export async function createValidationDiagnosticsReport(
             value: "inquiry_validation_error",
           },
         },
-      },
+      }),
       orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
     },
     { maxRows },
@@ -68,16 +76,19 @@ export async function createValidationDiagnosticsReport(
   }));
   const payload = {
     dateRange,
+    timeZone,
+    hostname: productionHostname,
     rows,
     rowCount: report.rowCount,
     truncated: report.truncated,
   };
 
-  writeOutput({
+  (dependencies.writeOutput ?? writeOutput)({
     json: options.json === true,
     payload,
     lines: [
       `Inquiry validation diagnostics: ${dateRange.startDate} through ${dateRange.endDate}`,
+      `Production hostname: ${productionHostname}; property timezone: ${timeZone}`,
       ...formatRows(rows, [
         { key: "stepId", label: "Step" },
         { key: "fieldId", label: "Field" },

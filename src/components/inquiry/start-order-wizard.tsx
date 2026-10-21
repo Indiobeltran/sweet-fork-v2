@@ -363,17 +363,15 @@ export function StartOrderWizard({
 
     const step = getInquiryAnalyticsStep(currentStep);
 
-    if (!consumeInquiryStepViewed(analyticsSessionRef.current, step.id)) {
-      return;
-    }
-
-    trackAnalyticsEvent("inquiry_step_viewed", {
-      form_version: INQUIRY_FORM_VERSION,
-      page_path: "/start-order",
-      step_id: step.id,
-      step_name: step.name,
-      step_number: currentStep + 1,
-    });
+    consumeInquiryStepViewed(analyticsSessionRef.current, step.id, () =>
+      trackAnalyticsEvent("inquiry_step_viewed", {
+        form_version: INQUIRY_FORM_VERSION,
+        page_path: "/start-order",
+        step_id: step.id,
+        step_name: step.name,
+        step_number: currentStep + 1,
+      }),
+    );
   }, [currentStep, hasRestoredDraft]);
 
   useEffect(() => {
@@ -465,14 +463,12 @@ export function StartOrderWizard({
   };
 
   const trackInquiryStarted = () => {
-    if (!consumeInquiryStarted(analyticsSessionRef.current)) {
-      return;
-    }
-
-    trackAnalyticsEvent("inquiry_started", {
-      form_version: INQUIRY_FORM_VERSION,
-      page_path: "/start-order",
-    });
+    consumeInquiryStarted(analyticsSessionRef.current, () =>
+      trackAnalyticsEvent("inquiry_started", {
+        form_version: INQUIRY_FORM_VERSION,
+        page_path: "/start-order",
+      }),
+    );
   };
 
   const setFieldValue = <Key extends keyof InquiryFormValues>(
@@ -499,27 +495,25 @@ export function StartOrderWizard({
   const trackStepCompleted = (stepIndex: number) => {
     const step = getInquiryAnalyticsStep(stepIndex);
 
-    if (!consumeInquiryStepCompleted(analyticsSessionRef.current, step.id)) {
-      return;
-    }
+    consumeInquiryStepCompleted(analyticsSessionRef.current, step.id, () => {
+      const preparedValues = normalizeInquiryFormValues(values);
 
-    const preparedValues = normalizeInquiryFormValues(values);
-
-    trackAnalyticsEvent("inquiry_step_completed", {
-      budget_bucket: stepIndex === 0 ? getBudgetBucket(preparedValues.budgetRange) : undefined,
-      delivery_method:
-        stepIndex === 0 ? preparedValues.fulfillmentMethod : undefined,
-      has_inspiration_links:
-        stepIndex === 3 ? preparedValues.inspirationLinks.length > 0 : undefined,
-      lead_time_bucket:
-        stepIndex === 0 ? getLeadTimeBucket(preparedValues.eventDate) : undefined,
-      form_version: INQUIRY_FORM_VERSION,
-      page_path: "/start-order",
-      selected_product_count:
-        stepIndex >= 1 ? preparedValues.orderItems.length : undefined,
-      step_id: step.id,
-      step_name: step.name,
-      step_number: stepIndex + 1,
+      return trackAnalyticsEvent("inquiry_step_completed", {
+        budget_bucket: stepIndex === 0 ? getBudgetBucket(preparedValues.budgetRange) : undefined,
+        delivery_method:
+          stepIndex === 0 ? preparedValues.fulfillmentMethod : undefined,
+        has_inspiration_links:
+          stepIndex === 3 ? preparedValues.inspirationLinks.length > 0 : undefined,
+        lead_time_bucket:
+          stepIndex === 0 ? getLeadTimeBucket(preparedValues.eventDate) : undefined,
+        form_version: INQUIRY_FORM_VERSION,
+        page_path: "/start-order",
+        selected_product_count:
+          stepIndex >= 1 ? preparedValues.orderItems.length : undefined,
+        step_id: step.id,
+        step_name: step.name,
+        step_number: stepIndex + 1,
+      });
     });
   };
 

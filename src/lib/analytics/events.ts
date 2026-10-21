@@ -75,7 +75,7 @@ export type AnalyticsParams = Partial<Record<AnalyticsParamKey, AnalyticsParamVa
 export type AnalyticsEventEmitter = (
   eventName: AnalyticsEventName,
   params?: AnalyticsParams,
-) => void;
+) => boolean;
 
 export type InquiryAnalyticsSession = {
   completedStepIds: Set<InquiryStepId>;
@@ -89,6 +89,15 @@ export type AnalyticsRuntimeInput = {
   measurementId: string | undefined;
   nodeEnv: string | undefined;
   pathname: string;
+};
+
+// This queue is document-local; no analytics payload is persisted to storage.
+export const MAX_PENDING_ANALYTICS_EVENTS = 50;
+
+type AnalyticsEventPayload = {
+  eventName: AnalyticsEventName;
+  pageLocation: string;
+  params: AnalyticsParams;
 };
 
 export type AnalyticsRuntimeState =
@@ -107,6 +116,9 @@ declare global {
   interface Window {
     __sweetForkAnalytics?: {
       lastPageViewKey?: string;
+      pendingEvents?: AnalyticsEventPayload[];
+      pendingMeasurementId?: string;
+      flushingEvents?: boolean;
     };
     gtag?: (
       command: "config" | "event" | "js",
@@ -205,8 +217,19 @@ export function createInquiryAnalyticsSession(): InquiryAnalyticsSession {
   };
 }
 
-export function consumeInquiryStarted(session: InquiryAnalyticsSession) {
-  if (session.started) {
+function acceptAnalyticsMilestone(accept: () => boolean) {
+  try {
+    return accept() === true;
+  } catch {
+    return false;
+  }
+}
+
+export function consumeInquiryStarted(
+  session: InquiryAnalyticsSession,
+  accept: () => boolean,
+) {
+  if (session.started || !acceptAnalyticsMilestone(accept)) {
     return false;
   }
 
@@ -217,8 +240,9 @@ export function consumeInquiryStarted(session: InquiryAnalyticsSession) {
 export function consumeInquiryStepViewed(
   session: InquiryAnalyticsSession,
   stepId: InquiryStepId,
+  accept: () => boolean,
 ) {
-  if (session.viewedStepIds.has(stepId)) {
+  if (session.viewedStepIds.has(stepId) || !acceptAnalyticsMilestone(accept)) {
     return false;
   }
 
@@ -229,8 +253,9 @@ export function consumeInquiryStepViewed(
 export function consumeInquiryStepCompleted(
   session: InquiryAnalyticsSession,
   stepId: InquiryStepId,
+  accept: () => boolean,
 ) {
-  if (session.completedStepIds.has(stepId)) {
+  if (session.completedStepIds.has(stepId) || !acceptAnalyticsMilestone(accept)) {
     return false;
   }
 
@@ -271,12 +296,14 @@ export function emitGenerateLeadAfterPersistence({
     return false;
   }
 
-  session.generateLeadSent = true;
-  emit("generate_lead", {
-    ...params,
-    form_version: INQUIRY_FORM_VERSION,
-  });
-  return true;
+  const accepted = acceptAnalyticsMilestone(() =>
+    emit("generate_lead", {
+      ...params,
+      form_version: INQUIRY_FORM_VERSION,
+    }),
+  );
+  session.generateLeadSent = accepted;
+  return accepted;
 }
 
 function camelToSnakeCase(value: string) {
@@ -432,6 +459,110 @@ export function trackAnalyticsPageView(measurementId: string, path: string) {
   }
 }
 
+function getEligibleEventStore(input: AnalyticsRuntimeInput) {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  // Check again when flushing: a public route may have changed to an admin route
+  // while the Google tag was loading. Discard pending events across that boundary.
+  if (!getAnalyticsRuntimeState(input).enabled) {
+    if (window.__sweetForkAnalytics) {
+      window.__sweetForkAnalytics.pendingEvents = [];
+      window.__sweetForkAnalytics.pendingMeasurementId = undefined;
+    }
+    return null;
+  }
+
+  const store = getPageViewStore();
+  const measurementId = input.measurementId!.trim();
+  if (store.pendingMeasurementId !== measurementId) {
+    store.pendingEvents = [];
+    store.pendingMeasurementId = measurementId;
+  }
+  store.pendingEvents ??= [];
+  return store;
+}
+
+function dispatchAnalyticsEvent(payload: AnalyticsEventPayload, measurementId: string) {
+  try {
+    window.gtag!("event", payload.eventName, {
+      ...payload.params,
+      page_location: payload.pageLocation,
+      send_to: measurementId,
+    });
+    return true;
+  } catch {
+    // No retry after a throwing tag: it may already have accepted the event.
+    // Analytics failures must never interrupt navigation or inquiry submission.
+    return false;
+  }
+}
+
+export function flushAnalyticsEventsForRuntime(input: AnalyticsRuntimeInput) {
+  const store = getEligibleEventStore(input);
+  if (!store || store.flushingEvents || typeof window.gtag !== "function") {
+    return 0;
+  }
+
+  // Detach before dispatch so repeated readiness notifications cannot replay
+  // accepted events. Keep FIFO order and leave any reentrant arrivals queued.
+  const pending = store.pendingEvents ?? [];
+  store.pendingEvents = [];
+  store.flushingEvents = true;
+  let dispatched = 0;
+  try {
+    for (const payload of pending) {
+      if (dispatchAnalyticsEvent(payload, input.measurementId!.trim())) {
+        dispatched += 1;
+      }
+    }
+  } finally {
+    store.flushingEvents = false;
+  }
+  return dispatched;
+}
+
+export function trackAnalyticsEventForRuntime(
+  input: AnalyticsRuntimeInput,
+  eventName: AnalyticsEventName,
+  params: AnalyticsParams = {},
+) {
+  const store = getEligibleEventStore(input);
+  if (!store) {
+    return false;
+  }
+  const sanitizedPayload = buildAnalyticsEventPayload(eventName, params);
+  if (!sanitizedPayload) {
+    return false;
+  }
+  const pagePath = normalizeAnalyticsPagePath(
+    typeof sanitizedPayload.params.page_path === "string"
+      ? sanitizedPayload.params.page_path
+      : input.pathname,
+  );
+  const payload: AnalyticsEventPayload = {
+    ...sanitizedPayload,
+    // Capture trusted source context now: a queued event may flush after an SPA
+    // navigation, when GA4's default document location would describe another page.
+    pageLocation: `https://${input.hostname.toLowerCase()}${pagePath}`,
+  };
+
+  if (typeof window.gtag === "function" && !store.flushingEvents) {
+    flushAnalyticsEventsForRuntime(input);
+    return dispatchAnalyticsEvent(payload, input.measurementId!.trim());
+  }
+
+  const pending = store.pendingEvents!;
+  if (pending.length >= MAX_PENDING_ANALYTICS_EVENTS) {
+    // Drop the new arrival, not an already accepted milestone. Blocked scripts
+    // must not grow memory indefinitely or cause a polling/retry loop.
+    return false;
+  }
+  pending.push(payload);
+  return true;
+}
+
 export function trackAnalyticsPageViewForRuntime(input: AnalyticsRuntimeInput) {
   const normalizedPath = normalizeAnalyticsPagePath(input.pathname);
   const runtimeState = getAnalyticsRuntimeState({
@@ -498,9 +629,16 @@ export function buildAnalyticsEventPayload(
         return accumulator;
       }
 
+      if (key === "page_path") {
+        if (typeof value === "string" && value.startsWith("/")) {
+          accumulator.page_path = normalizeAnalyticsPagePath(value);
+        }
+        return accumulator;
+      }
+
       if (
         typeof value === "string" ||
-        typeof value === "number" ||
+        (typeof value === "number" && Number.isFinite(value)) ||
         typeof value === "boolean"
       ) {
         accumulator[key as AnalyticsParamKey] = value;

@@ -9,7 +9,9 @@ import {
   writeOutput,
 } from "./google-client.mjs";
 import {
-  getDateRange,
+  getAnalyticsReportingPeriod,
+  productionHostFilter,
+  productionHostname,
   runPaginatedAnalyticsReport,
 } from "./report-utils.mjs";
 
@@ -76,15 +78,21 @@ export function classifyLeadRows(rows) {
 
 export async function createMonthlyPerformanceReport(
   argv = process.argv.slice(2),
+  dependencies = {},
 ) {
   const options = parseArguments(argv);
-  const dateRange = getDateRange(options);
   const maxRows = getIntegerOption(options, "limit", 1_000, {
     minimum: 1,
     maximum: 10_000,
   });
-  const config = await loadGoogleConfig();
-  const { data } = createAnalyticsClients();
+  const config = await (dependencies.loadConfig ?? loadGoogleConfig)();
+  const { admin, data } = (dependencies.createClients ?? createAnalyticsClients)();
+  const { dateRange, timeZone } = await getAnalyticsReportingPeriod(
+    admin,
+    config.propertyName,
+    options,
+    dependencies.now,
+  );
   const [siteSummary, leadBreakdown] = await Promise.all([
     runPaginatedAnalyticsReport(
       data,
@@ -97,6 +105,7 @@ export async function createMonthlyPerformanceReport(
           { name: "totalUsers" },
           { name: "keyEvents" },
         ],
+        dimensionFilter: productionHostFilter(),
         orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
       },
       { maxRows },
@@ -120,12 +129,12 @@ export async function createMonthlyPerformanceReport(
           { name: "totalUsers" },
           { name: "sessions" },
         ],
-        dimensionFilter: {
+        dimensionFilter: productionHostFilter({
           filter: {
             fieldName: "eventName",
             stringFilter: { matchType: "EXACT", value: "generate_lead" },
           },
-        },
+        }),
         orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
       },
       { maxRows },
@@ -159,6 +168,8 @@ export async function createMonthlyPerformanceReport(
   const socialSummary = buildSocialSummary(summaryRows);
   const payload = {
     dateRange,
+    timeZone,
+    hostname: productionHostname,
     siteSummary: summaryRows,
     socialSummary,
     leadPerformance: classifiedLeadRows,
@@ -177,11 +188,12 @@ export async function createMonthlyPerformanceReport(
     truncated: siteSummary.truncated || leadBreakdown.truncated,
   };
 
-  writeOutput({
+  (dependencies.writeOutput ?? writeOutput)({
     json: options.json === true,
     payload,
     lines: [
       `Monthly performance: ${dateRange.startDate} through ${dateRange.endDate}`,
+      `Production hostname: ${productionHostname}; property timezone: ${timeZone}`,
       "",
       "Site acquisition",
       ...formatRows(summaryRows, [

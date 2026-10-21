@@ -66,11 +66,11 @@ Every command supports `--json` for machine-readable output. Reports accept
 | `npm run analytics:campaign-link -- --platform facebook --campaign 2026-08-custom-cakes --placement post --destination https://thesweetfork.com/custom-cakes` | Builds a canonical Sweet Fork campaign URL using the approved Facebook/Instagram UTM taxonomy. Destination defaults to the homepage. |
 | `npm run analytics:realtime` | Shows inquiry event names and counts from the recent Realtime window. Use `--minutes N` from 1 through 29. |
 | `npm run analytics:realtime -- --expect-lead` | Fails if no `generate_lead` is visible. `--expected-count 1` requires an exact count and `--fail-on-unexpected` rejects legacy or unknown inquiry event names. The command never submits an inquiry. |
-| `npm run analytics:funnel` | Reports `inquiry_started`, `inquiry_step_completed` by step, and `generate_lead`. |
+| `npm run analytics:funnel` | Reports aggregate event and step counts for `inquiry_started`, `inquiry_step_completed`, and `generate_lead`; not a sequenced abandonment funnel. |
 | `npm run analytics:validation` | Reports errors by stable step, field, error code, form version, device, source/medium, users, and sessions. |
 | `npm run analytics:monthly` | Preserves raw acquisition rows, adds normalized tagged/untagged Facebook and Instagram totals, and reports only `form_version=inquiry_wizard_v3` events as verified leads. Unlabeled or other `generate_lead` events are listed separately as unverified events. |
 | `npm run search-console:verify` | Lists accessible-property metadata and runs a minimal Search Analytics query without printing search terms. |
-| `npm run search-console:report` | Reports queries and landing pages with clicks, impressions, CTR, average position, and a previous-period comparison. Summary totals come from complete ungrouped rows and are not reduced by table limits; per-table truncation is reported separately. The default period ends three days ago. |
+| `npm run search-console:report` | Reports queries and landing pages with clicks, impressions, CTR, average position, and a previous-period comparison. Headline metrics come from a separate ungrouped web query with property aggregation and are not reduced by table limits; per-table truncation is reported separately. The default period ends three days ago. |
 | `npm run search-console:sitemap` | Lists submitted sitemaps, download/submission dates, pending state, warnings, and errors. |
 | `npm run search-console:inspect -- --url https://www.thesweetfork.com/` | Runs read-only URL Inspection for an HTTPS URL inside the configured property. |
 
@@ -83,6 +83,29 @@ npm run analytics:monthly -- --days 30 --json
 npm run analytics:campaign-link -- --platform instagram --campaign 2026-08-wedding-cakes --placement story --destination https://thesweetfork.com/wedding-cakes
 npm run search-console:report -- --days 28 --limit 100
 ```
+
+## Reporting boundaries and interpretation
+
+- Monthly, inquiry-event, and validation reports filter every Data API request
+  to the exact production hostname `thesweetfork.com`, including requests with
+  additional event filters. Historic `www`, preview, localhost, and unrelated
+  host rows are excluded; production redirects use the apex host.
+- These reports read the property's reporting timezone through the Admin API.
+  Default `--days N` selects the previous N completed calendar days in that
+  timezone, excluding today. Explicit paired dates remain exactly as supplied.
+  Property-read permission is required; a missing timezone stops the report
+  rather than guessing a date boundary. JSON includes hostname and timezone.
+- Search Console uses Pacific calendar dates. Its default period still ends
+  three days ago to allow processing. Headline totals use `dimensions: []`,
+  `type: "web"`, `aggregationType: "byProperty"`, and final data independently
+  of query/page tables and `--limit`. Anonymized queries and page aggregation
+  mean table sums can legitimately differ from property totals.
+- `analytics:funnel` returns `measurement: "event_and_step_counts"` and
+  `sequenced: false`. Counts do not connect the same users or sessions in order;
+  ratios must not be described as abandonment or step-to-step conversion.
+  Use a separately configured GA4 Funnel Exploration for ordered behavior.
+- Host filtering does not repair historical rule-generated leads. Monthly
+  verified/unverified lead separation and social normalization remain in place.
 
 ## Verified lead and campaign semantics
 

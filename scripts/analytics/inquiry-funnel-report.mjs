@@ -9,7 +9,9 @@ import {
   writeOutput,
 } from "./google-client.mjs";
 import {
-  getDateRange,
+  getAnalyticsReportingPeriod,
+  productionHostFilter,
+  productionHostname,
   runPaginatedAnalyticsReport,
 } from "./report-utils.mjs";
 
@@ -21,15 +23,21 @@ const funnelEvents = [
 
 export async function createInquiryFunnelReport(
   argv = process.argv.slice(2),
+  dependencies = {},
 ) {
   const options = parseArguments(argv);
-  const dateRange = getDateRange(options);
   const maxRows = getIntegerOption(options, "limit", 500, {
     minimum: 1,
     maximum: 10_000,
   });
-  const config = await loadGoogleConfig();
-  const { data } = createAnalyticsClients();
+  const config = await (dependencies.loadConfig ?? loadGoogleConfig)();
+  const { admin, data } = (dependencies.createClients ?? createAnalyticsClients)();
+  const { dateRange, timeZone } = await getAnalyticsReportingPeriod(
+    admin,
+    config.propertyName,
+    options,
+    dependencies.now,
+  );
   const report = await runPaginatedAnalyticsReport(
     data,
     {
@@ -46,12 +54,12 @@ export async function createInquiryFunnelReport(
         { name: "totalUsers" },
         { name: "sessions" },
       ],
-      dimensionFilter: {
+      dimensionFilter: productionHostFilter({
         filter: {
           fieldName: "eventName",
           inListFilter: { values: funnelEvents },
         },
-      },
+      }),
       orderBys: [
         { dimension: { dimensionName: "eventName" } },
         { dimension: { dimensionName: "customEvent:step_id" } },
@@ -70,16 +78,24 @@ export async function createInquiryFunnelReport(
   }));
   const payload = {
     dateRange,
+    timeZone,
+    hostname: productionHostname,
+    measurement: "event_and_step_counts",
+    sequenced: false,
+    interpretation:
+      "Independent event and step aggregates; not a sequenced funnel or abandonment rate. Use a GA4 Funnel Exploration for ordered progression.",
     rows,
     rowCount: report.rowCount,
     truncated: report.truncated,
   };
 
-  writeOutput({
+  (dependencies.writeOutput ?? writeOutput)({
     json: options.json === true,
     payload,
     lines: [
-      `Inquiry funnel: ${dateRange.startDate} through ${dateRange.endDate}`,
+      `Inquiry event and step counts: ${dateRange.startDate} through ${dateRange.endDate}`,
+      `Production hostname: ${productionHostname}; property timezone: ${timeZone}`,
+      payload.interpretation,
       ...formatRows(rows, [
         { key: "eventName", label: "Event" },
         { key: "stepId", label: "Step ID" },

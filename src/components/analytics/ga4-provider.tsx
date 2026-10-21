@@ -4,6 +4,7 @@ import Script from "next/script";
 import { usePathname } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 
+import { flushAnalyticsEvents } from "@/lib/analytics/client";
 import {
   getAnalyticsRuntimeState,
   getGoogleAnalyticsInitScript,
@@ -24,6 +25,11 @@ function GoogleAnalyticsRuntime({ measurementId }: GoogleAnalyticsProviderProps)
 
   useEffect(() => {
     setHost(window.location.hostname);
+    // The public layout unmounts when entering admin; recheck the current URL
+    // then so a delayed tag cannot retain public events across that boundary.
+    return () => {
+      flushAnalyticsEvents();
+    };
   }, []);
 
   const runtimeState =
@@ -40,19 +46,36 @@ function GoogleAnalyticsRuntime({ measurementId }: GoogleAnalyticsProviderProps)
     if (
       !runtimeState.enabled ||
       !normalizedMeasurementId ||
-      !isReady ||
-      initialPageViewSentRef.current
+      !isReady
     ) {
       return;
     }
 
-    initialPageViewSentRef.current = trackAnalyticsPageViewForRuntime({
+    const currentRuntime = {
       hostname: window.location.hostname,
       measurementId: normalizedMeasurementId,
       nodeEnv: process.env.NODE_ENV,
-      pathname: initialPathRef.current,
-    });
-  }, [isReady, normalizedMeasurementId, runtimeState.enabled]);
+      pathname: window.location.pathname,
+    };
+    if (!getAnalyticsRuntimeState(currentRuntime).enabled) {
+      flushAnalyticsEvents();
+      return;
+    }
+
+    if (!initialPageViewSentRef.current) {
+      initialPageViewSentRef.current = trackAnalyticsPageViewForRuntime({
+        ...currentRuntime,
+        pathname: initialPathRef.current,
+      });
+    }
+    flushAnalyticsEvents();
+  }, [isReady, normalizedMeasurementId, pathname, runtimeState.enabled]);
+
+  useEffect(() => {
+    if (host && !runtimeState.enabled) {
+      flushAnalyticsEvents();
+    }
+  }, [host, pathname, runtimeState.enabled]);
 
   if (!runtimeState.enabled || !normalizedMeasurementId) {
     return null;

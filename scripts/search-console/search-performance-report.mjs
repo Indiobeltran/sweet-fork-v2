@@ -47,6 +47,7 @@ async function queryDimension(
     {
       ...dateRange,
       dimensions: [dimension],
+      type: "web",
       dataState: "final",
       aggregationType: "auto",
     },
@@ -59,8 +60,10 @@ async function queryTotals(searchConsole, siteUrl, dateRange) {
     siteUrl,
     requestBody: {
       ...dateRange,
+      dimensions: [],
+      type: "web",
       dataState: "final",
-      aggregationType: "auto",
+      aggregationType: "byProperty",
       rowLimit: 1,
     },
   });
@@ -69,6 +72,7 @@ async function queryTotals(searchConsole, siteUrl, dateRange) {
 
 export async function createSearchPerformanceReport(
   argv = process.argv.slice(2),
+  dependencies = {},
 ) {
   const options = parseArguments(argv);
   const periods = getSearchConsolePeriods(options);
@@ -76,8 +80,8 @@ export async function createSearchPerformanceReport(
     minimum: 1,
     maximum: 25_000,
   });
-  const config = await loadGoogleConfig();
-  const searchConsole = createSearchConsoleClient();
+  const config = await (dependencies.loadConfig ?? loadGoogleConfig)();
+  const searchConsole = (dependencies.createClient ?? createSearchConsoleClient)();
   const [
     currentQueries,
     currentPages,
@@ -144,7 +148,7 @@ export async function createSearchPerformanceReport(
   const formatPercent = (value) =>
     value === null ? "new" : `${value.toFixed(1)}%`;
 
-  writeOutput({
+  (dependencies.writeOutput ?? writeOutput)({
     json: options.json === true,
     payload,
     lines: [

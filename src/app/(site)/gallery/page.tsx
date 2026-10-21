@@ -52,7 +52,7 @@ export default async function GalleryPage() {
         </div>
       </section>
       <section className="section-shell pb-14 pt-5 sm:pt-7 md:pb-18 md:pt-8">
-        <GalleryGrid items={galleryItems} priorityCount={6} />
+        <GalleryGrid items={galleryItems} priorityCount={1} />
       </section>
       <InquiryCta
         title="Have a direction in mind after browsing?"

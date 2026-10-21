@@ -4,45 +4,44 @@ import { useEffect, useRef } from "react";
 
 import { trackAnalyticsEvent } from "@/lib/analytics/client";
 import type { AnalyticsEventName, AnalyticsParams } from "@/lib/analytics/events";
+import { observeAnalyticsVisibility } from "@/components/analytics/visibility-analytics-observer";
 
 type VisibilityAnalyticsProps = {
   eventName: AnalyticsEventName;
   params?: AnalyticsParams;
+  targetId: string;
   threshold?: number;
 };
 
 export function VisibilityAnalytics({
   eventName,
   params,
-  threshold = 0.55,
+  targetId,
+  threshold = 0,
 }: VisibilityAnalyticsProps) {
-  const elementRef = useRef<HTMLDivElement | null>(null);
   const trackedRef = useRef(false);
 
   useEffect(() => {
-    const element = elementRef.current;
+    const element = document.getElementById(targetId);
 
     if (!element || trackedRef.current) {
       return;
     }
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry?.isIntersecting || trackedRef.current) {
-          return;
+    return observeAnalyticsVisibility(
+      element,
+      () => {
+        if (trackedRef.current) {
+          return true;
         }
 
-        trackedRef.current = true;
-        trackAnalyticsEvent(eventName, params);
-        observer.disconnect();
+        const accepted = trackAnalyticsEvent(eventName, params);
+        trackedRef.current = accepted;
+        return accepted;
       },
-      { threshold },
+      threshold,
     );
+  }, [eventName, params, targetId, threshold]);
 
-    observer.observe(element);
-
-    return () => observer.disconnect();
-  }, [eventName, params, threshold]);
-
-  return <div ref={elementRef} aria-hidden="true" className="sr-only" />;
+  return null;
 }

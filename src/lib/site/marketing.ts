@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createPublicDataClient } from "@/lib/supabase/public";
 import { defaultPricingBaseline } from "@/lib/pricing";
 import { resolveGalleryPlaceholderImageUrl } from "@/lib/site/placeholder-images";
+import { getGalleryAltText, prettifyFileName } from "@/lib/site/gallery-text";
 import {
   getNormalizedProductCategoryName,
   getProductGalleryCategoryNames,
@@ -663,44 +664,6 @@ function logPublicDataFallback(message: string, error: unknown) {
         ? error.message
         : getErrorField(error, "message") ?? "Unknown public content load error",
   });
-}
-
-function prettifyFileName(value: string | null) {
-  if (!value) {
-    return "Gallery image";
-  }
-
-  return value
-    .replace(/\.[^.]+$/, "")
-    .replace(/[-_]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (character) => character.toUpperCase());
-}
-
-function getGalleryAltText({
-  altText,
-  category,
-  title,
-}: {
-  altText: string | null | undefined;
-  category: string | undefined;
-  title: string;
-}) {
-  const trimmedAltText = altText?.trim();
-
-  if (trimmedAltText) {
-    return trimmedAltText;
-  }
-
-  if (!category) {
-    return title;
-  }
-
-  const normalizedCategory = category.trim();
-  return title.toLowerCase().includes(normalizedCategory.toLowerCase())
-    ? title
-    : `${title}, ${normalizedCategory.toLowerCase()}`;
 }
 
 function getContentDefinitionIdentity(definition: ContentSectionDefinition) {

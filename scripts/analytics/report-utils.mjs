@@ -4,6 +4,56 @@ export function isoDate(daysAgo = 0, referenceDate = new Date()) {
   return date.toISOString().slice(0, 10);
 }
 
+export const productionHostname = "thesweetfork.com";
+
+export function productionHostFilter(eventFilter) {
+  const hostnameFilter = {
+    filter: {
+      fieldName: "hostName",
+      stringFilter: {
+        matchType: "EXACT",
+        value: productionHostname,
+        caseSensitive: true,
+      },
+    },
+  };
+
+  return eventFilter
+    ? { andGroup: { expressions: [hostnameFilter, eventFilter] } }
+    : hostnameFilter;
+}
+
+function dateInTimeZone(referenceDate, timeZone) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(referenceDate);
+  const part = (type) => parts.find((item) => item.type === type).value;
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+export async function getAnalyticsReportingPeriod(
+  adminClient,
+  propertyName,
+  options,
+  referenceDate = new Date(),
+) {
+  const [property] = await adminClient.getProperty({ name: propertyName });
+  if (!property.timeZone) {
+    throw new Error("The GA4 property reporting timezone is unavailable.");
+  }
+
+  return {
+    timeZone: property.timeZone,
+    dateRange: getDateRange(options, 30, {
+      timeZone: property.timeZone,
+      referenceDate,
+    }),
+  };
+}
+
 export function parseIsoDate(value, label) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value ?? "")) {
     throw new Error(`${label} must use YYYY-MM-DD format.`);
@@ -20,7 +70,12 @@ export function parseIsoDate(value, label) {
   return value;
 }
 
-export function getDateRange(options, defaultDays = 30) {
+export function getDateRange(
+  options,
+  defaultDays = 30,
+  // Matches the approved property configuration; live reports resolve it above.
+  { timeZone = "America/Denver", referenceDate = new Date() } = {},
+) {
   if (options.start || options.end) {
     if (!options.start || !options.end) {
       throw new Error("--start and --end must be provided together.");
@@ -35,30 +90,32 @@ export function getDateRange(options, defaultDays = 30) {
     return { startDate, endDate };
   }
 
-  const days = Number.parseInt(String(options.days ?? defaultDays), 10);
-  if (!Number.isInteger(days) || days < 1 || days > 730) {
+  const rawDays = String(options.days ?? defaultDays);
+  const days = Number(rawDays);
+  if (!/^\d+$/.test(rawDays) || !Number.isInteger(days) || days < 1 || days > 730) {
     throw new Error("--days must be an integer from 1 to 730.");
   }
 
-  return {
-    startDate: isoDate(days - 1),
-    endDate: isoDate(0),
-  };
+  // Shift calendar dates, not elapsed hours, so DST cannot change window length.
+  const today = new Date(`${dateInTimeZone(referenceDate, timeZone)}T00:00:00.000Z`);
+  return { startDate: isoDate(days, today), endDate: isoDate(1, today) };
 }
 
-export function getSearchConsolePeriods(options, defaultDays = 28) {
+export function getSearchConsolePeriods(
+  options,
+  defaultDays = 28,
+  { referenceDate = new Date() } = {},
+) {
   const current = getDateRange(
-    options.start || options.end
-      ? options
-      : {
-          days: options.days ?? defaultDays,
-          start: isoDate(
-            Number.parseInt(String(options.days ?? defaultDays), 10) + 2,
-          ),
-          end: isoDate(3),
-        },
+    options,
     defaultDays,
+    { timeZone: "America/Los_Angeles", referenceDate },
   );
+  // Search Console dates use Pacific time. Preserve the three-day final-data lag.
+  if (!options.start && !options.end) {
+    current.startDate = isoDate(2, new Date(`${current.startDate}T00:00:00.000Z`));
+    current.endDate = isoDate(2, new Date(`${current.endDate}T00:00:00.000Z`));
+  }
 
   const currentStart = new Date(`${current.startDate}T00:00:00.000Z`);
   const currentEnd = new Date(`${current.endDate}T00:00:00.000Z`);

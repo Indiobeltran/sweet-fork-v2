@@ -108,18 +108,33 @@ describe("inquiry analytics contract", () => {
   it("records started, viewed, and completed milestones once per inquiry session", () => {
     const session = createInquiryAnalyticsSession();
 
-    assert.equal(consumeInquiryStarted(session), true);
-    assert.equal(consumeInquiryStarted(session), false);
-    assert.equal(consumeInquiryStepViewed(session, "event_details"), true);
-    assert.equal(consumeInquiryStepViewed(session, "event_details"), false);
+    assert.equal(consumeInquiryStarted(session, () => true), true);
+    assert.equal(consumeInquiryStarted(session, () => true), false);
+    assert.equal(consumeInquiryStepViewed(session, "event_details", () => true), true);
+    assert.equal(consumeInquiryStepViewed(session, "event_details", () => true), false);
     assert.equal(
-      consumeInquiryStepCompleted(session, "event_details"),
+      consumeInquiryStepCompleted(session, "event_details", () => true),
       true,
     );
     assert.equal(
-      consumeInquiryStepCompleted(session, "event_details"),
+      consumeInquiryStepCompleted(session, "event_details", () => true),
       false,
     );
+  });
+
+  it("leaves unaccepted milestone guards available for a later attempt", () => {
+    const session = createInquiryAnalyticsSession();
+    const attempts = [
+      (accept: () => boolean) => consumeInquiryStarted(session, accept),
+      (accept: () => boolean) => consumeInquiryStepViewed(session, "event_details", accept),
+      (accept: () => boolean) => consumeInquiryStepCompleted(session, "event_details", accept),
+    ];
+    for (const attempt of attempts) {
+      assert.equal(attempt(() => false), false);
+      assert.equal(attempt(() => { throw new Error("tag failure"); }), false);
+      assert.equal(attempt(() => true), true);
+      assert.equal(attempt(() => { throw new Error("must not emit twice"); }), false);
+    }
   });
 });
 
@@ -136,6 +151,7 @@ describe("generate_lead persistence contract", () => {
         params?: Record<string, unknown>,
       ) => {
         events.push({ eventName, params });
+        return true;
       },
       events,
     };
@@ -181,6 +197,23 @@ describe("generate_lead persistence contract", () => {
       JSON.stringify(recorder.events).includes("SF-PRIVATE"),
       false,
     );
+  });
+
+  it("does not consume a lead when dispatch is rejected or throws", () => {
+    const session = createInquiryAnalyticsSession();
+    const recorder = createRecorder();
+    const input = {
+      confirmation: { inquiryId: "private-id", persisted: true, referenceCode: "SF-PRIVATE" },
+      params: { product_category: "custom_cakes" },
+      session,
+    };
+    assert.equal(emitGenerateLeadAfterPersistence({ ...input, emit: () => false }), false);
+    assert.equal(session.generateLeadSent, false);
+    assert.equal(emitGenerateLeadAfterPersistence({ ...input, emit: () => { throw new Error("blocked"); } }), false);
+    assert.equal(session.generateLeadSent, false);
+    assert.equal(emitGenerateLeadAfterPersistence({ ...input, emit: recorder.emit }), true);
+    assert.equal(session.generateLeadSent, true);
+    assert.equal(recorder.events.length, 1);
   });
 
   it("emits no generate_lead after failed persistence", () => {

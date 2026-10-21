@@ -10,6 +10,8 @@ import {
   getNextHomeGalleryCarouselIndex,
   orderHomeGalleryCarouselItems,
 } from "@/components/site/home-gallery-carousel-utils";
+import { getGalleryItemAnalyticsParams } from "@/components/site/gallery-analytics";
+import { trackAnalyticsEvent } from "@/lib/analytics/client";
 import { cn } from "@/lib/utils";
 import type { GalleryItem } from "@/types/domain";
 
@@ -60,6 +62,7 @@ function GalleryPreviewImage({
 export function HomeGalleryCarousel({ items }: HomeGalleryCarouselProps) {
   const orderedItems = useMemo(() => orderHomeGalleryCarouselItems(items), [items]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const activeIndexRef = useRef(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isReducedMotion, setIsReducedMotion] = useState(false);
   const carouselRef = useRef<HTMLDivElement | null>(null);
@@ -75,22 +78,47 @@ export function HomeGalleryCarousel({ items }: HomeGalleryCarouselProps) {
 
   const hasMultipleItems = orderedItems.length > 1;
 
-  const showNextItem = useCallback(() => {
-    setActiveIndex((currentIndex) =>
-      getNextHomeGalleryCarouselIndex(currentIndex, orderedItems.length, "next"),
+  // Autoplay updates presentation only; it is not a visitor interaction.
+  const advanceAutoplay = useCallback(() => {
+    const destinationIndex = getNextHomeGalleryCarouselIndex(
+      activeIndexRef.current,
+      orderedItems.length,
+      "next",
     );
+    activeIndexRef.current = destinationIndex;
+    setActiveIndex(destinationIndex);
   }, [orderedItems.length]);
 
-  const showPreviousItem = () => {
-    setActiveIndex((currentIndex) =>
-      getNextHomeGalleryCarouselIndex(currentIndex, orderedItems.length, "previous"),
-    );
+  const goToItem = (index: number, location: string) => {
     setIsPaused(true);
+    const destinationItem = orderedItems[index];
+    if (!destinationItem || index === activeIndexRef.current) {
+      return;
+    }
+
+    activeIndexRef.current = index;
+    setActiveIndex(index);
+    trackAnalyticsEvent(
+      "gallery_item_navigated",
+      getGalleryItemAnalyticsParams(destinationItem, index + 1, "/", location),
+    );
   };
 
-  const goToItem = (index: number) => {
-    setActiveIndex(index);
-    setIsPaused(true);
+  const navigateManually = (direction: "next" | "previous") => {
+    goToItem(
+      getNextHomeGalleryCarouselIndex(activeIndexRef.current, orderedItems.length, direction),
+      `home_gallery_${direction}`,
+    );
+  };
+
+  const trackGalleryLink = (index: number, location: string) => {
+    const item = orderedItems[index];
+    if (item) {
+      trackAnalyticsEvent(
+        "gallery_item_viewed",
+        getGalleryItemAnalyticsParams(item, index + 1, "/", location),
+      );
+    }
   };
 
   useEffect(() => {
@@ -113,12 +141,12 @@ export function HomeGalleryCarousel({ items }: HomeGalleryCarouselProps) {
       return;
     }
 
-    const intervalId = window.setInterval(showNextItem, AUTOPLAY_INTERVAL_MS);
+    const intervalId = window.setInterval(advanceAutoplay, AUTOPLAY_INTERVAL_MS);
 
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [hasMultipleItems, isPaused, isReducedMotion, showNextItem]);
+  }, [hasMultipleItems, isPaused, isReducedMotion, advanceAutoplay]);
 
   if (orderedItems.length === 0) {
     return null;
@@ -144,6 +172,7 @@ export function HomeGalleryCarousel({ items }: HomeGalleryCarouselProps) {
           <Link
             key={`${item.id}-${activeIndex}-${index}`}
             href="/gallery"
+            onClick={() => trackGalleryLink((activeIndex + index) % orderedItems.length, "home_gallery_card")}
             className={cn(
               "group min-w-0 overflow-hidden rounded-[1.45rem] border border-charcoal/7 bg-white/88 shadow-[0_16px_42px_rgba(44,36,27,0.06)] transition hover:-translate-y-1 hover:border-gold/32 hover:shadow-[0_22px_54px_rgba(44,36,27,0.09)] focus-visible:border-gold/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60",
               index > 0 && "hidden sm:block",
@@ -179,7 +208,7 @@ export function HomeGalleryCarousel({ items }: HomeGalleryCarouselProps) {
             type="button"
             className="inline-flex size-10 items-center justify-center rounded-full border border-charcoal/10 bg-white/82 text-charcoal shadow-[0_10px_22px_rgba(44,36,27,0.06)] transition hover:-translate-y-0.5 hover:border-gold/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60"
             aria-label="Show previous gallery preview"
-            onClick={showPreviousItem}
+            onClick={() => navigateManually("previous")}
           >
             <ChevronLeft aria-hidden="true" size={18} />
           </button>
@@ -187,10 +216,7 @@ export function HomeGalleryCarousel({ items }: HomeGalleryCarouselProps) {
             type="button"
             className="inline-flex size-10 items-center justify-center rounded-full border border-charcoal/10 bg-white/82 text-charcoal shadow-[0_10px_22px_rgba(44,36,27,0.06)] transition hover:-translate-y-0.5 hover:border-gold/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60"
             aria-label="Show next gallery preview"
-            onClick={() => {
-              showNextItem();
-              setIsPaused(true);
-            }}
+            onClick={() => navigateManually("next")}
           >
             <ChevronRight aria-hidden="true" size={18} />
           </button>
@@ -198,6 +224,10 @@ export function HomeGalleryCarousel({ items }: HomeGalleryCarouselProps) {
 
         <Link
           href="/gallery"
+          onClick={() => trackAnalyticsEvent("gallery_item_viewed", {
+            page_path: "/",
+            cta_location: "home_gallery_link",
+          })}
           className="text-xs font-semibold uppercase tracking-[0.14em] text-charcoal/68 underline decoration-gold/45 underline-offset-4 transition hover:text-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60"
         >
           View the Gallery
@@ -217,7 +247,7 @@ export function HomeGalleryCarousel({ items }: HomeGalleryCarouselProps) {
                   ? "w-6 bg-gold"
                   : "w-1.5 bg-charcoal/16 hover:bg-charcoal/32",
               )}
-              onClick={() => goToItem(index)}
+              onClick={() => goToItem(index, "home_gallery_dot")}
             />
           ))}
         </div>

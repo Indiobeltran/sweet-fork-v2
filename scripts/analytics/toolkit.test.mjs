@@ -17,6 +17,7 @@ import {
 import {
   getDateRange,
   getSearchConsolePeriods,
+  getAnalyticsReportingPeriod,
   percentageChange,
 } from "./report-utils.mjs";
 import { planLegacyKeyEventRetirement } from "./retire-legacy-key-event.mjs";
@@ -24,7 +25,10 @@ import {
   buildSocialSummary,
   classifyLeadRows,
   classifySocialSourceMedium,
+  createMonthlyPerformanceReport,
 } from "./monthly-performance-report.mjs";
+import { createInquiryFunnelReport } from "./inquiry-funnel-report.mjs";
+import { createValidationDiagnosticsReport } from "./validation-diagnostics-report.mjs";
 import { buildCampaignLink } from "./build-campaign-link.mjs";
 import {
   approvedPageviewLeadRuleResource,
@@ -95,6 +99,180 @@ test("builds deterministic reporting periods", () => {
   assert.equal(percentageChange(150, 100), 50);
   assert.equal(percentageChange(0, 0), 0);
   assert.equal(percentageChange(1, 0), null);
+});
+
+test("GA4 defaults end on the last completed property-local calendar day", () => {
+  const cases = [
+    // Before and after Mountain midnight at a month boundary.
+    ["2026-03-01T06:59:00Z", "2026-02-26", "2026-02-27"],
+    ["2026-03-01T07:00:00Z", "2026-02-27", "2026-02-28"],
+    // The completed day is 23 hours at spring-forward and 25 hours at fall-back.
+    ["2026-03-09T06:00:00Z", "2026-03-07", "2026-03-08"],
+    ["2026-11-02T07:00:00Z", "2026-10-31", "2026-11-01"],
+    ["2027-01-01T07:00:00Z", "2026-12-30", "2026-12-31"],
+  ];
+  for (const [now, startDate, endDate] of cases) {
+    assert.deepEqual(
+      getDateRange({ days: "2" }, 30, {
+        timeZone: "America/Denver",
+        referenceDate: new Date(now),
+      }),
+      { startDate, endDate },
+      now,
+    );
+  }
+  assert.deepEqual(
+    getDateRange({ days: "1" }, 30, {
+      timeZone: "Asia/Tokyo",
+      referenceDate: new Date("2026-03-01T16:00:00Z"),
+    }),
+    { startDate: "2026-03-01", endDate: "2026-03-01" },
+  );
+});
+
+test("explicit dates remain exact and invalid date windows fail", () => {
+  assert.deepEqual(
+    getDateRange({ start: "2026-03-01", end: "2026-03-02" }, 30, {
+      timeZone: "America/Denver",
+      referenceDate: new Date("2026-03-01T06:00:00Z"),
+    }),
+    { startDate: "2026-03-01", endDate: "2026-03-02" },
+  );
+  for (const days of [0, 731, true, "2days", "1.5"]) {
+    assert.throws(() => getDateRange({ days }), /integer from 1 to 730/);
+  }
+  assert.throws(() => getDateRange({ start: "2026-03-01" }), /provided together/);
+  assert.throws(
+    () => getDateRange({ start: "2026-02-30", end: "2026-03-01" }),
+    /valid calendar date/,
+  );
+});
+
+test("Search Console retains a three-day lag in Pacific time", () => {
+  assert.deepEqual(
+    getSearchConsolePeriods({ days: 2 }, 28, {
+      referenceDate: new Date("2026-03-01T07:30:00Z"),
+    }),
+    {
+      current: { startDate: "2026-02-24", endDate: "2026-02-25" },
+      previous: { startDate: "2026-02-22", endDate: "2026-02-23" },
+    },
+  );
+});
+
+test("live reporting uses the property timezone and fails if it is unavailable", async () => {
+  const calls = [];
+  const context = await getAnalyticsReportingPeriod(
+    { getProperty: async (request) => { calls.push(request); return [{ timeZone: "America/New_York" }]; } },
+    "properties/123456789",
+    { days: 1 },
+    new Date("2026-03-01T06:00:00Z"),
+  );
+  assert.deepEqual(calls, [{ name: "properties/123456789" }]);
+  assert.deepEqual(context, {
+    timeZone: "America/New_York",
+    dateRange: { startDate: "2026-02-28", endDate: "2026-02-28" },
+  });
+  await assert.rejects(
+    getAnalyticsReportingPeriod({ getProperty: async () => [{}] }, "properties/123", {}),
+    /timezone is unavailable/,
+  );
+});
+
+function analyticsReportHarness(rowsForRequest = () => [], rowCount) {
+  const requests = [];
+  const outputs = [];
+  return {
+    requests,
+    outputs,
+    dependencies: {
+      now: new Date("2026-03-01T06:30:00Z"),
+      loadConfig: async () => ({ propertyName: "properties/123456789" }),
+      createClients: () => ({
+        admin: { getProperty: async () => [{ timeZone: "America/Denver" }] },
+        data: {
+          runReport: async (request) => {
+            requests.push(request);
+            const rows = rowsForRequest(request);
+            return [{
+              dimensionHeaders: request.dimensions,
+              metricHeaders: request.metrics,
+              rows: rows.map((row) => ({
+                dimensionValues: request.dimensions.map(({ name }) => ({ value: row[name] ?? "" })),
+                metricValues: request.metrics.map(({ name }) => ({ value: String(row[name] ?? 0) })),
+              })),
+              rowCount: rowCount ?? rows.length,
+            }];
+          },
+        },
+      }),
+      writeOutput: (output) => outputs.push(output),
+    },
+  };
+}
+
+const expectedProductionHostFilter = {
+  filter: {
+    fieldName: "hostName",
+    stringFilter: { matchType: "EXACT", value: "thesweetfork.com", caseSensitive: true },
+  },
+};
+
+test("monthly requests filter production while preserving lead and social semantics", async () => {
+  const harness = analyticsReportHarness((request) => request.dimensions.length === 1
+    ? [{ sessionSourceMedium: "m.facebook.com / referral", sessions: 4, totalUsers: 3, keyEvents: 1 }]
+    : [
+      { "customEvent:form_version": "inquiry_wizard_v3", eventCount: 2 },
+      { "customEvent:form_version": "(not set)", eventCount: 9 },
+    ]);
+  const result = await createMonthlyPerformanceReport(["--days", "2"], harness.dependencies);
+  const [summary, leads] = harness.requests;
+  assert.deepEqual(summary.dimensionFilter, expectedProductionHostFilter);
+  assert.deepEqual(leads.dimensionFilter, {
+    andGroup: { expressions: [expectedProductionHostFilter, {
+      filter: { fieldName: "eventName", stringFilter: { matchType: "EXACT", value: "generate_lead" } },
+    }] },
+  });
+  for (const request of harness.requests) {
+    assert.deepEqual(request.dateRanges, [{ startDate: "2026-02-26", endDate: "2026-02-27" }]);
+  }
+  assert.deepEqual(result.leadSummary, { verified: 2, unverified: 9 });
+  assert.equal(result.socialSummary[0].platform, "facebook");
+  assert.equal(result.socialSummary[0].attribution, "untagged");
+  assert.equal(result.hostname, "thesweetfork.com");
+  assert.equal(result.timeZone, "America/Denver");
+});
+
+test("inquiry reporting keeps the event filter and labels independent aggregates", async () => {
+  const harness = analyticsReportHarness(() => [{ eventName: "inquiry_started", eventCount: 3 }], 2);
+  const result = await createInquiryFunnelReport(
+    ["--start", "2026-03-01", "--end", "2026-03-31", "--limit", "1", "--json"],
+    harness.dependencies,
+  );
+  assert.deepEqual(harness.requests[0].dimensionFilter, {
+    andGroup: { expressions: [expectedProductionHostFilter, {
+      filter: { fieldName: "eventName", inListFilter: { values: ["inquiry_started", "inquiry_step_completed", "generate_lead"] } },
+    }] },
+  });
+  assert.deepEqual(harness.requests[0].dateRanges, [{ startDate: "2026-03-01", endDate: "2026-03-31" }]);
+  assert.equal(result.truncated, true);
+  assert.equal(result.measurement, "event_and_step_counts");
+  assert.equal(result.sequenced, false);
+  assert.match(result.interpretation, /not a sequenced funnel or abandonment rate/);
+  assert.match(harness.outputs[0].lines.join("\n"), /Inquiry event and step counts/);
+  assert.match(harness.outputs[0].lines.join("\n"), /not a sequenced funnel/);
+  assert.equal(harness.outputs[0].json, true);
+});
+
+test("validation diagnostics share production and completed-day filters", async () => {
+  const harness = analyticsReportHarness();
+  const result = await createValidationDiagnosticsReport(["--days", "1"], harness.dependencies);
+  assert.deepEqual(harness.requests[0].dimensionFilter, {
+    andGroup: { expressions: [expectedProductionHostFilter, {
+      filter: { fieldName: "eventName", stringFilter: { matchType: "EXACT", value: "inquiry_validation_error" } },
+    }] },
+  });
+  assert.deepEqual(result.dateRange, { startDate: "2026-02-27", endDate: "2026-02-27" });
 });
 
 test("plans requested dimensions idempotently", () => {

@@ -3,33 +3,32 @@
 import {
   type AnalyticsEventName,
   type AnalyticsParams,
-  buildAnalyticsEventPayload,
+  flushAnalyticsEventsForRuntime,
+  trackAnalyticsEventForRuntime,
 } from "./events";
 
-declare global {
-  interface Window {
-    dataLayer?: unknown[];
-    gtag?: (
-      command: "config" | "event" | "js",
-      targetId: string | Date,
-      config?: Record<string, unknown>,
-    ) => void;
+function getBrowserRuntime() {
+  if (typeof window === "undefined") {
+    return null;
   }
+  return {
+    hostname: window.location.hostname,
+    measurementId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
+    nodeEnv: process.env.NODE_ENV,
+    pathname: window.location.pathname,
+  };
 }
 
+export function flushAnalyticsEvents() {
+  const runtime = getBrowserRuntime();
+  return runtime ? flushAnalyticsEventsForRuntime(runtime) : 0;
+}
+
+// True means accepted for dispatch or bounded queueing, not confirmed by GA4.
 export function trackAnalyticsEvent(
   eventName: AnalyticsEventName,
   params: AnalyticsParams = {},
 ) {
-  const payload = buildAnalyticsEventPayload(eventName, params);
-
-  if (!payload || typeof window === "undefined" || typeof window.gtag !== "function") {
-    return;
-  }
-
-  try {
-    window.gtag("event", payload.eventName, payload.params);
-  } catch {
-    // Analytics must never interrupt customer navigation or inquiry submission.
-  }
+  const runtime = getBrowserRuntime();
+  return runtime ? trackAnalyticsEventForRuntime(runtime, eventName, params) : false;
 }

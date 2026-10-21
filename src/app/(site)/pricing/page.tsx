@@ -29,9 +29,10 @@ export default async function PricingPage() {
         cta={defaultCta}
       />
 
-      <section className="border-y border-charcoal/8 bg-cream/70 py-16 md:py-20">
+      <section id="pricing-guide" className="border-y border-charcoal/8 bg-cream/70 py-16 md:py-20">
         <VisibilityAnalytics
           eventName="pricing_section_viewed"
+          targetId="pricing-guide"
           params={{
             page_path: "/pricing",
             cta_location: "pricing_matrix",

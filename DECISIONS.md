@@ -2,6 +2,50 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
+## 2026-10-21 - Batch 1 Analytics Reliability And Technical SEO
+
+### Status
+
+Accepted for local implementation; no publication or external configuration change authorized.
+
+### Context
+
+The owner approved the audit's event queue, reporting, technical SEO, gallery,
+and pricing measurement fixes. The primary checkout at `8b79ceb` is two commits
+behind the verified Netlify production and remote `main` revision `b3fd3e0`.
+Those intervening commits explain the metadata mismatch and already introduce
+independent Search Console totals plus verified/unverified lead reporting.
+The primary checkout contains unrelated documentation edits and report assets.
+
+### Options Considered
+
+- Implement against the stale checkout, risking regression of deployed fixes.
+- Update the dirty primary checkout in place.
+- Use a clean task worktree based on verified production, preserving the primary checkout.
+
+### Decision
+
+Use `codex/analytics-batch-one` in the attached `analytics-batch-one` worktree,
+starting at `b3fd3e0`; no integration branch currently exists. Keep deployed
+metadata, the apex canonical, lead verification, and social normalization.
+Queue only sanitized, eligible production custom events in bounded memory;
+one-time milestones are consumed only after dispatch or queue acceptance.
+Keep the existing initial-pageview / Enhanced Measurement ownership split.
+Reports use production-host filters and completed property-timezone days;
+Search Console headlines explicitly use ungrouped final Web property totals.
+Inquiry step reports describe aggregate events, not ordered abandonment.
+Omit sitemap modification dates until reliable content timestamps exist,
+noindex the forms blueprint, limit image preloads, and reject camera filenames
+as descriptive image fallbacks. Gallery navigation measures destinations and
+manual homepage interactions only; pricing exposure observes its real section.
+
+### Consequences
+
+- Original `DECISIONS.md`, `HANDOFF.md`, `output/`, and `tmp/` remain untouched.
+- No GA4 settings, inquiry records, database schema, dependencies, or deployment change.
+- Existing historical data cannot be repaired by queueing future events.
+- Changes remain unstaged for review; production submission QA remains owner-controlled.
+
 ## 2026-08-15 - Remove The Page-View Lead Rule And Require Verified Inquiry Semantics
 
 ### Status
