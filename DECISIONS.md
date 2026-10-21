@@ -2,6 +2,73 @@
 
 Record durable repo, product, architecture, tooling, branch, validation, security, and launch-readiness decisions here. Do not rely on chat history as the only source of truth.
 
+## 2026-10-21 - Authorized Batch 1 And Batch 2 Production Release
+
+### Status
+
+Accepted by explicit owner instruction in the release turn.
+
+### Context
+
+Batch 1 is `fa2fd5b`; Batch 2 is `d3b45f0`. The owner authorized a clean
+checkpoint, preservation of the dirty primary documentation, fast-forward of
+primary `main`, removal of the temporary worktree, push to `origin/main`, and
+read-only production verification. Primary `main` was at `8b79ceb`; fresh
+`origin/main` is `b3fd3e0` and is an ancestor of the release branch.
+
+### Options Considered
+
+- Discard or stash the primary notes and risk losing operational context.
+- Preserve the unique notes verbatim in committed documentation and retain a
+  full temporary backup outside the checkout before restoring tracked files.
+
+### Decision
+
+Preserve the monitoring-account and weekly-owner-briefing notes verbatim in this
+log and HANDOFF. Keep existing `output/` and `tmp/` contents unchanged, verified
+by path/size/mtime inventory. Back up the original documents in
+`/tmp/sweet-fork-release-preservation.json`. Fast-forward only; do not force-push,
+rebase, or rewrite existing commits. The owner's specific release instruction
+authorizes this push to `main` despite the default branch workflow. Use Git CD
+and the existing Netlify project, then verify the published commit and live HTTP
+responses. Preserve the approved sitemap policy: omit `lastModified` where no
+reliable content date is tracked instead of manufacturing deployment dates.
+
+### Consequences
+
+- Primary tracked files will be clean; original untracked report artifacts remain.
+- The temporary worktree can be archived after primary revision and quality checks.
+- Catalog metadata stays code-owned for all six product routes. No production
+  database update is needed merely to make the public snippets match defaults.
+- Release verification is read-only and does not create inquiries or change GA4.
+
+## 2026-09-19 - Dedicated Grok Bot Admin Monitoring Account
+
+### Status
+
+Accepted
+
+### Context
+
+External monitoring bots (Grok Bot) require authenticated access to observe and monitor The Sweet Fork admin system (including dashboard health, inquiries, orders, and calendar status). Reusing personal owner accounts or granting owner-level permissions would violate least-privilege principles and create unnecessary operational risk (such as order deletion or access-control changes).
+
+### Options Considered
+
+- Reuse an existing owner account (Brandon Beltran, Melissa Beltran, or Dev Admin).
+- Grant the bot an owner role in `user_roles`.
+- Provision a dedicated least-privilege Supabase Auth account with email `grok-bot@thesweetfork.com`, an active `profiles` record, and a `manager` role in `user_roles`, storing credentials only in the git-ignored `.env.local`.
+
+### Decision
+
+Provision a dedicated Supabase Auth user with email `grok-bot@thesweetfork.com`, full name `Grok Bot Monitor`, an active `profiles` record, and a `manager` role in `user_roles`. Store the email and generated secure password only in `.env.local` as `GROK_BOT_EMAIL` and `GROK_BOT_PASSWORD`. Do not print, commit, or push the password.
+
+### Consequences
+
+- Grok Bot can authenticate to `/admin/login` or via the Supabase Auth API to monitor administrative operations without session conflicts.
+- The account has least-privilege `manager` access: it cannot alter admin roles or permanently delete cancelled orders.
+- Credentials remain confined to the ignored `.env.local` file.
+
+
 ## 2026-10-21 - Batch 2 Local SEO, Inquiry Context, And Allergen Policy
 
 ### Status

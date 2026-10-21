@@ -4,6 +4,74 @@
 > * **Availability Integration (CAL-9)**: Public wizard availability integration (CAL-9) is ON HOLD pending explicit owner approval — do not implement any public-facing changes under any circumstances.
 > * **Standing Workflow Rule**: No merge or push operations are to be executed by any agent without an explicit human instruction in the current session.
 
+## Batch 1 And Batch 2 Production Release — 2026-10-21
+
+- **Authorization / current objective**: Owner explicitly approved committing
+  Batch 2, reconciling primary `main`, pushing production, removing the temporary
+  worktree, and verifying live routes. This supersedes earlier no-publication
+  status notes; normal no-push-without-approval rules still apply to future work.
+- **Checkpoints**: Batch 1 `fa2fd5b`; Batch 2 `d3b45f0`. Release preparation is on
+  `codex/analytics-batch-one`; primary starts at `8b79ceb`, while fresh
+  `origin/main` remains `b3fd3e0` with no divergence from the task branch.
+- **Preservation completed**: Primary documentation diffs were inspected. The
+  monitoring-account decision, corresponding handoff, and weekly owner briefing
+  were merged here/into DECISIONS verbatim. Original full documents and untracked
+  artifact inventories are backed up in `/tmp/sweet-fork-release-preservation.json`.
+  Existing `output/` (11 files) and `tmp/` (3,222 files) must remain unchanged.
+- **Verification basis**: Approved Batch 2 passed 304 tests, lint, typecheck,
+  production build, 378 local HTTP assertions, and desktop/mobile browser checks.
+  No application source changes are part of release preparation.
+- **Next exact tasks / commands still needed**: Commit preservation notes on the
+  task branch; restore only the backed-up, fully merged primary docs; use
+  `git merge --ff-only`; verify primary and rerun release gates; archive the
+  attached temporary worktree; `git push origin main`; confirm Netlify publishes
+  the release commit; run `/tmp/sweet-fork-batch2-seo-check.py` against the live
+  apex origin. Record final deploy/HTTP outcomes below before closing the task.
+- **Files changed / open decisions**: Only HANDOFF and DECISIONS changed during
+  release preparation. No open implementation decision. Sitemap dates stay
+  omitted until accurate content timestamps exist. Production catalog metadata
+  fields are not consumed by the six product route metadata exports, so public
+  snippet correctness does not depend on synchronizing those stored fields.
+
+## Dedicated Grok Bot Admin Monitoring Account Setup — 2026-09-19 MDT
+
+- **Current branch**: `main`; no commit, push, deployment, or application source code changes made.
+- **Objective completed**: Created a dedicated, least-privilege Supabase Auth user for Grok Bot monitoring of The Sweet Fork admin system.
+- **Account details**:
+  - Email: `grok-bot@thesweetfork.com`
+  - Full Name: `Grok Bot Monitor`
+  - User ID: `bff4a708-e0af-4b97-ad86-e76900dd1d7d`
+  - Profile: active in `public.profiles` (`is_active = true`, timezone `America/Denver`).
+  - Role: `manager` in `public.user_roles` (`granted_by = null`).
+- **Security & credentials**:
+  - Generated a clean, shell-safe 32-character alphanumeric password (preventing shell variable expansion `$`, history expansion `!`, or dotenv-evaluator corruption) and stored it in `.env.local` as `GROK_BOT_EMAIL` and `GROK_BOT_PASSWORD`.
+  - Credentials remain excluded from Git and repository tracking via `.gitignore`.
+  - The password was not logged, printed, or committed.
+  - Role is constrained to `manager` (least privilege), preventing bot access to user role management or permanent order deletion.
+- **Verification**:
+  - Supabase Auth user created with email confirmed.
+  - Profile and user role rows verified in Supabase PostgreSQL database.
+  - Password updated via Supabase Admin API and client authentication verification succeeded.
+  - Live production browser login verified at `https://thesweetfork.com/admin/login` using automated browser session; successfully authenticated and redirected to `/admin/inquiries`.
+  - Presence of `GROK_BOT_EMAIL` and `GROK_BOT_PASSWORD` in `.env.local` verified.
+- **Next steps**: Provide the owner with instructions on how to view the updated credentials in `.env.local` and configure Grok Bot for monitoring `/admin/login`.
+
+## Weekly website owner briefing — 2026-08-02
+
+- **Current branch**: `main`; no commit, push, deployment, application-code change, or analytics configuration change was made.
+- **Objective completed**: Rebuilt the July 26-August 1 weekly website report as a Sweet Fork-branded, visual-first owner briefing with sections for Melissa, both owners, and Brandon.
+- **Outputs**:
+  - `output/pdf/sweet-fork-weekly-owner-briefing-2026-08-01.pdf`
+  - `output/presentation/sweet-fork-weekly-owner-briefing-2026-08-01.pptx`
+- **Content decisions**: Melissa receives the plain-language traffic story and visuals; both owners receive shared lead-generation priorities and annotated site screenshots; Brandon receives three specific four-week experiment cards with hypotheses, metrics, and decision rules.
+- **Verification**: All 14 PDF pages were rendered and visually inspected; the final PDF was opened successfully in macOS Preview; presentation overflow testing passed; `git diff --check` passed. The template-fidelity checker reports only 16 intentional `mask-cover-overlay` warnings caused by replacing sample template content with approved charts, cards, and screenshots; no unresolved template text or empty structural placeholders remain.
+- **Known limitation**: PowerPoint slides 10-11 use full-slide branded composites to prevent cross-viewer template collisions; the rest of the deck remains element-editable.
+- **Next exact task**: After owner approval of this format, define the weekly schedule, recipients, email copy, delivery mechanism, and failure/monitoring behavior before implementing automation.
+- **Working tree**: The report outputs and build intermediates remain untracked under `output/` and `tmp/`; pre-existing output artifacts were preserved.
+- **Reusable template created (2026-08-02)**: Personal Codex presentation template `$artifact-template-sweet-fork-weekly-owner-briefing` at `$HOME/.codex/skills/artifact-template-sweet-fork-weekly-owner-briefing`. It retains the approved PPTX reference and preview; no repository plugin or workspace marketplace package was created.
+- **Recommended automation model**: Run locally on Wednesday morning Mountain Time for the prior Monday-Sunday period, allowing Search Console's normal reporting delay. Collect aggregate JSON through the existing toolkit, build and verify the branded PDF/PPTX from the saved template, then create a Gmail draft with the PDF attached. Keep the first four runs draft-only before considering automatic sending.
+- **Automation guardrails**: Fail closed on missing credentials, API errors, incomplete date ranges, or report QA failures; never submit an inquiry, expose credentials, include customer data, change production, or auto-implement website recommendations. Prefer four-week trends and minimum-sample rules over single-week conclusions.
+
 ## Batch 2 Metadata, Schema, Gallery, And Conversion UX — 2026-10-21
 
 - **Current branch / worktree**: `codex/analytics-batch-one` in
